@@ -21,6 +21,7 @@ import { useData } from "@/context/data-context"
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "./ui/command"
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
+import { Skeleton } from "./ui/skeleton"
 
 type HistoricalTenant = {
     uniqueId: string;
@@ -69,7 +70,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
   const [selectedMonth, setSelectedMonth] = React.useState(months[currentMonthIndex]);
   const { toast } = useToast();
 
-  const { tenants, expenses, rentData, addRentEntry, updateRentEntry, deleteRentEntry, addExpense, updateExpense, deleteExpense, syncTenantsForMonth } = useData();
+  const { tenants, expenses, rentData, addRentEntry, updateRentEntry, deleteRentEntry, addExpense, updateExpense, deleteExpense, syncTenantsForMonth, loading } = useData();
 
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = React.useState(false);
   const [editingExpense, setEditingExpense] = React.useState<Expense | null>(null);
@@ -166,12 +167,12 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
     }
   }
 
-  const handleDeleteRentEntry = (entryId: string) => {
-    deleteRentEntry(entryId);
+  const handleDeleteRentEntry = async (entryId: string) => {
+    await deleteRentEntry(entryId);
     toast({ title: "Rent Entry Deleted", description: "The rent entry for this month has been deleted.", variant: "destructive" });
   };
   
-  const handleSaveRentEntry = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSaveRentEntry = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     const rentEntryData = {
@@ -185,12 +186,12 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
     };
 
     if(editingRentEntry) {
-        updateRentEntry({ ...editingRentEntry, ...rentEntryData });
+        await updateRentEntry({ ...editingRentEntry, ...rentEntryData });
         toast({ title: "Rent Entry Updated", description: "The entry has been successfully updated." });
     } else {
         const selectedMonthIndex = months.indexOf(selectedMonth);
         const newEntry: Omit<RentEntry, 'id' | 'tenantId' | 'year' | 'month' | 'dueDate'> = rentEntryData;
-        addRentEntry(newEntry, year, selectedMonthIndex);
+        await addRentEntry(newEntry, year, selectedMonthIndex);
         toast({ title: "Rent Entry Added", description: "The new entry has been successfully added." });
     }
 
@@ -199,9 +200,9 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
     setSelectedHistoricalTenant(null);
   };
 
-    const handleSyncTenants = () => {
+    const handleSyncTenants = async () => {
         const selectedMonthIndex = months.indexOf(selectedMonth);
-        const syncedCount = syncTenantsForMonth(year, selectedMonthIndex);
+        const syncedCount = await syncTenantsForMonth(year, selectedMonthIndex);
 
         if (syncedCount > 0) {
             toast({
@@ -217,7 +218,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
     };
 
   // Expense Handlers
-  const handleSaveExpense = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSaveExpense = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     
@@ -230,10 +231,10 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
     };
 
     if (editingExpense) {
-      updateExpense({ ...editingExpense, ...expenseData });
+      await updateExpense({ ...editingExpense, ...expenseData });
       toast({ title: "Expense Updated", description: "The expense has been successfully updated." });
     } else {
-      addExpense(expenseData);
+      await addExpense(expenseData);
       toast({ title: "Expense Added", description: "The new expense has been successfully added." });
     }
 
@@ -246,8 +247,8 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
     setIsExpenseDialogOpen(true);
   };
   
-  const handleDeleteExpense = (expenseId: string) => {
-    deleteExpense(expenseId);
+  const handleDeleteExpense = async (expenseId: string) => {
+    await deleteExpense(expenseId);
     toast({ title: "Expense Deleted", description: "The expense has been deleted.", variant: "destructive" });
   };
   
@@ -273,6 +274,45 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
   const totalExpenses = filteredExpenses.reduce((acc, expense) => acc + expense.amount, 0);
   const netResult = totalRentCollected - totalExpenses;
   const amountForDeposit = netResult > 0 ? netResult : 0;
+
+  if (loading) {
+    return (
+      <div className="pt-4 space-y-6">
+        <Skeleton className="h-10 w-1/4" />
+        <Skeleton className="h-10 w-full" />
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-1/2" />
+            <Skeleton className="h-4 w-3/4" />
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead><Skeleton className="h-5 w-20" /></TableHead>
+                  <TableHead><Skeleton className="h-5 w-20" /></TableHead>
+                  <TableHead><Skeleton className="h-5 w-20" /></TableHead>
+                  <TableHead><Skeleton className="h-5 w-20" /></TableHead>
+                  <TableHead><Skeleton className="h-5 w-20" /></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {[...Array(3)].map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell><Skeleton className="h-5 w-full" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-full" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-full" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-full" /></TableCell>
+                    <TableCell><Skeleton className="h-5 w-full" /></TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
 
   return (
     <Tabs value={selectedMonth} onValueChange={setSelectedMonth} className="w-full pt-4">
@@ -695,5 +735,3 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
     </Tabs>
   )
 }
-
-    

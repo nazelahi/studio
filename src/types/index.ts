@@ -9,6 +9,7 @@ export type Tenant = {
   notes?: string;
   status: "Paid" | "Pending" | "Overdue";
   avatar: string;
+  created_at?: string;
 };
 
 export type Expense = {
@@ -18,6 +19,7 @@ export type Expense = {
   amount: number;
   description: string;
   status: "Reimbursed" | "Pending";
+  created_at?: string;
 };
 
 export type RentEntry = {
@@ -33,4 +35,5 @@ export type RentEntry = {
     month: number; // "Month" as an index
     paymentDate?: string; // "Date" of collection
     collectedBy?: string;
+    created_at?: string;
 }

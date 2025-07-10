@@ -16,9 +16,10 @@ import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
 import type { Tenant } from "@/types"
 import { useData } from "@/context/data-context"
+import { Skeleton } from "./ui/skeleton"
 
 export function TenantsTab() {
-  const { tenants, addTenant, updateTenant, deleteTenant } = useData();
+  const { tenants, addTenant, updateTenant, deleteTenant, loading } = useData();
   const [open, setOpen] = React.useState(false);
   const [editingTenant, setEditingTenant] = React.useState<Tenant | null>(null);
   const { toast } = useToast();
@@ -36,7 +37,7 @@ export function TenantsTab() {
     }
   };
   
-  const handleSaveTenant = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSaveTenant = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     
@@ -49,16 +50,17 @@ export function TenantsTab() {
       joinDate: formData.get('joinDate') as string,
       notes: formData.get('notes') as string,
       avatar: previewImage || editingTenant?.avatar || 'https://placehold.co/80x80.png',
+      status: editingTenant?.status || 'Pending',
     };
 
     if (editingTenant) {
-      updateTenant({ ...editingTenant, ...tenantData });
+      await updateTenant({ ...editingTenant, ...tenantData });
       toast({
         title: 'Tenant Updated',
         description: `${tenantData.name}'s information has been successfully updated.`,
       });
     } else {
-      addTenant({ status: 'Pending', ...tenantData });
+      await addTenant(tenantData);
       toast({
         title: 'Tenant Added',
         description: `${tenantData.name} has been successfully added.`,
@@ -76,8 +78,8 @@ export function TenantsTab() {
     setOpen(true);
   };
 
-  const handleDelete = (tenantId: string) => {
-    deleteTenant(tenantId);
+  const handleDelete = async (tenantId: string) => {
+    await deleteTenant(tenantId);
     toast({
         title: 'Tenant Deleted',
         description: "The tenant's information has been deleted.",
@@ -106,6 +108,39 @@ export function TenantsTab() {
         return '';
     }
   };
+  
+  const TableSkeleton = () => (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead><Skeleton className="h-5 w-24" /></TableHead>
+          <TableHead className="hidden lg:table-cell"><Skeleton className="h-5 w-40" /></TableHead>
+          <TableHead className="hidden md:table-cell"><Skeleton className="h-5 w-20" /></TableHead>
+          <TableHead className="hidden md:table-cell"><Skeleton className="h-5 w-16" /></TableHead>
+          <TableHead><Skeleton className="h-5 w-16" /></TableHead>
+          <TableHead><span className="sr-only">Actions</span></TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {[...Array(5)].map((_, i) => (
+          <TableRow key={i}>
+            <TableCell>
+              <div className="flex items-center gap-3">
+                <Skeleton className="h-10 w-10 rounded-full" />
+                <Skeleton className="h-5 w-32" />
+              </div>
+            </TableCell>
+            <TableCell className="hidden lg:table-cell"><Skeleton className="h-5 w-40" /></TableCell>
+            <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-20" /></TableCell>
+            <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-16" /></TableCell>
+            <TableCell><Skeleton className="h-6 w-20 rounded-full" /></TableCell>
+            <TableCell><Skeleton className="h-8 w-8" /></TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  );
+
 
   return (
     <Card className="mt-4">
@@ -193,82 +228,84 @@ export function TenantsTab() {
         </Dialog>
       </CardHeader>
       <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Tenant</TableHead>
-              <TableHead className="hidden lg:table-cell">Contact</TableHead>
-              <TableHead className="hidden md:table-cell">Apartment</TableHead>
-              <TableHead className="hidden md:table-cell">Rent</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>
-                <span className="sr-only">Actions</span>
-              </TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {tenants.map((tenant) => (
-              <TableRow key={tenant.id}>
-                <TableCell>
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage
-                        src={tenant.avatar}
-                        alt={tenant.name}
-                        data-ai-hint="person avatar"
-                      />
-                      <AvatarFallback>
-                        {tenant.name.split(' ').map(n => n[0]).join('')}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="font-medium">{tenant.name}</div>
-                  </div>
-                </TableCell>
-                <TableCell className="hidden lg:table-cell">
-                    <div className="flex flex-col gap-1">
-                        <div className="flex items-center gap-2">
-                            <Mail className="h-4 w-4 text-muted-foreground"/>
-                            <span>{tenant.email}</span>
-                        </div>
-                        {tenant.phone && (
-                             <div className="flex items-center gap-2">
-                                <Phone className="h-4 w-4 text-muted-foreground"/>
-                                <span>{tenant.phone}</span>
-                            </div>
-                        )}
+        {loading ? <TableSkeleton /> : (
+            <Table>
+            <TableHeader>
+                <TableRow>
+                <TableHead>Tenant</TableHead>
+                <TableHead className="hidden lg:table-cell">Contact</TableHead>
+                <TableHead className="hidden md:table-cell">Apartment</TableHead>
+                <TableHead className="hidden md:table-cell">Rent</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>
+                    <span className="sr-only">Actions</span>
+                </TableHead>
+                </TableRow>
+            </TableHeader>
+            <TableBody>
+                {tenants.map((tenant) => (
+                <TableRow key={tenant.id}>
+                    <TableCell>
+                    <div className="flex items-center gap-3">
+                        <Avatar className="h-10 w-10">
+                        <AvatarImage
+                            src={tenant.avatar}
+                            alt={tenant.name}
+                            data-ai-hint="person avatar"
+                        />
+                        <AvatarFallback>
+                            {tenant.name.split(' ').map(n => n[0]).join('')}
+                        </AvatarFallback>
+                        </Avatar>
+                        <div className="font-medium">{tenant.name}</div>
                     </div>
-                </TableCell>
-                <TableCell className="hidden md:table-cell">{tenant.property}</TableCell>
-                <TableCell className="hidden md:table-cell">${tenant.rent.toFixed(2)}</TableCell>
-                <TableCell>
-                  <Badge className={getStatusBadge(tenant.status)}>
-                    {tenant.status}
-                  </Badge>
-                </TableCell>
-                <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        aria-haspopup="true"
-                        size="icon"
-                        variant="ghost"
-                      >
-                        <MoreHorizontal className="h-4 w-4" />
-                        <span className="sr-only">Toggle menu</span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => handleEdit(tenant)}>Edit</DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleDelete(tenant.id)} className="text-destructive">
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+                    </TableCell>
+                    <TableCell className="hidden lg:table-cell">
+                        <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-2">
+                                <Mail className="h-4 w-4 text-muted-foreground"/>
+                                <span>{tenant.email}</span>
+                            </div>
+                            {tenant.phone && (
+                                <div className="flex items-center gap-2">
+                                    <Phone className="h-4 w-4 text-muted-foreground"/>
+                                    <span>{tenant.phone}</span>
+                                </div>
+                            )}
+                        </div>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">{tenant.property}</TableCell>
+                    <TableCell className="hidden md:table-cell">${tenant.rent.toFixed(2)}</TableCell>
+                    <TableCell>
+                    <Badge className={getStatusBadge(tenant.status)}>
+                        {tenant.status}
+                    </Badge>
+                    </TableCell>
+                    <TableCell>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                        <Button
+                            aria-haspopup="true"
+                            size="icon"
+                            variant="ghost"
+                        >
+                            <MoreHorizontal className="h-4 w-4" />
+                            <span className="sr-only">Toggle menu</span>
+                        </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleEdit(tenant)}>Edit</DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleDelete(tenant.id)} className="text-destructive">
+                            Delete
+                        </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                    </TableCell>
+                </TableRow>
+                ))}
+            </TableBody>
+            </Table>
+        )}
       </CardContent>
     </Card>
   );

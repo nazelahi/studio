@@ -1,9 +1,11 @@
 
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import type { Tenant, Expense, RentEntry } from '@/types';
 import { parseISO, startOfMonth } from 'date-fns';
+import { supabase } from '@/lib/supabase';
+import { useToast } from '@/hooks/use-toast';
 
 interface AppData {
   tenants: Tenant[];
@@ -12,213 +14,195 @@ interface AppData {
 }
 
 interface DataContextType extends AppData {
-  addTenant: (tenant: Omit<Tenant, 'id'>) => void;
-  updateTenant: (tenant: Tenant) => void;
-  deleteTenant: (tenantId: string) => void;
-  addExpense: (expense: Omit<Expense, 'id'>) => void;
-  updateExpense: (expense: Expense) => void;
-  deleteExpense: (expenseId: string) => void;
-  addRentEntry: (rentEntry: Omit<RentEntry, 'id' | 'tenantId' | 'avatar' | 'year' | 'month' | 'dueDate'>, year: number, month: number) => void;
-  updateRentEntry: (rentEntry: RentEntry) => void;
-  deleteRentEntry: (rentEntryId: string) => void;
-  syncTenantsForMonth: (year: number, month: number) => number;
+  addTenant: (tenant: Omit<Tenant, 'id'>) => Promise<void>;
+  updateTenant: (tenant: Tenant) => Promise<void>;
+  deleteTenant: (tenantId: string) => Promise<void>;
+  addExpense: (expense: Omit<Expense, 'id'>) => Promise<void>;
+  updateExpense: (expense: Expense) => Promise<void>;
+  deleteExpense: (expenseId: string) => Promise<void>;
+  addRentEntry: (rentEntry: Omit<RentEntry, 'id' | 'tenantId' | 'avatar' | 'year' | 'month' | 'dueDate'>, year: number, month: number) => Promise<void>;
+  updateRentEntry: (rentEntry: RentEntry) => Promise<void>;
+  deleteRentEntry: (rentEntryId: string) => Promise<void>;
+  syncTenantsForMonth: (year: number, month: number) => Promise<number>;
+  loading: boolean;
 }
-
-const initialTenants: Tenant[] = [
-    { id: "T001", name: "Alice Johnson", email: "alice.j@email.com", phone: "555-1234", property: "Apt 101", rent: 1200, joinDate: "2023-01-15", notes: "Prefers quiet hours after 10 PM.", status: "Paid", avatar: "https://placehold.co/80x80.png" },
-    { id: "T002", name: "Bob Smith", email: "bob.smith@email.com", phone: "555-5678", property: "Apt 102", rent: 1250, joinDate: "2022-07-20", notes: "Has a small dog named Sparky.", status: "Pending", avatar: "https://placehold.co/80x80.png" },
-    { id: "T003", name: "Charlie Brown", email: "charlie.b@email.com", phone: "555-8765", property: "Apt 201", rent: 1400, joinDate: "2023-08-01", notes: "", status: "Overdue", avatar: "https://placehold.co/80x80.png" },
-    { id: "T004", name: "Diana Prince", property: "Apt 202", rent: 1450, status: "Paid", avatar: "https://placehold.co/40x40.png", email: 'diana.p@email.com', joinDate: '2024-01-01' },
-    { id: "T005", name: "Ethan Hunt", property: "Apt 301", rent: 1600, status: "Paid", avatar: "https://placehold.co/40x40.png", email: 'ethan.h@email.com', joinDate: '2024-02-01' },
-    { id: "T006", name: "Frank Castle", property: "Apt 101", rent: 1200, status: "Paid", avatar: "https://placehold.co/40x40.png", email: 'frank.c@email.com', joinDate: '2024-03-01' },
-];
-
-const initialExpenses: Expense[] = [
-  { id: "EXP001", date: "2024-07-15", category: "Maintenance", amount: 150.00, description: "Plumbing repair at Unit 101", status: "Reimbursed" },
-  { id: "EXP002", date: "2024-07-12", category: "Utilities", amount: 75.50, description: "Common area electricity", status: "Pending" },
-  { id: "EXP003", date: "2024-08-10", category: "Landscaping", amount: 200.00, description: "Monthly gardening service", status: "Reimbursed" },
-  { id: "EXP004", date: "2024-08-05", category: "Supplies", amount: 45.25, description: "Cleaning supplies", status: "Pending" },
-  { id: "EXP005", date: "2024-06-28", category: "Repairs", amount: 350.00, description: "Roof leak fix at Unit 204", status: "Reimbursed" },
-];
-
-
-const generateInitialRentData = (tenants: Tenant[]): RentEntry[] => {
-    const rentData: RentEntry[] = [];
-    const currentYear = new Date().getFullYear();
-    tenants.forEach(tenant => {
-        const joinDate = parseISO(tenant.joinDate);
-        // Generate for last year and this year for demo
-        for (const year of [currentYear -1, currentYear]) {
-            const startMonth = joinDate.getFullYear() < year ? 0 : joinDate.getMonth();
-            for (let monthIndex = startMonth; monthIndex < 12; monthIndex++) {
-                const monthStartDate = new Date(year, monthIndex, 1);
-                if (monthStartDate < startOfMonth(joinDate)) continue;
-
-                const dueDate = new Date(year, monthIndex, 1);
-                rentData.push({
-                    id: `${tenant.id}-${year}-${monthIndex}`,
-                    tenantId: tenant.id,
-                    name: tenant.name,
-                    property: tenant.property,
-                    rent: tenant.rent,
-                    dueDate: dueDate.toISOString().split("T")[0],
-                    status: "Pending", // Default status
-                    avatar: tenant.avatar,
-                    year: year,
-                    month: monthIndex
-                });
-            }
-        }
-    });
-    return rentData;
-};
-
-
-const initialData: AppData = {
-    tenants: initialTenants,
-    expenses: initialExpenses,
-    rentData: generateInitialRentData(initialTenants),
-};
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
 export function DataProvider({ children }: { children: ReactNode }) {
-    const [data, setData] = useState<AppData>(() => {
-        if (typeof window === 'undefined') {
-            return initialData;
+    const [data, setData] = useState<AppData>({ tenants: [], expenses: [], rentData: [] });
+    const [loading, setLoading] = useState(true);
+    const { toast } = useToast();
+
+    const handleError = (error: any, context: string) => {
+        console.error(`Error in ${context}:`, error);
+        toast({
+            title: `Error: ${context}`,
+            description: error.message || 'An unexpected error occurred.',
+            variant: 'destructive',
+        });
+    };
+
+    const fetchData = useCallback(async () => {
+        if (!supabase) {
+            setLoading(false);
+            return;
         }
+        setLoading(true);
         try {
-            const item = window.localStorage.getItem('appData');
-            return item ? JSON.parse(item) : initialData;
+            const [tenantsRes, expensesRes, rentDataRes] = await Promise.all([
+                supabase.from('tenants').select('*'),
+                supabase.from('expenses').select('*'),
+                supabase.from('rent_entries').select('*')
+            ]);
+
+            if (tenantsRes.error) throw tenantsRes.error;
+            if (expensesRes.error) throw expensesRes.error;
+            if (rentDataRes.error) throw rentDataRes.error;
+
+            setData({
+                tenants: tenantsRes.data as Tenant[],
+                expenses: expensesRes.data as Expense[],
+                rentData: rentDataRes.data as RentEntry[],
+            });
         } catch (error) {
-            console.error("Failed to load data from localStorage", error);
-            return initialData;
+            handleError(error, 'fetching data');
+        } finally {
+            setLoading(false);
         }
-    });
+    }, []);
 
     useEffect(() => {
-        try {
-            window.localStorage.setItem('appData', JSON.stringify(data));
-        } catch (error) {
-            console.error("Failed to save data to localStorage", error);
+        fetchData();
+    }, [fetchData]);
+    
+    // Subscribe to DB changes
+    useEffect(() => {
+        if (!supabase) return;
+        const channel = supabase.channel('db-changes')
+            .on('postgres_changes', { event: '*', schema: 'public' }, (payload) => {
+                console.log('Change received!', payload);
+                fetchData(); // Refetch all data on any change
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [fetchData]);
+
+
+    const addTenant = async (tenant: Omit<Tenant, 'id' | 'created_at'>) => {
+        if (!supabase) return;
+        const { data: newTenant, error } = await supabase.from('tenants').insert([tenant]).select().single();
+        if (error) handleError(error, 'adding tenant');
+    };
+
+    const updateTenant = async (updatedTenant: Tenant) => {
+        if (!supabase) return;
+        const { id, ...tenantData } = updatedTenant;
+        const { error } = await supabase.from('tenants').update(tenantData).eq('id', id);
+        if (error) handleError(error, 'updating tenant');
+    };
+
+    const deleteTenant = async (tenantId: string) => {
+        if (!supabase) return;
+        const { error } = await supabase.from('tenants').delete().eq('id', tenantId);
+        if (error) handleError(error, 'deleting tenant');
+        else {
+            // Also delete related rent entries
+            const { error: rentError } = await supabase.from('rent_entries').delete().eq('tenantId', tenantId);
+            if (rentError) handleError(rentError, 'deleting tenant rent entries');
         }
-    }, [data]);
-
-    const addTenant = (tenant: Omit<Tenant, 'id'>) => {
-        setData(prevData => {
-            const newTenant = { ...tenant, id: `T${Date.now()}` };
-            return { ...prevData, tenants: [...prevData.tenants, newTenant] };
-        });
     };
 
-    const updateTenant = (updatedTenant: Tenant) => {
-        setData(prevData => ({
-            ...prevData,
-            tenants: prevData.tenants.map(t => t.id === updatedTenant.id ? updatedTenant : t)
-        }));
+    const addExpense = async (expense: Omit<Expense, 'id' | 'created_at'>) => {
+        if (!supabase) return;
+        const { error } = await supabase.from('expenses').insert([expense]);
+        if (error) handleError(error, 'adding expense');
     };
 
-    const deleteTenant = (tenantId: string) => {
-        setData(prevData => ({
-            ...prevData,
-            tenants: prevData.tenants.filter(t => t.id !== tenantId),
-             rentData: prevData.rentData.filter(r => r.tenantId !== tenantId)
-        }));
+    const updateExpense = async (updatedExpense: Expense) => {
+        if (!supabase) return;
+        const { id, ...expenseData } = updatedExpense;
+        const { error } = await supabase.from('expenses').update(expenseData).eq('id', id);
+        if (error) handleError(error, 'updating expense');
     };
 
-    const addExpense = (expense: Omit<Expense, 'id'>) => {
-        setData(prevData => {
-            const newExpense = { ...expense, id: `EXP${Date.now()}` };
-            return { ...prevData, expenses: [...prevData.expenses, newExpense] };
-        });
+    const deleteExpense = async (expenseId: string) => {
+        if (!supabase) return;
+        const { error } = await supabase.from('expenses').delete().eq('id', expenseId);
+        if (error) handleError(error, 'deleting expense');
     };
 
-    const updateExpense = (updatedExpense: Expense) => {
-        setData(prevData => ({
-            ...prevData,
-            expenses: prevData.expenses.map(e => e.id === updatedExpense.id ? updatedExpense : e)
-        }));
-    };
-
-    const deleteExpense = (expenseId: string) => {
-        setData(prevData => ({
-            ...prevData,
-            expenses: prevData.expenses.filter(e => e.id !== expenseId)
-        }));
-    };
-
-    const addRentEntry = (rentEntry: Omit<RentEntry, 'id' | 'tenantId' | 'avatar' | 'year' | 'month' | 'dueDate'>, year: number, month: number) => {
-        setData(prevData => {
-            const newEntry: RentEntry = {
-                ...rentEntry,
-                id: `RENT-${Date.now()}`,
-                tenantId: `T-MANUAL-${Date.now()}`,
-                avatar: 'https://placehold.co/80x80.png',
-                dueDate: new Date(year, month, 1).toISOString().split('T')[0],
-                year,
-                month,
-            };
-            return { ...prevData, rentData: [...prevData.rentData, newEntry] };
-        });
-    };
-
-    const updateRentEntry = (updatedRentEntry: RentEntry) => {
-        setData(prevData => ({
-            ...prevData,
-            rentData: prevData.rentData.map(r => r.id === updatedRentEntry.id ? updatedRentEntry : r)
-        }));
-    };
-
-    const deleteRentEntry = (rentEntryId: string) => {
-        setData(prevData => ({
-            ...prevData,
-            rentData: prevData.rentData.filter(r => r.id !== rentEntryId)
-        }));
+    const addRentEntry = async (rentEntry: Omit<RentEntry, 'id' | 'tenantId' | 'avatar' | 'year' | 'month' | 'dueDate' | 'created_at'>, year: number, month: number) => {
+        if (!supabase) return;
+        const newEntryData = {
+            ...rentEntry,
+            tenantId: `T-MANUAL-${Date.now()}`,
+            avatar: 'https://placehold.co/80x80.png',
+            dueDate: new Date(year, month, 1).toISOString().split('T')[0],
+            year,
+            month,
+        };
+        const { error } = await supabase.from('rent_entries').insert([newEntryData]);
+        if (error) handleError(error, 'adding rent entry');
     };
     
-    const syncTenantsForMonth = (year: number, month: number): number => {
-        let newEntriesCount = 0;
-        setData(prevData => {
-            const selectedMonthStartDate = new Date(year, month, 1);
+    const updateRentEntry = async (updatedRentEntry: RentEntry) => {
+        if (!supabase) return;
+        const { id, ...rentEntryData } = updatedRentEntry;
+        const { error } = await supabase.from('rent_entries').update(rentEntryData).eq('id', id);
+        if (error) handleError(error, 'updating rent entry');
+    };
+    
+    const deleteRentEntry = async (rentEntryId: string) => {
+        if (!supabase) return;
+        const { error } = await supabase.from('rent_entries').delete().eq('id', rentEntryId);
+        if (error) handleError(error, 'deleting rent entry');
+    };
+    
+    const syncTenantsForMonth = async (year: number, month: number): Promise<number> => {
+        if (!supabase) return 0;
+        const selectedMonthStartDate = new Date(year, month, 1);
 
-            const tenantsInMonth = prevData.rentData
-                .filter(entry => entry.month === month && entry.year === year)
-                .map(entry => entry.tenantId);
+        const tenantsInMonth = data.rentData
+            .filter(entry => entry.month === month && entry.year === year)
+            .map(entry => entry.tenantId);
 
-            const tenantsToSync = prevData.tenants.filter(tenant => {
-                const joinDate = parseISO(tenant.joinDate);
-                return !tenantsInMonth.includes(tenant.id) && joinDate <= selectedMonthStartDate;
-            });
-            
-            if (tenantsToSync.length === 0) {
-                return prevData;
-            }
-
-            newEntriesCount = tenantsToSync.length;
-
-            const newRentEntries: RentEntry[] = tenantsToSync.map(tenant => ({
-                id: `${tenant.id}-${year}-${month}`,
-                tenantId: tenant.id,
-                name: tenant.name,
-                property: tenant.property,
-                rent: tenant.rent,
-                dueDate: new Date(year, month, 1).toISOString().split("T")[0],
-                status: "Pending",
-                avatar: tenant.avatar,
-                year,
-                month,
-            }));
-
-            return {
-                ...prevData,
-                rentData: [...prevData.rentData, ...newRentEntries]
-            };
+        const tenantsToSync = data.tenants.filter(tenant => {
+            const joinDate = parseISO(tenant.joinDate);
+            return !tenantsInMonth.includes(tenant.id) && joinDate <= selectedMonthStartDate;
         });
-        return newEntriesCount;
+        
+        if (tenantsToSync.length === 0) {
+            return 0;
+        }
+
+        const newRentEntries = tenantsToSync.map(tenant => ({
+            tenantId: tenant.id,
+            name: tenant.name,
+            property: tenant.property,
+            rent: tenant.rent,
+            dueDate: new Date(year, month, 1).toISOString().split("T")[0],
+            status: "Pending" as const,
+            avatar: tenant.avatar,
+            year,
+            month,
+        }));
+        
+        const { error } = await supabase.from('rent_entries').insert(newRentEntries);
+
+        if (error) {
+            handleError(error, 'syncing tenants');
+            return 0;
+        }
+
+        return tenantsToSync.length;
     };
 
     return (
-        <DataContext.Provider value={{ ...data, addTenant, updateTenant, deleteTenant, addExpense, updateExpense, deleteExpense, addRentEntry, updateRentEntry, deleteRentEntry, syncTenantsForMonth }}>
+        <DataContext.Provider value={{ ...data, addTenant, updateTenant, deleteTenant, addExpense, updateExpense, deleteExpense, addRentEntry, updateRentEntry, deleteRentEntry, syncTenantsForMonth, loading }}>
             {children}
         </DataContext.Provider>
     );
