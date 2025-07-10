@@ -85,6 +85,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
                 fetchData(); // Refetch all data on any change
             })
             .subscribe((status, err) => {
+                if (status === 'SUBSCRIBED') {
+                    console.log('Successfully subscribed to real-time updates!');
+                }
                 if (err) {
                     handleError(err, 'subscribing to real-time updates')
                 }
@@ -141,10 +144,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     const addRentEntry = async (rentEntry: Omit<RentEntry, 'id' | 'tenantId' | 'avatar' | 'year' | 'month' | 'dueDate' | 'created_at'>, year: number, month: number) => {
         if (!supabase) return;
+        // Check for an existing tenant based on name and property to link them
+        const { data: existingTenant } = await supabase.from('tenants').select('id, avatar').eq('name', rentEntry.name).eq('property', rentEntry.property).single();
+
         const newEntryData = {
             ...rentEntry,
-            tenantId: `T-MANUAL-${Date.now()}`,
-            avatar: 'https://placehold.co/80x80.png',
+            tenantId: existingTenant?.id || `T-MANUAL-${Date.now()}`,
+            avatar: existingTenant?.avatar || 'https://placehold.co/80x80.png',
             dueDate: new Date(year, month, 1).toISOString().split('T')[0],
             year,
             month,
