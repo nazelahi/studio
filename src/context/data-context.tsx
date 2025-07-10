@@ -155,7 +155,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
             year,
             month,
         };
-        const { error } = await supabase.from('rent_entries').insert([newEntryData]);
+        const { error } = await supabase.from('rent_entries').insert([{ ...newEntryData, rent: newEntryData.rent }]);
         if (error) handleError(error, 'adding rent entry');
     };
     
