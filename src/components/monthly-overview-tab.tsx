@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { DollarSign, Banknote, ArrowUpCircle, ArrowDownCircle, PlusCircle, Trash2, Pencil, CheckCircle, XCircle, AlertCircle } from "lucide-react"
+import { DollarSign, Banknote, ArrowUpCircle, ArrowDownCircle, PlusCircle, Trash2, Pencil, CheckCircle, XCircle, AlertCircle, RefreshCw } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog"
@@ -165,6 +165,47 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
     setEditingRentEntry(null);
   };
 
+    const handleSyncTenants = () => {
+    const selectedMonthIndex = months.indexOf(selectedMonth);
+    const tenantsInMonth = rentData.filter(
+        (entry) => entry.month === selectedMonthIndex && entry.year === year
+    ).map((entry) => entry.tenantId);
+
+    const tenantsToSync = initialTenants.filter(
+        (tenant) => !tenantsInMonth.includes(tenant.id)
+    );
+
+    if (tenantsToSync.length === 0) {
+        toast({
+            title: "Already up to date",
+            description: "All tenants are already in the rent roll for this month.",
+        });
+        return;
+    }
+
+    const newRentEntries: RentEntry[] = tenantsToSync.map((tenant) => {
+        const dueDate = new Date(year, selectedMonthIndex, 1);
+        return {
+            id: `${tenant.id}-${year}-${selectedMonthIndex}`,
+            tenantId: tenant.id,
+            name: tenant.name,
+            property: tenant.property,
+            rent: tenant.rent,
+            dueDate: dueDate.toISOString().split("T")[0],
+            status: "Pending",
+            avatar: tenant.avatar,
+            year: year,
+            month: selectedMonthIndex,
+        };
+    });
+
+    setRentData((prevData) => [...prevData, ...newRentEntries]);
+    toast({
+        title: "Sync Complete",
+        description: `${tenantsToSync.length} tenant(s) have been added to the rent roll.`,
+    });
+};
+
   // Expense Handlers
   const handleSaveExpense = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -252,63 +293,69 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                         <CardTitle>Rent Roll - {month} {year}</CardTitle>
                         <CardDescription>Rent payment status for {month} {year}.</CardDescription>
                     </div>
-                     <Dialog open={isRentDialogOpen} onOpenChange={handleRentOpenChange}>
-                        <DialogTrigger asChild>
-                           <Button size="sm" className="gap-2" onClick={() => setEditingRentEntry(null)}>
-                                <PlusCircle className="h-4 w-4" />
-                                Add Rent
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                            <DialogHeader>
-                                <DialogTitle>{editingRentEntry ? 'Edit Rent Entry' : 'Add New Rent Entry'}</DialogTitle>
-                                <DialogDescription>
-                                    Fill in the form below to {editingRentEntry ? 'update the' : 'add a new'} rent entry.
-                                </DialogDescription>
-                            </DialogHeader>
-                             <form onSubmit={handleSaveRentEntry} className="grid gap-4 py-4">
-                               <div className="space-y-2">
-                                    <Label htmlFor="name">Name</Label>
-                                    <Input id="name" name="name" defaultValue={editingRentEntry?.name} placeholder="e.g., John Doe" required />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="property">Flat</Label>
-                                    <Input id="property" name="property" defaultValue={editingRentEntry?.property} placeholder="e.g., Flat-1" required />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="paymentDate">Date</Label>
-                                    <Input id="paymentDate" name="paymentDate" type="date" defaultValue={editingRentEntry?.paymentDate || ''} />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="collectedBy">Collect by</Label>
-                                    <Input id="collectedBy" name="collectedBy" defaultValue={editingRentEntry?.collectedBy} placeholder="e.g., Admin" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="amount">Amount</Label>
-                                    <Input id="amount" name="amount" type="number" step="0.01" defaultValue={editingRentEntry?.rent} placeholder="0.00" required />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="status">Status</Label>
-                                    <Select name="status" defaultValue={editingRentEntry?.status || 'Pending'}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select status" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="Paid">Paid</SelectItem>
-                                        <SelectItem value="Pending">Pending</SelectItem>
-                                        <SelectItem value="Overdue">Overdue</SelectItem>
-                                    </SelectContent>
-                                    </Select>
-                                </div>
-                                <DialogFooter>
-                                    <DialogClose asChild>
-                                        <Button variant="outline">Cancel</Button>
-                                    </DialogClose>
-                                    <Button type="submit">Save Entry</Button>
-                                </DialogFooter>
-                            </form>
-                        </DialogContent>
-                    </Dialog>
+                    <div className="flex items-center gap-2">
+                        <Button size="sm" variant="outline" className="gap-2" onClick={handleSyncTenants}>
+                            <RefreshCw className="h-4 w-4" />
+                            Sync Tenants
+                        </Button>
+                        <Dialog open={isRentDialogOpen} onOpenChange={handleRentOpenChange}>
+                            <DialogTrigger asChild>
+                               <Button size="sm" className="gap-2" onClick={() => setEditingRentEntry(null)}>
+                                    <PlusCircle className="h-4 w-4" />
+                                    Add Rent
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent>
+                                <DialogHeader>
+                                    <DialogTitle>{editingRentEntry ? 'Edit Rent Entry' : 'Add New Rent Entry'}</DialogTitle>
+                                    <DialogDescription>
+                                        Fill in the form below to {editingRentEntry ? 'update the' : 'add a new'} rent entry.
+                                    </DialogDescription>
+                                </DialogHeader>
+                                 <form onSubmit={handleSaveRentEntry} className="grid gap-4 py-4">
+                                   <div className="space-y-2">
+                                        <Label htmlFor="name">Name</Label>
+                                        <Input id="name" name="name" defaultValue={editingRentEntry?.name} placeholder="e.g., John Doe" required />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="property">Flat</Label>
+                                        <Input id="property" name="property" defaultValue={editingRentEntry?.property} placeholder="e.g., Flat-1" required />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="paymentDate">Date</Label>
+                                        <Input id="paymentDate" name="paymentDate" type="date" defaultValue={editingRentEntry?.paymentDate || ''} />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="collectedBy">Collect by</Label>
+                                        <Input id="collectedBy" name="collectedBy" defaultValue={editingRentEntry?.collectedBy} placeholder="e.g., Admin" />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="amount">Amount</Label>
+                                        <Input id="amount" name="amount" type="number" step="0.01" defaultValue={editingRentEntry?.rent} placeholder="0.00" required />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="status">Status</Label>
+                                        <Select name="status" defaultValue={editingRentEntry?.status || 'Pending'}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select status" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="Paid">Paid</SelectItem>
+                                            <SelectItem value="Pending">Pending</SelectItem>
+                                            <SelectItem value="Overdue">Overdue</SelectItem>
+                                        </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <DialogFooter>
+                                        <DialogClose asChild>
+                                            <Button variant="outline">Cancel</Button>
+                                        </DialogClose>
+                                        <Button type="submit">Save Entry</Button>
+                                    </DialogFooter>
+                                </form>
+                            </DialogContent>
+                        </Dialog>
+                    </div>
                   </CardHeader>
                   <CardContent className="p-0">
                     {filteredTenants.length > 0 ? (
@@ -579,5 +626,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
     </Tabs>
   )
 }
+
+    
 
     
