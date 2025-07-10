@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Logo } from "@/components/icons"
 import DashboardTabs from "@/components/dashboard-tabs"
 
-export default function Home() {
+export default function HomePage() {
   return (
     <SidebarProvider>
       <Sidebar variant="inset" collapsible="icon">
@@ -32,14 +32,6 @@ export default function Home() {
               <SidebarMenuButton tooltip="Properties">
                 <Building2 />
                 Properties
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild tooltip="Tenants">
-                <Link href="/tenants">
-                  <Users />
-                  Tenants
-                </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
