@@ -101,8 +101,7 @@ export function TenantsTab() {
       // Add new tenant
       const newTenant: Tenant = {
         id: `T${String(tenants.length + 1).padStart(3, '0')}`,
-        status: 'Pending',
-        dueDate: new Date().toISOString().split('T')[0], // Placeholder
+        status: 'Pending', // Default status for new tenant
         ...tenantData
       };
       setTenants([...tenants, newTenant]);
@@ -122,6 +121,15 @@ export function TenantsTab() {
     setPreviewImage(tenant.avatar);
     setOpen(true);
   };
+
+  const handleDelete = (tenantId: string) => {
+    setTenants(tenants.filter(t => t.id !== tenantId));
+    toast({
+        title: 'Tenant Deleted',
+        description: "The tenant's information has been deleted.",
+        variant: 'destructive'
+    });
+  }
 
   const handleOpenChange = (isOpen: boolean) => {
     if (!isOpen) {
@@ -171,7 +179,7 @@ export function TenantsTab() {
             <form onSubmit={handleSaveTenant} className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
               <div className="md:col-span-2 flex flex-col items-center gap-4">
                   <Avatar className="h-24 w-24">
-                      <AvatarImage src={previewImage ?? "https://placehold.co/96x96.png"} data-ai-hint="person avatar"/>
+                      <AvatarImage src={previewImage ?? "https://placehold.co/96x96.png"} alt="Tenant Avatar" data-ai-hint="person avatar"/>
                       <AvatarFallback><ImageIcon className="text-muted-foreground h-12 w-12"/></AvatarFallback>
                   </Avatar>
                   <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
@@ -297,7 +305,7 @@ export function TenantsTab() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem onClick={() => handleEdit(tenant)}>Edit</DropdownMenuItem>
-                      <DropdownMenuItem className="text-destructive">
+                      <DropdownMenuItem onClick={() => handleDelete(tenant.id)} className="text-destructive">
                         Delete
                       </DropdownMenuItem>
                     </DropdownMenuContent>

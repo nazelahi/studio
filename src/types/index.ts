@@ -7,7 +7,6 @@ export type Tenant = {
   rent: number;
   joinDate: string;
   notes?: string;
-  dueDate?: string;
   status: "Paid" | "Pending" | "Overdue";
   avatar: string;
 };
