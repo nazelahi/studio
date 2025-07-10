@@ -4,12 +4,10 @@
 import * as React from "react"
 import type { Tenant, Expense, RentEntry } from "@/types"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { DollarSign, MoreHorizontal, Banknote, ArrowUpCircle, ArrowDownCircle, PlusCircle } from "lucide-react"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuPortal } from "@/components/ui/dropdown-menu"
+import { DollarSign, Banknote, ArrowUpCircle, ArrowDownCircle, PlusCircle, Trash2, Pencil, CheckCircle, XCircle, AlertCircle } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog"
@@ -17,14 +15,16 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
+import { format, parseISO } from "date-fns"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "./ui/alert-dialog"
 
 const initialTenants: Tenant[] = [
-    { id: "T001", name: "Alice Johnson", email: "alice.j@email.com", phone: "555-1234", property: "Apt 101, Bldg A", rent: 1200, joinDate: "2023-01-15", notes: "Prefers quiet hours after 10 PM.", status: "Paid", avatar: "https://placehold.co/80x80.png" },
-    { id: "T002", name: "Bob Smith", email: "bob.smith@email.com", phone: "555-5678", property: "Apt 102, Bldg A", rent: 1250, joinDate: "2022-07-20", notes: "Has a small dog named Sparky.", status: "Pending", avatar: "https://placehold.co/80x80.png" },
-    { id: "T003", name: "Charlie Brown", email: "charlie.b@email.com", phone: "555-8765", property: "Apt 201, Bldg B", rent: 1400, joinDate: "2023-08-01", notes: "", status: "Overdue", avatar: "https://placehold.co/80x80.png" },
-    { id: "T004", name: "Diana Prince", property: "Apt 202, Bldg B", rent: 1450, dueDate: "2024-07-01", status: "Paid", avatar: "https://placehold.co/40x40.png", email: 'diana.p@email.com', joinDate: '2024-01-01' },
-    { id: "T005", name: "Ethan Hunt", property: "Apt 301, Bldg C", rent: 1600, dueDate: "2024-07-01", status: "Paid", avatar: "https://placehold.co/40x40.png", email: 'ethan.h@email.com', joinDate: '2024-02-01' },
-    { id: "T006", name: "Frank Castle", property: "Apt 101, Bldg A", rent: 1200, dueDate: "2024-06-01", status: "Paid", avatar: "https://placehold.co/40x40.png", email: 'frank.c@email.com', joinDate: '2024-03-01' },
+    { id: "T001", name: "Alice Johnson", email: "alice.j@email.com", phone: "555-1234", property: "Apt 101", rent: 1200, joinDate: "2023-01-15", notes: "Prefers quiet hours after 10 PM.", status: "Paid", avatar: "https://placehold.co/80x80.png" },
+    { id: "T002", name: "Bob Smith", email: "bob.smith@email.com", phone: "555-5678", property: "Apt 102", rent: 1250, joinDate: "2022-07-20", notes: "Has a small dog named Sparky.", status: "Pending", avatar: "https://placehold.co/80x80.png" },
+    { id: "T003", name: "Charlie Brown", email: "charlie.b@email.com", phone: "555-8765", property: "Apt 201", rent: 1400, joinDate: "2023-08-01", notes: "", status: "Overdue", avatar: "https://placehold.co/80x80.png" },
+    { id: "T004", name: "Diana Prince", property: "Apt 202", rent: 1450, dueDate: "2024-07-01", status: "Paid", avatar: "https://placehold.co/40x40.png", email: 'diana.p@email.com', joinDate: '2024-01-01' },
+    { id: "T005", name: "Ethan Hunt", property: "Apt 301", rent: 1600, dueDate: "2024-07-01", status: "Paid", avatar: "https://placehold.co/40x40.png", email: 'ethan.h@email.com', joinDate: '2024-02-01' },
+    { id: "T006", name: "Frank Castle", property: "Apt 101", rent: 1200, dueDate: "2024-06-01", status: "Paid", avatar: "https://placehold.co/40x40.png", email: 'frank.c@email.com', joinDate: '2024-03-01' },
 ];
 
 const initialExpenses: Expense[] = [
@@ -67,19 +67,28 @@ const generateRentDataForYear = (tenants: Tenant[], year: number): RentEntry[] =
   return rentData;
 };
 
-
 const getStatusBadge = (status: RentEntry["status"]) => {
     switch (status) {
       case "Paid":
-        return "bg-success text-success-foreground hover:bg-success/80";
+        return "bg-green-100 text-green-800 border-green-200";
       case "Pending":
-        return "bg-warning text-warning-foreground hover:bg-warning/80";
+        return "bg-yellow-100 text-yellow-800 border-yellow-200";
       case "Overdue":
-        return "bg-destructive text-destructive-foreground hover:bg-destructive/80";
+        return "bg-red-100 text-red-800 border-red-200";
       default:
-        return "";
+        return "bg-gray-100 text-gray-800 border-gray-200";
     }
 };
+
+const getStatusIcon = (status: RentEntry["status"]) => {
+    switch(status) {
+        case "Paid": return <CheckCircle className="h-4 w-4 mr-1"/>;
+        case "Overdue": return <XCircle className="h-4 w-4 mr-1"/>;
+        case "Pending": return <AlertCircle className="h-4 w-4 mr-1"/>
+        default: return null;
+    }
+}
+
 
 const getExpenseStatusBadge = (status: Expense["status"]) => {
     return status === "Reimbursed" ? "bg-success text-success-foreground hover:bg-success/80"
@@ -95,23 +104,68 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
   const [expenses, setExpenses] = React.useState<Expense[]>(initialExpenses);
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = React.useState(false);
   const [editingExpense, setEditingExpense] = React.useState<Expense | null>(null);
+
+  const [isRentDialogOpen, setIsRentDialogOpen] = React.useState(false);
+  const [editingRentEntry, setEditingRentEntry] = React.useState<RentEntry | null>(null);
   
   React.useEffect(() => {
     setRentData(generateRentDataForYear(initialTenants, year));
   }, [year]);
 
-  const handleChangeRentStatus = (rentEntryId: string, status: RentEntry['status']) => {
-    setRentData(prevData =>
-      prevData.map(entry =>
-        entry.id === rentEntryId ? { ...entry, status } : entry
-      )
-    );
-    toast({
-      title: "Rent Status Updated",
-      description: `Rent status has been updated to ${status}.`,
-    });
+  // Rent Entry Handlers
+  const handleRentOpenChange = (isOpen: boolean) => {
+    if (!isOpen) {
+        setEditingRentEntry(null);
+    }
+    setIsRentDialogOpen(isOpen);
   };
   
+  const handleEditRentEntry = (entry: RentEntry) => {
+    setEditingRentEntry(entry);
+    setIsRentDialogOpen(true);
+  };
+
+  const handleDeleteRentEntry = (entryId: string) => {
+    setRentData(prevData => prevData.filter(entry => entry.id !== entryId));
+    toast({ title: "Rent Entry Deleted", description: "The rent entry has been deleted.", variant: "destructive" });
+  };
+  
+  const handleSaveRentEntry = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const rentEntryData = {
+        name: formData.get('name') as string,
+        property: formData.get('property') as string,
+        rent: Number(formData.get('amount')),
+        paymentDate: formData.get('paymentDate') as string,
+        collectedBy: formData.get('collectedBy') as string,
+        status: formData.get('status') as RentEntry['status'],
+    };
+
+    if(editingRentEntry) {
+        const updatedEntry = { ...editingRentEntry, ...rentEntryData };
+        setRentData(rentData.map(e => e.id === editingRentEntry.id ? updatedEntry : e));
+        toast({ title: "Rent Entry Updated", description: "The entry has been successfully updated." });
+    } else {
+        const selectedMonthIndex = months.indexOf(selectedMonth);
+        const newEntry: RentEntry = {
+            id: `RENT-${Date.now()}`,
+            tenantId: `T${String(initialTenants.length + 1).padStart(3, '0')}`,
+            avatar: 'https://placehold.co/80x80.png',
+            dueDate: new Date(year, selectedMonthIndex, 1).toISOString().split('T')[0],
+            year,
+            month: selectedMonthIndex,
+            ...rentEntryData,
+        };
+        setRentData([...rentData, newEntry]);
+        toast({ title: "Rent Entry Added", description: "The new entry has been successfully added." });
+    }
+
+    setIsRentDialogOpen(false);
+    setEditingRentEntry(null);
+  };
+
+  // Expense Handlers
   const handleSaveExpense = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
@@ -190,71 +244,143 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
               </TabsList>
               <TabsContent value="rent-roll">
                  <Card className="mt-4">
-                  <CardHeader>
-                    <CardTitle>Rent Roll - {month} {year}</CardTitle>
-                    <CardDescription>Rent payment status for {month} {year}.</CardDescription>
+                  <CardHeader className="flex flex-row items-center justify-between">
+                     <div>
+                        <CardTitle>Rent Roll - {month} {year}</CardTitle>
+                        <CardDescription>Rent payment status for {month} {year}.</CardDescription>
+                    </div>
+                     <Dialog open={isRentDialogOpen} onOpenChange={handleRentOpenChange}>
+                        <DialogTrigger asChild>
+                           <Button size="sm" className="gap-2" onClick={() => setEditingRentEntry(null)}>
+                                <PlusCircle className="h-4 w-4" />
+                                Add Rent
+                            </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                            <DialogHeader>
+                                <DialogTitle>{editingRentEntry ? 'Edit Rent Entry' : 'Add New Rent Entry'}</DialogTitle>
+                                <DialogDescription>
+                                    Fill in the form below to {editingRentEntry ? 'update the' : 'add a new'} rent entry.
+                                </DialogDescription>
+                            </DialogHeader>
+                             <form onSubmit={handleSaveRentEntry} className="grid gap-4 py-4">
+                               <div className="space-y-2">
+                                    <Label htmlFor="name">Name</Label>
+                                    <Input id="name" name="name" defaultValue={editingRentEntry?.name} placeholder="e.g., John Doe" required />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="property">Flat</Label>
+                                    <Input id="property" name="property" defaultValue={editingRentEntry?.property} placeholder="e.g., Flat-1" required />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="paymentDate">Date</Label>
+                                    <Input id="paymentDate" name="paymentDate" type="date" defaultValue={editingRentEntry?.paymentDate || ''} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="collectedBy">Collect by</Label>
+                                    <Input id="collectedBy" name="collectedBy" defaultValue={editingRentEntry?.collectedBy} placeholder="e.g., Admin" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="amount">Amount</Label>
+                                    <Input id="amount" name="amount" type="number" step="0.01" defaultValue={editingRentEntry?.rent} placeholder="0.00" required />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="status">Status</Label>
+                                    <Select name="status" defaultValue={editingRentEntry?.status || 'Pending'}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select status" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="Paid">Paid</SelectItem>
+                                        <SelectItem value="Pending">Pending</SelectItem>
+                                        <SelectItem value="Overdue">Overdue</SelectItem>
+                                    </SelectContent>
+                                    </Select>
+                                </div>
+                                <DialogFooter>
+                                    <DialogClose asChild>
+                                        <Button variant="outline">Cancel</Button>
+                                    </DialogClose>
+                                    <Button type="submit">Save Entry</Button>
+                                </DialogFooter>
+                            </form>
+                        </DialogContent>
+                    </Dialog>
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="p-0">
                     {filteredTenants.length > 0 ? (
                       <Table>
                         <TableHeader>
                           <TableRow>
-                            <TableHead>Tenant</TableHead>
-                            <TableHead>Rent</TableHead>
+                            <TableHead>Name</TableHead>
+                            <TableHead>Flat</TableHead>
+                            <TableHead className="hidden sm:table-cell">Month</TableHead>
+                            <TableHead className="hidden sm:table-cell">Year</TableHead>
+                            <TableHead>Date</TableHead>
+                            <TableHead>Collect by</TableHead>
                             <TableHead>Status</TableHead>
-                            <TableHead><span className="sr-only">Actions</span></TableHead>
+                            <TableHead>Amount</TableHead>
+                            <TableHead>Actions</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {filteredTenants.map((tenant) => (
-                            <TableRow key={tenant.id}>
+                          {filteredTenants.map((entry) => (
+                            <TableRow key={entry.id}>
+                              <TableCell className="font-medium">{entry.name}</TableCell>
+                              <TableCell><Badge variant="outline">{entry.property}</Badge></TableCell>
+                              <TableCell className="hidden sm:table-cell">{months[entry.month]}</TableCell>
+                              <TableCell className="hidden sm:table-cell">{entry.year}</TableCell>
+                              <TableCell>{entry.paymentDate ? format(parseISO(entry.paymentDate), "dd MMM yyyy") : '-'}</TableCell>
+                              <TableCell>{entry.collectedBy || '-'}</TableCell>
                               <TableCell>
-                                <div className="flex items-center gap-3">
-                                  <Avatar className="h-9 w-9">
-                                    <AvatarImage src={tenant.avatar} alt={tenant.name} data-ai-hint="person avatar"/>
-                                    <AvatarFallback>{tenant.name.charAt(0)}</AvatarFallback>
-                                  </Avatar>
-                                  <div>
-                                    <div className="font-medium">{tenant.name}</div>
-                                    <div className="text-sm text-muted-foreground">{tenant.property}</div>
-                                  </div>
-                                </div>
-                              </TableCell>
-                              <TableCell>${tenant.rent.toFixed(2)}</TableCell>
-                              <TableCell>
-                                <Badge className={getStatusBadge(tenant.status)}>
-                                  {tenant.status}
+                                <Badge className={getStatusBadge(entry.status)} variant="outline">
+                                  {getStatusIcon(entry.status)}
+                                  {entry.status}
                                 </Badge>
                               </TableCell>
+                              <TableCell>${entry.rent.toFixed(2)}</TableCell>
                               <TableCell>
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger asChild>
-                                    <Button size="icon" variant="ghost">
-                                      <MoreHorizontal className="h-4 w-4" />
-                                    </Button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end">
-                                    <DropdownMenuSub>
-                                      <DropdownMenuSubTrigger>Change Status</DropdownMenuSubTrigger>
-                                      <DropdownMenuPortal>
-                                        <DropdownMenuSubContent>
-                                          <DropdownMenuItem onClick={() => handleChangeRentStatus(tenant.id, 'Paid')}>Paid</DropdownMenuItem>
-                                          <DropdownMenuItem onClick={() => handleChangeRentStatus(tenant.id, 'Pending')}>Pending</DropdownMenuItem>
-                                          <DropdownMenuItem onClick={() => handleChangeRentStatus(tenant.id, 'Overdue')}>Overdue</DropdownMenuItem>
-                                        </DropdownMenuSubContent>
-                                      </DropdownMenuPortal>
-                                    </DropdownMenuSub>
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
+                                <div className="flex items-center gap-2">
+                                  <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => handleEditRentEntry(entry)}>
+                                    <Pencil className="h-4 w-4" />
+                                    <span className="sr-only">Edit</span>
+                                  </Button>
+                                   <AlertDialog>
+                                      <AlertDialogTrigger asChild>
+                                        <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive">
+                                          <Trash2 className="h-4 w-4" />
+                                          <span className="sr-only">Delete</span>
+                                        </Button>
+                                      </AlertDialogTrigger>
+                                      <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                          <AlertDialogDescription>
+                                            This action cannot be undone. This will permanently delete the rent entry.
+                                          </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                          <AlertDialogAction onClick={() => handleDeleteRentEntry(entry.id)}>Delete</AlertDialogAction>
+                                        </AlertDialogFooter>
+                                      </AlertDialogContent>
+                                    </AlertDialog>
+                                </div>
                               </TableCell>
                             </TableRow>
                           ))}
                         </TableBody>
                       </Table>
                     ) : (
-                      <div className="text-center text-muted-foreground py-10">No rent collection data for {month} {year}.</div>
+                      <div className="text-center text-muted-foreground p-10">No rent collection data for {month} {year}.</div>
                     )}
                   </CardContent>
+                  {filteredTenants.length > 0 && (
+                     <CardFooter className="bg-primary/90 text-primary-foreground font-bold text-lg p-4 mt-4 rounded-b-lg flex justify-between">
+                        <span>Total for {month} {year}</span>
+                        <span>${totalRentCollected.toFixed(2)}</span>
+                     </CardFooter>
+                  )}
                 </Card>
               </TabsContent>
               <TabsContent value="expenses">
@@ -326,7 +452,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                               <TableHead>Details</TableHead>
                               <TableHead>Amount</TableHead>
                               <TableHead>Status</TableHead>
-                              <TableHead><span className="sr-only">Actions</span></TableHead>
+                              <TableHead>Actions</TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -343,17 +469,32 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                   </Badge>
                                 </TableCell>
                                 <TableCell>
-                                  <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                      <Button size="icon" variant="ghost">
-                                        <MoreHorizontal className="h-4 w-4" />
-                                      </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                      <DropdownMenuItem onClick={() => handleEditExpense(expense)}>Edit</DropdownMenuItem>
-                                      <DropdownMenuItem onClick={() => handleDeleteExpense(expense.id)} className="text-destructive">Delete</DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                  </DropdownMenu>
+                                  <div className="flex items-center gap-2">
+                                     <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => handleEditExpense(expense)}>
+                                        <Pencil className="h-4 w-4" />
+                                        <span className="sr-only">Edit</span>
+                                     </Button>
+                                     <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                           <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive">
+                                            <Trash2 className="h-4 w-4" />
+                                            <span className="sr-only">Delete</span>
+                                          </Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                          <AlertDialogHeader>
+                                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                              This action cannot be undone. This will permanently delete the expense.
+                                            </AlertDialogDescription>
+                                          </AlertDialogHeader>
+                                          <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                            <AlertDialogAction onClick={() => handleDeleteExpense(expense.id)}>Delete</AlertDialogAction>
+                                          </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                      </AlertDialog>
+                                  </div>
                                 </TableCell>
                               </TableRow>
                             ))}

@@ -24,11 +24,13 @@ export type RentEntry = {
     id: string;
     tenantId: string;
     name: string;
-    property: string;
-    rent: number;
-    dueDate: string;
+    property: string; // "Flat" in the new design
+    rent: number; // "Amount"
+    dueDate: string; 
     status: "Paid" | "Pending" | "Overdue";
     avatar: string;
     year: number;
-    month: number;
+    month: number; // "Month" as an index
+    paymentDate?: string; // "Date" of collection
+    collectedBy?: string;
 }
