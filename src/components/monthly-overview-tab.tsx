@@ -217,6 +217,9 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
   const totalRentCollected = filteredTenants
     .filter(t => t.status === 'Paid')
     .reduce((acc, t) => acc + t.rent, 0);
+  
+  const totalRentExpected = filteredTenants.reduce((acc, t) => acc + t.rent, 0);
+  const collectionRate = totalRentExpected > 0 ? (totalRentCollected / totalRentExpected) * 100 : 0;
 
   const filteredExpenses = expenses.filter(expense => {
     const expenseDate = new Date(expense.date);
@@ -224,8 +227,8 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
   });
 
   const totalExpenses = filteredExpenses.reduce((acc, expense) => acc + expense.amount, 0);
-
-  const amountForDeposit = totalRentCollected - totalExpenses;
+  const netResult = totalRentCollected - totalExpenses;
+  const amountForDeposit = netResult > 0 ? netResult : 0;
 
   return (
     <Tabs value={selectedMonth} onValueChange={setSelectedMonth} className="w-full pt-4">
@@ -338,7 +341,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                   {entry.status}
                                 </Badge>
                               </TableCell>
-                              <TableCell>${entry.rent.toFixed(2)}</TableCell>
+                              <TableCell>{entry.rent.toLocaleString('en-US', { style: 'currency', currency: 'BDT', minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace('BDT', '৳')}</TableCell>
                               <TableCell>
                                 <div className="flex items-center gap-2">
                                   <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => handleEditRentEntry(entry)}>
@@ -378,7 +381,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                   {filteredTenants.length > 0 && (
                      <CardFooter className="bg-primary/90 text-primary-foreground font-bold text-lg p-4 mt-4 rounded-b-lg flex justify-between">
                         <span>Total for {month} {year}</span>
-                        <span>${totalRentCollected.toFixed(2)}</span>
+                        <span>{totalRentCollected.toLocaleString('en-US', { style: 'currency', currency: 'BDT', minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace('BDT', '৳')}</span>
                      </CardFooter>
                   )}
                 </Card>
@@ -462,7 +465,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                     <div className="font-medium">{expense.category}</div>
                                     <div className="text-sm text-muted-foreground hidden sm:block">{expense.description}</div>
                                 </TableCell>
-                                <TableCell>${expense.amount.toFixed(2)}</TableCell>
+                                <TableCell>{expense.amount.toLocaleString('en-US', { style: 'currency', currency: 'BDT', minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace('BDT', '৳')}</TableCell>
                                 <TableCell>
                                   <Badge className={getExpenseStatusBadge(expense.status)}>
                                     {expense.status}
@@ -503,7 +506,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                         <div className="flex justify-end items-center mt-4 pt-4 border-t">
                           <div className="text-lg font-bold flex items-center gap-2">
                             <DollarSign className="h-5 w-5 text-muted-foreground" />
-                            <span>Total: ${totalExpenses.toFixed(2)}</span>
+                            <span>Total: {totalExpenses.toLocaleString('en-US', { style: 'currency', currency: 'BDT', minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace('BDT', '৳')}</span>
                           </div>
                         </div>
                       </>
@@ -515,41 +518,37 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
               </TabsContent>
             </Tabs>
             
-            <Card className="lg:col-span-3 mt-6">
-              <CardHeader>
-                <CardTitle>Financial Summary</CardTitle>
-                <CardDescription>Net cash flow for {month} {year}.</CardDescription>
-              </CardHeader>
-              <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="flex items-center justify-between p-4 bg-card rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <ArrowUpCircle className="h-8 w-8 text-success" />
-                    <div>
-                      <span className="text-muted-foreground text-sm">Rent Collected</span>
-                      <p className="font-bold text-2xl text-success">${totalRentCollected.toFixed(2)}</p>
+            <Card className="lg:col-span-3 mt-6 bg-card">
+                <CardHeader className="text-center">
+                    <CardTitle>Financial Overview - {month} {year}</CardTitle>
+                </CardHeader>
+                <CardContent className="flex flex-col items-center gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 w-full max-w-4xl text-center">
+                        <div>
+                            <p className="text-sm text-muted-foreground">Total Rent Expected</p>
+                            <p className="text-3xl font-bold" style={{ color: 'hsl(var(--chart-1))' }}>
+                                {totalRentExpected.toLocaleString('en-US', { style: 'currency', currency: 'BDT', minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace('BDT', '৳')}
+                            </p>
+                        </div>
+                        <div>
+                            <p className="text-sm text-muted-foreground">Total Expenses</p>
+                            <p className="text-3xl font-bold text-destructive">
+                                {totalExpenses.toLocaleString('en-US', { style: 'currency', currency: 'BDT', minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace('BDT', '৳')}
+                            </p>
+                        </div>
+                        <div>
+                            <p className="text-sm text-muted-foreground">Net Result</p>
+                            <p className={`text-3xl font-bold ${netResult >= 0 ? 'text-success' : 'text-destructive'}`}>
+                                {netResult >= 0 ? '+' : ''}{netResult.toLocaleString('en-US', { style: 'currency', currency: 'BDT', minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace('BDT', '৳')}
+                            </p>
+                        </div>
                     </div>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between p-4 bg-card rounded-lg">
-                   <div className="flex items-center gap-3">
-                    <ArrowDownCircle className="h-8 w-8 text-destructive" />
-                    <div>
-                      <span className="text-muted-foreground text-sm">Total Expenses</span>
-                      <p className="font-bold text-2xl text-destructive">${totalExpenses.toFixed(2)}</p>
+                    <div className="bg-success/10 text-success-foreground font-semibold px-6 py-3 rounded-full">
+                       <span>Collection Rate: {collectionRate.toFixed(1)}% | Available for Deposit: {amountForDeposit.toLocaleString('en-US', { style: 'currency', currency: 'BDT', minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace('BDT', '৳')}</span>
                     </div>
-                  </div>
-                </div>
-                 <div className="flex items-center justify-between p-4 bg-card rounded-lg border-2 border-primary">
-                   <div className="flex items-center gap-3">
-                    <Banknote className="h-8 w-8 text-primary" />
-                    <div>
-                      <span className="font-bold text-primary text-sm">Bank Deposit</span>
-                      <p className={`font-bold text-2xl ${amountForDeposit >= 0 ? 'text-primary' : 'text-destructive'}`}>${amountForDeposit.toFixed(2)}</p>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
+                </CardContent>
             </Card>
+
           </div>
         </TabsContent>
       ))}
