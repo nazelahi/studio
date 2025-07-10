@@ -4,8 +4,7 @@ import Link from "next/link"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Search, Home as HomeIcon, DollarSign, Users, LineChart, Settings, Building2 } from "lucide-react"
-import { SidebarProvider, Sidebar, SidebarHeader, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar"
+import { Search } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -34,71 +33,40 @@ export default function SettingsPage() {
   };
 
   return (
-    <SidebarProvider>
-      <Sidebar variant="inset" collapsible="icon">
-        <SidebarHeader>
-          <div className="flex items-center gap-2 p-2">
-            <Logo className="size-8 text-primary" />
-            <h1 className="text-xl font-semibold text-primary">{settings.appName}</h1>
-          </div>
-        </SidebarHeader>
-        <SidebarContent>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild tooltip="Dashboard" isActive={pathname === '/'}>
-                <Link href="/">
-                  <HomeIcon />
-                  Dashboard
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton tooltip="Properties">
-                <Building2 />
-                Properties
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton tooltip="Payments">
-                <DollarSign />
-                Payments
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarMenuButton tooltip="Reports">
-                <LineChart />
-                Reports
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarContent>
-        <SidebarFooter>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton asChild tooltip="Settings" isActive={pathname === '/settings'}>
-                <Link href="/settings">
-                  <Settings />
-                  Settings
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarFooter>
-      </Sidebar>
-      <SidebarInset>
-        <header className="sticky top-0 z-40 flex h-16 items-center gap-4 border-b bg-background/80 px-6 backdrop-blur-sm">
-          <SidebarTrigger className="md:hidden" />
-          <div className="flex-1">
-            <h1 className="text-lg font-semibold">Settings</h1>
-          </div>
-          <div className="relative flex-1 md:grow-0">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              type="search"
-              placeholder="Search..."
-              className="w-full rounded-lg bg-background pl-8 md:w-[200px] lg:w-[320px]"
-            />
-          </div>
+     <div className="flex min-h-screen w-full flex-col">
+       <header className="sticky top-0 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6 z-50">
+        <nav className="hidden flex-col gap-6 text-lg font-medium md:flex md:flex-row md:items-center md:gap-5 md:text-sm lg:gap-6">
+          <Link
+            href="#"
+            className="flex items-center gap-2 text-lg font-semibold md:text-base"
+          >
+            <Logo className="h-6 w-6 text-primary" />
+            <span className="sr-only">{settings.appName}</span>
+          </Link>
+          <Link
+            href="/"
+            className={`transition-colors hover:text-foreground ${pathname === '/' ? 'text-foreground' : 'text-muted-foreground'}`}
+          >
+            Dashboard
+          </Link>
+          <Link
+            href="/settings"
+            className={`transition-colors hover:text-foreground ${pathname === '/settings' ? 'text-foreground' : 'text-muted-foreground'}`}
+          >
+            Settings
+          </Link>
+        </nav>
+        <div className="flex w-full items-center gap-4 md:ml-auto md:gap-2 lg:gap-4">
+          <form className="ml-auto flex-1 sm:flex-initial">
+            <div className="relative">
+              <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                type="search"
+                placeholder="Search..."
+                className="pl-8 sm:w-[300px] md:w-[200px] lg:w-[300px]"
+              />
+            </div>
+          </form>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon" className="rounded-full border-2">
@@ -117,9 +85,13 @@ export default function SettingsPage() {
               <DropdownMenuItem>Logout</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
-        </header>
-        <main className="flex-1 flex flex-col p-4 md:p-6">
-          <div className="flex-grow">
+        </div>
+      </header>
+       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+          <div className="mx-auto grid w-full max-w-6xl gap-2">
+            <h1 className="text-3xl font-semibold">Settings</h1>
+          </div>
+          <div className="mx-auto grid w-full max-w-6xl items-start gap-6">
             <Card>
                 <CardHeader>
                     <CardTitle>Application Settings</CardTitle>
@@ -154,11 +126,10 @@ export default function SettingsPage() {
                 </CardContent>
             </Card>
           </div>
-           <footer className="text-center text-sm text-muted-foreground mt-8">
+           <footer className="text-center text-sm text-muted-foreground mt-auto pt-4">
             {settings.footerName}
           </footer>
         </main>
-      </SidebarInset>
-    </SidebarProvider>
+      </div>
   )
 }
