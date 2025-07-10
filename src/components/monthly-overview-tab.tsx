@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -189,36 +190,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                 )}
               </CardContent>
             </Card>
-            <div className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Financial Summary</CardTitle>
-                  <CardDescription>Net cash flow for {month} {year}.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <ArrowUpCircle className="h-6 w-6 text-success" />
-                      <span className="text-muted-foreground">Rent Collected</span>
-                    </div>
-                    <span className="font-bold text-lg text-success">${totalRentCollected.toFixed(2)}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                     <div className="flex items-center gap-3">
-                      <ArrowDownCircle className="h-6 w-6 text-destructive" />
-                      <span className="text-muted-foreground">Total Expenses</span>
-                    </div>
-                    <span className="font-bold text-lg text-destructive">${totalExpenses.toFixed(2)}</span>
-                  </div>
-                   <div className="flex items-center justify-between border-t pt-4 mt-4">
-                     <div className="flex items-center gap-3">
-                      <Banknote className="h-6 w-6 text-primary" />
-                      <span className="font-bold text-primary">Bank Deposit</span>
-                    </div>
-                    <span className={`font-bold text-xl ${amountForDeposit >= 0 ? 'text-primary' : 'text-destructive'}`}>${amountForDeposit.toFixed(2)}</span>
-                  </div>
-                </CardContent>
-              </Card>
+            <div className="lg:col-span-1">
               <Card>
                 <CardHeader>
                   <CardTitle>Expenses - {month} {year}</CardTitle>
@@ -265,9 +237,46 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                 </CardContent>
               </Card>
             </div>
+            <Card className="lg:col-span-3">
+              <CardHeader>
+                <CardTitle>Financial Summary</CardTitle>
+                <CardDescription>Net cash flow for {month} {year}.</CardDescription>
+              </CardHeader>
+              <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="flex items-center justify-between p-4 bg-card rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <ArrowUpCircle className="h-8 w-8 text-success" />
+                    <div>
+                      <span className="text-muted-foreground text-sm">Rent Collected</span>
+                      <p className="font-bold text-2xl text-success">${totalRentCollected.toFixed(2)}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center justify-between p-4 bg-card rounded-lg">
+                   <div className="flex items-center gap-3">
+                    <ArrowDownCircle className="h-8 w-8 text-destructive" />
+                    <div>
+                      <span className="text-muted-foreground text-sm">Total Expenses</span>
+                      <p className="font-bold text-2xl text-destructive">${totalExpenses.toFixed(2)}</p>
+                    </div>
+                  </div>
+                </div>
+                 <div className="flex items-center justify-between p-4 bg-card rounded-lg border-2 border-primary">
+                   <div className="flex items-center gap-3">
+                    <Banknote className="h-8 w-8 text-primary" />
+                    <div>
+                      <span className="font-bold text-primary text-sm">Bank Deposit</span>
+                      <p className={`font-bold text-2xl ${amountForDeposit >= 0 ? 'text-primary' : 'text-destructive'}`}>${amountForDeposit.toFixed(2)}</p>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
         </TabsContent>
       ))}
     </Tabs>
   )
 }
+
+    
