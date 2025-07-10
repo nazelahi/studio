@@ -17,56 +17,12 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
 import { format, parseISO, startOfMonth } from "date-fns"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "./ui/alert-dialog"
-
-const initialTenants: Tenant[] = [
-    { id: "T001", name: "Alice Johnson", email: "alice.j@email.com", phone: "555-1234", property: "Apt 101", rent: 1200, joinDate: "2023-01-15", notes: "Prefers quiet hours after 10 PM.", status: "Paid", avatar: "https://placehold.co/80x80.png" },
-    { id: "T002", name: "Bob Smith", email: "bob.smith@email.com", phone: "555-5678", property: "Apt 102", rent: 1250, joinDate: "2022-07-20", notes: "Has a small dog named Sparky.", status: "Pending", avatar: "https://placehold.co/80x80.png" },
-    { id: "T003", name: "Charlie Brown", email: "charlie.b@email.com", phone: "555-8765", property: "Apt 201", rent: 1400, joinDate: "2023-08-01", notes: "", status: "Overdue", avatar: "https://placehold.co/80x80.png" },
-    { id: "T004", name: "Diana Prince", property: "Apt 202", rent: 1450, dueDate: "2024-07-01", status: "Paid", avatar: "https://placehold.co/40x40.png", email: 'diana.p@email.com', joinDate: '2024-01-01' },
-    { id: "T005", name: "Ethan Hunt", property: "Apt 301", rent: 1600, dueDate: "2024-07-01", status: "Paid", avatar: "https://placehold.co/40x40.png", email: 'ethan.h@email.com', joinDate: '2024-02-01' },
-    { id: "T006", name: "Frank Castle", property: "Apt 101", rent: 1200, dueDate: "2024-06-01", status: "Paid", avatar: "https://placehold.co/40x40.png", email: 'frank.c@email.com', joinDate: '2024-03-01' },
-];
-
-const initialExpenses: Expense[] = [
-  { id: "EXP001", date: "2024-07-15", category: "Maintenance", amount: 150.00, description: "Plumbing repair at Unit 101", status: "Reimbursed" },
-  { id: "EXP002", date: "2024-07-12", category: "Utilities", amount: 75.50, description: "Common area electricity", status: "Pending" },
-  { id: "EXP003", date: "2024-08-10", category: "Landscaping", amount: 200.00, description: "Monthly gardening service", status: "Reimbursed" },
-  { id: "EXP004", date: "2024-08-05", category: "Supplies", amount: 45.25, description: "Cleaning supplies", status: "Pending" },
-  { id: "EXP005", date: "2024-06-28", category: "Repairs", amount: 350.00, description: "Roof leak fix at Unit 204", status: "Reimbursed" },
-];
+import { useData } from "@/context/data-context"
 
 const months = [
     "January", "February", "March", "April", "May", "June", 
     "July", "August", "September", "October", "November", "December"
 ];
-
-const generateRentDataForYear = (tenants: Tenant[], year: number): RentEntry[] => {
-  const rentData: RentEntry[] = [];
-  tenants.forEach(tenant => {
-    const joinDate = parseISO(tenant.joinDate);
-    const startMonth = joinDate.getFullYear() < year ? 0 : joinDate.getMonth();
-    
-    for (let monthIndex = startMonth; monthIndex < 12; monthIndex++) {
-        const monthStartDate = new Date(year, monthIndex, 1);
-        if (monthStartDate < startOfMonth(joinDate)) continue;
-
-        const dueDate = new Date(year, monthIndex, 1);
-        rentData.push({
-            id: `${tenant.id}-${year}-${monthIndex}`,
-            tenantId: tenant.id,
-            name: tenant.name,
-            property: tenant.property,
-            rent: tenant.rent,
-            dueDate: dueDate.toISOString().split("T")[0],
-            status: "Pending", // Default status
-            avatar: tenant.avatar,
-            year: year,
-            month: monthIndex
-        });
-    }
-  });
-  return rentData;
-};
 
 const getStatusBadge = (status: RentEntry["status"]) => {
     switch (status) {
@@ -101,17 +57,13 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
   const [selectedMonth, setSelectedMonth] = React.useState(months[currentMonthIndex]);
   const { toast } = useToast();
 
-  const [rentData, setRentData] = React.useState<RentEntry[]>([]);
-  const [expenses, setExpenses] = React.useState<Expense[]>(initialExpenses);
+  const { tenants, expenses, rentData, addRentEntry, updateRentEntry, deleteRentEntry, addExpense, updateExpense, deleteExpense, syncTenantsForMonth } = useData();
+
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = React.useState(false);
   const [editingExpense, setEditingExpense] = React.useState<Expense | null>(null);
 
   const [isRentDialogOpen, setIsRentDialogOpen] = React.useState(false);
   const [editingRentEntry, setEditingRentEntry] = React.useState<RentEntry | null>(null);
-  
-  React.useEffect(() => {
-    setRentData(generateRentDataForYear(initialTenants, year));
-  }, [year]);
 
   // Rent Entry Handlers
   const handleRentOpenChange = (isOpen: boolean) => {
@@ -127,7 +79,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
   };
 
   const handleDeleteRentEntry = (entryId: string) => {
-    setRentData(prevData => prevData.filter(entry => entry.id !== entryId));
+    deleteRentEntry(entryId);
     toast({ title: "Rent Entry Deleted", description: "The rent entry for this month has been deleted.", variant: "destructive" });
   };
   
@@ -144,21 +96,12 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
     };
 
     if(editingRentEntry) {
-        const updatedEntry = { ...editingRentEntry, ...rentEntryData };
-        setRentData(rentData.map(e => e.id === editingRentEntry.id ? updatedEntry : e));
+        updateRentEntry({ ...editingRentEntry, ...rentEntryData });
         toast({ title: "Rent Entry Updated", description: "The entry has been successfully updated." });
     } else {
         const selectedMonthIndex = months.indexOf(selectedMonth);
-        const newEntry: RentEntry = {
-            id: `RENT-${Date.now()}`,
-            tenantId: `T${String(initialTenants.length + 1).padStart(3, '0')}`,
-            avatar: 'https://placehold.co/80x80.png',
-            dueDate: new Date(year, selectedMonthIndex, 1).toISOString().split('T')[0],
-            year,
-            month: selectedMonthIndex,
-            ...rentEntryData,
-        };
-        setRentData([...rentData, newEntry]);
+        const newEntry: Omit<RentEntry, 'id' | 'tenantId' | 'avatar' | 'year' | 'month' | 'dueDate'> = rentEntryData;
+        addRentEntry(newEntry, year, selectedMonthIndex);
         toast({ title: "Rent Entry Added", description: "The new entry has been successfully added." });
     }
 
@@ -168,46 +111,19 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
 
     const handleSyncTenants = () => {
         const selectedMonthIndex = months.indexOf(selectedMonth);
-        const selectedMonthStartDate = new Date(year, selectedMonthIndex, 1);
+        const syncedCount = syncTenantsForMonth(year, selectedMonthIndex);
 
-        const tenantsInMonth = rentData.filter(
-            (entry) => entry.month === selectedMonthIndex && entry.year === year
-        ).map((entry) => entry.tenantId);
-
-        const tenantsToSync = initialTenants.filter((tenant) => {
-            const joinDate = parseISO(tenant.joinDate);
-            return !tenantsInMonth.includes(tenant.id) && joinDate <= selectedMonthStartDate;
-        });
-
-        if (tenantsToSync.length === 0) {
+        if (syncedCount > 0) {
             toast({
+                title: "Sync Complete",
+                description: `${syncedCount} tenant(s) have been added to the rent roll for ${months[selectedMonthIndex]}.`,
+            });
+        } else {
+             toast({
                 title: "Already up to date",
                 description: "All active tenants are already in the rent roll for this month.",
             });
-            return;
         }
-
-        const newRentEntries: RentEntry[] = tenantsToSync.map((tenant) => {
-            const dueDate = new Date(year, selectedMonthIndex, 1);
-            return {
-                id: `${tenant.id}-${year}-${selectedMonthIndex}`,
-                tenantId: tenant.id,
-                name: tenant.name,
-                property: tenant.property,
-                rent: tenant.rent,
-                dueDate: dueDate.toISOString().split("T")[0],
-                status: "Pending",
-                avatar: tenant.avatar,
-                year: year,
-                month: selectedMonthIndex,
-            };
-        });
-
-        setRentData((prevData) => [...prevData, ...newRentEntries]);
-        toast({
-            title: "Sync Complete",
-            description: `${tenantsToSync.length} tenant(s) have been added to the rent roll for ${months[selectedMonthIndex]}.`,
-        });
     };
 
   // Expense Handlers
@@ -224,15 +140,10 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
     };
 
     if (editingExpense) {
-      const updatedExpense = { ...editingExpense, ...expenseData };
-      setExpenses(expenses.map(e => e.id === editingExpense.id ? updatedExpense : e));
+      updateExpense({ ...editingExpense, ...expenseData });
       toast({ title: "Expense Updated", description: "The expense has been successfully updated." });
     } else {
-      const newExpense: Expense = {
-        id: `EXP${String(expenses.length + 1).padStart(3, '0')}`,
-        ...expenseData
-      };
-      setExpenses([...expenses, newExpense]);
+      addExpense(expenseData);
       toast({ title: "Expense Added", description: "The new expense has been successfully added." });
     }
 
@@ -246,7 +157,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
   };
   
   const handleDeleteExpense = (expenseId: string) => {
-    setExpenses(expenses.filter(e => e.id !== expenseId));
+    deleteExpense(expenseId);
     toast({ title: "Expense Deleted", description: "The expense has been deleted.", variant: "destructive" });
   };
   
@@ -446,7 +357,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                     </div>
                      <Dialog open={isExpenseDialogOpen} onOpenChange={handleExpenseOpenChange}>
                       <DialogTrigger asChild>
-                        <Button size="sm" className="gap-2">
+                        <Button size="sm" className="gap-2" onClick={() => setEditingExpense(null)}>
                           <PlusCircle className="h-4 w-4" />
                           Add Expense
                         </Button>

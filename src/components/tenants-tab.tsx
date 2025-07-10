@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -14,49 +15,10 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
 import type { Tenant } from "@/types"
-
-const initialTenants: Tenant[] = [
-  {
-    id: 'T001',
-    name: 'Alice Johnson',
-    email: 'alice.j@email.com',
-    phone: '555-1234',
-    property: 'Apt 101, Bldg A',
-    rent: 1200,
-    joinDate: '2023-01-15',
-    notes: 'Prefers quiet hours after 10 PM.',
-    status: 'Paid',
-    avatar: 'https://placehold.co/80x80.png',
-  },
-  {
-    id: 'T002',
-    name: 'Bob Smith',
-    email: 'bob.smith@email.com',
-    phone: '555-5678',
-    property: 'Apt 102, Bldg A',
-    rent: 1250,
-    joinDate: '2022-07-20',
-    notes: 'Has a small dog named Sparky.',
-    status: 'Pending',
-    avatar: 'https://placehold.co/80x80.png',
-  },
-  {
-    id: 'T003',
-    name: 'Charlie Brown',
-    email: 'charlie.b@email.com',
-    phone: '555-8765',
-    property: 'Apt 201, Bldg B',
-    rent: 1400,
-    joinDate: '2023-08-01',
-    notes: '',
-    status: 'Overdue',
-    avatar: 'https://placehold.co/80x80.png',
-  },
-];
-
+import { useData } from "@/context/data-context"
 
 export function TenantsTab() {
-  const [tenants, setTenants] = React.useState<Tenant[]>(initialTenants);
+  const { tenants, addTenant, updateTenant, deleteTenant } = useData();
   const [open, setOpen] = React.useState(false);
   const [editingTenant, setEditingTenant] = React.useState<Tenant | null>(null);
   const { toast } = useToast();
@@ -90,24 +52,16 @@ export function TenantsTab() {
     };
 
     if (editingTenant) {
-      // Update existing tenant
-      const updatedTenant = { ...editingTenant, ...tenantData };
-      setTenants(tenants.map(t => t.id === editingTenant.id ? updatedTenant : t));
+      updateTenant({ ...editingTenant, ...tenantData });
       toast({
         title: 'Tenant Updated',
-        description: `${updatedTenant.name}'s information has been successfully updated.`,
+        description: `${tenantData.name}'s information has been successfully updated.`,
       });
     } else {
-      // Add new tenant
-      const newTenant: Tenant = {
-        id: `T${String(tenants.length + 1).padStart(3, '0')}`,
-        status: 'Pending', // Default status for new tenant
-        ...tenantData
-      };
-      setTenants([...tenants, newTenant]);
+      addTenant({ status: 'Pending', ...tenantData });
       toast({
         title: 'Tenant Added',
-        description: `${newTenant.name} has been successfully added.`,
+        description: `${tenantData.name} has been successfully added.`,
       });
     }
 
@@ -123,7 +77,7 @@ export function TenantsTab() {
   };
 
   const handleDelete = (tenantId: string) => {
-    setTenants(tenants.filter(t => t.id !== tenantId));
+    deleteTenant(tenantId);
     toast({
         title: 'Tenant Deleted',
         description: "The tenant's information has been deleted.",
@@ -164,7 +118,7 @@ export function TenantsTab() {
         </div>
         <Dialog open={open} onOpenChange={handleOpenChange}>
           <DialogTrigger asChild>
-            <Button size="sm" className="gap-2">
+            <Button size="sm" className="gap-2" onClick={() => setEditingTenant(null)}>
               <PlusCircle className="h-4 w-4" />
               Add Tenant
             </Button>
