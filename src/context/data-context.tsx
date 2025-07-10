@@ -96,7 +96,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [fetchData]);
+    }, [fetchData, toast]);
 
 
     const addTenant = async (tenant: Omit<Tenant, 'id' | 'created_at'>) => {
