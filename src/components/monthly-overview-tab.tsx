@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
-import { format, parseISO } from "date-fns"
+import { format, parseISO, startOfMonth } from "date-fns"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "./ui/alert-dialog"
 
 const initialTenants: Tenant[] = [
@@ -43,11 +43,12 @@ const months = [
 const generateRentDataForYear = (tenants: Tenant[], year: number): RentEntry[] => {
   const rentData: RentEntry[] = [];
   tenants.forEach(tenant => {
-    const joinDate = new Date(tenant.joinDate);
+    const joinDate = parseISO(tenant.joinDate);
     const startMonth = joinDate.getFullYear() < year ? 0 : joinDate.getMonth();
     
     for (let monthIndex = startMonth; monthIndex < 12; monthIndex++) {
-        if (new Date(year, monthIndex, 1) < joinDate) continue;
+        const monthStartDate = new Date(year, monthIndex, 1);
+        if (monthStartDate < startOfMonth(joinDate)) continue;
 
         const dueDate = new Date(year, monthIndex, 1);
         rentData.push({
@@ -127,7 +128,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
 
   const handleDeleteRentEntry = (entryId: string) => {
     setRentData(prevData => prevData.filter(entry => entry.id !== entryId));
-    toast({ title: "Rent Entry Deleted", description: "The rent entry has been deleted.", variant: "destructive" });
+    toast({ title: "Rent Entry Deleted", description: "The rent entry for this month has been deleted.", variant: "destructive" });
   };
   
   const handleSaveRentEntry = (event: React.FormEvent<HTMLFormElement>) => {
@@ -166,45 +167,48 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
   };
 
     const handleSyncTenants = () => {
-    const selectedMonthIndex = months.indexOf(selectedMonth);
-    const tenantsInMonth = rentData.filter(
-        (entry) => entry.month === selectedMonthIndex && entry.year === year
-    ).map((entry) => entry.tenantId);
+        const selectedMonthIndex = months.indexOf(selectedMonth);
+        const selectedMonthStartDate = new Date(year, selectedMonthIndex, 1);
 
-    const tenantsToSync = initialTenants.filter(
-        (tenant) => !tenantsInMonth.includes(tenant.id)
-    );
+        const tenantsInMonth = rentData.filter(
+            (entry) => entry.month === selectedMonthIndex && entry.year === year
+        ).map((entry) => entry.tenantId);
 
-    if (tenantsToSync.length === 0) {
-        toast({
-            title: "Already up to date",
-            description: "All tenants are already in the rent roll for this month.",
+        const tenantsToSync = initialTenants.filter((tenant) => {
+            const joinDate = parseISO(tenant.joinDate);
+            return !tenantsInMonth.includes(tenant.id) && joinDate <= selectedMonthStartDate;
         });
-        return;
-    }
 
-    const newRentEntries: RentEntry[] = tenantsToSync.map((tenant) => {
-        const dueDate = new Date(year, selectedMonthIndex, 1);
-        return {
-            id: `${tenant.id}-${year}-${selectedMonthIndex}`,
-            tenantId: tenant.id,
-            name: tenant.name,
-            property: tenant.property,
-            rent: tenant.rent,
-            dueDate: dueDate.toISOString().split("T")[0],
-            status: "Pending",
-            avatar: tenant.avatar,
-            year: year,
-            month: selectedMonthIndex,
-        };
-    });
+        if (tenantsToSync.length === 0) {
+            toast({
+                title: "Already up to date",
+                description: "All active tenants are already in the rent roll for this month.",
+            });
+            return;
+        }
 
-    setRentData((prevData) => [...prevData, ...newRentEntries]);
-    toast({
-        title: "Sync Complete",
-        description: `${tenantsToSync.length} tenant(s) have been added to the rent roll.`,
-    });
-};
+        const newRentEntries: RentEntry[] = tenantsToSync.map((tenant) => {
+            const dueDate = new Date(year, selectedMonthIndex, 1);
+            return {
+                id: `${tenant.id}-${year}-${selectedMonthIndex}`,
+                tenantId: tenant.id,
+                name: tenant.name,
+                property: tenant.property,
+                rent: tenant.rent,
+                dueDate: dueDate.toISOString().split("T")[0],
+                status: "Pending",
+                avatar: tenant.avatar,
+                year: year,
+                month: selectedMonthIndex,
+            };
+        });
+
+        setRentData((prevData) => [...prevData, ...newRentEntries]);
+        toast({
+            title: "Sync Complete",
+            description: `${tenantsToSync.length} tenant(s) have been added to the rent roll for ${months[selectedMonthIndex]}.`,
+        });
+    };
 
   // Expense Handlers
   const handleSaveExpense = (event: React.FormEvent<HTMLFormElement>) => {
@@ -273,7 +277,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
 
   return (
     <Tabs value={selectedMonth} onValueChange={setSelectedMonth} className="w-full pt-4">
-      <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-12">
+      <TabsList className="grid w-full grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-12">
         {months.map(month => (
           <TabsTrigger key={month} value={month}>{month.substring(0,3)}</TabsTrigger>
         ))}
@@ -309,7 +313,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                 <DialogHeader>
                                     <DialogTitle>{editingRentEntry ? 'Edit Rent Entry' : 'Add New Rent Entry'}</DialogTitle>
                                     <DialogDescription>
-                                        Fill in the form below to {editingRentEntry ? 'update the' : 'add a new'} rent entry.
+                                        Fill in the form below to {editingRentEntry ? 'update the' : 'add a new'} rent entry for this month.
                                     </DialogDescription>
                                 </DialogHeader>
                                  <form onSubmit={handleSaveRentEntry} className="grid gap-4 py-4">
@@ -406,7 +410,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                         <AlertDialogHeader>
                                           <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                                           <AlertDialogDescription>
-                                            This action cannot be undone. This will permanently delete the rent entry.
+                                            This action cannot be undone. This will permanently delete the rent entry for this tenant for {months[entry.month]} {entry.year}.
                                           </AlertDialogDescription>
                                         </AlertDialogHeader>
                                         <AlertDialogFooter>
@@ -626,7 +630,3 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
     </Tabs>
   )
 }
-
-    
-
-    
