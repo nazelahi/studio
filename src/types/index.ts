@@ -7,7 +7,7 @@ export type Tenant = {
   rent: number;
   joinDate: string;
   notes?: string;
-  dueDate?: string; // This was from previous logic, might need to integrate
+  dueDate?: string;
   status: "Paid" | "Pending" | "Overdue";
   avatar: string;
 };
@@ -20,3 +20,16 @@ export type Expense = {
   description: string;
   status: "Reimbursed" | "Pending";
 };
+
+export type RentEntry = {
+    id: string;
+    tenantId: string;
+    name: string;
+    property: string;
+    rent: number;
+    dueDate: string;
+    status: "Paid" | "Pending" | "Overdue";
+    avatar: string;
+    year: number;
+    month: number;
+}

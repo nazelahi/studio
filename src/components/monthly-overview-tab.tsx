@@ -1,21 +1,23 @@
 "use client"
 
 import * as React from "react"
-import type { Tenant, Expense } from "@/types"
+import type { Tenant, Expense, RentEntry } from "@/types"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { DollarSign } from "lucide-react"
+import { DollarSign, MoreHorizontal } from "lucide-react"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { useToast } from "@/hooks/use-toast"
 
-const allTenantsData: Tenant[] = [
-  { id: "T001", name: "Alice Johnson", property: "Apt 101, Bldg A", rent: 1200, dueDate: "2024-08-01", status: "Paid", avatar: "https://placehold.co/40x40.png" },
-  { id: "T002", name: "Bob Smith", property: "Apt 102, Bldg A", rent: 1250, dueDate: "2024-08-01", status: "Pending", avatar: "https://placehold.co/40x40.png" },
-  { id: "T003", name: "Charlie Brown", property: "Apt 201, Bldg B", rent: 1400, dueDate: "2024-08-01", status: "Overdue", avatar: "https://placehold.co/40x40.png" },
-  { id: "T004", name: "Diana Prince", property: "Apt 202, Bldg B", rent: 1450, dueDate: "2024-07-01", status: "Paid", avatar: "https://placehold.co/40x40.png" },
-  { id: "T005", name: "Ethan Hunt", property: "Apt 301, Bldg C", rent: 1600, dueDate: "2024-07-01", status: "Paid", avatar: "https://placehold.co/40x40.png" },
-  { id: "T006", name: "Frank Castle", property: "Apt 101, Bldg A", rent: 1200, dueDate: "2024-06-01", status: "Paid", avatar: "https://placehold.co/40x40.png" },
+const initialTenants: Tenant[] = [
+    { id: "T001", name: "Alice Johnson", email: "alice.j@email.com", phone: "555-1234", property: "Apt 101, Bldg A", rent: 1200, joinDate: "2023-01-15", notes: "Prefers quiet hours after 10 PM.", status: "Paid", avatar: "https://placehold.co/80x80.png" },
+    { id: "T002", name: "Bob Smith", email: "bob.smith@email.com", phone: "555-5678", property: "Apt 102, Bldg A", rent: 1250, joinDate: "2022-07-20", notes: "Has a small dog named Sparky.", status: "Pending", avatar: "https://placehold.co/80x80.png" },
+    { id: "T003", name: "Charlie Brown", email: "charlie.b@email.com", phone: "555-8765", property: "Apt 201, Bldg B", rent: 1400, joinDate: "2023-08-01", notes: "", status: "Overdue", avatar: "https://placehold.co/80x80.png" },
+    { id: "T004", name: "Diana Prince", property: "Apt 202, Bldg B", rent: 1450, dueDate: "2024-07-01", status: "Paid", avatar: "https://placehold.co/40x40.png", email: 'diana.p@email.com', joinDate: '2024-01-01' },
+    { id: "T005", name: "Ethan Hunt", property: "Apt 301, Bldg C", rent: 1600, dueDate: "2024-07-01", status: "Paid", avatar: "https://placehold.co/40x40.png", email: 'ethan.h@email.com', joinDate: '2024-02-01' },
+    { id: "T006", name: "Frank Castle", property: "Apt 101, Bldg A", rent: 1200, dueDate: "2024-06-01", status: "Paid", avatar: "https://placehold.co/40x40.png", email: 'frank.c@email.com', joinDate: '2024-03-01' },
 ];
 
 const allExpensesData: Expense[] = [
@@ -31,7 +33,35 @@ const months = [
     "July", "August", "September", "October", "November", "December"
 ];
 
-const getStatusBadge = (status: Tenant["status"]) => {
+const generateRentDataForYear = (tenants: Tenant[], year: number): RentEntry[] => {
+  const rentData: RentEntry[] = [];
+  tenants.forEach(tenant => {
+    const joinDate = new Date(tenant.joinDate);
+    const startMonth = joinDate.getFullYear() < year ? 0 : joinDate.getMonth();
+    
+    for (let monthIndex = startMonth; monthIndex < 12; monthIndex++) {
+        if (new Date(year, monthIndex, 1) < joinDate) continue;
+
+        const dueDate = new Date(year, monthIndex, 1);
+        rentData.push({
+            id: `${tenant.id}-${year}-${monthIndex}`,
+            tenantId: tenant.id,
+            name: tenant.name,
+            property: tenant.property,
+            rent: tenant.rent,
+            dueDate: dueDate.toISOString().split("T")[0],
+            status: "Pending", // Default status
+            avatar: tenant.avatar,
+            year: year,
+            month: monthIndex
+        });
+    }
+  });
+  return rentData;
+};
+
+
+const getStatusBadge = (status: RentEntry["status"]) => {
     switch (status) {
       case "Paid":
         return "bg-success text-success-foreground hover:bg-success/80";
@@ -49,18 +79,35 @@ const getExpenseStatusBadge = (status: Expense["status"]) => {
       : "bg-warning text-warning-foreground hover:bg-warning/80";
 };
 
-export function MonthlyOverviewTab() {
-  const currentMonthIndex = new Date().getMonth();
+export function MonthlyOverviewTab({ year }: { year: number }) {
+  const currentMonthIndex = year === new Date().getFullYear() ? new Date().getMonth() : 0;
   const [selectedMonth, setSelectedMonth] = React.useState(months[currentMonthIndex]);
+  const { toast } = useToast();
 
-  const filteredTenants = allTenantsData.filter(tenant => {
-    const tenantMonth = new Date(tenant.dueDate).getMonth();
-    return tenantMonth === months.indexOf(selectedMonth);
-  });
+  const [rentData, setRentData] = React.useState<RentEntry[]>([]);
+  
+  React.useEffect(() => {
+    setRentData(generateRentDataForYear(initialTenants, year));
+  }, [year]);
+
+  const handleRecordPayment = (rentEntryId: string) => {
+    setRentData(prevData =>
+      prevData.map(entry =>
+        entry.id === rentEntryId ? { ...entry, status: "Paid" } : entry
+      )
+    );
+    toast({
+      title: "Payment Recorded",
+      description: "Rent status has been updated to Paid.",
+      variant: "default",
+    });
+  };
+
+  const filteredTenants = rentData.filter(entry => entry.month === months.indexOf(selectedMonth) && entry.year === year);
 
   const filteredExpenses = allExpensesData.filter(expense => {
-    const expenseMonth = new Date(expense.date).getMonth();
-    return expenseMonth === months.indexOf(selectedMonth);
+    const expenseDate = new Date(expense.date);
+    return expenseDate.getMonth() === months.indexOf(selectedMonth) && expenseDate.getFullYear() === year;
   });
 
   const totalExpenses = filteredExpenses.reduce((acc, expense) => acc + expense.amount, 0);
@@ -77,8 +124,8 @@ export function MonthlyOverviewTab() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
             <Card>
               <CardHeader>
-                <CardTitle>Rent Roll - {month}</CardTitle>
-                <CardDescription>Rent payment status for {month}.</CardDescription>
+                <CardTitle>Rent Roll - {month} {year}</CardTitle>
+                <CardDescription>Rent payment status for {month} {year}.</CardDescription>
               </CardHeader>
               <CardContent>
                 {filteredTenants.length > 0 ? (
@@ -88,6 +135,7 @@ export function MonthlyOverviewTab() {
                         <TableHead>Tenant</TableHead>
                         <TableHead>Rent</TableHead>
                         <TableHead>Status</TableHead>
+                        <TableHead><span className="sr-only">Actions</span></TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -111,19 +159,33 @@ export function MonthlyOverviewTab() {
                               {tenant.status}
                             </Badge>
                           </TableCell>
+                          <TableCell>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button size="icon" variant="ghost">
+                                  <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => handleRecordPayment(tenant.id)}>
+                                  Record Payment
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
                   </Table>
                 ) : (
-                  <div className="text-center text-muted-foreground py-10">No rent collection data for {month}.</div>
+                  <div className="text-center text-muted-foreground py-10">No rent collection data for {month} {year}.</div>
                 )}
               </CardContent>
             </Card>
             <Card>
               <CardHeader>
-                <CardTitle>Expenses - {month}</CardTitle>
-                 <CardDescription>Property-related expenses for {month}.</CardDescription>
+                <CardTitle>Expenses - {month} {year}</CardTitle>
+                 <CardDescription>Property-related expenses for {month} {year}.</CardDescription>
               </CardHeader>
               <CardContent>
                 {filteredExpenses.length > 0 ? (
@@ -161,7 +223,7 @@ export function MonthlyOverviewTab() {
                     </div>
                   </>
                 ) : (
-                  <div className="text-center text-muted-foreground py-10">No expense data for {month}.</div>
+                  <div className="text-center text-muted-foreground py-10">No expense data for {month} {year}.</div>
                 )}
               </CardContent>
             </Card>
