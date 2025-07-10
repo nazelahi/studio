@@ -8,10 +8,15 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { DollarSign, MoreHorizontal, Banknote, ArrowUpCircle, ArrowDownCircle } from "lucide-react"
+import { DollarSign, MoreHorizontal, Banknote, ArrowUpCircle, ArrowDownCircle, PlusCircle } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
 
 const initialTenants: Tenant[] = [
     { id: "T001", name: "Alice Johnson", email: "alice.j@email.com", phone: "555-1234", property: "Apt 101, Bldg A", rent: 1200, joinDate: "2023-01-15", notes: "Prefers quiet hours after 10 PM.", status: "Paid", avatar: "https://placehold.co/80x80.png" },
@@ -22,7 +27,7 @@ const initialTenants: Tenant[] = [
     { id: "T006", name: "Frank Castle", property: "Apt 101, Bldg A", rent: 1200, dueDate: "2024-06-01", status: "Paid", avatar: "https://placehold.co/40x40.png", email: 'frank.c@email.com', joinDate: '2024-03-01' },
 ];
 
-const allExpensesData: Expense[] = [
+const initialExpenses: Expense[] = [
   { id: "EXP001", date: "2024-07-15", category: "Maintenance", amount: 150.00, description: "Plumbing repair at Unit 101", status: "Reimbursed" },
   { id: "EXP002", date: "2024-07-12", category: "Utilities", amount: 75.50, description: "Common area electricity", status: "Pending" },
   { id: "EXP003", date: "2024-08-10", category: "Landscaping", amount: 200.00, description: "Monthly gardening service", status: "Reimbursed" },
@@ -87,6 +92,9 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
   const { toast } = useToast();
 
   const [rentData, setRentData] = React.useState<RentEntry[]>([]);
+  const [expenses, setExpenses] = React.useState<Expense[]>(initialExpenses);
+  const [isExpenseDialogOpen, setIsExpenseDialogOpen] = React.useState(false);
+  const [editingExpense, setEditingExpense] = React.useState<Expense | null>(null);
   
   React.useEffect(() => {
     setRentData(generateRentDataForYear(initialTenants, year));
@@ -101,8 +109,53 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
     toast({
       title: "Payment Recorded",
       description: "Rent status has been updated to Paid.",
-      variant: "default",
     });
+  };
+  
+  const handleSaveExpense = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    
+    const expenseData = {
+      date: formData.get('date') as string,
+      category: formData.get('category') as string,
+      amount: Number(formData.get('amount')),
+      description: formData.get('description') as string,
+      status: formData.get('status') as "Pending" | "Reimbursed",
+    };
+
+    if (editingExpense) {
+      const updatedExpense = { ...editingExpense, ...expenseData };
+      setExpenses(expenses.map(e => e.id === editingExpense.id ? updatedExpense : e));
+      toast({ title: "Expense Updated", description: "The expense has been successfully updated." });
+    } else {
+      const newExpense: Expense = {
+        id: `EXP${String(expenses.length + 1).padStart(3, '0')}`,
+        ...expenseData
+      };
+      setExpenses([...expenses, newExpense]);
+      toast({ title: "Expense Added", description: "The new expense has been successfully added." });
+    }
+
+    setIsExpenseDialogOpen(false);
+    setEditingExpense(null);
+  };
+  
+  const handleEditExpense = (expense: Expense) => {
+    setEditingExpense(expense);
+    setIsExpenseDialogOpen(true);
+  };
+  
+  const handleDeleteExpense = (expenseId: string) => {
+    setExpenses(expenses.filter(e => e.id !== expenseId));
+    toast({ title: "Expense Deleted", description: "The expense has been deleted.", variant: "destructive" });
+  };
+  
+  const handleExpenseOpenChange = (isOpen: boolean) => {
+    if (!isOpen) {
+      setEditingExpense(null);
+    }
+    setIsExpenseDialogOpen(isOpen);
   };
 
   const filteredTenants = rentData.filter(entry => entry.month === months.indexOf(selectedMonth) && entry.year === year);
@@ -111,7 +164,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
     .filter(t => t.status === 'Paid')
     .reduce((acc, t) => acc + t.rent, 0);
 
-  const filteredExpenses = allExpensesData.filter(expense => {
+  const filteredExpenses = expenses.filter(expense => {
     const expenseDate = new Date(expense.date);
     return expenseDate.getMonth() === months.indexOf(selectedMonth) && expenseDate.getFullYear() === year;
   });
@@ -199,9 +252,63 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
               </TabsContent>
               <TabsContent value="expenses">
                 <Card className="mt-4">
-                  <CardHeader>
-                    <CardTitle>Expenses - {month} {year}</CardTitle>
-                    <CardDescription>Property-related expenses for {month} {year}.</CardDescription>
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <div>
+                      <CardTitle>Expenses - {month} {year}</CardTitle>
+                      <CardDescription>Property-related expenses for {month} {year}.</CardDescription>
+                    </div>
+                     <Dialog open={isExpenseDialogOpen} onOpenChange={handleExpenseOpenChange}>
+                      <DialogTrigger asChild>
+                        <Button size="sm" className="gap-2">
+                          <PlusCircle className="h-4 w-4" />
+                          Add Expense
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>{editingExpense ? 'Edit Expense' : 'Add New Expense'}</DialogTitle>
+                          <DialogDescription>
+                            Fill in the form below to {editingExpense ? 'update the' : 'add a new'} expense.
+                          </DialogDescription>
+                        </DialogHeader>
+                        <form onSubmit={handleSaveExpense} className="grid gap-4 py-4">
+                          <div className="space-y-2">
+                            <Label htmlFor="date">Date</Label>
+                            <Input id="date" name="date" type="date" defaultValue={editingExpense?.date || new Date().toISOString().split('T')[0]} required />
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="category">Category</Label>
+                            <Input id="category" name="category" defaultValue={editingExpense?.category} placeholder="e.g., Maintenance" required />
+                          </div>
+                           <div className="space-y-2">
+                            <Label htmlFor="amount">Amount</Label>
+                            <Input id="amount" name="amount" type="number" step="0.01" defaultValue={editingExpense?.amount} placeholder="0.00" required />
+                          </div>
+                           <div className="space-y-2">
+                            <Label htmlFor="status">Status</Label>
+                            <Select name="status" defaultValue={editingExpense?.status || 'Pending'}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select status" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Pending">Pending</SelectItem>
+                                <SelectItem value="Reimbursed">Reimbursed</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-2">
+                            <Label htmlFor="description">Description</Label>
+                            <Textarea id="description" name="description" defaultValue={editingExpense?.description} placeholder="Describe the expense..." />
+                          </div>
+                          <DialogFooter>
+                            <DialogClose asChild>
+                               <Button variant="outline">Cancel</Button>
+                            </DialogClose>
+                            <Button type="submit">Save Expense</Button>
+                          </DialogFooter>
+                        </form>
+                      </DialogContent>
+                    </Dialog>
                   </CardHeader>
                   <CardContent>
                     {filteredExpenses.length > 0 ? (
@@ -209,9 +316,10 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                         <Table>
                           <TableHeader>
                             <TableRow>
-                              <TableHead>Category</TableHead>
+                              <TableHead>Details</TableHead>
                               <TableHead>Amount</TableHead>
                               <TableHead>Status</TableHead>
+                              <TableHead><span className="sr-only">Actions</span></TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -226,6 +334,19 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                   <Badge className={getExpenseStatusBadge(expense.status)}>
                                     {expense.status}
                                   </Badge>
+                                </TableCell>
+                                <TableCell>
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                      <Button size="icon" variant="ghost">
+                                        <MoreHorizontal className="h-4 w-4" />
+                                      </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                      <DropdownMenuItem onClick={() => handleEditExpense(expense)}>Edit</DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => handleDeleteExpense(expense.id)} className="text-destructive">Delete</DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
                                 </TableCell>
                               </TableRow>
                             ))}
