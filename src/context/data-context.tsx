@@ -70,7 +70,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [toast]);
 
     useEffect(() => {
         fetchData();
@@ -84,7 +84,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
                 console.log('Change received!', payload);
                 fetchData(); // Refetch all data on any change
             })
-            .subscribe();
+            .subscribe((status, err) => {
+                if (err) {
+                    handleError(err, 'subscribing to real-time updates')
+                }
+            });
 
         return () => {
             supabase.removeChannel(channel);
@@ -94,7 +98,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     const addTenant = async (tenant: Omit<Tenant, 'id' | 'created_at'>) => {
         if (!supabase) return;
-        const { data: newTenant, error } = await supabase.from('tenants').insert([tenant]).select().single();
+        const { error } = await supabase.from('tenants').insert([tenant]).select().single();
         if (error) handleError(error, 'adding tenant');
     };
 
