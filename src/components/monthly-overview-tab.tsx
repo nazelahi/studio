@@ -129,115 +129,124 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
       </TabsList>
       {months.map(month => (
         <TabsContent key={month} value={month}>
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-            <Card className="lg:col-span-2">
-              <CardHeader>
-                <CardTitle>Rent Roll - {month} {year}</CardTitle>
-                <CardDescription>Rent payment status for {month} {year}.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {filteredTenants.length > 0 ? (
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>Tenant</TableHead>
-                        <TableHead>Rent</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead><span className="sr-only">Actions</span></TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredTenants.map((tenant) => (
-                        <TableRow key={tenant.id}>
-                          <TableCell>
-                            <div className="flex items-center gap-3">
-                              <Avatar className="h-9 w-9">
-                                <AvatarImage src={tenant.avatar} alt={tenant.name} data-ai-hint="person avatar"/>
-                                <AvatarFallback>{tenant.name.charAt(0)}</AvatarFallback>
-                              </Avatar>
-                              <div>
-                                <div className="font-medium">{tenant.name}</div>
-                                <div className="text-sm text-muted-foreground">{tenant.property}</div>
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>${tenant.rent.toFixed(2)}</TableCell>
-                          <TableCell>
-                            <Badge className={getStatusBadge(tenant.status)}>
-                              {tenant.status}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button size="icon" variant="ghost">
-                                  <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => handleRecordPayment(tenant.id)} disabled={tenant.status === 'Paid'}>
-                                  Record Payment
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                ) : (
-                  <div className="text-center text-muted-foreground py-10">No rent collection data for {month} {year}.</div>
-                )}
-              </CardContent>
-            </Card>
-            <div className="lg:col-span-1">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Expenses - {month} {year}</CardTitle>
-                   <CardDescription>Property-related expenses for {month} {year}.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {filteredExpenses.length > 0 ? (
-                    <>
+          <div className="mt-6">
+            <Tabs defaultValue="rent-roll" className="w-full">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="rent-roll">Rent Roll</TabsTrigger>
+                <TabsTrigger value="expenses">Expenses</TabsTrigger>
+              </TabsList>
+              <TabsContent value="rent-roll">
+                 <Card className="mt-4">
+                  <CardHeader>
+                    <CardTitle>Rent Roll - {month} {year}</CardTitle>
+                    <CardDescription>Rent payment status for {month} {year}.</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {filteredTenants.length > 0 ? (
                       <Table>
                         <TableHeader>
                           <TableRow>
-                            <TableHead>Category</TableHead>
-                            <TableHead>Amount</TableHead>
+                            <TableHead>Tenant</TableHead>
+                            <TableHead>Rent</TableHead>
                             <TableHead>Status</TableHead>
+                            <TableHead><span className="sr-only">Actions</span></TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {filteredExpenses.map((expense) => (
-                            <TableRow key={expense.id}>
-                               <TableCell>
-                                  <div className="font-medium">{expense.category}</div>
-                                  <div className="text-sm text-muted-foreground hidden sm:block">{expense.description}</div>
-                               </TableCell>
-                              <TableCell>${expense.amount.toFixed(2)}</TableCell>
+                          {filteredTenants.map((tenant) => (
+                            <TableRow key={tenant.id}>
                               <TableCell>
-                                <Badge className={getExpenseStatusBadge(expense.status)}>
-                                  {expense.status}
+                                <div className="flex items-center gap-3">
+                                  <Avatar className="h-9 w-9">
+                                    <AvatarImage src={tenant.avatar} alt={tenant.name} data-ai-hint="person avatar"/>
+                                    <AvatarFallback>{tenant.name.charAt(0)}</AvatarFallback>
+                                  </Avatar>
+                                  <div>
+                                    <div className="font-medium">{tenant.name}</div>
+                                    <div className="text-sm text-muted-foreground">{tenant.property}</div>
+                                  </div>
+                                </div>
+                              </TableCell>
+                              <TableCell>${tenant.rent.toFixed(2)}</TableCell>
+                              <TableCell>
+                                <Badge className={getStatusBadge(tenant.status)}>
+                                  {tenant.status}
                                 </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button size="icon" variant="ghost">
+                                      <MoreHorizontal className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onClick={() => handleRecordPayment(tenant.id)} disabled={tenant.status === 'Paid'}>
+                                      Record Payment
+                                    </DropdownMenuItem>
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
                               </TableCell>
                             </TableRow>
                           ))}
                         </TableBody>
                       </Table>
-                      <div className="flex justify-end items-center mt-4 pt-4 border-t">
-                        <div className="text-lg font-bold flex items-center gap-2">
-                          <DollarSign className="h-5 w-5 text-muted-foreground" />
-                          <span>Total: ${totalExpenses.toFixed(2)}</span>
+                    ) : (
+                      <div className="text-center text-muted-foreground py-10">No rent collection data for {month} {year}.</div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              <TabsContent value="expenses">
+                <Card className="mt-4">
+                  <CardHeader>
+                    <CardTitle>Expenses - {month} {year}</CardTitle>
+                    <CardDescription>Property-related expenses for {month} {year}.</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    {filteredExpenses.length > 0 ? (
+                      <>
+                        <Table>
+                          <TableHeader>
+                            <TableRow>
+                              <TableHead>Category</TableHead>
+                              <TableHead>Amount</TableHead>
+                              <TableHead>Status</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {filteredExpenses.map((expense) => (
+                              <TableRow key={expense.id}>
+                                <TableCell>
+                                    <div className="font-medium">{expense.category}</div>
+                                    <div className="text-sm text-muted-foreground hidden sm:block">{expense.description}</div>
+                                </TableCell>
+                                <TableCell>${expense.amount.toFixed(2)}</TableCell>
+                                <TableCell>
+                                  <Badge className={getExpenseStatusBadge(expense.status)}>
+                                    {expense.status}
+                                  </Badge>
+                                </TableCell>
+                              </TableRow>
+                            ))}
+                          </TableBody>
+                        </Table>
+                        <div className="flex justify-end items-center mt-4 pt-4 border-t">
+                          <div className="text-lg font-bold flex items-center gap-2">
+                            <DollarSign className="h-5 w-5 text-muted-foreground" />
+                            <span>Total: ${totalExpenses.toFixed(2)}</span>
+                          </div>
                         </div>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="text-center text-muted-foreground py-10">No expense data for {month} {year}.</div>
-                  )}
-                </CardContent>
-              </Card>
-            </div>
-            <Card className="lg:col-span-3">
+                      </>
+                    ) : (
+                      <div className="text-center text-muted-foreground py-10">No expense data for {month} {year}.</div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+            
+            <Card className="lg:col-span-3 mt-6">
               <CardHeader>
                 <CardTitle>Financial Summary</CardTitle>
                 <CardDescription>Net cash flow for {month} {year}.</CardDescription>
@@ -278,5 +287,3 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
     </Tabs>
   )
 }
-
-    
