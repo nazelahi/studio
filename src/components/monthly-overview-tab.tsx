@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { DollarSign, Banknote, ArrowUpCircle, ArrowDownCircle, PlusCircle, Trash2, Pencil, CheckCircle, XCircle, AlertCircle, RefreshCw } from "lucide-react"
+import { DollarSign, Banknote, ArrowUpCircle, ArrowDownCircle, PlusCircle, Trash2, Pencil, CheckCircle, XCircle, AlertCircle, RefreshCw, ChevronDown, Copy, X } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog"
@@ -18,6 +18,18 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { format, parseISO, startOfMonth } from "date-fns"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "./ui/alert-dialog"
 import { useData } from "@/context/data-context"
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover"
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "./ui/command"
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
+
+type HistoricalTenant = {
+    uniqueId: string;
+    name: string;
+    property: string;
+    rent: number;
+    avatar: string;
+    lastSeen: { month: number, year: number };
+}
 
 const months = [
     "January", "February", "March", "April", "May", "June", 
@@ -64,19 +76,95 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
 
   const [isRentDialogOpen, setIsRentDialogOpen] = React.useState(false);
   const [editingRentEntry, setEditingRentEntry] = React.useState<RentEntry | null>(null);
+  
+  const [isTenantFinderOpen, setIsTenantFinderOpen] = React.useState(false);
+  const [selectedHistoricalTenant, setSelectedHistoricalTenant] = React.useState<HistoricalTenant | null>(null);
+  
+  const formRef = React.useRef<HTMLFormElement>(null);
+
+
+  const filteredTenantsForMonth = React.useMemo(() => {
+    return rentData.filter(entry => entry.month === months.indexOf(selectedMonth) && entry.year === year);
+  }, [rentData, selectedMonth, year]);
+
+  const historicalTenants = React.useMemo(() => {
+    const allTenantsMap = new Map<string, HistoricalTenant>();
+
+    const processEntry = (entry: RentEntry | Tenant, type: 'rent' | 'tenant') => {
+        const uniqueId = `${entry.name.toLowerCase()}-${entry.property.toLowerCase()}`;
+        const existing = allTenantsMap.get(uniqueId);
+
+        let entryDate, entryMonth, entryYear;
+
+        if(type === 'rent' && 'year' in entry && 'month' in entry) {
+            entryYear = entry.year;
+            entryMonth = entry.month;
+        } else if ('joinDate' in entry) {
+            const parsedDate = parseISO(entry.joinDate);
+            entryYear = parsedDate.getFullYear();
+            entryMonth = parsedDate.getMonth();
+        } else {
+            return; 
+        }
+
+        const isMoreRecent = !existing || entryYear > existing.lastSeen.year || (entryYear === existing.lastSeen.year && entryMonth > existing.lastSeen.month);
+
+        if (isMoreRecent) {
+            allTenantsMap.set(uniqueId, {
+                uniqueId,
+                name: entry.name,
+                property: entry.property,
+                rent: entry.rent,
+                avatar: entry.avatar,
+                lastSeen: { month: entryMonth, year: entryYear }
+            });
+        }
+    };
+    
+    rentData.forEach(entry => processEntry(entry, 'rent'));
+    tenants.forEach(tenant => processEntry(tenant, 'tenant'));
+
+    const currentMonthTenantIds = new Set(filteredTenantsForMonth.map(t => `${t.name.toLowerCase()}-${t.property.toLowerCase()}`));
+    
+    return Array.from(allTenantsMap.values())
+        .filter(t => !currentMonthTenantIds.has(t.uniqueId))
+        .sort((a, b) => a.name.localeCompare(b.name));
+
+  }, [rentData, tenants, filteredTenantsForMonth]);
+
 
   // Rent Entry Handlers
   const handleRentOpenChange = (isOpen: boolean) => {
     if (!isOpen) {
         setEditingRentEntry(null);
+        setSelectedHistoricalTenant(null);
     }
     setIsRentDialogOpen(isOpen);
   };
   
   const handleEditRentEntry = (entry: RentEntry) => {
     setEditingRentEntry(entry);
+    setSelectedHistoricalTenant(null);
     setIsRentDialogOpen(true);
   };
+  
+  const handleSelectHistoricalTenant = (tenant: HistoricalTenant) => {
+      setSelectedHistoricalTenant(tenant);
+      setIsTenantFinderOpen(false);
+
+      if(formRef.current) {
+          (formRef.current.elements.namedItem('name') as HTMLInputElement).value = tenant.name;
+          (formRef.current.elements.namedItem('property') as HTMLInputElement).value = tenant.property;
+          (formRef.current.elements.namedItem('amount') as HTMLInputElement).value = tenant.rent.toString();
+      }
+  };
+
+  const handleClearSelectedTenant = () => {
+    setSelectedHistoricalTenant(null);
+    if(formRef.current) {
+      formRef.current.reset();
+    }
+  }
 
   const handleDeleteRentEntry = (entryId: string) => {
     deleteRentEntry(entryId);
@@ -93,6 +181,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
         paymentDate: formData.get('paymentDate') as string,
         collectedBy: formData.get('collectedBy') as string,
         status: formData.get('status') as RentEntry['status'],
+        avatar: selectedHistoricalTenant?.avatar,
     };
 
     if(editingRentEntry) {
@@ -100,13 +189,14 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
         toast({ title: "Rent Entry Updated", description: "The entry has been successfully updated." });
     } else {
         const selectedMonthIndex = months.indexOf(selectedMonth);
-        const newEntry: Omit<RentEntry, 'id' | 'tenantId' | 'avatar' | 'year' | 'month' | 'dueDate'> = rentEntryData;
+        const newEntry: Omit<RentEntry, 'id' | 'tenantId' | 'year' | 'month' | 'dueDate'> = rentEntryData;
         addRentEntry(newEntry, year, selectedMonthIndex);
         toast({ title: "Rent Entry Added", description: "The new entry has been successfully added." });
     }
 
     setIsRentDialogOpen(false);
     setEditingRentEntry(null);
+    setSelectedHistoricalTenant(null);
   };
 
     const handleSyncTenants = () => {
@@ -168,13 +258,11 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
     setIsExpenseDialogOpen(isOpen);
   };
 
-  const filteredTenants = rentData.filter(entry => entry.month === months.indexOf(selectedMonth) && entry.year === year);
-  
-  const totalRentCollected = filteredTenants
+  const totalRentCollected = filteredTenantsForMonth
     .filter(t => t.status === 'Paid')
     .reduce((acc, t) => acc + t.rent, 0);
   
-  const totalRentExpected = filteredTenants.reduce((acc, t) => acc + t.rent, 0);
+  const totalRentExpected = filteredTenantsForMonth.reduce((acc, t) => acc + t.rent, 0);
   const collectionRate = totalRentExpected > 0 ? (totalRentCollected / totalRentExpected) * 100 : 0;
 
   const filteredExpenses = expenses.filter(expense => {
@@ -224,10 +312,76 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                 <DialogHeader>
                                     <DialogTitle>{editingRentEntry ? 'Edit Rent Entry' : 'Add New Rent Entry'}</DialogTitle>
                                     <DialogDescription>
-                                        Fill in the form below to {editingRentEntry ? 'update the' : 'add a new'} rent entry for this month.
+                                        {editingRentEntry ? 'Update the entry below.' : 'Fill in the form or find a saved tenant to add a new entry.'}
                                     </DialogDescription>
                                 </DialogHeader>
-                                 <form onSubmit={handleSaveRentEntry} className="grid gap-4 py-4">
+                                 <form ref={formRef} onSubmit={handleSaveRentEntry} className="grid gap-4 py-4">
+                                   {!editingRentEntry && (
+                                     <>
+                                      <div className="space-y-2">
+                                        <Label>Find Saved Tenant</Label>
+                                        <Popover open={isTenantFinderOpen} onOpenChange={setIsTenantFinderOpen}>
+                                          <PopoverTrigger asChild>
+                                            <Button variant="outline" role="combobox" aria-expanded={isTenantFinderOpen} className="w-full justify-between">
+                                              {selectedHistoricalTenant ? `Selected: ${selectedHistoricalTenant.name}` : "Select a past tenant..."}
+                                              <div className="flex items-center">
+                                                <Badge variant="secondary" className="mr-2">{historicalTenants.length}</Badge>
+                                                <ChevronDown className="h-4 w-4 shrink-0 opacity-50"/>
+                                              </div>
+                                            </Button>
+                                          </PopoverTrigger>
+                                          <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                            <Command>
+                                              <CommandInput placeholder="Search tenant..." />
+                                              <CommandEmpty>No tenant found.</CommandEmpty>
+                                              <CommandList>
+                                                <CommandGroup>
+                                                  {historicalTenants.map((tenant) => (
+                                                    <CommandItem
+                                                      key={tenant.uniqueId}
+                                                      value={`${tenant.name} ${tenant.property}`}
+                                                      onSelect={() => handleSelectHistoricalTenant(tenant)}
+                                                      className="flex justify-between items-center"
+                                                    >
+                                                        <div className="flex items-center gap-3">
+                                                            <Avatar className="h-8 w-8">
+                                                                <AvatarImage src={tenant.avatar} />
+                                                                <AvatarFallback>{tenant.name.charAt(0)}</AvatarFallback>
+                                                            </Avatar>
+                                                            <div>
+                                                                <div className="font-medium">{tenant.name} - <span className="text-muted-foreground">{tenant.property}</span></div>
+                                                                <div className="text-xs text-muted-foreground">
+                                                                    Last seen: {months[tenant.lastSeen.month].substring(0,3)} {tenant.lastSeen.year} &middot; ৳{tenant.rent.toFixed(2)}
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </CommandItem>
+                                                  ))}
+                                                </CommandGroup>
+                                              </CommandList>
+                                            </Command>
+                                          </PopoverContent>
+                                        </Popover>
+                                      </div>
+
+                                      {selectedHistoricalTenant && (
+                                        <Card className="bg-secondary/50 relative">
+                                            <Button variant="ghost" size="icon" className="absolute top-1 right-1 h-6 w-6" onClick={handleClearSelectedTenant}>
+                                                <X className="h-4 w-4" />
+                                                <span className="sr-only">Clear selection</span>
+                                            </Button>
+                                            <CardHeader className="pb-2">
+                                                <CardTitle className="text-base">Tenant Preview</CardTitle>
+                                            </CardHeader>
+                                            <CardContent className="text-sm space-y-1">
+                                                <p><strong>Name:</strong> {selectedHistoricalTenant.name}</p>
+                                                <p><strong>Apartment:</strong> {selectedHistoricalTenant.property}</p>
+                                                <p><strong>Rent:</strong> {selectedHistoricalTenant.rent.toLocaleString('en-US', { style: 'currency', currency: 'BDT', minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace('BDT', '৳')}</p>
+                                            </CardContent>
+                                        </Card>
+                                      )}
+                                     </>
+                                   )}
                                    <div className="space-y-2">
                                         <Label htmlFor="name">Name</Label>
                                         <Input id="name" name="name" defaultValue={editingRentEntry?.name} placeholder="e.g., John Doe" required />
@@ -273,7 +427,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                     </div>
                   </CardHeader>
                   <CardContent className="p-0">
-                    {filteredTenants.length > 0 ? (
+                    {filteredTenantsForMonth.length > 0 ? (
                       <Table>
                         <TableHeader>
                           <TableRow>
@@ -289,7 +443,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {filteredTenants.map((entry) => (
+                          {filteredTenantsForMonth.map((entry) => (
                             <TableRow key={entry.id}>
                               <TableCell className="font-medium">{entry.name}</TableCell>
                               <TableCell><Badge variant="outline">{entry.property}</Badge></TableCell>
@@ -340,7 +494,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                       <div className="text-center text-muted-foreground p-10">No rent collection data for {month} {year}.</div>
                     )}
                   </CardContent>
-                  {filteredTenants.length > 0 && (
+                  {filteredTenantsForMonth.length > 0 && (
                      <CardFooter className="bg-primary/90 text-primary-foreground font-bold text-lg p-4 mt-4 rounded-b-lg flex justify-between">
                         <span>Total for {month} {year}</span>
                         <span>{totalRentCollected.toLocaleString('en-US', { style: 'currency', currency: 'BDT', minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace('BDT', '৳')}</span>
@@ -541,3 +695,5 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
     </Tabs>
   )
 }
+
+    
