@@ -518,36 +518,60 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
               </TabsContent>
             </Tabs>
             
-            <Card className="lg:col-span-3 mt-6 bg-card">
-                <CardHeader className="text-center">
-                    <CardTitle>Financial Overview - {month} {year}</CardTitle>
-                </CardHeader>
-                <CardContent className="flex flex-col items-center gap-6">
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 w-full max-w-4xl text-center">
-                        <div>
-                            <p className="text-sm text-muted-foreground">Total Rent Expected</p>
-                            <p className="text-3xl font-bold" style={{ color: 'hsl(var(--chart-1))' }}>
+            <div className="mt-6 space-y-6">
+                <div className="text-center">
+                    <h3 className="text-2xl font-bold tracking-tight">Financial Overview - {month} {year}</h3>
+                    <p className="text-muted-foreground">A summary of your income and expenses for the month.</p>
+                </div>
+                <div className="grid gap-6 md:grid-cols-3">
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Total Rent Expected</CardTitle>
+                            <Banknote className="h-5 w-5 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-3xl font-bold" style={{ color: 'hsl(var(--chart-1))' }}>
                                 {totalRentExpected.toLocaleString('en-US', { style: 'currency', currency: 'BDT', minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace('BDT', '৳')}
-                            </p>
-                        </div>
-                        <div>
-                            <p className="text-sm text-muted-foreground">Total Expenses</p>
-                            <p className="text-3xl font-bold text-destructive">
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
+                            <ArrowDownCircle className="h-5 w-5 text-destructive" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-3xl font-bold text-destructive">
                                 {totalExpenses.toLocaleString('en-US', { style: 'currency', currency: 'BDT', minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace('BDT', '৳')}
-                            </p>
-                        </div>
-                        <div>
-                            <p className="text-sm text-muted-foreground">Net Result</p>
-                            <p className={`text-3xl font-bold ${netResult >= 0 ? 'text-success' : 'text-destructive'}`}>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-sm font-medium">Net Result</CardTitle>
+                            <DollarSign className="h-5 w-5 text-muted-foreground" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className={`text-3xl font-bold ${netResult >= 0 ? 'text-success' : 'text-destructive'}`}>
                                 {netResult >= 0 ? '+' : ''}{netResult.toLocaleString('en-US', { style: 'currency', currency: 'BDT', minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace('BDT', '৳')}
-                            </p>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
+                <Card className="bg-secondary">
+                    <CardContent className="p-4 flex flex-col sm:flex-row justify-around items-center text-center sm:text-left">
+                        <div className="p-2">
+                            <p className="text-sm text-secondary-foreground font-semibold">Collection Rate</p>
+                            <p className="text-2xl font-bold text-primary">{collectionRate.toFixed(1)}%</p>
                         </div>
-                    </div>
-                    <div className="bg-success/10 text-success-foreground font-semibold px-6 py-3 rounded-full">
-                       <span>Collection Rate: {collectionRate.toFixed(1)}% | Available for Deposit: {amountForDeposit.toLocaleString('en-US', { style: 'currency', currency: 'BDT', minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace('BDT', '৳')}</span>
-                    </div>
-                </CardContent>
-            </Card>
+                        <div className="border-t sm:border-t-0 sm:border-l border-border w-full sm:w-auto h-auto sm:h-12 my-2 sm:my-0"></div>
+                        <div className="p-2">
+                            <p className="text-sm text-secondary-foreground font-semibold">Available for Deposit</p>
+                            <p className="text-2xl font-bold text-success">{amountForDeposit.toLocaleString('en-US', { style: 'currency', currency: 'BDT', minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace('BDT', '৳')}</p>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
 
           </div>
         </TabsContent>
@@ -555,3 +579,5 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
     </Tabs>
   )
 }
+
+    
