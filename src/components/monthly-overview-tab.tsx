@@ -100,10 +100,15 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
         if(type === 'rent' && 'year' in entry && 'month' in entry) {
             entryYear = entry.year;
             entryMonth = entry.month;
-        } else if ('joinDate' in entry) {
-            const parsedDate = parseISO(entry.joinDate);
-            entryYear = parsedDate.getFullYear();
-            entryMonth = parsedDate.getMonth();
+        } else if ('joinDate' in entry && entry.joinDate) {
+            try {
+                const parsedDate = parseISO(entry.joinDate);
+                entryYear = parsedDate.getFullYear();
+                entryMonth = parsedDate.getMonth();
+            } catch (e) {
+                console.error("Invalid joinDate:", entry.joinDate);
+                return;
+            }
         } else {
             return; 
         }
@@ -267,8 +272,13 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
   const collectionRate = totalRentExpected > 0 ? (totalRentCollected / totalRentExpected) * 100 : 0;
 
   const filteredExpenses = expenses.filter(expense => {
-    const expenseDate = new Date(expense.date);
-    return expenseDate.getMonth() === months.indexOf(selectedMonth) && expenseDate.getFullYear() === year;
+    if (!expense.date) return false;
+    try {
+        const expenseDate = parseISO(expense.date);
+        return expenseDate.getMonth() === months.indexOf(selectedMonth) && expenseDate.getFullYear() === year;
+    } catch {
+        return false;
+    }
   });
 
   const totalExpenses = filteredExpenses.reduce((acc, expense) => acc + expense.amount, 0);

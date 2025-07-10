@@ -155,7 +155,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
             year,
             month,
         };
-        const { error } = await supabase.from('rent_entries').insert([{ ...newEntryData, rent: newEntryData.rent }]);
+        const { error } = await supabase.from('rent_entries').insert([newEntryData]);
         if (error) handleError(error, 'adding rent entry');
     };
     
@@ -181,6 +181,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
             .map(entry => entry.tenantId);
 
         const tenantsToSync = data.tenants.filter(tenant => {
+            if (!tenant.joinDate) return false;
             const joinDate = parseISO(tenant.joinDate);
             return !tenantsInMonth.includes(tenant.id) && joinDate <= selectedMonthStartDate;
         });
