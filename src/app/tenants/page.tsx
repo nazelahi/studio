@@ -148,6 +148,22 @@ export default function TenantsPage() {
     }
   };
 
+  const handleRecordPayment = (tenantId: string) => {
+    setTenants(prevTenants =>
+      prevTenants.map(tenant =>
+        tenant.id === tenantId ? { ...tenant, status: 'Paid' } : tenant
+      )
+    );
+    const tenant = tenants.find(t => t.id === tenantId);
+    if(tenant) {
+        toast({
+            title: "Payment Recorded",
+            description: `Rent payment for ${tenant.name} has been recorded as Paid.`
+        });
+    }
+  };
+
+
   return (
     <SidebarProvider>
       <Sidebar variant="inset" collapsible="icon">
@@ -373,6 +389,9 @@ export default function TenantsPage() {
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem>View Details</DropdownMenuItem>
                             <DropdownMenuItem>Edit</DropdownMenuItem>
+                             <DropdownMenuItem onClick={() => handleRecordPayment(tenant.id)} disabled={tenant.status === 'Paid'}>
+                                Record Payment
+                            </DropdownMenuItem>
                             <DropdownMenuItem className="text-destructive">
                               Delete
                             </DropdownMenuItem>

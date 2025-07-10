@@ -1,4 +1,6 @@
+
 "use client"
+import * as React from "react"
 import type { Tenant } from "@/types"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -7,8 +9,9 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { MoreHorizontal } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
 
-const tenantsData: Tenant[] = [
+const initialTenantsData: Tenant[] = [
   { id: "T001", name: "Alice Johnson", property: "Apt 101, Bldg A", rent: 1200, dueDate: "2024-08-01", status: "Paid", avatar: "https://placehold.co/40x40.png" },
   { id: "T002", name: "Bob Smith", property: "Apt 102, Bldg A", rent: 1250, dueDate: "2024-08-01", status: "Pending", avatar: "https://placehold.co/40x40.png" },
   { id: "T003", name: "Charlie Brown", property: "Apt 201, Bldg B", rent: 1400, dueDate: "2024-08-01", status: "Overdue", avatar: "https://placehold.co/40x40.png" },
@@ -17,6 +20,9 @@ const tenantsData: Tenant[] = [
 ]
 
 export function RentRollTab() {
+  const [tenantsData, setTenantsData] = React.useState<Tenant[]>(initialTenantsData)
+  const { toast } = useToast()
+
   const getStatusBadge = (status: Tenant["status"]) => {
     switch (status) {
       case "Paid":
@@ -27,6 +33,21 @@ export function RentRollTab() {
         return "bg-destructive text-destructive-foreground hover:bg-destructive/80";
       default:
         return "";
+    }
+  };
+
+  const handleRecordPayment = (tenantId: string) => {
+    setTenantsData(prevTenants =>
+      prevTenants.map(tenant =>
+        tenant.id === tenantId ? { ...tenant, status: 'Paid' } : tenant
+      )
+    );
+    const tenant = tenantsData.find(t => t.id === tenantId);
+    if(tenant) {
+        toast({
+            title: "Payment Recorded",
+            description: `Rent payment for ${tenant.name} has been recorded as Paid.`
+        });
     }
   };
 
@@ -79,7 +100,9 @@ export function RentRollTab() {
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem>View Details</DropdownMenuItem>
                       <DropdownMenuItem>Send Reminder</DropdownMenuItem>
-                      <DropdownMenuItem>Record Payment</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleRecordPayment(tenant.id)} disabled={tenant.status === 'Paid'}>
+                        Record Payment
+                      </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </TableCell>
