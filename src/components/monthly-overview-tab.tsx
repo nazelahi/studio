@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { DollarSign, MoreHorizontal } from "lucide-react"
+import { DollarSign, MoreHorizontal, Banknote, ArrowUpCircle, ArrowDownCircle } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
@@ -105,6 +105,10 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
   };
 
   const filteredTenants = rentData.filter(entry => entry.month === months.indexOf(selectedMonth) && entry.year === year);
+  
+  const totalRentCollected = filteredTenants
+    .filter(t => t.status === 'Paid')
+    .reduce((acc, t) => acc + t.rent, 0);
 
   const filteredExpenses = allExpensesData.filter(expense => {
     const expenseDate = new Date(expense.date);
@@ -112,6 +116,8 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
   });
 
   const totalExpenses = filteredExpenses.reduce((acc, expense) => acc + expense.amount, 0);
+
+  const amountForDeposit = totalRentCollected - totalExpenses;
 
   return (
     <Tabs value={selectedMonth} onValueChange={setSelectedMonth} className="w-full pt-4">
@@ -122,8 +128,8 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
       </TabsList>
       {months.map(month => (
         <TabsContent key={month} value={month}>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-            <Card>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
+            <Card className="lg:col-span-2">
               <CardHeader>
                 <CardTitle>Rent Roll - {month} {year}</CardTitle>
                 <CardDescription>Rent payment status for {month} {year}.</CardDescription>
@@ -168,7 +174,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => handleRecordPayment(tenant.id)}>
+                                <DropdownMenuItem onClick={() => handleRecordPayment(tenant.id)} disabled={tenant.status === 'Paid'}>
                                   Record Payment
                                 </DropdownMenuItem>
                               </DropdownMenuContent>
@@ -183,51 +189,82 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                 )}
               </CardContent>
             </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle>Expenses - {month} {year}</CardTitle>
-                 <CardDescription>Property-related expenses for {month} {year}.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {filteredExpenses.length > 0 ? (
-                  <>
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>Category</TableHead>
-                          <TableHead>Amount</TableHead>
-                          <TableHead>Status</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {filteredExpenses.map((expense) => (
-                          <TableRow key={expense.id}>
-                             <TableCell>
-                                <div className="font-medium">{expense.category}</div>
-                                <div className="text-sm text-muted-foreground hidden sm:block">{expense.description}</div>
-                             </TableCell>
-                            <TableCell>${expense.amount.toFixed(2)}</TableCell>
-                            <TableCell>
-                              <Badge className={getExpenseStatusBadge(expense.status)}>
-                                {expense.status}
-                              </Badge>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                    <div className="flex justify-end items-center mt-4 pt-4 border-t">
-                      <div className="text-lg font-bold flex items-center gap-2">
-                        <DollarSign className="h-5 w-5 text-muted-foreground" />
-                        <span>Total: ${totalExpenses.toFixed(2)}</span>
-                      </div>
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Financial Summary</CardTitle>
+                  <CardDescription>Net cash flow for {month} {year}.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <ArrowUpCircle className="h-6 w-6 text-success" />
+                      <span className="text-muted-foreground">Rent Collected</span>
                     </div>
-                  </>
-                ) : (
-                  <div className="text-center text-muted-foreground py-10">No expense data for {month} {year}.</div>
-                )}
-              </CardContent>
-            </Card>
+                    <span className="font-bold text-lg text-success">${totalRentCollected.toFixed(2)}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                     <div className="flex items-center gap-3">
+                      <ArrowDownCircle className="h-6 w-6 text-destructive" />
+                      <span className="text-muted-foreground">Total Expenses</span>
+                    </div>
+                    <span className="font-bold text-lg text-destructive">${totalExpenses.toFixed(2)}</span>
+                  </div>
+                   <div className="flex items-center justify-between border-t pt-4 mt-4">
+                     <div className="flex items-center gap-3">
+                      <Banknote className="h-6 w-6 text-primary" />
+                      <span className="font-bold text-primary">Bank Deposit</span>
+                    </div>
+                    <span className={`font-bold text-xl ${amountForDeposit >= 0 ? 'text-primary' : 'text-destructive'}`}>${amountForDeposit.toFixed(2)}</span>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Expenses - {month} {year}</CardTitle>
+                   <CardDescription>Property-related expenses for {month} {year}.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {filteredExpenses.length > 0 ? (
+                    <>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Category</TableHead>
+                            <TableHead>Amount</TableHead>
+                            <TableHead>Status</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {filteredExpenses.map((expense) => (
+                            <TableRow key={expense.id}>
+                               <TableCell>
+                                  <div className="font-medium">{expense.category}</div>
+                                  <div className="text-sm text-muted-foreground hidden sm:block">{expense.description}</div>
+                               </TableCell>
+                              <TableCell>${expense.amount.toFixed(2)}</TableCell>
+                              <TableCell>
+                                <Badge className={getExpenseStatusBadge(expense.status)}>
+                                  {expense.status}
+                                </Badge>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                      <div className="flex justify-end items-center mt-4 pt-4 border-t">
+                        <div className="text-lg font-bold flex items-center gap-2">
+                          <DollarSign className="h-5 w-5 text-muted-foreground" />
+                          <span>Total: ${totalExpenses.toFixed(2)}</span>
+                        </div>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-center text-muted-foreground py-10">No expense data for {month} {year}.</div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </TabsContent>
       ))}
