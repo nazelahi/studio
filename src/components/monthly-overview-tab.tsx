@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { DollarSign, MoreHorizontal, Banknote, ArrowUpCircle, ArrowDownCircle, PlusCircle } from "lucide-react"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger, DropdownMenuPortal } from "@/components/ui/dropdown-menu"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog"
@@ -100,15 +100,15 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
     setRentData(generateRentDataForYear(initialTenants, year));
   }, [year]);
 
-  const handleRecordPayment = (rentEntryId: string) => {
+  const handleChangeRentStatus = (rentEntryId: string, status: RentEntry['status']) => {
     setRentData(prevData =>
       prevData.map(entry =>
-        entry.id === rentEntryId ? { ...entry, status: "Paid" } : entry
+        entry.id === rentEntryId ? { ...entry, status } : entry
       )
     );
     toast({
-      title: "Payment Recorded",
-      description: "Rent status has been updated to Paid.",
+      title: "Rent Status Updated",
+      description: `Rent status has been updated to ${status}.`,
     });
   };
   
@@ -234,9 +234,16 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                     </Button>
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onClick={() => handleRecordPayment(tenant.id)} disabled={tenant.status === 'Paid'}>
-                                      Record Payment
-                                    </DropdownMenuItem>
+                                    <DropdownMenuSub>
+                                      <DropdownMenuSubTrigger>Change Status</DropdownMenuSubTrigger>
+                                      <DropdownMenuPortal>
+                                        <DropdownMenuSubContent>
+                                          <DropdownMenuItem onClick={() => handleChangeRentStatus(tenant.id, 'Paid')}>Paid</DropdownMenuItem>
+                                          <DropdownMenuItem onClick={() => handleChangeRentStatus(tenant.id, 'Pending')}>Pending</DropdownMenuItem>
+                                          <DropdownMenuItem onClick={() => handleChangeRentStatus(tenant.id, 'Overdue')}>Overdue</DropdownMenuItem>
+                                        </DropdownMenuSubContent>
+                                      </DropdownMenuPortal>
+                                    </DropdownMenuSub>
                                   </DropdownMenuContent>
                                 </DropdownMenu>
                               </TableCell>
