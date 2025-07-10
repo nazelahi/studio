@@ -6,8 +6,10 @@ import { MonthlyOverviewTab } from "@/components/monthly-overview-tab"
 import { TenantsTab } from "@/components/tenants-tab"
 import { WhatsappTab } from "@/components/whatsapp-tab"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useSettings } from "@/context/settings-context"
 
 export default function DashboardTabs() {
+  const { settings } = useSettings();
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = React.useState(currentYear.toString());
   
@@ -33,9 +35,9 @@ export default function DashboardTabs() {
       </div>
       <Tabs defaultValue="overview" className="w-full">
         <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="tenants">Tenants</TabsTrigger>
-          <TabsTrigger value="whatsapp">WhatsApp</TabsTrigger>
+          <TabsTrigger value="overview">{settings.tabNames.overview}</TabsTrigger>
+          <TabsTrigger value="tenants">{settings.tabNames.tenants}</TabsTrigger>
+          <TabsTrigger value="whatsapp">{settings.tabNames.whatsapp}</TabsTrigger>
         </TabsList>
         <TabsContent value="overview">
           <MonthlyOverviewTab year={parseInt(selectedYear)} />
