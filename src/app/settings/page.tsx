@@ -70,7 +70,7 @@ export default function SettingsPage() {
                     </div>
                     <div className="space-y-2">
                         <Label>Tab Names</Label>
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="tab-overview" className="font-normal text-muted-foreground">Overview Tab</Label>
                                 <Input id="tab-overview" name="tabNames.overview" value={settings.tabNames.overview} onChange={handleInputChange} />
@@ -82,6 +82,10 @@ export default function SettingsPage() {
                             <div className="space-y-2">
                                 <Label htmlFor="tab-whatsapp" className="font-normal text-muted-foreground">WhatsApp Tab</Label>
                                 <Input id="tab-whatsapp" name="tabNames.whatsapp" value={settings.tabNames.whatsapp} onChange={handleInputChange} />
+                            </div>
+                             <div className="space-y-2">
+                                <Label htmlFor="tab-reports" className="font-normal text-muted-foreground">Reports Tab</Label>
+                                <Input id="tab-reports" name="tabNames.reports" value={settings.tabNames.reports} onChange={handleInputChange} />
                             </div>
                         </div>
                     </div>

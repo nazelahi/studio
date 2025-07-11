@@ -6,6 +6,7 @@ interface TabNames {
     overview: string;
     tenants: string;
     whatsapp: string;
+    reports: string;
 }
 
 interface AppSettings {
@@ -25,6 +26,7 @@ const defaultSettings: AppSettings = {
         overview: "Overview",
         tenants: "Tenants",
         whatsapp: "WhatsApp",
+        reports: "Reports",
     },
     footerName: "© 2024 RentFlow. All Rights Reserved.",
 };
