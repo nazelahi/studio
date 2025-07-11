@@ -173,31 +173,6 @@ export default function SettingsPage() {
                   </CardContent>
               </Card>
 
-              <Card className="group-disabled:opacity-50">
-                  <CardHeader>
-                    <CardTitle>{settings.page_settings.tenant_settings.title}</CardTitle>
-                    <CardDescription>{settings.page_settings.tenant_settings.description}</CardDescription>
-                  </CardHeader>
-                  <CardContent className="grid md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                          <Label htmlFor="tenant-management-title">{settings.page_settings.tenant_settings.manage_title_label}</Label>
-                          <Input id="tenant-management-title" name="page_tenants.title" value={settings.page_tenants.title} onChange={handleInputChange} />
-                      </div>
-                      <div className="space-y-2">
-                          <Label htmlFor="tenant-management-desc">{settings.page_settings.tenant_settings.manage_description_label}</Label>
-                          <Input id="tenant-management-desc" name="page_tenants.description" value={settings.page_tenants.description} onChange={handleInputChange} />
-                      </div>
-                      <div className="space-y-2">
-                          <Label htmlFor="tenant-search-placeholder">{settings.page_settings.tenant_settings.search_placeholder_label}</Label>
-                          <Input id="tenant-search-placeholder" name="page_tenants.search_placeholder" value={settings.page_tenants.search_placeholder} onChange={handleInputChange} />
-                      </div>
-                      <div className="space-y-2">
-                          <Label htmlFor="tenant-add-button">{settings.page_settings.tenant_settings.add_tenant_button_label}</Label>
-                          <Input id="tenant-add-button" name="page_tenants.add_tenant_button" value={settings.page_tenants.add_tenant_button} onChange={handleInputChange} />
-                      </div>
-                  </CardContent>
-              </Card>
-
               {isAdmin && user?.id === 'super-admin-id' && (
               <Card>
                 <CardHeader>

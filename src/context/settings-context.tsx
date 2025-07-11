@@ -42,14 +42,6 @@ interface PageSettings {
         financial_title_label: string;
         financial_description_label: string;
     };
-    tenant_settings: {
-        title: string;
-        description: string;
-        manage_title_label: string;
-        manage_description_label: string;
-        search_placeholder_label: string;
-        add_tenant_button_label: string;
-    },
     security_settings: {
         title: string;
         description: string;
@@ -120,14 +112,6 @@ const defaultSettings: AppSettings = {
             description: "Customize the text on the monthly overview page.",
             financial_title_label: "Financial Overview Title",
             financial_description_label: "Financial Overview Description",
-        },
-        tenant_settings: {
-            title: "Tenant Page Settings",
-            description: "Customize the text on the tenant management page.",
-            manage_title_label: "Management Section Title",
-            manage_description_label: "Management Section Description",
-            search_placeholder_label: "Search Bar Placeholder",
-            add_tenant_button_label: "'Add Tenant' Button Text",
         },
         security_settings: {
             title: "Security",
