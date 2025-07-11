@@ -226,7 +226,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
         name: selectedHistoricalTenant?.name || formData.get('name') as string,
         property: selectedHistoricalTenant?.property || formData.get('property') as string,
         rent: Number(formData.get('amount')),
-        paymentDate: formData.get('paymentDate') as string,
+        paymentDate: formData.get('paymentDate') as string || undefined,
         collectedBy: formData.get('collectedBy') as string,
         status: formData.get('status') as RentEntry['status'],
         avatar: selectedHistoricalTenant?.avatar,
@@ -382,25 +382,31 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
         }
 
         const rentEntriesToCreate = json.map(row => {
-            const status = ['Paid', 'Pending', 'Overdue'].includes(row.Status) ? row.Status : 'Pending';
+            const validStatuses = ["Paid", "Pending", "Overdue"];
+            const status = validStatuses.includes(row.Status) ? row.Status : "Pending";
             
-            // Handle Excel date serial numbers
-            let paymentDate = row.PaymentDate;
-            if (typeof paymentDate === 'number') {
-                const utc_days  = Math.floor(paymentDate - 25569);
-                const utc_value = utc_days * 86400;                                        
-                const date_info = new Date(utc_value * 1000);
-                paymentDate = new Date(date_info.getFullYear(), date_info.getMonth(), date_info.getDate()).toISOString().split('T')[0];
-            } else if (paymentDate) {
-                 paymentDate = new Date(paymentDate).toISOString().split('T')[0];
+            let paymentDate: string | undefined = undefined;
+            if (row.PaymentDate) {
+              // Handle Excel date serial numbers
+              if (typeof row.PaymentDate === 'number') {
+                  const utc_days  = Math.floor(row.PaymentDate - 25569);
+                  const utc_value = utc_days * 86400;                                        
+                  const date_info = new Date(utc_value * 1000);
+                  paymentDate = new Date(date_info.getFullYear(), date_info.getMonth(), date_info.getDate()).toISOString().split('T')[0];
+              } else if (row.PaymentDate) {
+                  const parsed = new Date(row.PaymentDate);
+                  if (!isNaN(parsed.getTime())) {
+                      paymentDate = parsed.toISOString().split('T')[0];
+                  }
+              }
             }
-
+            
             return {
                 name: String(row.Name || ''),
                 property: String(row.Property || ''),
                 rent: Number(row.Rent || 0),
                 status: status as RentEntry['status'],
-                paymentDate: paymentDate || undefined,
+                paymentDate: paymentDate,
                 collectedBy: String(row.CollectedBy || ''),
             };
         }).filter(entry => entry.name && entry.property && entry.rent > 0);
