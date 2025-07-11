@@ -11,6 +11,11 @@ import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, Responsive
 import { Badge } from "./ui/badge"
 import { format, parseISO } from "date-fns"
 import type { Tenant, RentEntry, Expense } from "@/types"
+import { Button } from "./ui/button"
+import { Download, Printer } from "lucide-react"
+import jsPDF from "jspdf"
+import html2canvas from "html2canvas"
+import { useToast } from "@/hooks/use-toast"
 
 const months = [
     "Jan", "Feb", "Mar", "Apr", "May", "Jun", 
@@ -33,6 +38,10 @@ export function ReportsTab({ year }: { year: number }) {
   const [reportType, setReportType] = React.useState("yearly");
   const [selectedTenant, setSelectedTenant] = React.useState<string | null>(null);
   const [selectedMonth, setSelectedMonth] = React.useState<number | null>(null);
+  const reportContentRef = React.useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
+  const [isPrinting, setIsPrinting] = React.useState(false);
+
 
   const yearlyData = React.useMemo(() => {
     const data = months.map((month, index) => ({
@@ -93,6 +102,49 @@ export function ReportsTab({ year }: { year: number }) {
 
   }, [rentData, expenses, year, selectedMonth]);
 
+  const handleDownloadPdf = async () => {
+    const input = reportContentRef.current;
+    if (!input) {
+      toast({
+        title: "Error",
+        description: "Could not find report content to download.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    toast({ title: "Generating PDF...", description: "Please wait a moment." });
+
+    try {
+      const canvas = await html2canvas(input, { scale: 2 });
+      const imgData = canvas.toDataURL('image/png');
+      
+      const pdf = new jsPDF({
+        orientation: 'p',
+        unit: 'px',
+        format: [canvas.width, canvas.height]
+      });
+      
+      pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+
+      const tenantName = selectedTenant ? tenants.find(t => t.id === selectedTenant)?.name.replace(' ', '_') : 'All';
+      const reportTitle = reportType === 'yearly' 
+        ? `Yearly_Report_${year}`
+        : `Tenant_Report_${tenantName}`;
+        
+      pdf.save(`${reportTitle}.pdf`);
+      
+      toast({ title: "Success", description: "PDF has been downloaded." });
+
+    } catch (error) {
+        console.error("Error generating PDF:", error);
+        toast({ title: "Error", description: "Failed to generate PDF.", variant: "destructive" });
+    }
+  };
+
+  const handlePrint = () => {
+    window.print();
+  };
 
   if (loading) {
     return (
@@ -115,163 +167,182 @@ export function ReportsTab({ year }: { year: number }) {
       setSelectedMonth(monthIndex);
     }
   }
+  
+  const selectedTenantName = selectedTenant ? tenants.find(t => t.id === selectedTenant)?.name : 'N/A';
 
   return (
     <div className="pt-4 space-y-6">
-      <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center gap-4">
         <h2 className="text-2xl font-bold">Reports</h2>
-        <Select value={reportType} onValueChange={setReportType}>
-          <SelectTrigger className="w-[180px]">
-            <SelectValue placeholder="Select Report Type" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="yearly">Yearly / Monthly</SelectItem>
-            <SelectItem value="tenant">Tenant-based</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-
-      {reportType === 'yearly' && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Yearly Report for {year}</CardTitle>
-            <CardDescription>An overview of your income and expenses for the year. Click a bar to see monthly details.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-             <div className="grid gap-4 md:grid-cols-3">
-                <Card className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
-                    <CardHeader>
-                        <CardTitle className="text-sm font-medium text-green-800 dark:text-green-300">Total Income</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-2xl font-bold text-green-600 dark:text-green-400">{formatCurrency(totalIncome)}</p>
-                    </CardContent>
-                </Card>
-                <Card className="bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800">
-                     <CardHeader>
-                        <CardTitle className="text-sm font-medium text-red-800 dark:text-red-300">Total Expenses</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-2xl font-bold text-red-600 dark:text-red-400">{formatCurrency(totalExpenses)}</p>
-                    </CardContent>
-                </Card>
-                 <Card>
-                     <CardHeader>
-                        <CardTitle className="text-sm font-medium">Net Profit</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <p className={`text-2xl font-bold ${netProfit >= 0 ? 'text-primary' : 'text-destructive'}`}>{formatCurrency(netProfit)}</p>
-                    </CardContent>
-                </Card>
-            </div>
-
-            <div style={{ width: '100%', height: 300 }}>
-              <ResponsiveContainer>
-                <BarChart data={yearlyData} onClick={handleBarClick}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis tickFormatter={(value) => formatCurrency(value as number)}/>
-                  <Tooltip formatter={(value) => formatCurrency(value as number)} />
-                  <Legend />
-                  <Bar dataKey="income" fill="hsl(var(--chart-1))" name="Income" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="expenses" fill="hsl(var(--destructive))" name="Expenses" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-            
-            {selectedMonth !== null && (
-                <Card>
-                    <CardHeader>
-                        <CardTitle>Transactions for {months[selectedMonth]} {year}</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Date</TableHead>
-                                    <TableHead>Details</TableHead>
-                                    <TableHead>Type</TableHead>
-                                    <TableHead className="text-right">Amount</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {monthlyTransactions.length > 0 ? monthlyTransactions.map(tx => (
-                                    <TableRow key={tx.id}>
-                                        <TableCell>{format(parseISO(tx.type === 'income' ? tx.paymentDate! : tx.date!), "dd MMM yyyy")}</TableCell>
-                                        <TableCell>
-                                            <div className="font-medium">{tx.type === 'income' ? `${tx.name} (${tx.property})` : tx.category}</div>
-                                            {tx.type === 'expense' && <div className="text-sm text-muted-foreground">{tx.description}</div>}
-                                        </TableCell>
-                                        <TableCell>
-                                            <Badge variant={tx.type === 'income' ? 'secondary' : 'outline'}>{tx.type}</Badge>
-                                        </TableCell>
-                                        <TableCell className={`text-right font-medium ${tx.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
-                                            {formatCurrency(tx.type === 'income' ? tx.rent : tx.amount)}
-                                        </TableCell>
-                                    </TableRow>
-                                )) : (
-                                    <TableRow>
-                                        <TableCell colSpan={4} className="text-center">No transactions for this month.</TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
-                    </CardContent>
-                </Card>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {reportType === 'tenant' && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Tenant Report</CardTitle>
-            <CardDescription>Select a tenant to view their payment history.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <Select onValueChange={setSelectedTenant}>
-              <SelectTrigger className="w-full md:w-[300px]">
-                <SelectValue placeholder="Select a tenant..." />
+        <div className="flex items-center gap-2 flex-grow">
+            <Select value={reportType} onValueChange={setReportType}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Select Report Type" />
               </SelectTrigger>
               <SelectContent>
-                {tenants.map(tenant => (
-                  <SelectItem key={tenant.id} value={tenant.id}>{tenant.name} - {tenant.property}</SelectItem>
-                ))}
+                <SelectItem value="yearly">Yearly / Monthly</SelectItem>
+                <SelectItem value="tenant">Tenant-based</SelectItem>
               </SelectContent>
             </Select>
+        </div>
+        <div className="flex items-center gap-2 ml-auto">
+          <Button variant="outline" onClick={handleDownloadPdf}>
+            <Download className="mr-2 h-4 w-4"/>
+            Download PDF
+          </Button>
+          <Button variant="outline" onClick={handlePrint}>
+            <Printer className="mr-2 h-4 w-4"/>
+            Print Report
+          </Button>
+        </div>
+      </div>
+        <div ref={reportContentRef} className="printable-area space-y-6 bg-background p-4 rounded-lg">
+          {reportType === 'yearly' && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Yearly Report for {year}</CardTitle>
+                <CardDescription className="no-print">An overview of your income and expenses for the year. Click a bar to see monthly details.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid gap-4 md:grid-cols-3">
+                    <Card className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
+                        <CardHeader>
+                            <CardTitle className="text-sm font-medium text-green-800 dark:text-green-300">Total Income</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <p className="text-2xl font-bold text-green-600 dark:text-green-400">{formatCurrency(totalIncome)}</p>
+                        </CardContent>
+                    </Card>
+                    <Card className="bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800">
+                        <CardHeader>
+                            <CardTitle className="text-sm font-medium text-red-800 dark:text-red-300">Total Expenses</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <p className="text-2xl font-bold text-red-600 dark:text-red-400">{formatCurrency(totalExpenses)}</p>
+                        </CardContent>
+                    </Card>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="text-sm font-medium">Net Profit</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <p className={`text-2xl font-bold ${netProfit >= 0 ? 'text-primary' : 'text-destructive'}`}>{formatCurrency(netProfit)}</p>
+                        </CardContent>
+                    </Card>
+                </div>
 
-            {selectedTenant && (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Period</TableHead>
-                    <TableHead>Due Date</TableHead>
-                    <TableHead>Payment Date</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {tenantReportData.length > 0 ? tenantReportData.map(entry => (
-                    <TableRow key={entry.id}>
-                      <TableCell className="font-medium">{months[entry.month]} {entry.year}</TableCell>
-                      <TableCell>{format(parseISO(entry.dueDate), "dd MMM yyyy")}</TableCell>
-                      <TableCell>{entry.paymentDate ? format(parseISO(entry.paymentDate), "dd MMM yyyy") : 'N/A'}</TableCell>
-                      <TableCell><Badge className={getStatusBadge(entry.status)}>{entry.status}</Badge></TableCell>
-                      <TableCell className="text-right">{formatCurrency(entry.rent)}</TableCell>
-                    </TableRow>
-                  )) : (
-                    <TableRow>
-                        <TableCell colSpan={5} className="text-center">No payment history found for this tenant.</TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
-      )}
+                <div style={{ width: '100%', height: 300 }}>
+                  <ResponsiveContainer>
+                    <BarChart data={yearlyData} onClick={handleBarClick}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" />
+                      <YAxis tickFormatter={(value) => formatCurrency(value as number)}/>
+                      <Tooltip formatter={(value) => formatCurrency(value as number)} />
+                      <Legend />
+                      <Bar dataKey="income" fill="hsl(var(--chart-1))" name="Income" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="expenses" fill="hsl(var(--destructive))" name="Expenses" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+                
+                {selectedMonth !== null && (
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Transactions for {months[selectedMonth]} {year}</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Date</TableHead>
+                                        <TableHead>Details</TableHead>
+                                        <TableHead>Type</TableHead>
+                                        <TableHead className="text-right">Amount</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {monthlyTransactions.length > 0 ? monthlyTransactions.map(tx => (
+                                        <TableRow key={tx.id}>
+                                            <TableCell>{format(parseISO(tx.type === 'income' ? tx.paymentDate! : tx.date!), "dd MMM yyyy")}</TableCell>
+                                            <TableCell>
+                                                <div className="font-medium">{tx.type === 'income' ? `${tx.name} (${tx.property})` : tx.category}</div>
+                                                {tx.type === 'expense' && <div className="text-sm text-muted-foreground">{tx.description}</div>}
+                                            </TableCell>
+                                            <TableCell>
+                                                <Badge variant={tx.type === 'income' ? 'secondary' : 'outline'}>{tx.type}</Badge>
+                                            </TableCell>
+                                            <TableCell className={`text-right font-medium ${tx.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
+                                                {formatCurrency(tx.type === 'income' ? tx.rent : tx.amount)}
+                                            </TableCell>
+                                        </TableRow>
+                                    )) : (
+                                        <TableRow>
+                                            <TableCell colSpan={4} className="text-center">No transactions for this month.</TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
+                )}
+              </CardContent>
+            </Card>
+          )}
+
+          {reportType === 'tenant' && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Tenant Report</CardTitle>
+                <CardDescription className="no-print">Select a tenant to view their payment history.</CardDescription>
+                <div className="no-print">
+                    <Select onValueChange={setSelectedTenant}>
+                      <SelectTrigger className="w-full md:w-[300px]">
+                        <SelectValue placeholder="Select a tenant..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {tenants.map(tenant => (
+                          <SelectItem key={tenant.id} value={tenant.id}>{tenant.name} - {tenant.property}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {selectedTenant ? (
+                  <>
+                    <h3 className="text-xl font-semibold">Payment History for: {selectedTenantName}</h3>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Period</TableHead>
+                          <TableHead>Due Date</TableHead>
+                          <TableHead>Payment Date</TableHead>
+                          <TableHead>Status</TableHead>
+                          <TableHead className="text-right">Amount</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {tenantReportData.length > 0 ? tenantReportData.map(entry => (
+                          <TableRow key={entry.id}>
+                            <TableCell className="font-medium">{months[entry.month]} {entry.year}</TableCell>
+                            <TableCell>{format(parseISO(entry.dueDate), "dd MMM yyyy")}</TableCell>
+                            <TableCell>{entry.paymentDate ? format(parseISO(entry.paymentDate), "dd MMM yyyy") : 'N/A'}</TableCell>
+                            <TableCell><Badge className={getStatusBadge(entry.status)}>{entry.status}</Badge></TableCell>
+                            <TableCell className="text-right">{formatCurrency(entry.rent)}</TableCell>
+                          </TableRow>
+                        )) : (
+                          <TableRow>
+                              <TableCell colSpan={5} className="text-center">No payment history found for this tenant.</TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </>
+                ) : <div className="text-center text-muted-foreground p-10">Please select a tenant to view their report.</div> }
+              </CardContent>
+            </Card>
+          )}
+        </div>
     </div>
   )
 }
