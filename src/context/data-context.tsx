@@ -31,6 +31,8 @@ interface DataContextType extends AppData {
   deleteMultipleRentEntries: (rentEntryIds: string[]) => Promise<void>;
   syncTenantsForMonth: (year: number, month: number) => Promise<number>;
   loading: boolean;
+  getAllData: () => AppData;
+  restoreAllData: (backupData: AppData) => void;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -274,7 +276,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
         if (!supabase) return 0;
         const selectedMonthStartDate = new Date(year, month, 1);
         
-        // 1. Get all tenant IDs that *already* have a rent entry for the selected month/year.
         const { data: rentDataForMonth, error: rentDataError } = await supabase
             .from('rent_entries')
             .select('tenantId')
@@ -287,7 +288,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
         }
         const existingTenantIds = new Set(rentDataForMonth.map(e => e.tenantId));
 
-        // 2. Get all tenants whose join date is on or before the selected month.
         const { data: allTenants, error: tenantsError } = await supabase
             .from('tenants')
             .select('*');
@@ -297,26 +297,23 @@ export function DataProvider({ children }: { children: ReactNode }) {
             return 0;
         }
 
-        // 3. Filter down to tenants who are active for the month but don't have an entry yet.
         const tenantsToSync = allTenants.filter(tenant => {
             if (existingTenantIds.has(tenant.id)) {
-                return false; // Already has an entry
+                return false; 
             }
             if (!tenant.joinDate) return false;
             try {
                 const joinDate = parseISO(tenant.joinDate);
-                // Tenant is active if their join date is before or on the first day of the selected month
                 return joinDate <= selectedMonthStartDate;
             } catch {
-                return false; // Invalid joinDate
+                return false; 
             }
         });
 
         if (tenantsToSync.length === 0) {
-            return 0; // No new tenants to sync for this month.
+            return 0; 
         }
         
-        // 4. Create new rent entries for the filtered tenants.
         const newRentEntries = tenantsToSync.map(tenant => ({
             tenantId: tenant.id,
             name: tenant.name,
@@ -339,9 +336,21 @@ export function DataProvider({ children }: { children: ReactNode }) {
         return tenantsToSync.length;
     };
 
+    const getAllData = () => {
+        return data;
+    };
+
+    const restoreAllData = (backupData: AppData) => {
+        if (backupData && backupData.tenants && backupData.expenses && backupData.rentData) {
+            setData(backupData);
+        } else {
+            handleError(new Error("Invalid backup data format."), "restoring data");
+        }
+    };
+
 
     return (
-        <DataContext.Provider value={{ ...data, addTenant, updateTenant, deleteTenant, addExpense, updateExpense, deleteExpense, deleteMultipleExpenses, addRentEntry, addRentEntriesBatch, updateRentEntry, deleteRentEntry, deleteMultipleRentEntries, syncTenantsForMonth, loading }}>
+        <DataContext.Provider value={{ ...data, addTenant, updateTenant, deleteTenant, addExpense, updateExpense, deleteExpense, deleteMultipleExpenses, addRentEntry, addRentEntriesBatch, updateRentEntry, deleteRentEntry, deleteMultipleRentEntries, syncTenantsForMonth, loading, getAllData, restoreAllData }}>
             {children}
         </DataContext.Provider>
     );

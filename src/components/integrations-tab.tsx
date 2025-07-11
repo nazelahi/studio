@@ -6,14 +6,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/context/auth-context";
 import { useToast } from "@/hooks/use-toast";
-import { RefreshCw, History } from "lucide-react";
+import { RefreshCw, History, HardDriveDownload, HardDriveUpload } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { useData } from "@/context/data-context";
 
+const GOOGLE_DRIVE_BACKUP_KEY = "rentflow_google_drive_backup";
 
 function GoogleDriveIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -30,14 +31,28 @@ function GoogleDriveIcon(props: React.SVGProps<SVGSVGElement>) {
 
 export function IntegrationsTab() {
   const { isAdmin } = useAuth();
+  const { getAllData, restoreAllData } = useData();
   const { toast } = useToast();
   const [isConnected, setIsConnected] = React.useState(false);
   const [isSyncing, setIsSyncing] = React.useState(false);
   const [isRestoring, setIsRestoring] = React.useState(false);
   const [lastSynced, setLastSynced] = React.useState("Never");
 
+  React.useEffect(() => {
+     const backup = localStorage.getItem(GOOGLE_DRIVE_BACKUP_KEY);
+     if (backup) {
+         try {
+             const backupData = JSON.parse(backup);
+             if(backupData.timestamp) {
+                setLastSynced(new Date(backupData.timestamp).toLocaleString());
+             }
+         } catch (e) {
+            console.error("Could not parse backup data from localStorage", e);
+         }
+     }
+  }, []);
+
   const handleConnect = () => {
-    // This is a placeholder for the actual OAuth flow
     toast({ title: "Connecting to Google Drive...", description: "Please follow the authentication steps." });
     setTimeout(() => {
         setIsConnected(true);
@@ -48,21 +63,50 @@ export function IntegrationsTab() {
   const handleSync = () => {
     setIsSyncing(true);
     toast({ title: "Syncing data...", description: "This may take a few moments."});
+    
     setTimeout(() => {
-        const now = new Date();
-        setLastSynced(now.toLocaleString());
-        setIsSyncing(false);
-        toast({ title: "Sync Complete", description: "Your data has been synced with Google Drive." });
-    }, 3000);
+        try {
+            const currentData = getAllData();
+            const backupPayload = {
+                timestamp: new Date().toISOString(),
+                data: currentData
+            };
+            localStorage.setItem(GOOGLE_DRIVE_BACKUP_KEY, JSON.stringify(backupPayload));
+
+            const now = new Date();
+            setLastSynced(now.toLocaleString());
+            setIsSyncing(false);
+            toast({ title: "Sync Complete", description: "Your data has been backed up." });
+        } catch(e) {
+            setIsSyncing(false);
+            toast({ title: "Sync Failed", description: "Could not back up data. Check console for errors.", variant: "destructive" });
+            console.error("Sync error:", e);
+        }
+    }, 1500);
   }
   
   const handleRestore = () => {
     setIsRestoring(true);
     toast({ title: "Restoring data...", description: "This may take a few moments. Do not close this window."});
+    
     setTimeout(() => {
-        setIsRestoring(false);
-        toast({ title: "Restore Complete", description: "Your data has been restored from the Google Drive backup." });
-    }, 4000);
+        try {
+            const backupJson = localStorage.getItem(GOOGLE_DRIVE_BACKUP_KEY);
+            if (!backupJson) {
+                throw new Error("No backup found.");
+            }
+            const backupPayload = JSON.parse(backupJson);
+            restoreAllData(backupPayload.data);
+            
+            setIsRestoring(false);
+            toast({ title: "Restore Complete", description: "Your data has been restored from the backup." });
+
+        } catch(e: any) {
+            setIsRestoring(false);
+            toast({ title: "Restore Failed", description: e.message || "Could not restore data.", variant: "destructive" });
+            console.error("Restore error:", e);
+        }
+    }, 2500);
   }
 
   return (
@@ -127,7 +171,7 @@ export function IntegrationsTab() {
                 <div>
                     <CardTitle>Google Drive Sync</CardTitle>
                     <CardDescription>
-                        Back up and restore your data from a Google Sheet.
+                        Back up and restore your data from a simulated Google Sheet.
                     </CardDescription>
                 </div>
             </div>
@@ -149,14 +193,13 @@ export function IntegrationsTab() {
                         </div>
                         <div className="grid grid-cols-2 gap-2">
                             <Button onClick={handleSync} disabled={isSyncing || isRestoring} className="w-full">
-                                {isSyncing && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
+                                {isSyncing ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <HardDriveUpload className="mr-2 h-4 w-4"/>}
                                 {isSyncing ? "Syncing..." : "Sync Now"}
                             </Button>
                              <AlertDialog>
                                 <AlertDialogTrigger asChild>
-                                  <Button variant="outline" disabled={isSyncing || isRestoring} className="w-full">
-                                    {isRestoring && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
-                                    <History className="mr-2 h-4 w-4" />
+                                  <Button variant="outline" disabled={isSyncing || isRestoring || lastSynced === 'Never'} className="w-full">
+                                    {isRestoring ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <HardDriveDownload className="mr-2 h-4 w-4" />}
                                     {isRestoring ? "Restoring..." : "Restore"}
                                   </Button>
                                 </AlertDialogTrigger>
@@ -164,7 +207,7 @@ export function IntegrationsTab() {
                                   <AlertDialogHeader>
                                     <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                                     <AlertDialogDescription>
-                                      This action cannot be undone. Restoring from a backup will overwrite all current tenant and financial data in this application with the data from your Google Drive file.
+                                      This action cannot be undone. Restoring from a backup will overwrite all current tenant and financial data in this application with the data from your saved backup.
                                     </AlertDialogDescription>
                                   </AlertDialogHeader>
                                   <AlertDialogFooter>
@@ -178,7 +221,7 @@ export function IntegrationsTab() {
                 )}
             </CardContent>
             <CardFooter className="text-xs text-muted-foreground">
-                Changes will be synced to a file named "RentFlow Backup" in your Google Drive root folder.
+                This feature simulates a backup to a file named "RentFlow Backup" in your Google Drive. The data is stored locally in your browser.
             </CardFooter>
         </fieldset>
       </Card>
