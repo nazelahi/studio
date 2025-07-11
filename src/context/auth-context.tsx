@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
@@ -154,18 +155,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const value = { user, session, isAdmin, signIn, signOut, changePassword };
 
-  if (loading) {
-     return (
-        <div className="flex justify-center items-center h-screen w-screen">
-          <LoaderCircle className="h-12 w-12 animate-spin text-primary" />
-        </div>
-      );
-  }
-  
-  if (!user && !publicRoutes.includes(pathname)) {
-     if (typeof window !== 'undefined') {
-        router.push('/login');
-     }
+  useEffect(() => {
+    if (!loading && !user && !publicRoutes.includes(pathname)) {
+      router.push('/login');
+    }
+  }, [user, loading, pathname, router]);
+
+  if (loading || (!user && !publicRoutes.includes(pathname))) {
      return (
         <div className="flex justify-center items-center h-screen w-screen">
           <LoaderCircle className="h-12 w-12 animate-spin text-primary" />
