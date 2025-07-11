@@ -13,6 +13,9 @@ interface AppData {
   rentData: RentEntry[];
 }
 
+type NewRentEntry = Omit<RentEntry, 'id' | 'tenantId' | 'avatar' | 'year' | 'month' | 'dueDate' | 'created_at'>;
+
+
 interface DataContextType extends AppData {
   addTenant: (tenant: Omit<Tenant, 'id'>) => Promise<void>;
   updateTenant: (tenant: Tenant) => Promise<void>;
@@ -21,7 +24,8 @@ interface DataContextType extends AppData {
   updateExpense: (expense: Expense) => Promise<void>;
   deleteExpense: (expenseId: string) => Promise<void>;
   deleteMultipleExpenses: (expenseIds: string[]) => Promise<void>;
-  addRentEntry: (rentEntry: Omit<RentEntry, 'id' | 'tenantId' | 'avatar' | 'year' | 'month' | 'dueDate'>, year: number, month: number) => Promise<void>;
+  addRentEntry: (rentEntry: NewRentEntry, year: number, month: number) => Promise<void>;
+  addRentEntriesBatch: (rentEntries: NewRentEntry[], year: number, month: number) => Promise<void>;
   updateRentEntry: (rentEntry: RentEntry) => Promise<void>;
   deleteRentEntry: (rentEntryId: string) => Promise<void>;
   deleteMultipleRentEntries: (rentEntryIds: string[]) => Promise<void>;
@@ -198,38 +202,53 @@ export function DataProvider({ children }: { children: ReactNode }) {
         if (error) handleError(error, 'deleting multiple expenses');
     }
 
-    const addRentEntry = async (rentEntryData: Omit<RentEntry, 'id' | 'tenantId' | 'avatar' | 'year' | 'month' | 'dueDate' | 'created_at'>, year: number, month: number) => {
+    const addRentEntry = async (rentEntryData: NewRentEntry, year: number, month: number) => {
+        await addRentEntriesBatch([rentEntryData], year, month);
+    };
+
+    const addRentEntriesBatch = async (rentEntriesData: NewRentEntry[], year: number, month: number) => {
         if (!supabase) return;
 
-        let { data: existingTenant } = await supabase.from('tenants').select('id, avatar').eq('name', rentEntryData.name).eq('property', rentEntryData.property).maybeSingle();
+        const newEntriesWithDetails = await Promise.all(rentEntriesData.map(async (rentEntryData) => {
+            let { data: existingTenant } = await supabase
+                .from('tenants')
+                .select('id, avatar')
+                .eq('name', rentEntryData.name)
+                .eq('property', rentEntryData.property)
+                .maybeSingle();
 
-        if (!existingTenant) {
-            const newTenantData = {
-                name: rentEntryData.name,
-                property: rentEntryData.property,
-                rent: rentEntryData.rent,
-                joinDate: new Date(year, month, 1).toISOString().split('T')[0],
-                avatar: 'https://placehold.co/80x80.png',
-                status: 'Pending',
-            };
-            const { data: newTenant, error } = await supabase.from('tenants').insert(newTenantData).select().single();
-            if (error) {
-                handleError(error, 'auto-creating tenant from rent entry');
-                return;
+            if (!existingTenant) {
+                const newTenantData = {
+                    name: rentEntryData.name,
+                    property: rentEntryData.property,
+                    rent: rentEntryData.rent,
+                    joinDate: new Date(year, month, 1).toISOString().split('T')[0],
+                    avatar: 'https://placehold.co/80x80.png',
+                    status: 'Pending',
+                };
+                const { data: newTenant, error } = await supabase.from('tenants').insert(newTenantData).select().single();
+                if (error) {
+                    handleError(error, `auto-creating tenant for ${rentEntryData.name}`);
+                    return null;
+                }
+                existingTenant = newTenant;
             }
-            existingTenant = newTenant;
-        }
 
-        const newEntryData = {
-            ...rentEntryData,
-            tenantId: existingTenant?.id,
-            avatar: existingTenant?.avatar || 'https://placehold.co/80x80.png',
-            dueDate: new Date(year, month, 1).toISOString().split('T')[0],
-            year,
-            month,
-        };
-        const { error } = await supabase.from('rent_entries').insert([newEntryData]);
-        if (error) handleError(error, 'adding rent entry');
+            return {
+                ...rentEntryData,
+                tenantId: existingTenant?.id,
+                avatar: existingTenant?.avatar || 'https://placehold.co/80x80.png',
+                dueDate: new Date(year, month, 1).toISOString().split('T')[0],
+                year,
+                month,
+            };
+        }));
+        
+        const validNewEntries = newEntriesWithDetails.filter(entry => entry !== null);
+        if(validNewEntries.length > 0) {
+            const { error } = await supabase.from('rent_entries').insert(validNewEntries);
+            if (error) handleError(error, 'batch adding rent entries');
+        }
     };
     
     const updateRentEntry = async (updatedRentEntry: RentEntry) => {
@@ -322,7 +341,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
 
     return (
-        <DataContext.Provider value={{ ...data, addTenant, updateTenant, deleteTenant, addExpense, updateExpense, deleteExpense, deleteMultipleExpenses, addRentEntry, updateRentEntry, deleteRentEntry, deleteMultipleRentEntries, syncTenantsForMonth, loading }}>
+        <DataContext.Provider value={{ ...data, addTenant, updateTenant, deleteTenant, addExpense, updateExpense, deleteExpense, deleteMultipleExpenses, addRentEntry, addRentEntriesBatch, updateRentEntry, deleteRentEntry, deleteMultipleRentEntries, syncTenantsForMonth, loading }}>
             {children}
         </DataContext.Provider>
     );

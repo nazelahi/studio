@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { DollarSign, Banknote, ArrowUpCircle, ArrowDownCircle, PlusCircle, Trash2, Pencil, CheckCircle, XCircle, AlertCircle, RefreshCw, ChevronDown, Copy, X, FileText } from "lucide-react"
+import { DollarSign, Banknote, ArrowUpCircle, ArrowDownCircle, PlusCircle, Trash2, Pencil, CheckCircle, XCircle, AlertCircle, RefreshCw, ChevronDown, Copy, X, FileText, Upload } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog"
@@ -24,6 +24,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
 import { Skeleton } from "./ui/skeleton"
 import { Checkbox } from "./ui/checkbox"
 import { TenantDetailSheet } from "./tenant-detail-sheet"
+import * as XLSX from 'xlsx';
+
 
 type HistoricalTenant = {
     uniqueId: string;
@@ -74,7 +76,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
   const [selectedMonth, setSelectedMonth] = React.useState(months[currentMonthIndex]);
   const { toast } = useToast();
 
-  const { tenants, expenses, rentData, addRentEntry, updateRentEntry, deleteRentEntry, addExpense, updateExpense, deleteExpense, syncTenantsForMonth, loading, deleteMultipleRentEntries, deleteMultipleExpenses } = useData();
+  const { tenants, expenses, rentData, addRentEntry, addRentEntriesBatch, updateRentEntry, deleteRentEntry, addExpense, updateExpense, deleteExpense, syncTenantsForMonth, loading, deleteMultipleRentEntries, deleteMultipleExpenses } = useData();
 
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = React.useState(false);
   const [editingExpense, setEditingExpense] = React.useState<Expense | null>(null);
@@ -95,6 +97,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
   const [selectedTenantForSheet, setSelectedTenantForSheet] = React.useState<Tenant | null>(null);
 
   const formRef = React.useRef<HTMLFormElement>(null);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
 
 
   const filteredTenantsForMonth = React.useMemo(() => {
@@ -346,6 +349,79 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
     setSelectedExpenseIds([]);
   }
 
+  // Import Handler
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    toast({ title: "Processing file...", description: "Please wait while we read your spreadsheet." });
+    
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const data = e.target?.result;
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        const json: any[] = XLSX.utils.sheet_to_json(worksheet);
+
+        if(json.length === 0) {
+            toast({ title: "Empty Sheet", description: "The selected file is empty or in an unsupported format.", variant: "destructive" });
+            return;
+        }
+
+        const rentEntriesToCreate = json.map(row => {
+            const status = ['Paid', 'Pending', 'Overdue'].includes(row.Status) ? row.Status : 'Pending';
+            
+            // Handle Excel date serial numbers
+            let paymentDate = row.PaymentDate;
+            if (typeof paymentDate === 'number') {
+                const utc_days  = Math.floor(paymentDate - 25569);
+                const utc_value = utc_days * 86400;                                        
+                const date_info = new Date(utc_value * 1000);
+                paymentDate = new Date(date_info.getFullYear(), date_info.getMonth(), date_info.getDate()).toISOString().split('T')[0];
+            } else if (paymentDate) {
+                 paymentDate = new Date(paymentDate).toISOString().split('T')[0];
+            }
+
+            return {
+                name: String(row.Name || ''),
+                property: String(row.Property || ''),
+                rent: Number(row.Rent || 0),
+                status: status as RentEntry['status'],
+                paymentDate: paymentDate || undefined,
+                collectedBy: String(row.CollectedBy || ''),
+            };
+        }).filter(entry => entry.name && entry.property && entry.rent > 0);
+
+        if(rentEntriesToCreate.length === 0) {
+            toast({ title: "No Valid Data Found", description: "Ensure your sheet has columns: Name, Property, Rent.", variant: "destructive" });
+            return;
+        }
+        
+        const selectedMonthIndex = months.indexOf(selectedMonth);
+        await addRentEntriesBatch(rentEntriesToCreate, year, selectedMonthIndex);
+
+        toast({ title: "Import Successful", description: `${rentEntriesToCreate.length} entries have been added to ${selectedMonth}, ${year}.` });
+
+      } catch (error) {
+        console.error("Error importing file:", error);
+        toast({ title: "Import Failed", description: "There was an error processing your file. Please check the console for details.", variant: "destructive" });
+      } finally {
+        // Reset file input
+        if(event.target) event.target.value = '';
+      }
+    };
+    reader.onerror = () => {
+        toast({ title: "Error Reading File", description: "Could not read the selected file.", variant: "destructive" });
+    };
+    reader.readAsArrayBuffer(file);
+  };
+
   const totalRentCollected = filteredTenantsForMonth
     .filter(t => t.status === 'Paid')
     .reduce((acc, t) => acc + t.rent, 0);
@@ -442,6 +518,17 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                             </AlertDialogContent>
                           </AlertDialog>
                         )}
+                         <Button size="sm" variant="outline" className="gap-2" onClick={handleImportClick}>
+                            <Upload className="h-4 w-4" />
+                            Import
+                        </Button>
+                        <input
+                            type="file"
+                            ref={fileInputRef}
+                            className="hidden"
+                            accept=".xlsx, .csv"
+                            onChange={handleFileChange}
+                        />
                         <Button size="sm" variant="outline" className="gap-2" onClick={handleSyncTenants}>
                             <RefreshCw className="h-4 w-4" />
                             Sync Tenants
