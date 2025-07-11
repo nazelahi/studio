@@ -68,7 +68,7 @@ const getStatusIcon = (status: RentEntry["status"]) => {
 
 
 const getExpenseStatusBadge = (status: Expense["status"]) => {
-    return status === "Reimbursed" ? "bg-success text-success-foreground hover:bg-success/80"
+    return status === "Paid" ? "bg-success text-success-foreground hover:bg-success/80"
       : "bg-warning text-warning-foreground hover:bg-warning/80";
 };
 
@@ -297,7 +297,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
       category: finalCategory,
       amount: Number(formData.get('amount')),
       description: formData.get('description') as string,
-      status: formData.get('status') as "Pending" | "Reimbursed",
+      status: formData.get('status') as "Paid" | "Due",
     };
 
     if (editingExpense) {
@@ -724,13 +724,13 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                               </div>
                                <div className="space-y-2">
                                 <Label htmlFor="status">Status</Label>
-                                <Select name="status" defaultValue={editingExpense?.status || 'Pending'}>
+                                <Select name="status" defaultValue={editingExpense?.status || 'Due'}>
                                   <SelectTrigger>
                                     <SelectValue placeholder="Select status" />
                                   </SelectTrigger>
                                   <SelectContent>
-                                    <SelectItem value="Pending">Pending</SelectItem>
-                                    <SelectItem value="Reimbursed">Reimbursed</SelectItem>
+                                    <SelectItem value="Due">Due</SelectItem>
+                                    <SelectItem value="Paid">Paid</SelectItem>
                                   </SelectContent>
                                 </Select>
                               </div>

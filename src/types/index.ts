@@ -18,7 +18,7 @@ export type Expense = {
   category: string;
   amount: number;
   description: string;
-  status: "Reimbursed" | "Pending";
+  status: "Paid" | "Due";
   created_at?: string;
 };
 
