@@ -4,12 +4,13 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { supabase } from '@/lib/supabase';
 import type { Session, User } from '@supabase/supabase-js';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { LoaderCircle } from 'lucide-react';
 
 const SUPER_ADMIN_EMAIL = 'admin@gmail.com';
 const SUPER_ADMIN_PASSWORD_KEY = 'superAdminPassword';
 const DEFAULT_SUPER_ADMIN_PASSWORD = '1234';
+const SUPER_ADMIN_SESSION_KEY = 'superAdminSession';
 
 
 interface AuthContextType {
@@ -29,13 +30,30 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isAdmin, setIsAdmin] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-  const pathname = usePathname();
 
   useEffect(() => {
     const getSession = async () => {
       // Initialize default super admin password if not set
       if (typeof window !== 'undefined' && !localStorage.getItem(SUPER_ADMIN_PASSWORD_KEY)) {
         localStorage.setItem(SUPER_ADMIN_PASSWORD_KEY, DEFAULT_SUPER_ADMIN_PASSWORD);
+      }
+
+      // Check for persisted super admin session
+      if (typeof window !== 'undefined') {
+        const superAdminSessionData = sessionStorage.getItem(SUPER_ADMIN_SESSION_KEY);
+        if (superAdminSessionData) {
+          try {
+            const superAdminSession = JSON.parse(superAdminSessionData);
+            setSession(superAdminSession);
+            setUser(superAdminSession.user);
+            setIsAdmin(true);
+            setLoading(false);
+            return;
+          } catch (e) {
+            console.error("Failed to parse super admin session", e);
+            sessionStorage.removeItem(SUPER_ADMIN_SESSION_KEY);
+          }
+        }
       }
 
       if (!supabase) {
@@ -47,19 +65,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       if (error) {
         console.error("Error getting session:", error);
-        setLoading(false);
-        return;
       }
       
       setSession(session);
       setUser(session?.user ?? null);
-
-      if (session?.user) {
-        const userRole = session.user.user_metadata?.role;
-        setIsAdmin(userRole === 'admin' || session.user.email === SUPER_ADMIN_EMAIL);
-      } else {
-        setIsAdmin(false);
-      }
+      setIsAdmin(session?.user?.user_metadata?.role === 'admin');
       
       setLoading(false);
     };
@@ -68,15 +78,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     if (supabase) {
       const { data: authListener } = supabase.auth.onAuthStateChange(
-        async (event, session) => {
-          setSession(session);
-          setUser(session?.user ?? null);
-
-          if (session?.user) {
-            const userRole = session.user.user_metadata?.role;
-            setIsAdmin(userRole === 'admin' || session.user.email === SUPER_ADMIN_EMAIL);
-          } else {
+        (event, session) => {
+          // If a Supabase event logs us out, ensure super admin is also logged out
+          if (event === 'SIGNED_OUT') {
+            sessionStorage.removeItem(SUPER_ADMIN_SESSION_KEY);
+            setUser(null);
+            setSession(null);
             setIsAdmin(false);
+          } else if (session && session.user.email !== SUPER_ADMIN_EMAIL) {
+             setSession(session);
+             setUser(session.user);
+             setIsAdmin(session.user.user_metadata?.role === 'admin');
+             sessionStorage.removeItem(SUPER_ADMIN_SESSION_KEY);
           }
         }
       );
@@ -93,29 +106,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signIn = async (email: string, password: string) => {
-    if (email === SUPER_ADMIN_EMAIL && password === getSuperAdminPassword()) {
-      const mockUser = {
-        id: 'super-admin-id',
-        email: SUPER_ADMIN_EMAIL,
-        user_metadata: { role: 'admin' },
-        app_metadata: {},
-        aud: 'authenticated',
-        created_at: new Date().toISOString(),
-      } as unknown as User;
+    if (email === SUPER_ADMIN_EMAIL) {
+        if (password === getSuperAdminPassword()) {
+            const mockUser = {
+                id: 'super-admin-id',
+                email: SUPER_ADMIN_EMAIL,
+                user_metadata: { role: 'admin' },
+                app_metadata: {},
+                aud: 'authenticated',
+                created_at: new Date().toISOString(),
+            } as unknown as User;
 
-      const mockSession = {
-        access_token: 'super-admin-token',
-        refresh_token: 'super-admin-refresh-token',
-        user: mockUser,
-        token_type: 'bearer',
-        expires_in: 3600,
-        expires_at: Math.floor(Date.now() / 1000) + 3600,
-      } as Session;
+            const mockSession = {
+                access_token: 'super-admin-token',
+                refresh_token: 'super-admin-refresh-token',
+                user: mockUser,
+                token_type: 'bearer',
+                expires_in: 3600 * 24 * 7, // 1 week
+                expires_at: Math.floor(Date.now() / 1000) + (3600 * 24 * 7),
+            } as Session;
 
-      setUser(mockUser);
-      setSession(mockSession);
-      setIsAdmin(true);
-      return { error: null };
+            if (typeof window !== 'undefined') {
+                sessionStorage.setItem(SUPER_ADMIN_SESSION_KEY, JSON.stringify(mockSession));
+            }
+
+            setUser(mockUser);
+            setSession(mockSession);
+            setIsAdmin(true);
+            return { error: null };
+        } else {
+            return { error: "Invalid password for super admin." };
+        }
     }
     
     if (!supabase) {
@@ -130,16 +151,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     if (user?.id === 'super-admin-id') {
-      setUser(null);
-      setSession(null);
-      setIsAdmin(false);
-      // No need to push to login, as it's a dialog now
-      return;
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem(SUPER_ADMIN_SESSION_KEY);
+      }
     }
 
     if (supabase) {
       await supabase.auth.signOut();
     }
+
     setUser(null);
     setSession(null);
     setIsAdmin(false);
@@ -150,21 +170,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { error: "This function is only for the super admin." };
     }
     if (oldPass === getSuperAdminPassword()) {
-      localStorage.setItem(SUPER_ADMIN_PASSWORD_KEY, newPass);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(SUPER_ADMIN_PASSWORD_KEY, newPass);
+      }
       return { error: null };
     }
     return { error: "Incorrect old password." };
   };
 
   const value = { user, session, isAdmin, signIn, signOut, changePassword };
-
-  // This effect can be removed as we are no longer redirecting automatically
-  // useEffect(() => {
-  //   if (!loading && user && pathname === '/login') {
-  //     router.push('/');
-  //   }
-  // }, [user, loading, pathname, router]);
-
 
   if (loading) {
      return (
