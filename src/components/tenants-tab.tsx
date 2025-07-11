@@ -82,25 +82,19 @@ export function TenantsTab() {
   
   const handleSelectTenantToCopy = (tenant: Tenant) => {
     if (formRef.current) {
-      const elements = formRef.current.elements;
+        const elements = formRef.current.elements;
+        const getEl = (name: string) => elements.namedItem(name) as HTMLInputElement | HTMLTextAreaElement;
 
-      const getEl = (name: string) => elements.namedItem(name) as HTMLInputElement | HTMLTextAreaElement;
-
-      const fieldsToCopy: (keyof Tenant)[] = ['name', 'email', 'phone', 'property', 'rent', 'joinDate', 'notes'];
-      
-      fieldsToCopy.forEach(fieldName => {
-        const input = getEl(fieldName);
-        if(input && !input.value) { // only copy if field is empty
-            const value = tenant[fieldName];
-            if(value !== undefined && value !== null) {
-              input.value = String(value);
-            }
-        }
-      });
-      
-      if (!previewImage) {
+        // Directly set the values, overwriting what's there
+        getEl('name').value = tenant.name;
+        getEl('email').value = tenant.email;
+        getEl('phone').value = tenant.phone || '';
+        getEl('property').value = tenant.property;
+        getEl('rent').value = tenant.rent.toString();
+        getEl('joinDate').value = tenant.joinDate;
+        getEl('notes').value = tenant.notes || '';
+        
         setPreviewImage(tenant.avatar);
-      }
     }
     toast({ title: 'Tenant Info Copied', description: `Data from ${tenant.name} has been pre-filled.`});
     setIsFinderOpen(false);
@@ -406,3 +400,5 @@ export function TenantsTab() {
     </Card>
   );
 }
+
+    
