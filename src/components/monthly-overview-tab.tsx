@@ -30,6 +30,7 @@ import { useSettings } from "@/context/settings-context"
 
 
 type HistoricalTenant = {
+    id: string;
     uniqueId: string;
     name: string;
     property: string;
@@ -156,6 +157,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
 
         if (isMoreRecent) {
             allTenantsMap.set(uniqueId, {
+                id: (entry as any).tenantId || (entry as any).id,
                 uniqueId,
                 name: entry.name,
                 property: entry.property,
@@ -219,14 +221,16 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
   const handleSaveRentEntry = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
+    
     const rentEntryData = {
-        name: formData.get('name') as string,
-        property: formData.get('property') as string,
+        name: selectedHistoricalTenant?.name || formData.get('name') as string,
+        property: selectedHistoricalTenant?.property || formData.get('property') as string,
         rent: Number(formData.get('amount')),
         paymentDate: formData.get('paymentDate') as string,
         collectedBy: formData.get('collectedBy') as string,
         status: formData.get('status') as RentEntry['status'],
         avatar: selectedHistoricalTenant?.avatar,
+        tenantId: selectedHistoricalTenant?.id
     };
 
     if(editingRentEntry) {
@@ -234,8 +238,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
         toast({ title: "Rent Entry Updated", description: "The entry has been successfully updated." });
     } else {
         const selectedMonthIndex = months.indexOf(selectedMonth);
-        const newEntry: Omit<RentEntry, 'id' | 'tenantId' | 'year' | 'month' | 'dueDate'> = rentEntryData;
-        await addRentEntry(newEntry, year, selectedMonthIndex);
+        await addRentEntry(rentEntryData, year, selectedMonthIndex);
         toast({ title: "Rent Entry Added", description: "The new entry has been successfully added." });
     }
 
@@ -623,11 +626,11 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                   )}
                                   <div className="space-y-2">
                                       <Label htmlFor="name">Name</Label>
-                                      <Input id="name" name="name" defaultValue={editingRentEntry?.name} placeholder="e.g., John Doe" required />
+                                      <Input id="name" name="name" defaultValue={editingRentEntry?.name} placeholder="e.g., John Doe" required disabled={!!selectedHistoricalTenant} />
                                   </div>
                                   <div className="space-y-2">
                                       <Label htmlFor="property">Flat</Label>
-                                      <Input id="property" name="property" defaultValue={editingRentEntry?.property} placeholder="e.g., Flat-1" required />
+                                      <Input id="property" name="property" defaultValue={editingRentEntry?.property} placeholder="e.g., Flat-1" required disabled={!!selectedHistoricalTenant}/>
                                   </div>
                                   <div className="space-y-2">
                                       <Label htmlFor="paymentDate">Date</Label>
@@ -639,7 +642,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                   </div>
                                   <div className="space-y-2">
                                       <Label htmlFor="amount">Amount</Label>
-                                      <Input id="amount" name="amount" type="number" step="0.01" defaultValue={editingRentEntry?.rent} placeholder="0.00" required />
+                                      <Input id="amount" name="amount" type="number" step="0.01" defaultValue={editingRentEntry?.rent} placeholder="0.00" required disabled={!!selectedHistoricalTenant} />
                                   </div>
                                   <div className="space-y-2">
                                       <Label htmlFor="status">Status</Label>
@@ -1050,5 +1053,3 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
     </>
   )
 }
-
-    

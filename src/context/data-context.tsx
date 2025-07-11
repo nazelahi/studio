@@ -13,7 +13,7 @@ interface AppData {
   rentData: RentEntry[];
 }
 
-type NewRentEntry = Omit<RentEntry, 'id' | 'tenantId' | 'avatar' | 'year' | 'month' | 'dueDate' | 'created_at'>;
+type NewRentEntry = Omit<RentEntry, 'id' | 'avatar' | 'year' | 'month' | 'dueDate' | 'created_at'>;
 
 
 interface DataContextType extends AppData {
@@ -25,7 +25,7 @@ interface DataContextType extends AppData {
   deleteExpense: (expenseId: string) => Promise<void>;
   deleteMultipleExpenses: (expenseIds: string[]) => Promise<void>;
   addRentEntry: (rentEntry: NewRentEntry, year: number, month: number) => Promise<void>;
-  addRentEntriesBatch: (rentEntries: NewRentEntry[], year: number, month: number) => Promise<void>;
+  addRentEntriesBatch: (rentEntries: Omit<NewRentEntry, 'tenantId'>[], year: number, month: number) => Promise<void>;
   updateRentEntry: (rentEntry: RentEntry) => Promise<void>;
   deleteRentEntry: (rentEntryId: string) => Promise<void>;
   deleteMultipleRentEntries: (rentEntryIds: string[]) => Promise<void>;
@@ -205,41 +205,49 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
 
     const addRentEntry = async (rentEntryData: NewRentEntry, year: number, month: number) => {
-        await addRentEntriesBatch([rentEntryData], year, month);
+        if (!supabase) return;
+        const entriesToBatch = [{...rentEntryData, tenantId: rentEntryData.tenantId || ''}];
+        await addRentEntriesBatch(entriesToBatch, year, month);
     };
 
-    const addRentEntriesBatch = async (rentEntriesData: NewRentEntry[], year: number, month: number) => {
+    const addRentEntriesBatch = async (rentEntriesData: Omit<NewRentEntry, 'tenantId'>[], year: number, month: number) => {
         if (!supabase) return;
 
         const newEntriesWithDetails = await Promise.all(rentEntriesData.map(async (rentEntryData) => {
-            let { data: existingTenant } = await supabase
-                .from('tenants')
-                .select('id, avatar')
-                .eq('name', rentEntryData.name)
-                .eq('property', rentEntryData.property)
-                .maybeSingle();
+            let tenantInfo = { id: (rentEntryData as any).tenantId, avatar: (rentEntryData as any).avatar };
 
-            if (!existingTenant) {
-                const newTenantData = {
-                    name: rentEntryData.name,
-                    property: rentEntryData.property,
-                    rent: rentEntryData.rent,
-                    joinDate: new Date(year, month, 1).toISOString().split('T')[0],
-                    avatar: 'https://placehold.co/80x80.png',
-                    status: 'Pending',
-                };
-                const { data: newTenant, error } = await supabase.from('tenants').insert(newTenantData).select().single();
-                if (error) {
-                    handleError(error, `auto-creating tenant for ${rentEntryData.name}`);
-                    return null;
+            if (!tenantInfo.id) {
+                let { data: existingTenant } = await supabase
+                    .from('tenants')
+                    .select('id, avatar')
+                    .eq('name', rentEntryData.name)
+                    .eq('property', rentEntryData.property)
+                    .maybeSingle();
+
+                if (!existingTenant) {
+                    const newTenantData = {
+                        name: rentEntryData.name,
+                        property: rentEntryData.property,
+                        rent: rentEntryData.rent,
+                        joinDate: new Date(year, month, 1).toISOString().split('T')[0],
+                        avatar: 'https://placehold.co/80x80.png',
+                        status: 'Pending',
+                    };
+                    const { data: newTenant, error } = await supabase.from('tenants').insert(newTenantData).select().single();
+                    if (error) {
+                        handleError(error, `auto-creating tenant for ${rentEntryData.name}`);
+                        return null;
+                    }
+                    existingTenant = newTenant;
                 }
-                existingTenant = newTenant;
+                tenantInfo.id = existingTenant?.id;
+                tenantInfo.avatar = existingTenant?.avatar;
             }
 
             return {
                 ...rentEntryData,
-                tenantId: existingTenant?.id,
-                avatar: existingTenant?.avatar || 'https://placehold.co/80x80.png',
+                tenantId: tenantInfo.id,
+                avatar: tenantInfo.avatar || 'https://placehold.co/80x80.png',
                 dueDate: new Date(year, month, 1).toISOString().split('T')[0],
                 year,
                 month,
@@ -363,5 +371,3 @@ export function useData() {
   }
   return context;
 }
-
-    
