@@ -11,7 +11,9 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/context/auth-context";
 import { useToast } from "@/hooks/use-toast";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, History } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+
 
 function GoogleDriveIcon(props: React.SVGProps<SVGSVGElement>) {
   return (
@@ -31,6 +33,7 @@ export function IntegrationsTab() {
   const { toast } = useToast();
   const [isConnected, setIsConnected] = React.useState(false);
   const [isSyncing, setIsSyncing] = React.useState(false);
+  const [isRestoring, setIsRestoring] = React.useState(false);
   const [lastSynced, setLastSynced] = React.useState("Never");
 
   const handleConnect = () => {
@@ -51,6 +54,15 @@ export function IntegrationsTab() {
         setIsSyncing(false);
         toast({ title: "Sync Complete", description: "Your data has been synced with Google Drive." });
     }, 3000);
+  }
+  
+  const handleRestore = () => {
+    setIsRestoring(true);
+    toast({ title: "Restoring data...", description: "This may take a few moments. Do not close this window."});
+    setTimeout(() => {
+        setIsRestoring(false);
+        toast({ title: "Restore Complete", description: "Your data has been restored from the Google Drive backup." });
+    }, 4000);
   }
 
   return (
@@ -115,7 +127,7 @@ export function IntegrationsTab() {
                 <div>
                     <CardTitle>Google Drive Sync</CardTitle>
                     <CardDescription>
-                        Back up your tenant and financial data to a Google Sheet.
+                        Back up and restore your data from a Google Sheet.
                     </CardDescription>
                 </div>
             </div>
@@ -135,10 +147,33 @@ export function IntegrationsTab() {
                             <p className="font-medium text-secondary-foreground">Status: <span className="text-success font-bold">Connected</span></p>
                             <p className="text-muted-foreground">Last synced: {lastSynced}</p>
                         </div>
-                        <Button onClick={handleSync} disabled={isSyncing} className="w-full">
-                            {isSyncing && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
-                            {isSyncing ? "Syncing..." : "Sync Now"}
-                        </Button>
+                        <div className="grid grid-cols-2 gap-2">
+                            <Button onClick={handleSync} disabled={isSyncing || isRestoring} className="w-full">
+                                {isSyncing && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
+                                {isSyncing ? "Syncing..." : "Sync Now"}
+                            </Button>
+                             <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="outline" disabled={isSyncing || isRestoring} className="w-full">
+                                    {isRestoring && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
+                                    <History className="mr-2 h-4 w-4" />
+                                    {isRestoring ? "Restoring..." : "Restore"}
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      This action cannot be undone. Restoring from a backup will overwrite all current tenant and financial data in this application with the data from your Google Drive file.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={handleRestore} className="bg-destructive hover:bg-destructive/90">Restore Backup</AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                        </div>
                     </div>
                 )}
             </CardContent>
