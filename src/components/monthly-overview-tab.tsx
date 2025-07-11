@@ -38,6 +38,8 @@ const months = [
     "July", "August", "September", "October", "November", "December"
 ];
 
+const expenseCategories = ["Maintenance", "Repairs", "Utilities", "Insurance", "Taxes", "Management Fee", "Other"];
+
 const getStatusBadge = (status: RentEntry["status"]) => {
     switch (status) {
       case "Paid":
@@ -75,6 +77,9 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
 
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = React.useState(false);
   const [editingExpense, setEditingExpense] = React.useState<Expense | null>(null);
+  const [expenseCategory, setExpenseCategory] = React.useState('');
+  const [customCategory, setCustomCategory] = React.useState('');
+
 
   const [isRentDialogOpen, setIsRentDialogOpen] = React.useState(false);
   const [editingRentEntry, setEditingRentEntry] = React.useState<RentEntry | null>(null);
@@ -260,9 +265,13 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     
+    const finalCategory = expenseCategory === 'Other' 
+        ? formData.get('customCategory') as string
+        : expenseCategory;
+
     const expenseData = {
       date: formData.get('date') as string,
-      category: formData.get('category') as string,
+      category: finalCategory,
       amount: Number(formData.get('amount')),
       description: formData.get('description') as string,
       status: formData.get('status') as "Pending" | "Reimbursed",
@@ -278,10 +287,20 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
 
     setIsExpenseDialogOpen(false);
     setEditingExpense(null);
+    setExpenseCategory('');
+    setCustomCategory('');
   };
   
   const handleEditExpense = (expense: Expense) => {
     setEditingExpense(expense);
+    const categoryIsPredefined = expenseCategories.includes(expense.category);
+    if (categoryIsPredefined) {
+        setExpenseCategory(expense.category);
+        setCustomCategory('');
+    } else {
+        setExpenseCategory('Other');
+        setCustomCategory(expense.category);
+    }
     setIsExpenseDialogOpen(true);
   };
   
@@ -293,6 +312,8 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
   const handleExpenseOpenChange = (isOpen: boolean) => {
     if (!isOpen) {
       setEditingExpense(null);
+      setExpenseCategory('');
+      setCustomCategory('');
     }
     setIsExpenseDialogOpen(isOpen);
   };
@@ -407,6 +428,12 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                             Sync Tenants
                         </Button>
                         <Dialog open={isRentDialogOpen} onOpenChange={handleRentOpenChange}>
+                          <DialogTrigger asChild>
+                             <Button size="sm" className="gap-2">
+                              <PlusCircle className="h-4 w-4" />
+                              Add Rent
+                            </Button>
+                          </DialogTrigger>
                             <DialogContent>
                                 <DialogHeader>
                                     <DialogTitle>{editingRentEntry ? 'Edit Rent Entry' : 'Add New Rent Entry'}</DialogTitle>
@@ -532,7 +559,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                           <TableRow>
                             <TableHead className="w-10">
                                 <Checkbox
-                                    checked={selectedRentEntryIds.length === filteredTenantsForMonth.length}
+                                    checked={selectedRentEntryIds.length > 0 && selectedRentEntryIds.length === filteredTenantsForMonth.length}
                                     onCheckedChange={(checked) => {
                                         if (checked) {
                                             setSelectedRentEntryIds(filteredTenantsForMonth.map(t => t.id));
@@ -672,10 +699,33 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                 <Label htmlFor="date">Date</Label>
                                 <Input id="date" name="date" type="date" defaultValue={editingExpense?.date || new Date().toISOString().split('T')[0]} required />
                               </div>
-                              <div className="space-y-2">
+                               <div className="space-y-2">
                                 <Label htmlFor="category">Category</Label>
-                                <Input id="category" name="category" defaultValue={editingExpense?.category} placeholder="e.g., Maintenance" required />
+                                <Select value={expenseCategory} onValueChange={setExpenseCategory}>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select a category" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {expenseCategories.map(cat => (
+                                      <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
                               </div>
+
+                              {expenseCategory === 'Other' && (
+                                <div className="space-y-2">
+                                  <Label htmlFor="customCategory">Custom Category</Label>
+                                  <Input 
+                                    id="customCategory" 
+                                    name="customCategory" 
+                                    value={customCategory}
+                                    onChange={(e) => setCustomCategory(e.target.value)}
+                                    placeholder="Enter custom category" 
+                                    required 
+                                  />
+                                </div>
+                              )}
                                <div className="space-y-2">
                                 <Label htmlFor="amount">Amount</Label>
                                 <Input id="amount" name="amount" type="number" step="0.01" defaultValue={editingExpense?.amount} placeholder="0.00" required />
@@ -715,7 +765,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                             <TableRow>
                                <TableHead className="w-10">
                                     <Checkbox
-                                        checked={selectedExpenseIds.length === filteredExpenses.length}
+                                        checked={selectedExpenseIds.length > 0 && selectedExpenseIds.length === filteredExpenses.length}
                                         onCheckedChange={(checked) => {
                                             if (checked) {
                                                 setSelectedExpenseIds(filteredExpenses.map(e => e.id));
