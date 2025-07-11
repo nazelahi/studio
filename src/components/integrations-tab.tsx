@@ -10,9 +10,10 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/context/auth-context";
 import { useToast } from "@/hooks/use-toast";
-import { RefreshCw, History, HardDriveDownload, HardDriveUpload } from "lucide-react";
+import { RefreshCw, HardDriveDownload, HardDriveUpload } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useData } from "@/context/data-context";
+import { useRouter } from "next/navigation";
 
 const GOOGLE_DRIVE_BACKUP_KEY = "rentflow_google_drive_backup";
 
@@ -33,6 +34,7 @@ export function IntegrationsTab() {
   const { isAdmin } = useAuth();
   const { getAllData, restoreAllData } = useData();
   const { toast } = useToast();
+  const router = useRouter();
   const [isConnected, setIsConnected] = React.useState(false);
   const [isSyncing, setIsSyncing] = React.useState(false);
   const [isRestoring, setIsRestoring] = React.useState(false);
@@ -99,7 +101,12 @@ export function IntegrationsTab() {
             restoreAllData(backupPayload.data);
             
             setIsRestoring(false);
-            toast({ title: "Restore Complete", description: "Your data has been restored from the backup." });
+            toast({ title: "Restore Complete", description: "Your data has been restored. The application will now reload." });
+            
+            setTimeout(() => {
+                window.location.reload();
+            }, 2000);
+
 
         } catch(e: any) {
             setIsRestoring(false);
