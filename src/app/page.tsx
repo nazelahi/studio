@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button"
 import { User, LogOut } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { LoginDialog } from "@/components/login-dialog"
+import { AppHeader } from "@/components/app-header"
 
 export default function HomePage() {
   const { settings } = useSettings();
@@ -65,6 +66,7 @@ export default function HomePage() {
         )}
       </header>
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+        <AppHeader />
         <DashboardTabs />
         <footer className="text-center text-sm text-muted-foreground mt-auto pt-4">
           {settings.footerName}

@@ -25,6 +25,12 @@ interface PageOverview {
 
 interface PageSettings {
     title: string;
+    property_details: {
+        title: string;
+        description: string;
+        house_name_label: string;
+        house_address_label: string;
+    };
     app_settings: {
         title: string;
         description: string;
@@ -52,21 +58,15 @@ interface PageSettings {
     };
 }
 
-interface PageTenants {
-    title: string;
-    description: string;
-    search_placeholder: string;
-    add_tenant_button: string;
-}
-
 interface AppSettings {
   appName: string;
+  houseName: string;
+  houseAddress: string;
   tabNames: TabNames;
   footerName: string;
   page_dashboard: PageDashboard;
   page_overview: PageOverview;
   page_settings: PageSettings;
-  page_tenants: PageTenants;
 }
 
 interface SettingsContextType {
@@ -76,6 +76,8 @@ interface SettingsContextType {
 
 const defaultSettings: AppSettings = {
     appName: "RentFlow",
+    houseName: "Sunset Apartments",
+    houseAddress: "123 Ocean View Drive, Miami, FL 33139",
     tabNames: {
         overview: "Overview",
         tenants: "Tenants",
@@ -96,6 +98,12 @@ const defaultSettings: AppSettings = {
     },
     page_settings: {
         title: "Settings",
+        property_details: {
+            title: "Property Details",
+            description: "Set the name and address of your property.",
+            house_name_label: "House Name",
+            house_address_label: "House Address",
+        },
         app_settings: {
             title: "Application Settings",
             description: "Customize the names and labels used throughout the application.",
@@ -122,12 +130,6 @@ const defaultSettings: AppSettings = {
             change_password_button: "Change Password",
         }
     },
-    page_tenants: {
-        title: "Tenant Management",
-        description: "View, add, edit, and manage all of your tenant information in one place.",
-        search_placeholder: "Search by name, email, or property...",
-        add_tenant_button: "Add Tenant",
-    }
 };
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);

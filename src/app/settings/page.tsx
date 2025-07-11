@@ -15,6 +15,7 @@ import { User, LogOut, KeyRound } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useToast } from "@/hooks/use-toast"
 import { LoginDialog } from "@/components/login-dialog"
+import { AppHeader } from "@/components/app-header"
 
 export default function SettingsPage() {
   const { settings, setSettings } = useSettings();
@@ -113,11 +114,29 @@ export default function SettingsPage() {
         )}
       </header>
        <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+          <AppHeader />
           <div className="mx-auto grid w-full max-w-6xl gap-2">
             <h1 className="text-3xl font-semibold">{settings.page_settings.title}</h1>
           </div>
           <div className="mx-auto grid w-full max-w-6xl items-start gap-6">
             <fieldset disabled={!isAdmin} className="group grid gap-6">
+              <Card className="group-disabled:opacity-50">
+                <CardHeader>
+                    <CardTitle>{settings.page_settings.property_details.title}</CardTitle>
+                    <CardDescription>{settings.page_settings.property_details.description}</CardDescription>
+                </CardHeader>
+                <CardContent className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="houseName">{settings.page_settings.property_details.house_name_label}</Label>
+                        <Input id="houseName" name="houseName" value={settings.houseName} onChange={handleInputChange} />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="houseAddress">{settings.page_settings.property_details.house_address_label}</Label>
+                        <Input id="houseAddress" name="houseAddress" value={settings.houseAddress} onChange={handleInputChange} />
+                    </div>
+                </CardContent>
+              </Card>
+
               <Card className="group-disabled:opacity-50">
                   <CardHeader>
                       <CardTitle>{settings.page_settings.app_settings.title}</CardTitle>
