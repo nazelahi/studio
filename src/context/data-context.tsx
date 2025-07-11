@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import type { Tenant, Expense, RentEntry } from '@/types';
-import { parseISO, startOfMonth } from 'date-fns';
+import { parseISO, startOfMonth, isFuture, getMonth, getYear } from 'date-fns';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 
@@ -76,20 +76,26 @@ export function DataProvider({ children }: { children: ReactNode }) {
         fetchData();
     }, [fetchData]);
     
-    // Subscribe to DB changes
     useEffect(() => {
         if (!supabase) return;
-        const channel = supabase.channel('db-changes')
-            .on('postgres_changes', { event: '*', schema: 'public' }, (payload) => {
-                console.log('Change received!', payload);
-                fetchData(); // Refetch all data on any change
-            })
+
+        const channel = supabase
+            .channel('db-changes')
+            .on(
+                'postgres_changes',
+                { event: '*', schema: 'public' },
+                (payload) => {
+                    console.log('Change received!', payload);
+                    fetchData();
+                }
+            )
             .subscribe((status, err) => {
                 if (status === 'SUBSCRIBED') {
                     console.log('Successfully subscribed to real-time updates!');
                 }
                 if (err) {
-                    handleError(err, 'subscribing to real-time updates')
+                    console.error("Realtime subscription error:", err);
+                    handleError(new Error("Realtime was unable to connect to the project database"), 'subscribing to real-time updates');
                 }
             });
 
@@ -98,29 +104,77 @@ export function DataProvider({ children }: { children: ReactNode }) {
         };
     }, [fetchData, toast]);
 
-
-    const addTenant = async (tenant: Omit<Tenant, 'id' | 'created_at'>) => {
+    const addTenant = async (tenantData: Omit<Tenant, 'id'>) => {
         if (!supabase) return;
-        const { error } = await supabase.from('tenants').insert([tenant]).select().single();
-        if (error) handleError(error, 'adding tenant');
+
+        const { data: newTenant, error } = await supabase.from('tenants').insert([tenantData]).select().single();
+        if (error) {
+            handleError(error, 'adding tenant');
+            return;
+        }
+
+        if (newTenant) {
+            // Automatically add a rent entry for the current month
+            const joinDate = parseISO(newTenant.joinDate);
+            const month = getMonth(joinDate);
+            const year = getYear(joinDate);
+
+            const newRentEntryData = {
+                tenantId: newTenant.id,
+                name: newTenant.name,
+                property: newTenant.property,
+                rent: newTenant.rent,
+                status: 'Pending' as const,
+                avatar: newTenant.avatar,
+                dueDate: new Date(year, month, 1).toISOString().split('T')[0],
+                year,
+                month,
+            };
+            const { error: rentError } = await supabase.from('rent_entries').insert([newRentEntryData]);
+            if (rentError) handleError(rentError, 'auto-creating rent entry');
+        }
     };
 
     const updateTenant = async (updatedTenant: Tenant) => {
         if (!supabase) return;
         const { id, ...tenantData } = updatedTenant;
         const { error } = await supabase.from('tenants').update(tenantData).eq('id', id);
-        if (error) handleError(error, 'updating tenant');
+        if (error) {
+            handleError(error, 'updating tenant');
+            return;
+        }
+
+        // Also update future, unpaid rent entries
+        const { error: rentUpdateError } = await supabase
+            .from('rent_entries')
+            .update({
+                name: tenantData.name,
+                property: tenantData.property,
+                rent: tenantData.rent,
+                avatar: tenantData.avatar,
+            })
+            .eq('tenantId', id)
+            .neq('status', 'Paid')
+            .gt('dueDate', new Date().toISOString());
+
+        if (rentUpdateError) {
+            handleError(rentUpdateError, 'syncing future rent entries');
+        }
     };
 
     const deleteTenant = async (tenantId: string) => {
         if (!supabase) return;
+
+        // First, delete all related rent entries
+        const { error: rentError } = await supabase.from('rent_entries').delete().eq('tenantId', tenantId);
+        if (rentError) {
+            handleError(rentError, 'deleting tenant rent entries');
+            return; // Stop if we can't delete dependencies
+        }
+        
+        // Then, delete the tenant
         const { error } = await supabase.from('tenants').delete().eq('id', tenantId);
         if (error) handleError(error, 'deleting tenant');
-        else {
-            // Also delete related rent entries
-            const { error: rentError } = await supabase.from('rent_entries').delete().eq('tenantId', tenantId);
-            if (rentError) handleError(rentError, 'deleting tenant rent entries');
-        }
     };
 
     const addExpense = async (expense: Omit<Expense, 'id' | 'created_at'>) => {
@@ -142,14 +196,33 @@ export function DataProvider({ children }: { children: ReactNode }) {
         if (error) handleError(error, 'deleting expense');
     };
 
-    const addRentEntry = async (rentEntry: Omit<RentEntry, 'id' | 'tenantId' | 'avatar' | 'year' | 'month' | 'dueDate' | 'created_at'>, year: number, month: number) => {
+    const addRentEntry = async (rentEntryData: Omit<RentEntry, 'id' | 'tenantId' | 'avatar' | 'year' | 'month' | 'dueDate' | 'created_at'>, year: number, month: number) => {
         if (!supabase) return;
-        // Check for an existing tenant based on name and property to link them
-        const { data: existingTenant } = await supabase.from('tenants').select('id, avatar').eq('name', rentEntry.name).eq('property', rentEntry.property).single();
+
+        // Check for an existing tenant based on name and property
+        let { data: existingTenant } = await supabase.from('tenants').select('id, avatar').eq('name', rentEntryData.name).eq('property', rentEntryData.property).maybeSingle();
+
+        // If tenant doesn't exist, create one
+        if (!existingTenant) {
+            const newTenantData = {
+                name: rentEntryData.name,
+                property: rentEntryData.property,
+                rent: rentEntryData.rent,
+                joinDate: new Date(year, month, 1).toISOString().split('T')[0],
+                avatar: 'https://placehold.co/80x80.png',
+                status: 'Pending',
+            };
+            const { data: newTenant, error } = await supabase.from('tenants').insert(newTenantData).select().single();
+            if (error) {
+                handleError(error, 'auto-creating tenant from rent entry');
+                return;
+            }
+            existingTenant = newTenant;
+        }
 
         const newEntryData = {
-            ...rentEntry,
-            tenantId: existingTenant?.id || `T-MANUAL-${Date.now()}`,
+            ...rentEntryData,
+            tenantId: existingTenant?.id,
             avatar: existingTenant?.avatar || 'https://placehold.co/80x80.png',
             dueDate: new Date(year, month, 1).toISOString().split('T')[0],
             year,
