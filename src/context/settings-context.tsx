@@ -10,10 +10,59 @@ interface TabNames {
     reports: string;
 }
 
+interface PageDashboard {
+    nav_dashboard: string;
+    nav_settings: string;
+    signin_button: string;
+    user_menu_tooltip: string;
+    user_menu_logout: string;
+}
+
+interface PageSettings {
+    title: string;
+    app_settings: {
+        title: string;
+        description: string;
+        header_name_label: string;
+        tab_names_label: string;
+        overview_tab_label: string;
+        tenants_tab_label: string;
+        whatsapp_tab_label: string;
+        reports_tab_label: string;
+        footer_name_label: string;
+    };
+    tenant_settings: {
+        title: string;
+        description: string;
+        manage_title_label: string;
+        manage_description_label: string;
+        search_placeholder_label: string;
+        add_tenant_button_label: string;
+    },
+    security_settings: {
+        title: string;
+        description: string;
+        old_password_label: string;
+        new_password_label: string;
+        confirm_password_label: string;
+        change_password_button: string;
+    };
+}
+
+interface PageTenants {
+    title: string;
+    description: string;
+    search_placeholder: string;
+    add_tenant_button: string;
+}
+
 interface AppSettings {
   appName: string;
   tabNames: TabNames;
   footerName: string;
+  page_dashboard: PageDashboard;
+  page_settings: PageSettings;
+  page_tenants: PageTenants;
 }
 
 interface SettingsContextType {
@@ -30,9 +79,74 @@ const defaultSettings: AppSettings = {
         reports: "Reports",
     },
     footerName: "© 2024 RentFlow. All Rights Reserved.",
+    page_dashboard: {
+        nav_dashboard: "Dashboard",
+        nav_settings: "Settings",
+        signin_button: "Sign In",
+        user_menu_tooltip: "Toggle user menu",
+        user_menu_logout: "Log out",
+    },
+    page_settings: {
+        title: "Settings",
+        app_settings: {
+            title: "Application Settings",
+            description: "Customize the names and labels used throughout the application.",
+            header_name_label: "Header Name",
+            tab_names_label: "Tab Names",
+            overview_tab_label: "Overview Tab",
+            tenants_tab_label: "Tenants Tab",
+            whatsapp_tab_label: "WhatsApp Tab",
+            reports_tab_label: "Reports Tab",
+            footer_name_label: "Footer Name",
+        },
+        tenant_settings: {
+            title: "Tenant Page Settings",
+            description: "Customize the text on the tenant management page.",
+            manage_title_label: "Management Section Title",
+            manage_description_label: "Management Section Description",
+            search_placeholder_label: "Search Bar Placeholder",
+            add_tenant_button_label: "'Add Tenant' Button Text",
+        },
+        security_settings: {
+            title: "Security",
+            description: "Change your super admin password.",
+            old_password_label: "Old Password",
+            new_password_label: "New Password",
+            confirm_password_label: "Confirm New Password",
+            change_password_button: "Change Password",
+        }
+    },
+    page_tenants: {
+        title: "Tenant Management",
+        description: "View, add, edit, and manage all of your tenant information in one place.",
+        search_placeholder: "Search by name, email, or property...",
+        add_tenant_button: "Add Tenant",
+    }
 };
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
+
+const deepMerge = (target: any, source: any) => {
+    const output = { ...target };
+    if (isObject(target) && isObject(source)) {
+        Object.keys(source).forEach(key => {
+            if (isObject(source[key])) {
+                if (!(key in target))
+                    Object.assign(output, { [key]: source[key] });
+                else
+                    output[key] = deepMerge(target[key], source[key]);
+            } else {
+                Object.assign(output, { [key]: source[key] });
+            }
+        });
+    }
+    return output;
+}
+
+const isObject = (item: any) => {
+    return (item && typeof item === 'object' && !Array.isArray(item));
+}
+
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
     const [settings, setSettings] = useState<AppSettings>(defaultSettings);
@@ -44,15 +158,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
             const item = window.localStorage.getItem('appSettings');
             if (item) {
                 const storedSettings = JSON.parse(item);
-                // Ensure all keys are present, falling back to default
-                setSettings({
-                    ...defaultSettings,
-                    ...storedSettings,
-                    tabNames: {
-                        ...defaultSettings.tabNames,
-                        ...storedSettings.tabNames,
-                    }
-                });
+                // Deep merge to ensure all keys from default settings are present
+                setSettings(deepMerge(defaultSettings, storedSettings));
             }
         } catch (error) {
             console.error("Failed to parse settings from localStorage", error);

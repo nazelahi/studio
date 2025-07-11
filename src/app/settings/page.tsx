@@ -1,3 +1,4 @@
+
 "use client"
 
 import Link from "next/link"
@@ -28,18 +29,19 @@ export default function SettingsPage() {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    if (name.startsWith('tabNames.')) {
-        const key = name.split('.')[1] as keyof typeof settings.tabNames;
-        setSettings(prev => ({
-            ...prev,
-            tabNames: {
-                ...prev.tabNames,
-                [key]: value
-            }
-        }));
-    } else {
-        setSettings(prev => ({ ...prev, [name]: value }));
-    }
+    const keys = name.split('.');
+    
+    setSettings(prev => {
+        let newState = { ...prev };
+        let currentLevel: any = newState;
+        
+        for (let i = 0; i < keys.length - 1; i++) {
+            currentLevel = currentLevel[keys[i]];
+        }
+        
+        currentLevel[keys[keys.length - 1]] = value;
+        return newState;
+    });
   };
 
   const handlePasswordChange = async (e: React.FormEvent) => {
@@ -80,13 +82,13 @@ export default function SettingsPage() {
             href="/"
             className={`transition-colors hover:text-foreground ${pathname === '/' ? 'text-foreground' : 'text-muted-foreground'}`}
           >
-            Dashboard
+            {settings.page_dashboard.nav_dashboard}
           </Link>
           <Link
             href="/settings"
             className={`transition-colors hover:text-foreground ${pathname === '/settings' ? 'text-foreground' : 'text-muted-foreground'}`}
           >
-            Settings
+            {settings.page_dashboard.nav_settings}
           </Link>
         </nav>
         {user ? (
@@ -94,7 +96,7 @@ export default function SettingsPage() {
             <DropdownMenuTrigger asChild>
               <Button variant="secondary" size="icon" className="rounded-full">
                 <User className="h-5 w-5" />
-                <span className="sr-only">Toggle user menu</span>
+                <span className="sr-only">{settings.page_dashboard.user_menu_tooltip}</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -102,87 +104,113 @@ export default function SettingsPage() {
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={signOut}>
                 <LogOut className="mr-2 h-4 w-4" />
-                <span>Log out</span>
+                <span>{settings.page_dashboard.user_menu_logout}</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         ) : (
-          <Button onClick={() => setIsLoginOpen(true)}>Sign In</Button>
+          <Button onClick={() => setIsLoginOpen(true)}>{settings.page_dashboard.signin_button}</Button>
         )}
       </header>
        <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
           <div className="mx-auto grid w-full max-w-6xl gap-2">
-            <h1 className="text-3xl font-semibold">Settings</h1>
+            <h1 className="text-3xl font-semibold">{settings.page_settings.title}</h1>
           </div>
           <div className="mx-auto grid w-full max-w-6xl items-start gap-6">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Application Settings</CardTitle>
-                    <CardDescription>Customize the names and labels used throughout the application. { !isAdmin && "Sign in as an admin to make changes."}</CardDescription>
-                </CardHeader>
-                <fieldset disabled={!isAdmin} className="group">
-                  <CardContent className="space-y-6 group-disabled:opacity-50">
+            <fieldset disabled={!isAdmin} className="group grid gap-6">
+              <Card className="group-disabled:opacity-50">
+                  <CardHeader>
+                      <CardTitle>{settings.page_settings.app_settings.title}</CardTitle>
+                      <CardDescription>{settings.page_settings.app_settings.description}{ !isAdmin && " Sign in as an admin to make changes."}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
                       <div className="space-y-2">
-                          <Label htmlFor="appName">Header Name</Label>
+                          <Label htmlFor="appName">{settings.page_settings.app_settings.header_name_label}</Label>
                           <Input id="appName" name="appName" value={settings.appName} onChange={handleInputChange} />
                       </div>
                       <div className="space-y-2">
-                          <Label>Tab Names</Label>
+                          <Label>{settings.page_settings.app_settings.tab_names_label}</Label>
                           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                               <div className="space-y-2">
-                                  <Label htmlFor="tab-overview" className="font-normal text-muted-foreground">Overview Tab</Label>
+                                  <Label htmlFor="tab-overview" className="font-normal text-muted-foreground">{settings.page_settings.app_settings.overview_tab_label}</Label>
                                   <Input id="tab-overview" name="tabNames.overview" value={settings.tabNames.overview} onChange={handleInputChange} />
                               </div>
                               <div className="space-y-2">
-                                  <Label htmlFor="tab-tenants" className="font-normal text-muted-foreground">Tenants Tab</Label>
+                                  <Label htmlFor="tab-tenants" className="font-normal text-muted-foreground">{settings.page_settings.app_settings.tenants_tab_label}</Label>
                                   <Input id="tab-tenants" name="tabNames.tenants" value={settings.tabNames.tenants} onChange={handleInputChange} />
                               </div>
                               <div className="space-y-2">
-                                  <Label htmlFor="tab-whatsapp" className="font-normal text-muted-foreground">WhatsApp Tab</Label>
+                                  <Label htmlFor="tab-whatsapp" className="font-normal text-muted-foreground">{settings.page_settings.app_settings.whatsapp_tab_label}</Label>
                                   <Input id="tab-whatsapp" name="tabNames.whatsapp" value={settings.tabNames.whatsapp} onChange={handleInputChange} />
                               </div>
                               <div className="space-y-2">
-                                  <Label htmlFor="tab-reports" className="font-normal text-muted-foreground">Reports Tab</Label>
+                                  <Label htmlFor="tab-reports" className="font-normal text-muted-foreground">{settings.page_settings.app_settings.reports_tab_label}</Label>
                                   <Input id="tab-reports" name="tabNames.reports" value={settings.tabNames.reports} onChange={handleInputChange} />
                               </div>
                           </div>
                       </div>
                       <div className="space-y-2">
-                          <Label htmlFor="footerName">Footer Name</Label>
+                          <Label htmlFor="footerName">{settings.page_settings.app_settings.footer_name_label}</Label>
                           <Input id="footerName" name="footerName" value={settings.footerName} onChange={handleInputChange} />
                       </div>
                   </CardContent>
-                </fieldset>
-            </Card>
+              </Card>
 
-            {isAdmin && user?.id === 'super-admin-id' && (
+              <Card className="group-disabled:opacity-50">
+                  <CardHeader>
+                    <CardTitle>{settings.page_settings.tenant_settings.title}</CardTitle>
+                    <CardDescription>{settings.page_settings.tenant_settings.description}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="grid md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                          <Label htmlFor="tenant-management-title">{settings.page_settings.tenant_settings.manage_title_label}</Label>
+                          <Input id="tenant-management-title" name="page_tenants.title" value={settings.page_tenants.title} onChange={handleInputChange} />
+                      </div>
+                      <div className="space-y-2">
+                          <Label htmlFor="tenant-management-desc">{settings.page_settings.tenant_settings.manage_description_label}</Label>
+                          <Input id="tenant-management-desc" name="page_tenants.description" value={settings.page_tenants.description} onChange={handleInputChange} />
+                      </div>
+                      <div className="space-y-2">
+                          <Label htmlFor="tenant-search-placeholder">{settings.page_settings.tenant_settings.search_placeholder_label}</Label>
+                          <Input id="tenant-search-placeholder" name="page_tenants.search_placeholder" value={settings.page_tenants.search_placeholder} onChange={handleInputChange} />
+                      </div>
+                      <div className="space-y-2">
+                          <Label htmlFor="tenant-add-button">{settings.page_settings.tenant_settings.add_tenant_button_label}</Label>
+                          <Input id="tenant-add-button" name="page_tenants.add_tenant_button" value={settings.page_tenants.add_tenant_button} onChange={handleInputChange} />
+                      </div>
+                  </CardContent>
+              </Card>
+
+              {isAdmin && user?.id === 'super-admin-id' && (
               <Card>
                 <CardHeader>
-                  <CardTitle>Security</CardTitle>
-                  <CardDescription>Change your super admin password.</CardDescription>
+                  <CardTitle>{settings.page_settings.security_settings.title}</CardTitle>
+                  <CardDescription>{settings.page_settings.security_settings.description}</CardDescription>
                 </CardHeader>
                 <CardContent>
                   <form onSubmit={handlePasswordChange} className="space-y-4 max-w-sm">
                     <div className="space-y-2">
-                      <Label htmlFor="oldPassword">Old Password</Label>
+                      <Label htmlFor="oldPassword">{settings.page_settings.security_settings.old_password_label}</Label>
                       <Input id="oldPassword" type="password" value={oldPassword} onChange={(e) => setOldPassword(e.target.value)} required />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="newPassword">New Password</Label>
+                      <Label htmlFor="newPassword">{settings.page_settings.security_settings.new_password_label}</Label>
                       <Input id="newPassword" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                      <Label htmlFor="confirmPassword">{settings.page_settings.security_settings.confirm_password_label}</Label>
+
                       <Input id="confirmPassword" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
                     </div>
                     <Button type="submit">
                       <KeyRound className="mr-2 h-4 w-4" />
-                      Change Password
+                      {settings.page_settings.security_settings.change_password_button}
                     </Button>
                   </form>
                 </CardContent>
               </Card>
-            )}
+              )}
+            </fieldset>
 
           </div>
            <footer className="text-center text-sm text-muted-foreground mt-auto pt-4">

@@ -1,3 +1,4 @@
+
 "use client"
 
 import Link from "next/link"
@@ -33,13 +34,13 @@ export default function HomePage() {
             href="/"
             className={`transition-colors hover:text-foreground ${pathname === '/' ? 'text-foreground' : 'text-muted-foreground'}`}
           >
-            Dashboard
+            {settings.page_dashboard.nav_dashboard}
           </Link>
           <Link
             href="/settings"
             className={`transition-colors hover:text-foreground ${pathname === '/settings' ? 'text-foreground' : 'text-muted-foreground'}`}
           >
-            Settings
+            {settings.page_dashboard.nav_settings}
           </Link>
         </nav>
         {user ? (
@@ -47,7 +48,7 @@ export default function HomePage() {
             <DropdownMenuTrigger asChild>
               <Button variant="secondary" size="icon" className="rounded-full">
                 <User className="h-5 w-5" />
-                <span className="sr-only">Toggle user menu</span>
+                <span className="sr-only">{settings.page_dashboard.user_menu_tooltip}</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
@@ -55,12 +56,12 @@ export default function HomePage() {
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={signOut}>
                 <LogOut className="mr-2 h-4 w-4" />
-                <span>Log out</span>
+                <span>{settings.page_dashboard.user_menu_logout}</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         ) : (
-           <Button onClick={() => setIsLoginOpen(true)}>Sign In</Button>
+           <Button onClick={() => setIsLoginOpen(true)}>{settings.page_dashboard.signin_button}</Button>
         )}
       </header>
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">

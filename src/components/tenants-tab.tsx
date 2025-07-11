@@ -21,10 +21,12 @@ import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "./ui/command"
 import { TenantDetailSheet } from "./tenant-detail-sheet"
 import { useAuth } from "@/context/auth-context"
+import { useSettings } from "@/context/settings-context"
 
 export function TenantsTab() {
   const { tenants, addTenant, updateTenant, deleteTenant, loading } = useData();
   const { isAdmin } = useAuth();
+  const { settings } = useSettings();
   const [open, setOpen] = React.useState(false);
   const [editingTenant, setEditingTenant] = React.useState<Tenant | null>(null);
   const { toast } = useToast();
@@ -59,7 +61,7 @@ export function TenantsTab() {
       reader.onloadend = () => {
         setPreviewImage(reader.result as string);
       };
-      reader.readAsDataURL(file);
+      reader.readDataURL(file);
     }
   };
   
@@ -203,9 +205,9 @@ export function TenantsTab() {
     <>
       <Card className="mt-4">
         <CardHeader>
-          <CardTitle>Tenant Management</CardTitle>
+          <CardTitle>{settings.page_tenants.title}</CardTitle>
           <CardDescription>
-            View, add, edit, and manage all of your tenant information in one place.
+            {settings.page_tenants.description}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -213,7 +215,7 @@ export function TenantsTab() {
               <div className="relative w-full max-w-sm">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input 
-                  placeholder="Search by name, email, or property..." 
+                  placeholder={settings.page_tenants.search_placeholder}
                   className="pl-9"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -224,7 +226,7 @@ export function TenantsTab() {
                   <DialogTrigger asChild>
                     <Button onClick={() => setEditingTenant(null)}>
                       <PlusCircle className="mr-2 h-4 w-4" />
-                      Add Tenant
+                      {settings.page_tenants.add_tenant_button}
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-[600px]">
