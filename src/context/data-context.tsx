@@ -351,6 +351,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const restoreAllData = (backupData: AppData) => {
         if (backupData && backupData.tenants && backupData.expenses && backupData.rentData) {
             setData(backupData);
+            // After restoring data, a page reload is the simplest way to ensure all components
+            // are re-rendered with the new state.
+            window.location.reload();
         } else {
             handleError(new Error("Invalid backup data format."), "restoring data");
         }
