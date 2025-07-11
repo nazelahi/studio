@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { DollarSign, Banknote, ArrowUpCircle, ArrowDownCircle, PlusCircle, Trash2, Pencil, CheckCircle, XCircle, AlertCircle, RefreshCw, ChevronDown, Copy, X } from "lucide-react"
+import { DollarSign, Banknote, ArrowUpCircle, ArrowDownCircle, PlusCircle, Trash2, Pencil, CheckCircle, XCircle, AlertCircle, RefreshCw, ChevronDown, Copy, X, FileText } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog"
@@ -23,6 +23,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
 import { Skeleton } from "./ui/skeleton"
 import { Checkbox } from "./ui/checkbox"
+import { TenantDetailSheet } from "./tenant-detail-sheet"
 
 type HistoricalTenant = {
     uniqueId: string;
@@ -89,6 +90,9 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
   
   const [selectedRentEntryIds, setSelectedRentEntryIds] = React.useState<string[]>([]);
   const [selectedExpenseIds, setSelectedExpenseIds] = React.useState<string[]>([]);
+
+  const [isSheetOpen, setIsSheetOpen] = React.useState(false);
+  const [selectedTenantForSheet, setSelectedTenantForSheet] = React.useState<Tenant | null>(null);
 
   const formRef = React.useRef<HTMLFormElement>(null);
 
@@ -260,6 +264,20 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
     setSelectedRentEntryIds([]);
   }
 
+  const handleViewDetails = (entry: RentEntry) => {
+    const tenant = tenants.find(t => t.id === entry.tenantId);
+    if (tenant) {
+      setSelectedTenantForSheet(tenant);
+      setIsSheetOpen(true);
+    } else {
+      toast({
+        title: "Tenant Not Found",
+        description: "Could not find the full details for this tenant.",
+        variant: "destructive",
+      });
+    }
+  };
+
   // Expense Handlers
   const handleSaveExpense = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -379,6 +397,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
   }
 
   return (
+    <>
     <Tabs value={selectedMonth} onValueChange={setSelectedMonth} className="w-full pt-4">
       <TabsList className="grid w-full grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-12">
         {months.map(month => (
@@ -607,7 +626,11 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                               </TableCell>
                               <TableCell>{entry.rent.toLocaleString('en-US', { style: 'currency', currency: 'BDT', minimumFractionDigits: 2 }).replace('BDT', '৳')}</TableCell>
                               <TableCell>
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-1">
+                                  <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => handleViewDetails(entry)}>
+                                    <FileText className="h-4 w-4" />
+                                    <span className="sr-only">View Details</span>
+                                  </Button>
                                   <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => handleEditRentEntry(entry)}>
                                     <Pencil className="h-4 w-4" />
                                     <span className="sr-only">Edit</span>
@@ -910,5 +933,15 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
         </TabsContent>
       ))}
     </Tabs>
+    {selectedTenantForSheet && (
+      <TenantDetailSheet 
+          tenant={selectedTenantForSheet}
+          isOpen={isSheetOpen}
+          onOpenChange={setIsSheetOpen}
+      />
+    )}
+    </>
   )
 }
+
+    
