@@ -745,5 +745,3 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
     </Tabs>
   )
 }
-
-    
