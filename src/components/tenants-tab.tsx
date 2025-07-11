@@ -61,7 +61,7 @@ export function TenantsTab() {
       reader.onloadend = () => {
         setPreviewImage(reader.result as string);
       };
-      reader.readDataURL(file);
+      reader.readAsDataURL(file);
     }
   };
   
