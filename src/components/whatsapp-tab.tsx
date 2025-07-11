@@ -7,8 +7,11 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
+import { useAuth } from "@/context/auth-context";
 
 export function WhatsappTab() {
+  const { isAdmin } = useAuth();
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
       <Card>
@@ -18,7 +21,8 @@ export function WhatsappTab() {
             Configure automatic rent reminders via WhatsApp.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-6">
+        <fieldset disabled={!isAdmin} className="group">
+        <CardContent className="space-y-6 group-disabled:opacity-50">
           <div className="flex items-center justify-between space-x-2">
             <Label htmlFor="enable-reminders" className="flex flex-col space-y-1">
               <span>Enable Auto-Reminders</span>
@@ -58,8 +62,9 @@ export function WhatsappTab() {
             </div>
         </CardContent>
         <CardFooter>
-            <Button>Save Settings</Button>
+            <Button disabled={!isAdmin}>Save Settings</Button>
         </CardFooter>
+        </fieldset>
       </Card>
 
       <Card>
@@ -69,7 +74,8 @@ export function WhatsappTab() {
             Send a one-off message to a specific tenant or group.
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <fieldset disabled={!isAdmin} className="group">
+        <CardContent className="space-y-4 group-disabled:opacity-50">
             <div className="space-y-2">
                 <Label htmlFor="recipient">Recipient</Label>
                 <Select>
@@ -91,8 +97,9 @@ export function WhatsappTab() {
             </div>
         </CardContent>
         <CardFooter>
-            <Button>Send Message</Button>
+            <Button disabled={!isAdmin}>Send Message</Button>
         </CardFooter>
+        </fieldset>
       </Card>
     </div>
   );

@@ -25,6 +25,7 @@ import { Skeleton } from "./ui/skeleton"
 import { Checkbox } from "./ui/checkbox"
 import { TenantDetailSheet } from "./tenant-detail-sheet"
 import * as XLSX from 'xlsx';
+import { useAuth } from "@/context/auth-context"
 
 
 type HistoricalTenant = {
@@ -75,6 +76,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
   const currentMonthIndex = year === new Date().getFullYear() ? new Date().getMonth() : 0;
   const [selectedMonth, setSelectedMonth] = React.useState(months[currentMonthIndex]);
   const { toast } = useToast();
+  const { isAdmin } = useAuth();
 
   const { tenants, expenses, rentData, addRentEntry, addRentEntriesBatch, updateRentEntry, deleteRentEntry, addExpense, updateExpense, deleteExpense, syncTenantsForMonth, loading, deleteMultipleRentEntries, deleteMultipleExpenses } = useData();
 
@@ -495,7 +497,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                         <CardTitle>Rent Roll - {month} {year}</CardTitle>
                         <CardDescription>Rent payment status for {month} {year}.</CardDescription>
                     </div>
-                    <div className="flex items-center gap-2">
+                     {isAdmin && <div className="flex items-center gap-2">
                         {selectedRentEntryIds.length > 0 && (
                            <AlertDialog>
                             <AlertDialogTrigger asChild>
@@ -533,137 +535,14 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                             <RefreshCw className="h-4 w-4" />
                             Sync Tenants
                         </Button>
-                        <Dialog open={isRentDialogOpen} onOpenChange={handleRentOpenChange}>
-                            <DialogTrigger asChild>
-                                <Button size="sm" className="gap-2">
-                                    <PlusCircle className="h-4 w-4" />
-                                    Add Rent
-                                </Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                                <DialogHeader>
-                                    <DialogTitle>{editingRentEntry ? 'Edit Rent Entry' : 'Add New Rent Entry'}</DialogTitle>
-                                    <DialogDescription>
-                                        {editingRentEntry ? 'Update the entry below.' : 'Fill in the form or find a saved tenant to add a new entry.'}
-                                    </DialogDescription>
-                                </DialogHeader>
-                                 <form ref={formRef} onSubmit={handleSaveRentEntry} className="grid gap-4 py-4">
-                                   {!editingRentEntry && (
-                                     <>
-                                      <div className="space-y-2">
-                                        <Label>Find Saved Tenant</Label>
-                                        <Popover open={isTenantFinderOpen} onOpenChange={setIsTenantFinderOpen}>
-                                          <PopoverTrigger asChild>
-                                            <Button variant="outline" role="combobox" aria-expanded={isTenantFinderOpen} className="w-full justify-between">
-                                              {selectedHistoricalTenant ? `Selected: ${selectedHistoricalTenant.name}` : "Select a past tenant..."}
-                                              <div className="flex items-center">
-                                                <Badge variant="secondary" className="mr-2">{historicalTenants.length}</Badge>
-                                                <ChevronDown className="h-4 w-4 shrink-0 opacity-50"/>
-                                              </div>
-                                            </Button>
-                                          </PopoverTrigger>
-                                          <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                            <Command>
-                                              <CommandInput placeholder="Search tenant..." />
-                                              <CommandEmpty>No tenant found.</CommandEmpty>
-                                              <CommandList>
-                                                <CommandGroup>
-                                                  {historicalTenants.map((tenant) => (
-                                                    <CommandItem
-                                                      key={tenant.uniqueId}
-                                                      value={`${tenant.name} ${tenant.property}`}
-                                                      onSelect={() => handleSelectHistoricalTenant(tenant)}
-                                                      className="flex justify-between items-center"
-                                                    >
-                                                        <div className="flex items-center gap-3">
-                                                            <Avatar className="h-8 w-8">
-                                                                <AvatarImage src={tenant.avatar} />
-                                                                <AvatarFallback>{tenant.name.charAt(0)}</AvatarFallback>
-                                                            </Avatar>
-                                                            <div>
-                                                                <div className="font-medium">{tenant.name} - <span className="text-muted-foreground">{tenant.property}</span></div>
-                                                                <div className="text-xs text-muted-foreground">
-                                                                    Last seen: {months[tenant.lastSeen.month].substring(0,3)} {tenant.lastSeen.year} &middot; {tenant.rent.toLocaleString('en-US', { style: 'currency', currency: 'BDT', minimumFractionDigits: 0 }).replace('BDT', '৳')}
-                                                                </div>
-                                                            </div>
-                                                        </div>
-                                                    </CommandItem>
-                                                  ))}
-                                                </CommandGroup>
-                                              </CommandList>
-                                            </Command>
-                                          </PopoverContent>
-                                        </Popover>
-                                      </div>
-
-                                      {selectedHistoricalTenant && (
-                                        <Card className="bg-secondary/50 relative">
-                                            <Button variant="ghost" size="icon" className="absolute top-1 right-1 h-6 w-6" onClick={handleClearSelectedTenant}>
-                                                <X className="h-4 w-4" />
-                                                <span className="sr-only">Clear selection</span>
-                                            </Button>
-                                            <CardHeader className="pb-2">
-                                                <CardTitle className="text-base">Tenant Preview</CardTitle>
-                                            </CardHeader>
-                                            <CardContent className="text-sm space-y-1">
-                                                <p><strong>Name:</strong> {selectedHistoricalTenant.name}</p>
-                                                <p><strong>Apartment:</strong> {selectedHistoricalTenant.property}</p>
-                                                <p><strong>Rent:</strong> {selectedHistoricalTenant.rent.toLocaleString('en-US', { style: 'currency', currency: 'BDT', minimumFractionDigits: 2 }).replace('BDT', '৳')}</p>
-                                            </CardContent>
-                                        </Card>
-                                      )}
-                                     </>
-                                   )}
-                                   <div className="space-y-2">
-                                        <Label htmlFor="name">Name</Label>
-                                        <Input id="name" name="name" defaultValue={editingRentEntry?.name} placeholder="e.g., John Doe" required />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="property">Flat</Label>
-                                        <Input id="property" name="property" defaultValue={editingRentEntry?.property} placeholder="e.g., Flat-1" required />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="paymentDate">Date</Label>
-                                        <Input id="paymentDate" name="paymentDate" type="date" defaultValue={editingRentEntry?.paymentDate ? format(parseISO(editingRentEntry.paymentDate), 'yyyy-MM-dd') : ''} />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="collectedBy">Collect by</Label>
-                                        <Input id="collectedBy" name="collectedBy" defaultValue={editingRentEntry?.collectedBy} placeholder="e.g., Admin" />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="amount">Amount</Label>
-                                        <Input id="amount" name="amount" type="number" step="0.01" defaultValue={editingRentEntry?.rent} placeholder="0.00" required />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="status">Status</Label>
-                                        <Select name="status" defaultValue={editingRentEntry?.status || 'Pending'}>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select status" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="Paid">Paid</SelectItem>
-                                            <SelectItem value="Pending">Pending</SelectItem>
-                                            <SelectItem value="Overdue">Overdue</SelectItem>
-                                        </SelectContent>
-                                        </Select>
-                                    </div>
-                                    <DialogFooter>
-                                        <DialogClose asChild>
-                                            <Button variant="outline">Cancel</Button>
-                                        </DialogClose>
-                                        <Button type="submit">Save Entry</Button>
-                                    </DialogFooter>
-                                </form>
-                            </DialogContent>
-                        </Dialog>
-                    </div>
+                    </div>}
                   </CardHeader>
                   <CardContent className="p-0">
                     {filteredTenantsForMonth.length > 0 ? (
                       <Table>
                         <TableHeader>
                           <TableRow>
-                            <TableHead className="w-10">
+                            {isAdmin && <TableHead className="w-10">
                                 <Checkbox
                                     checked={selectedRentEntryIds.length > 0 && selectedRentEntryIds.length === filteredTenantsForMonth.length}
                                     onCheckedChange={(checked) => {
@@ -674,7 +553,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                         }
                                     }}
                                 />
-                            </TableHead>
+                            </TableHead>}
                             <TableHead>Name</TableHead>
                             <TableHead>Flat</TableHead>
                             <TableHead className="hidden sm:table-cell">Month</TableHead>
@@ -688,8 +567,8 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                         </TableHeader>
                         <TableBody>
                           {filteredTenantsForMonth.map((entry) => (
-                            <TableRow key={entry.id} data-state={selectedRentEntryIds.includes(entry.id) && "selected"}>
-                              <TableCell>
+                            <TableRow key={entry.id} data-state={isAdmin && selectedRentEntryIds.includes(entry.id) ? "selected" : undefined}>
+                              {isAdmin && <TableCell>
                                   <Checkbox
                                       checked={selectedRentEntryIds.includes(entry.id)}
                                       onCheckedChange={(checked) => {
@@ -698,7 +577,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                           );
                                       }}
                                   />
-                              </TableCell>
+                              </TableCell>}
                               <TableCell className="font-medium">{entry.name}</TableCell>
                               <TableCell><Badge variant="outline">{entry.property}</Badge></TableCell>
                               <TableCell className="hidden sm:table-cell">{months[entry.month]}</TableCell>
@@ -718,30 +597,33 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                     <FileText className="h-4 w-4" />
                                     <span className="sr-only">View Details</span>
                                   </Button>
-                                  <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => handleEditRentEntry(entry)}>
-                                    <Pencil className="h-4 w-4" />
-                                    <span className="sr-only">Edit</span>
-                                  </Button>
-                                   <AlertDialog>
-                                      <AlertDialogTrigger asChild>
-                                        <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive">
-                                          <Trash2 className="h-4 w-4" />
-                                          <span className="sr-only">Delete</span>
-                                        </Button>
-                                      </AlertDialogTrigger>
-                                      <AlertDialogContent>
-                                        <AlertDialogHeader>
-                                          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                          <AlertDialogDescription>
-                                            This action cannot be undone. This will permanently delete the rent entry for this tenant for {months[entry.month]} {entry.year}.
-                                          </AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                          <AlertDialogAction onClick={() => handleDeleteRentEntry(entry.id)}>Delete</AlertDialogAction>
-                                        </AlertDialogFooter>
-                                      </AlertDialogContent>
-                                    </AlertDialog>
+                                  {isAdmin && <>
+                                      <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => handleEditRentEntry(entry)}>
+                                        <Pencil className="h-4 w-4" />
+                                        <span className="sr-only">Edit</span>
+                                      </Button>
+                                       <AlertDialog>
+                                          <AlertDialogTrigger asChild>
+                                            <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive">
+                                              <Trash2 className="h-4 w-4" />
+                                              <span className="sr-only">Delete</span>
+                                            </Button>
+                                          </AlertDialogTrigger>
+                                          <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                              <AlertDialogDescription>
+                                                This action cannot be undone. This will permanently delete the rent entry for this tenant for {months[entry.month]} {entry.year}.
+                                              </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                              <AlertDialogAction onClick={() => handleDeleteRentEntry(entry.id)}>Delete</AlertDialogAction>
+                                            </AlertDialogFooter>
+                                          </AlertDialogContent>
+                                        </AlertDialog>
+                                    </>
+                                  }
                                 </div>
                               </TableCell>
                             </TableRow>
@@ -767,7 +649,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                       <CardTitle>Expenses - {month} {year}</CardTitle>
                       <CardDescription>Property-related expenses for {month} {year}.</CardDescription>
                     </div>
-                    <div className="flex items-center gap-2">
+                    {isAdmin && <div className="flex items-center gap-2">
                        {selectedExpenseIds.length > 0 && (
                            <AlertDialog>
                             <AlertDialogTrigger asChild>
@@ -865,7 +747,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                             </form>
                           </DialogContent>
                         </Dialog>
-                    </div>
+                    </div>}
                   </CardHeader>
                   <CardContent>
                     {filteredExpenses.length > 0 ? (
@@ -873,7 +755,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                         <Table>
                           <TableHeader>
                             <TableRow>
-                               <TableHead className="w-10">
+                               {isAdmin && <TableHead className="w-10">
                                     <Checkbox
                                         checked={selectedExpenseIds.length > 0 && selectedExpenseIds.length === filteredExpenses.length}
                                         onCheckedChange={(checked) => {
@@ -884,7 +766,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                             }
                                         }}
                                     />
-                                </TableHead>
+                                </TableHead>}
                               <TableHead>Details</TableHead>
                               <TableHead>Amount</TableHead>
                               <TableHead>Status</TableHead>
@@ -893,8 +775,8 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                           </TableHeader>
                           <TableBody>
                             {filteredExpenses.map((expense) => (
-                              <TableRow key={expense.id} data-state={selectedExpenseIds.includes(expense.id) && "selected"}>
-                                <TableCell>
+                              <TableRow key={expense.id} data-state={isAdmin && selectedExpenseIds.includes(expense.id) ? "selected" : undefined}>
+                                {isAdmin && <TableCell>
                                     <Checkbox
                                         checked={selectedExpenseIds.includes(expense.id)}
                                         onCheckedChange={(checked) => {
@@ -903,7 +785,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                             );
                                         }}
                                     />
-                                </TableCell>
+                                </TableCell>}
                                 <TableCell>
                                     <div className="font-medium">{expense.category}</div>
                                     <div className="text-sm text-muted-foreground hidden sm:block">{expense.description}</div>
@@ -916,30 +798,32 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                 </TableCell>
                                 <TableCell>
                                   <div className="flex items-center gap-2">
-                                     <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => handleEditExpense(expense)}>
-                                        <Pencil className="h-4 w-4" />
-                                        <span className="sr-only">Edit</span>
-                                     </Button>
-                                     <AlertDialog>
-                                        <AlertDialogTrigger asChild>
-                                           <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive">
-                                            <Trash2 className="h-4 w-4" />
-                                            <span className="sr-only">Delete</span>
-                                          </Button>
-                                        </AlertDialogTrigger>
-                                        <AlertDialogContent>
-                                          <AlertDialogHeader>
-                                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                            <AlertDialogDescription>
-                                              This action cannot be undone. This will permanently delete the expense.
-                                            </AlertDialogDescription>
-                                          </AlertDialogHeader>
-                                          <AlertDialogFooter>
-                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                            <AlertDialogAction onClick={() => handleDeleteExpense(expense.id)}>Delete</AlertDialogAction>
-                                          </AlertDialogFooter>
-                                        </AlertDialogContent>
-                                      </AlertDialog>
+                                     {isAdmin && <>
+                                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => handleEditExpense(expense)}>
+                                          <Pencil className="h-4 w-4" />
+                                          <span className="sr-only">Edit</span>
+                                        </Button>
+                                        <AlertDialog>
+                                          <AlertDialogTrigger asChild>
+                                             <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive">
+                                              <Trash2 className="h-4 w-4" />
+                                              <span className="sr-only">Delete</span>
+                                            </Button>
+                                          </AlertDialogTrigger>
+                                          <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                              <AlertDialogDescription>
+                                                This action cannot be undone. This will permanently delete the expense.
+                                              </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                              <AlertDialogAction onClick={() => handleDeleteExpense(expense.id)}>Delete</AlertDialogAction>
+                                            </AlertDialogFooter>
+                                          </AlertDialogContent>
+                                        </AlertDialog>
+                                      </>}
                                   </div>
                                 </TableCell>
                               </TableRow>
@@ -1027,6 +911,123 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
           onOpenChange={setIsSheetOpen}
       />
     )}
+     <Dialog open={isRentDialogOpen} onOpenChange={handleRentOpenChange}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>{editingRentEntry ? 'Edit Rent Entry' : 'Add New Rent Entry'}</DialogTitle>
+                <DialogDescription>
+                    {editingRentEntry ? 'Update the entry below.' : 'Fill in the form or find a saved tenant to add a new entry.'}
+                </DialogDescription>
+            </DialogHeader>
+                <form ref={formRef} onSubmit={handleSaveRentEntry} className="grid gap-4 py-4">
+                {!editingRentEntry && (
+                    <>
+                    <div className="space-y-2">
+                    <Label>Find Saved Tenant</Label>
+                    <Popover open={isTenantFinderOpen} onOpenChange={setIsTenantFinderOpen}>
+                        <PopoverTrigger asChild>
+                        <Button variant="outline" role="combobox" aria-expanded={isTenantFinderOpen} className="w-full justify-between">
+                            {selectedHistoricalTenant ? `Selected: ${selectedHistoricalTenant.name}` : "Select a past tenant..."}
+                            <div className="flex items-center">
+                            <Badge variant="secondary" className="mr-2">{historicalTenants.length}</Badge>
+                            <ChevronDown className="h-4 w-4 shrink-0 opacity-50"/>
+                            </div>
+                        </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                        <Command>
+                            <CommandInput placeholder="Search tenant..." />
+                            <CommandEmpty>No tenant found.</CommandEmpty>
+                            <CommandList>
+                            <CommandGroup>
+                                {historicalTenants.map((tenant) => (
+                                <CommandItem
+                                    key={tenant.uniqueId}
+                                    value={`${tenant.name} ${tenant.property}`}
+                                    onSelect={() => handleSelectHistoricalTenant(tenant)}
+                                    className="flex justify-between items-center"
+                                >
+                                    <div className="flex items-center gap-3">
+                                        <Avatar className="h-8 w-8">
+                                            <AvatarImage src={tenant.avatar} />
+                                            <AvatarFallback>{tenant.name.charAt(0)}</AvatarFallback>
+                                        </Avatar>
+                                        <div>
+                                            <div className="font-medium">{tenant.name} - <span className="text-muted-foreground">{tenant.property}</span></div>
+                                            <div className="text-xs text-muted-foreground">
+                                                Last seen: {months[tenant.lastSeen.month].substring(0,3)} {tenant.lastSeen.year} &middot; {tenant.rent.toLocaleString('en-US', { style: 'currency', currency: 'BDT', minimumFractionDigits: 0 }).replace('BDT', '৳')}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </CommandItem>
+                                ))}
+                            </CommandGroup>
+                            </CommandList>
+                        </Command>
+                        </PopoverContent>
+                    </Popover>
+                    </div>
+
+                    {selectedHistoricalTenant && (
+                    <Card className="bg-secondary/50 relative">
+                        <Button variant="ghost" size="icon" className="absolute top-1 right-1 h-6 w-6" onClick={handleClearSelectedTenant}>
+                            <X className="h-4 w-4" />
+                            <span className="sr-only">Clear selection</span>
+                        </Button>
+                        <CardHeader className="pb-2">
+                            <CardTitle className="text-base">Tenant Preview</CardTitle>
+                        </CardHeader>
+                        <CardContent className="text-sm space-y-1">
+                            <p><strong>Name:</strong> {selectedHistoricalTenant.name}</p>
+                            <p><strong>Apartment:</strong> {selectedHistoricalTenant.property}</p>
+                            <p><strong>Rent:</strong> {selectedHistoricalTenant.rent.toLocaleString('en-US', { style: 'currency', currency: 'BDT', minimumFractionDigits: 2 }).replace('BDT', '৳')}</p>
+                        </CardContent>
+                    </Card>
+                    )}
+                    </>
+                )}
+                <div className="space-y-2">
+                    <Label htmlFor="name">Name</Label>
+                    <Input id="name" name="name" defaultValue={editingRentEntry?.name} placeholder="e.g., John Doe" required />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="property">Flat</Label>
+                    <Input id="property" name="property" defaultValue={editingRentEntry?.property} placeholder="e.g., Flat-1" required />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="paymentDate">Date</Label>
+                    <Input id="paymentDate" name="paymentDate" type="date" defaultValue={editingRentEntry?.paymentDate ? format(parseISO(editingRentEntry.paymentDate), 'yyyy-MM-dd') : ''} />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="collectedBy">Collect by</Label>
+                    <Input id="collectedBy" name="collectedBy" defaultValue={editingRentEntry?.collectedBy} placeholder="e.g., Admin" />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="amount">Amount</Label>
+                    <Input id="amount" name="amount" type="number" step="0.01" defaultValue={editingRentEntry?.rent} placeholder="0.00" required />
+                </div>
+                <div className="space-y-2">
+                    <Label htmlFor="status">Status</Label>
+                    <Select name="status" defaultValue={editingRentEntry?.status || 'Pending'}>
+                    <SelectTrigger>
+                        <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="Paid">Paid</SelectItem>
+                        <SelectItem value="Pending">Pending</SelectItem>
+                        <SelectItem value="Overdue">Overdue</SelectItem>
+                    </SelectContent>
+                    </Select>
+                </div>
+                <DialogFooter>
+                    <DialogClose asChild>
+                        <Button variant="outline">Cancel</Button>
+                    </DialogClose>
+                    <Button type="submit">Save Entry</Button>
+                </DialogFooter>
+            </form>
+        </DialogContent>
+    </Dialog>
     </>
   )
 }

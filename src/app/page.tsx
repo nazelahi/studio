@@ -5,10 +5,17 @@ import { useSettings } from "@/context/settings-context"
 import { usePathname } from "next/navigation"
 import { Logo } from "@/components/icons"
 import DashboardTabs from "@/components/dashboard-tabs"
+import { useAuth } from "@/context/auth-context"
+import { Button } from "@/components/ui/button"
+import { User, LogOut } from "lucide-react"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { useRouter } from "next/navigation"
 
 export default function HomePage() {
   const { settings } = useSettings();
   const pathname = usePathname();
+  const { user, signOut } = useAuth();
+  const router = useRouter();
 
   return (
     <div className="flex min-h-screen w-full flex-col">
@@ -34,6 +41,26 @@ export default function HomePage() {
             Settings
           </Link>
         </nav>
+        {user ? (
+           <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="secondary" size="icon" className="rounded-full">
+                <User className="h-5 w-5" />
+                <span className="sr-only">Toggle user menu</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>{user.email}</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={signOut}>
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Log out</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <Button onClick={() => router.push('/login')}>Sign In</Button>
+        )}
       </header>
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         <DashboardTabs />

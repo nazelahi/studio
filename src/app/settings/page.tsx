@@ -7,10 +7,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Logo } from "@/components/icons"
 import { useSettings } from "@/context/settings-context"
 import { usePathname } from "next/navigation"
+import { useAuth } from "@/context/auth-context"
+import { Button } from "@/components/ui/button"
+import { User, LogOut } from "lucide-react"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { useRouter } from "next/navigation"
 
 export default function SettingsPage() {
   const { settings, setSettings } = useSettings();
   const pathname = usePathname();
+  const { user, signOut, isAdmin } = useAuth();
+  const router = useRouter();
+
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -52,6 +60,26 @@ export default function SettingsPage() {
             Settings
           </Link>
         </nav>
+        {user ? (
+           <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="secondary" size="icon" className="rounded-full">
+                <User className="h-5 w-5" />
+                <span className="sr-only">Toggle user menu</span>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>{user.email}</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={signOut}>
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Log out</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <Button onClick={() => router.push('/login')}>Sign In</Button>
+        )}
       </header>
        <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
           <div className="mx-auto grid w-full max-w-6xl gap-2">
@@ -61,39 +89,41 @@ export default function SettingsPage() {
             <Card>
                 <CardHeader>
                     <CardTitle>Application Settings</CardTitle>
-                    <CardDescription>Customize the names and labels used throughout the application.</CardDescription>
+                    <CardDescription>Customize the names and labels used throughout the application. { !isAdmin && "Sign in as an admin to make changes."}</CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-6">
-                    <div className="space-y-2">
-                        <Label htmlFor="appName">Header Name</Label>
-                        <Input id="appName" name="appName" value={settings.appName} onChange={handleInputChange} />
-                    </div>
-                    <div className="space-y-2">
-                        <Label>Tab Names</Label>
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="tab-overview" className="font-normal text-muted-foreground">Overview Tab</Label>
-                                <Input id="tab-overview" name="tabNames.overview" value={settings.tabNames.overview} onChange={handleInputChange} />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="tab-tenants" className="font-normal text-muted-foreground">Tenants Tab</Label>
-                                <Input id="tab-tenants" name="tabNames.tenants" value={settings.tabNames.tenants} onChange={handleInputChange} />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="tab-whatsapp" className="font-normal text-muted-foreground">WhatsApp Tab</Label>
-                                <Input id="tab-whatsapp" name="tabNames.whatsapp" value={settings.tabNames.whatsapp} onChange={handleInputChange} />
-                            </div>
-                             <div className="space-y-2">
-                                <Label htmlFor="tab-reports" className="font-normal text-muted-foreground">Reports Tab</Label>
-                                <Input id="tab-reports" name="tabNames.reports" value={settings.tabNames.reports} onChange={handleInputChange} />
-                            </div>
-                        </div>
-                    </div>
-                     <div className="space-y-2">
-                        <Label htmlFor="footerName">Footer Name</Label>
-                        <Input id="footerName" name="footerName" value={settings.footerName} onChange={handleInputChange} />
-                    </div>
-                </CardContent>
+                <fieldset disabled={!isAdmin} className="group">
+                  <CardContent className="space-y-6 group-disabled:opacity-50">
+                      <div className="space-y-2">
+                          <Label htmlFor="appName">Header Name</Label>
+                          <Input id="appName" name="appName" value={settings.appName} onChange={handleInputChange} />
+                      </div>
+                      <div className="space-y-2">
+                          <Label>Tab Names</Label>
+                          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                              <div className="space-y-2">
+                                  <Label htmlFor="tab-overview" className="font-normal text-muted-foreground">Overview Tab</Label>
+                                  <Input id="tab-overview" name="tabNames.overview" value={settings.tabNames.overview} onChange={handleInputChange} />
+                              </div>
+                              <div className="space-y-2">
+                                  <Label htmlFor="tab-tenants" className="font-normal text-muted-foreground">Tenants Tab</Label>
+                                  <Input id="tab-tenants" name="tabNames.tenants" value={settings.tabNames.tenants} onChange={handleInputChange} />
+                              </div>
+                              <div className="space-y-2">
+                                  <Label htmlFor="tab-whatsapp" className="font-normal text-muted-foreground">WhatsApp Tab</Label>
+                                  <Input id="tab-whatsapp" name="tabNames.whatsapp" value={settings.tabNames.whatsapp} onChange={handleInputChange} />
+                              </div>
+                              <div className="space-y-2">
+                                  <Label htmlFor="tab-reports" className="font-normal text-muted-foreground">Reports Tab</Label>
+                                  <Input id="tab-reports" name="tabNames.reports" value={settings.tabNames.reports} onChange={handleInputChange} />
+                              </div>
+                          </div>
+                      </div>
+                      <div className="space-y-2">
+                          <Label htmlFor="footerName">Footer Name</Label>
+                          <Input id="footerName" name="footerName" value={settings.footerName} onChange={handleInputChange} />
+                      </div>
+                  </CardContent>
+                </fieldset>
             </Card>
           </div>
            <footer className="text-center text-sm text-muted-foreground mt-auto pt-4">

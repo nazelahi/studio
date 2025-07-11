@@ -16,6 +16,7 @@ import { Download, Printer } from "lucide-react"
 import jsPDF from "jspdf"
 import html2canvas from "html2canvas"
 import { useToast } from "@/hooks/use-toast"
+import { useAuth } from "@/context/auth-context"
 
 const months = [
     "Jan", "Feb", "Mar", "Apr", "May", "Jun", 
@@ -35,6 +36,7 @@ const formatCurrency = (amount: number) => amount.toLocaleString('en-US', { styl
 
 export function ReportsTab({ year }: { year: number }) {
   const { rentData, expenses, tenants, loading } = useData();
+  const { isAdmin } = useAuth();
   const [reportType, setReportType] = React.useState("yearly");
   const [selectedTenant, setSelectedTenant] = React.useState<string | null>(null);
   const [selectedMonth, setSelectedMonth] = React.useState<number | null>(null);
