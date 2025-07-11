@@ -2,11 +2,11 @@
 "use client"
 
 import * as React from "react"
-import { MoreHorizontal, PlusCircle, Image as ImageIcon, Mail, Phone, Home, ChevronDown, Copy, X, Search, FileText } from "lucide-react"
+import { MoreHorizontal, PlusCircle, Image as ImageIcon, Mail, Phone, Home, ChevronDown, Copy, X, Search, FileText, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuPortal } from "@/components/ui/dropdown-menu"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
@@ -134,6 +134,13 @@ export function TenantsTab() {
     setOpen(isOpen);
   };
 
+  const handleStatusChange = async (tenant: Tenant, newStatus: "Paid" | "Pending" | "Overdue") => {
+    await updateTenant({ ...tenant, status: newStatus });
+    toast({
+      title: "Status Updated",
+      description: `${tenant.name}'s status has been changed to ${newStatus}.`
+    });
+  };
 
   const getStatusBadge = (status: Tenant['status']) => {
     switch (status) {
@@ -380,9 +387,30 @@ export function TenantsTab() {
                       <TableCell className="hidden md:table-cell">{tenant.property}</TableCell>
                       <TableCell className="hidden md:table-cell">${tenant.rent.toFixed(2)}</TableCell>
                       <TableCell>
-                      <Badge className={getStatusBadge(tenant.status)}>
-                          {tenant.status}
-                      </Badge>
+                        {isAdmin ? (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                               <Button variant="outline" className={`w-28 justify-start ${getStatusBadge(tenant.status)}`}>
+                                  <span className="truncate">{tenant.status}</span>
+                                  <ChevronDown className="ml-auto h-4 w-4 shrink-0 opacity-50" />
+                               </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="start">
+                                {(["Paid", "Pending", "Overdue"] as const).map(status => (
+                                    <DropdownMenuItem key={status} onSelect={() => handleStatusChange(tenant, status)}>
+                                        <span className="flex items-center justify-between w-full">
+                                            {status}
+                                            {tenant.status === status && <Check className="h-4 w-4" />}
+                                        </span>
+                                    </DropdownMenuItem>
+                                ))}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        ) : (
+                          <Badge className={getStatusBadge(tenant.status)}>
+                            {tenant.status}
+                          </Badge>
+                        )}
                       </TableCell>
                       <TableCell>
                       <DropdownMenu>
