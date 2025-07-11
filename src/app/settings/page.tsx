@@ -11,11 +11,11 @@ import { useSettings } from "@/context/settings-context"
 import { usePathname } from "next/navigation"
 import { useAuth } from "@/context/auth-context"
 import { Button } from "@/components/ui/button"
-import { User, LogOut, KeyRound } from "lucide-react"
+import { User, LogOut, KeyRound, MapPin, Trash2 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useToast } from "@/hooks/use-toast"
 import { LoginDialog } from "@/components/login-dialog"
-import { AppHeader } from "@/components/app-header"
+
 
 export default function SettingsPage() {
   const { settings, setSettings } = useSettings();
@@ -27,6 +27,9 @@ export default function SettingsPage() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoginOpen, setIsLoginOpen] = React.useState(false);
+
+  const [newBankName, setNewBankName] = useState('');
+  const [newAccountNumber, setNewAccountNumber] = useState('');
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -56,7 +59,7 @@ export default function SettingsPage() {
       return;
     }
 
-    const { error } = await changePassword(oldPassword, newPassword);
+    const { error } = await changePassword(newPassword);
 
     if (error) {
       toast({ title: "Password Change Failed", description: error, variant: "destructive" });
@@ -68,10 +71,33 @@ export default function SettingsPage() {
     }
   };
 
+  const handleAddBankAccount = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newBankName || !newAccountNumber) {
+        toast({ title: "Error", description: "Please fill both bank name and account number.", variant: "destructive" });
+        return;
+    }
+    setSettings(prev => ({
+        ...prev,
+        bankAccounts: [...prev.bankAccounts, { name: newBankName, accountNumber: newAccountNumber }]
+    }));
+    setNewBankName('');
+    setNewAccountNumber('');
+    toast({ title: "Bank Account Added", description: "The new account has been saved." });
+  };
+  
+  const handleDeleteBankAccount = (index: number) => {
+      setSettings(prev => ({
+          ...prev,
+          bankAccounts: prev.bankAccounts.filter((_, i) => i !== index)
+      }));
+      toast({ title: "Bank Account Removed", variant: "destructive" });
+  };
+
   return (
      <div className="flex min-h-screen w-full flex-col">
        <header className="sticky top-0 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6 z-50">
-        <nav className="flex-1 flex items-center gap-5 text-sm font-medium">
+        <nav className="hidden flex-col gap-6 text-lg font-medium md:flex md:flex-row md:items-center md:gap-5 md:text-sm lg:gap-6">
           <Link
             href="#"
             className="flex items-center gap-2 text-lg font-semibold md:text-base"
@@ -92,29 +118,37 @@ export default function SettingsPage() {
             {settings.page_dashboard.nav_settings}
           </Link>
         </nav>
-        {user ? (
-           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="secondary" size="icon" className="rounded-full">
-                <User className="h-5 w-5" />
-                <span className="sr-only">{settings.page_dashboard.user_menu_tooltip}</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>{user.email}</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={signOut}>
-                <LogOut className="mr-2 h-4 w-4" />
-                <span>{settings.page_dashboard.user_menu_logout}</span>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        ) : (
-          <Button onClick={() => setIsLoginOpen(true)}>{settings.page_dashboard.signin_button}</Button>
-        )}
+        <div className="flex-1 text-center">
+            <h1 className="text-lg font-bold tracking-tight text-primary">{settings.houseName}</h1>
+            <div className="flex items-center justify-center gap-2 mt-1 text-xs text-muted-foreground">
+                <MapPin className="h-3 w-3" />
+                <p>{settings.houseAddress}</p>
+            </div>
+        </div>
+        <div>
+            {user ? (
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                <Button variant="secondary" size="icon" className="rounded-full">
+                    <User className="h-5 w-5" />
+                    <span className="sr-only">{settings.page_dashboard.user_menu_tooltip}</span>
+                </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                <DropdownMenuLabel>{user.email}</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={signOut}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    <span>{settings.page_dashboard.user_menu_logout}</span>
+                </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+            ) : (
+            <Button onClick={() => setIsLoginOpen(true)}>{settings.page_dashboard.signin_button}</Button>
+            )}
+        </div>
       </header>
        <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-          <AppHeader />
           <div className="mx-auto grid w-full max-w-6xl gap-2">
             <h1 className="text-3xl font-semibold">{settings.page_settings.title}</h1>
           </div>
@@ -192,7 +226,40 @@ export default function SettingsPage() {
                   </CardContent>
               </Card>
 
-              {isAdmin && user?.id === 'super-admin-id' && (
+              <Card className="group-disabled:opacity-50">
+                <CardHeader>
+                    <CardTitle>{settings.page_settings.bank_account_settings.title}</CardTitle>
+                    <CardDescription>{settings.page_settings.bank_account_settings.description}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="space-y-4">
+                        {settings.bankAccounts.map((account, index) => (
+                            <div key={index} className="flex items-center justify-between p-2 bg-secondary rounded-md">
+                                <div>
+                                    <p className="font-medium">{account.name}</p>
+                                    <p className="text-sm text-muted-foreground">{account.accountNumber}</p>
+                                </div>
+                                <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDeleteBankAccount(index)}>
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        ))}
+                    </div>
+                    <form onSubmit={handleAddBankAccount} className="mt-6 flex items-end gap-2">
+                        <div className="flex-grow space-y-2">
+                            <Label htmlFor="newBankName">{settings.page_settings.bank_account_settings.bank_name_label}</Label>
+                            <Input id="newBankName" value={newBankName} onChange={e => setNewBankName(e.target.value)} placeholder="e.g., Central Bank" />
+                        </div>
+                        <div className="flex-grow space-y-2">
+                            <Label htmlFor="newAccountNumber">{settings.page_settings.bank_account_settings.account_number_label}</Label>
+                            <Input id="newAccountNumber" value={newAccountNumber} onChange={e => setNewAccountNumber(e.target.value)} placeholder="e.g., 123-456-789" />
+                        </div>
+                        <Button type="submit">{settings.page_settings.bank_account_settings.add_button}</Button>
+                    </form>
+                </CardContent>
+              </Card>
+
+              {user && (
               <Card>
                 <CardHeader>
                   <CardTitle>{settings.page_settings.security_settings.title}</CardTitle>
@@ -200,10 +267,6 @@ export default function SettingsPage() {
                 </CardHeader>
                 <CardContent>
                   <form onSubmit={handlePasswordChange} className="space-y-4 max-w-sm">
-                    <div className="space-y-2">
-                      <Label htmlFor="oldPassword">{settings.page_settings.security_settings.old_password_label}</Label>
-                      <Input id="oldPassword" type="password" value={oldPassword} onChange={(e) => setOldPassword(e.target.value)} required />
-                    </div>
                     <div className="space-y-2">
                       <Label htmlFor="newPassword">{settings.page_settings.security_settings.new_password_label}</Label>
                       <Input id="newPassword" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required />
