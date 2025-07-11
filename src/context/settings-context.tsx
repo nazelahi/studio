@@ -43,7 +43,16 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         try {
             const item = window.localStorage.getItem('appSettings');
             if (item) {
-                setSettings(JSON.parse(item));
+                const storedSettings = JSON.parse(item);
+                // Ensure all keys are present, falling back to default
+                setSettings({
+                    ...defaultSettings,
+                    ...storedSettings,
+                    tabNames: {
+                        ...defaultSettings.tabNames,
+                        ...storedSettings.tabNames,
+                    }
+                });
             }
         } catch (error) {
             console.error("Failed to parse settings from localStorage", error);
