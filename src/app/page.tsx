@@ -5,19 +5,10 @@ import { useSettings } from "@/context/settings-context"
 import { usePathname } from "next/navigation"
 import { Logo } from "@/components/icons"
 import DashboardTabs from "@/components/dashboard-tabs"
-import { useAuth } from "@/context/auth-context"
-import { Button } from "@/components/ui/button"
-import { LogOut } from "lucide-react"
 
 export default function HomePage() {
   const { settings } = useSettings();
   const pathname = usePathname();
-  const { user, signOut } = useAuth();
-
-
-  if (!user) {
-    return null; // or a loading spinner
-  }
 
   return (
     <div className="flex min-h-screen w-full flex-col">
@@ -43,13 +34,6 @@ export default function HomePage() {
             Settings
           </Link>
         </nav>
-        <div className="flex items-center gap-4">
-            <span className="text-sm text-muted-foreground hidden sm:inline-block">{user.email}</span>
-            <Button variant="outline" size="sm" onClick={signOut}>
-                <LogOut className="h-4 w-4 mr-2" />
-                Sign Out
-            </Button>
-        </div>
       </header>
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         <DashboardTabs />

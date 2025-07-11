@@ -7,14 +7,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Logo } from "@/components/icons"
 import { useSettings } from "@/context/settings-context"
 import { usePathname } from "next/navigation"
-import { useAuth } from "@/context/auth-context"
-import { Button } from "@/components/ui/button"
-import { LogOut } from "lucide-react"
 
 export default function SettingsPage() {
   const { settings, setSettings } = useSettings();
   const pathname = usePathname();
-  const { user, signOut } = useAuth();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -31,10 +27,6 @@ export default function SettingsPage() {
         setSettings(prev => ({ ...prev, [name]: value }));
     }
   };
-  
-  if (!user) {
-    return null; // or a loading spinner
-  }
 
   return (
      <div className="flex min-h-screen w-full flex-col">
@@ -60,13 +52,6 @@ export default function SettingsPage() {
             Settings
           </Link>
         </nav>
-        <div className="flex items-center gap-4">
-            <span className="text-sm text-muted-foreground hidden sm:inline-block">{user.email}</span>
-            <Button variant="outline" size="sm" onClick={signOut}>
-                <LogOut className="h-4 w-4 mr-2" />
-                Sign Out
-            </Button>
-        </div>
       </header>
        <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
           <div className="mx-auto grid w-full max-w-6xl gap-2">
