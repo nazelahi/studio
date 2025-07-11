@@ -271,7 +271,7 @@ export function TenantsTab() {
                                                 </Avatar>
                                                 <div>
                                                     <div className="font-medium">{tenant.name}</div>
-                                                    <div className="text-xs text-muted-foreground">{tenant.property} &middot; ${tenant.rent}</div>
+                                                    <div className="text-xs text-muted-foreground">{tenant.property} &middot; ৳{tenant.rent}</div>
                                                 </div>
                                             </div>
                                             <Button variant="ghost" size="sm" className="h-auto px-2 py-1 text-xs">
@@ -401,7 +401,7 @@ export function TenantsTab() {
                           </div>
                       </TableCell>
                       <TableCell className="hidden md:table-cell">{tenant.property}</TableCell>
-                      <TableCell className="hidden md:table-cell">${tenant.rent.toFixed(2)}</TableCell>
+                      <TableCell className="hidden md:table-cell">৳{tenant.rent.toFixed(2)}</TableCell>
                       <TableCell>
                         {isAdmin ? (
                           <DropdownMenu>
@@ -478,5 +478,3 @@ export function TenantsTab() {
     </>
   );
 }
-
-    

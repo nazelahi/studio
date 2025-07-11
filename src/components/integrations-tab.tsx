@@ -131,8 +131,8 @@ export function IntegrationsTab() {
               <Label htmlFor="reminder-template">Reminder Message Template</Label>
               <Textarea
                 id="reminder-template"
-                placeholder="e.g., Hi {tenantName}, a friendly reminder that your rent of ${rentAmount} for {property} is due on {dueDate}."
-                defaultValue="Hi {tenantName}, just a friendly reminder that your rent of ${rentAmount} for your unit at {property} is due on {dueDate}. Thank you!"
+                placeholder="e.g., Hi {tenantName}, a friendly reminder that your rent of ৳{rentAmount} for {property} is due on {dueDate}."
+                defaultValue="Hi {tenantName}, just a friendly reminder that your rent of ৳{rentAmount} for your unit at {property} is due on {dueDate}. Thank you!"
               />
                <p className="text-xs text-muted-foreground">
                 Use placeholders like {"{tenantName}"}, {"{rentAmount}"}, {"{property}"}, and {"{dueDate}"}.

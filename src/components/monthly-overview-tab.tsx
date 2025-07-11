@@ -599,7 +599,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                                           <div>
                                                               <div className="font-medium">{tenant.name} - <span className="text-muted-foreground">{tenant.property}</span></div>
                                                               <div className="text-xs text-muted-foreground">
-                                                                  Last seen: {months[tenant.lastSeen.month].substring(0,3)} {tenant.lastSeen.year} &middot; {tenant.rent.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 })}
+                                                                  Last seen: {months[tenant.lastSeen.month].substring(0,3)} {tenant.lastSeen.year} &middot; {tenant.rent.toLocaleString('en-US', { style: 'currency', currency: 'BDT', minimumFractionDigits: 0 }).replace('BDT', '৳')}
                                                               </div>
                                                           </div>
                                                       </div>
@@ -624,7 +624,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                           <CardContent className="text-sm space-y-1">
                                               <p><strong>Name:</strong> {selectedHistoricalTenant.name}</p>
                                               <p><strong>Apartment:</strong> {selectedHistoricalTenant.property}</p>
-                                              <p><strong>Rent:</strong> {selectedHistoricalTenant.rent.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</p>
+                                              <p><strong>Rent:</strong> {selectedHistoricalTenant.rent.toLocaleString('en-US', { style: 'currency', currency: 'BDT' }).replace('BDT', '৳')}</p>
                                           </CardContent>
                                       </Card>
                                       )}
@@ -734,7 +734,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                   {entry.status}
                                 </Badge>
                               </TableCell>
-                              <TableCell>${entry.rent.toFixed(2)}</TableCell>
+                              <TableCell>৳{entry.rent.toFixed(2)}</TableCell>
                               <TableCell>
                                 <div className="flex items-center gap-1">
                                   <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => handleViewDetails(entry)}>
@@ -781,7 +781,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                   {filteredTenantsForMonth.length > 0 && (
                      <CardFooter className="bg-secondary p-4 flex justify-between">
                         <div className="font-semibold">Total Rent Collected</div>
-                        <div className="font-bold text-lg text-primary">${totalRentCollected.toFixed(2)}</div>
+                        <div className="font-bold text-lg text-primary">৳{totalRentCollected.toFixed(2)}</div>
                      </CardFooter>
                   )}
                 </Card>
@@ -934,7 +934,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                     <div className="font-medium">{expense.category}</div>
                                     <div className="text-sm text-muted-foreground hidden sm:block">{expense.description}</div>
                                 </TableCell>
-                                <TableCell>${expense.amount.toFixed(2)}</TableCell>
+                                <TableCell>৳{expense.amount.toFixed(2)}</TableCell>
                                 <TableCell>
                                   <Badge className={getExpenseStatusBadge(expense.status)}>
                                     {expense.status}
@@ -977,7 +977,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                         <div className="flex justify-end items-center mt-4 pt-4 border-t">
                           <div className="text-lg font-bold flex items-center gap-2">
                             <DollarSign className="h-5 w-5 text-muted-foreground" />
-                            <span>Total: ${totalExpenses.toFixed(2)}</span>
+                            <span>Total: ৳{totalExpenses.toFixed(2)}</span>
                           </div>
                         </div>
                       </>
@@ -1002,7 +1002,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                         </CardHeader>
                         <CardContent>
                             <div className="text-3xl font-bold" style={{ color: 'hsl(var(--chart-1))' }}>
-                                ${totalRentExpected.toFixed(2)}
+                                ৳{totalRentExpected.toFixed(2)}
                             </div>
                         </CardContent>
                     </Card>
@@ -1013,7 +1013,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                         </CardHeader>
                         <CardContent>
                             <div className="text-3xl font-bold text-destructive">
-                                ${totalExpenses.toFixed(2)}
+                                ৳{totalExpenses.toFixed(2)}
                             </div>
                         </CardContent>
                     </Card>
@@ -1024,7 +1024,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                         </CardHeader>
                         <CardContent>
                             <div className={`text-3xl font-bold ${netResult >= 0 ? 'text-success' : 'text-destructive'}`}>
-                                {netResult >= 0 ? '+' : ''}${netResult.toFixed(2)}
+                                {netResult >= 0 ? '+' : ''}৳{netResult.toFixed(2)}
                             </div>
                         </CardContent>
                     </Card>
@@ -1038,7 +1038,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                         <div className="border-t sm:border-t-0 sm:border-l border-border w-full sm:w-auto h-auto sm:h-12 my-2 sm:my-0"></div>
                         <div className="p-2">
                             <p className="text-sm text-secondary-foreground font-semibold">Available for Deposit</p>
-                            <p className="text-2xl font-bold text-success">${amountForDeposit.toFixed(2)}</p>
+                            <p className="text-2xl font-bold text-success">৳{amountForDeposit.toFixed(2)}</p>
                         </div>
                     </CardContent>
                 </Card>

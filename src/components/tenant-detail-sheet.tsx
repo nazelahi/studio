@@ -168,7 +168,7 @@ export function TenantDetailSheet({
                     </div>
                      <div className="flex items-center gap-3">
                         <DollarSign className="h-4 w-4 text-muted-foreground" />
-                        <span>Monthly Rent: <strong>${tenant.rent.toFixed(2)}</strong></span>
+                        <span>Monthly Rent: <strong>৳{tenant.rent.toFixed(2)}</strong></span>
                     </div>
                     <div className="flex items-center gap-3">
                         <Calendar className="h-4 w-4 text-muted-foreground" />
