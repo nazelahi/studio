@@ -200,9 +200,13 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
       setIsTenantFinderOpen(false);
 
       if(formRef.current) {
-          (formRef.current.elements.namedItem('name') as HTMLInputElement).value = tenant.name;
-          (formRef.current.elements.namedItem('property') as HTMLInputElement).value = tenant.property;
-          (formRef.current.elements.namedItem('amount') as HTMLInputElement).value = tenant.rent.toString();
+          const nameInput = formRef.current.elements.namedItem('name') as HTMLInputElement;
+          const propertyInput = formRef.current.elements.namedItem('property') as HTMLInputElement;
+          const amountInput = formRef.current.elements.namedItem('amount') as HTMLInputElement;
+
+          if (nameInput) nameInput.value = tenant.name;
+          if (propertyInput) propertyInput.value = tenant.property;
+          if (amountInput) amountInput.value = tenant.rent.toString();
       }
   };
 
@@ -229,8 +233,8 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
         paymentDate: formData.get('paymentDate') as string || undefined,
         collectedBy: formData.get('collectedBy') as string,
         status: formData.get('status') as RentEntry['status'],
-        avatar: selectedHistoricalTenant?.avatar,
-        tenantId: selectedHistoricalTenant?.id
+        avatar: selectedHistoricalTenant?.avatar || editingRentEntry?.avatar || 'https://placehold.co/80x80.png',
+        tenantId: selectedHistoricalTenant?.id || editingRentEntry?.tenantId
     };
 
     if(editingRentEntry) {

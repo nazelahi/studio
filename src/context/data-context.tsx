@@ -25,7 +25,7 @@ interface DataContextType extends AppData {
   deleteExpense: (expenseId: string) => Promise<void>;
   deleteMultipleExpenses: (expenseIds: string[]) => Promise<void>;
   addRentEntry: (rentEntry: NewRentEntry, year: number, month: number) => Promise<void>;
-  addRentEntriesBatch: (rentEntries: Omit<NewRentEntry, 'tenantId'>[], year: number, month: number) => Promise<void>;
+  addRentEntriesBatch: (rentEntries: Omit<NewRentEntry, 'tenantId' | 'avatar'>[], year: number, month: number) => Promise<void>;
   updateRentEntry: (rentEntry: RentEntry) => Promise<void>;
   deleteRentEntry: (rentEntryId: string) => Promise<void>;
   deleteMultipleRentEntries: (rentEntryIds: string[]) => Promise<void>;
@@ -206,15 +206,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     const addRentEntry = async (rentEntryData: NewRentEntry, year: number, month: number) => {
         if (!supabase) return;
-        const entriesToBatch = [{...rentEntryData, tenantId: rentEntryData.tenantId || ''}];
-        await addRentEntriesBatch(entriesToBatch, year, month);
+        const entryWithAvatar = { ...rentEntryData, avatar: rentEntryData.avatar || 'https://placehold.co/80x80.png' };
+        await addRentEntriesBatch([entryWithAvatar], year, month);
     };
 
-    const addRentEntriesBatch = async (rentEntriesData: Omit<NewRentEntry, 'tenantId'>[], year: number, month: number) => {
+    const addRentEntriesBatch = async (rentEntriesData: Omit<NewRentEntry, 'tenantId' | 'avatar'>[], year: number, month: number) => {
         if (!supabase) return;
 
         const newEntriesWithDetails = await Promise.all(rentEntriesData.map(async (rentEntryData) => {
-            let tenantInfo = { id: (rentEntryData as any).tenantId, avatar: (rentEntryData as any).avatar };
+            const fullEntryData = rentEntryData as NewRentEntry;
+            let tenantInfo = { id: fullEntryData.tenantId, avatar: fullEntryData.avatar };
 
             if (!tenantInfo.id) {
                 let { data: existingTenant } = await supabase
@@ -232,6 +233,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
                         joinDate: new Date(year, month, 1).toISOString().split('T')[0],
                         avatar: 'https://placehold.co/80x80.png',
                         status: 'Pending',
+                        email: `${rentEntryData.name.replace(/\s+/g, '.').toLowerCase()}@example.com`,
                     };
                     const { data: newTenant, error } = await supabase.from('tenants').insert(newTenantData).select().single();
                     if (error) {
@@ -254,7 +256,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
             };
         }));
         
-        const validNewEntries = newEntriesWithDetails.filter(entry => entry !== null);
+        const validNewEntries = newEntriesWithDetails.filter((entry): entry is RentEntry => entry !== null);
         if(validNewEntries.length > 0) {
             const { error } = await supabase.from('rent_entries').insert(validNewEntries);
             if (error) handleError(error, 'batch adding rent entries');
@@ -278,7 +280,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         if (!supabase || rentEntryIds.length === 0) return;
         const { error } = await supabase.from('rent_entries').delete().in('id', rentEntryIds);
         if (error) handleError(error, 'deleting multiple rent entries');
-    }
+    };
     
     const syncTenantsForMonth = async (year: number, month: number): Promise<number> => {
         if (!supabase) return 0;
