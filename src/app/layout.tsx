@@ -3,6 +3,7 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { SettingsProvider } from '@/context/settings-context';
 import { DataProvider } from '@/context/data-context';
+import { ProtectionProvider } from '@/context/protection-context';
 
 export const metadata: Metadata = {
   title: 'RentFlow',
@@ -23,9 +24,11 @@ export default function RootLayout({
       </head>
       <body className="font-body antialiased">
           <SettingsProvider>
-            <DataProvider>
-              {children}
-            </DataProvider>
+            <ProtectionProvider>
+              <DataProvider>
+                {children}
+              </DataProvider>
+            </ProtectionProvider>
           </SettingsProvider>
         <Toaster />
       </body>
