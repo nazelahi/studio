@@ -58,7 +58,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (session?.user) {
         const userRole = session.user.user_metadata?.role;
-        setIsAdmin(userRole === 'admin');
+        setIsAdmin(userRole === 'admin' || session.user.email === SUPER_ADMIN_EMAIL);
       } else {
         setIsAdmin(false);
       }
@@ -76,7 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
           if (session?.user) {
             const userRole = session.user.user_metadata?.role;
-            setIsAdmin(userRole === 'admin');
+            setIsAdmin(userRole === 'admin' || session.user.email === SUPER_ADMIN_EMAIL);
           } else {
             setIsAdmin(false);
           }
@@ -124,6 +124,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { error: 'Database connection not available.' };
     }
     const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (!error) {
+       router.push('/');
+    }
     return { error: error?.message || null };
   };
 
@@ -157,11 +160,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!loading && !user && !publicRoutes.includes(pathname)) {
-      router.push('/login');
+      // User is not logged in and not on a public page, redirect to login
+      // but only if we are NOT on a public page. For this app, any non-login page is protected.
+      // router.push('/login'); 
+      // We no longer redirect, we just show the read-only view.
+    } else if (!loading && user && pathname === '/login') {
+      // If user is logged in and tries to access login page, redirect to home
+      router.push('/');
     }
   }, [user, loading, pathname, router]);
 
-  if (loading || (!user && !publicRoutes.includes(pathname))) {
+
+  if (loading) {
      return (
         <div className="flex justify-center items-center h-screen w-screen">
           <LoaderCircle className="h-12 w-12 animate-spin text-primary" />
