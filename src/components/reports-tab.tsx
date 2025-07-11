@@ -207,20 +207,20 @@ export function ReportsTab({ year }: { year: number }) {
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid gap-4 md:grid-cols-3">
-                    <Card className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
+                    <Card className="bg-success/10 border-success/20">
                         <CardHeader>
-                            <CardTitle className="text-sm font-medium text-green-800 dark:text-green-300">Total Income</CardTitle>
+                            <CardTitle className="text-sm font-medium text-success-foreground">Total Income</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <p className="text-2xl font-bold text-green-600 dark:text-green-400">{formatCurrency(totalIncome)}</p>
+                            <p className="text-2xl font-bold text-success">{formatCurrency(totalIncome)}</p>
                         </CardContent>
                     </Card>
-                    <Card className="bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800">
+                    <Card className="bg-destructive/10 border-destructive/20">
                         <CardHeader>
-                            <CardTitle className="text-sm font-medium text-red-800 dark:text-red-300">Total Expenses</CardTitle>
+                            <CardTitle className="text-sm font-medium text-destructive-foreground">Total Expenses</CardTitle>
                         </CardHeader>
                         <CardContent>
-                            <p className="text-2xl font-bold text-red-600 dark:text-red-400">{formatCurrency(totalExpenses)}</p>
+                            <p className="text-2xl font-bold text-destructive">{formatCurrency(totalExpenses)}</p>
                         </CardContent>
                     </Card>
                     <Card>
@@ -273,7 +273,7 @@ export function ReportsTab({ year }: { year: number }) {
                                             <TableCell>
                                                 <Badge variant={tx.type === 'income' ? 'secondary' : 'outline'}>{tx.type}</Badge>
                                             </TableCell>
-                                            <TableCell className={`text-right font-medium ${tx.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
+                                            <TableCell className={`text-right font-medium ${tx.type === 'income' ? 'text-success' : 'text-destructive'}`}>
                                                 {formatCurrency(tx.type === 'income' ? tx.rent : tx.amount)}
                                             </TableCell>
                                         </TableRow>
