@@ -6,12 +6,18 @@ import type { Session, User } from '@supabase/supabase-js';
 import { useRouter, usePathname } from 'next/navigation';
 import { LoaderCircle } from 'lucide-react';
 
+const SUPER_ADMIN_EMAIL = 'admin@gmail.com';
+const SUPER_ADMIN_PASSWORD_KEY = 'superAdminPassword';
+const DEFAULT_SUPER_ADMIN_PASSWORD = '1234';
+
+
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   isAdmin: boolean;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
+  changePassword: (oldPass: string, newPass: string) => Promise<{ error: string | null }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -28,6 +34,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const getSession = async () => {
+      // Initialize default super admin password if not set
+      if (typeof window !== 'undefined' && !localStorage.getItem(SUPER_ADMIN_PASSWORD_KEY)) {
+        localStorage.setItem(SUPER_ADMIN_PASSWORD_KEY, DEFAULT_SUPER_ADMIN_PASSWORD);
+      }
+
       if (!supabase) {
         setLoading(false);
         return;
@@ -77,12 +88,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const getSuperAdminPassword = () => {
+    if (typeof window === 'undefined') return DEFAULT_SUPER_ADMIN_PASSWORD;
+    return localStorage.getItem(SUPER_ADMIN_PASSWORD_KEY) || DEFAULT_SUPER_ADMIN_PASSWORD;
+  };
+
   const signIn = async (email: string, password: string) => {
-    // Super admin check
-    if (email === 'admin@gmail.com' && password === '1234') {
+    if (email === SUPER_ADMIN_EMAIL && password === getSuperAdminPassword()) {
       const mockUser = {
         id: 'super-admin-id',
-        email: 'admin@gmail.com',
+        email: SUPER_ADMIN_EMAIL,
         user_metadata: { role: 'admin' },
         app_metadata: {},
         aud: 'authenticated',
@@ -104,7 +119,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { error: null };
     }
     
-    // Regular Supabase sign-in
     if (!supabase) {
       return { error: 'Database connection not available.' };
     }
@@ -113,7 +127,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
-     // If it's the super admin, just clear the state
     if (user?.id === 'super-admin-id') {
       setUser(null);
       setSession(null);
@@ -128,9 +141,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     router.push('/');
   };
 
-  const value = { user, session, isAdmin, signIn, signOut };
+  const changePassword = async (oldPass: string, newPass: string) => {
+    if (user?.email !== SUPER_ADMIN_EMAIL) {
+      return { error: "This function is only for the super admin." };
+    }
+    if (oldPass === getSuperAdminPassword()) {
+      localStorage.setItem(SUPER_ADMIN_PASSWORD_KEY, newPass);
+      return { error: null };
+    }
+    return { error: "Incorrect old password." };
+  };
 
-  // Handle loading and routing
+  const value = { user, session, isAdmin, signIn, signOut, changePassword };
+
   if (loading) {
      return (
         <div className="flex justify-center items-center h-screen w-screen">
@@ -138,18 +161,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         </div>
       );
   }
-
-  // If we are on a public route, we don't need to check for a user
-  if (publicRoutes.includes(pathname)) {
-    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-  }
-
-  // If there's no user and we're not on a public route, redirect to login
-  if (!user) {
+  
+  if (!user && !publicRoutes.includes(pathname)) {
      if (typeof window !== 'undefined') {
         router.push('/login');
      }
-     // Render a loader while redirecting
      return (
         <div className="flex justify-center items-center h-screen w-screen">
           <LoaderCircle className="h-12 w-12 animate-spin text-primary" />

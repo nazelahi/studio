@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import React, { useState } from "react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -9,16 +10,21 @@ import { useSettings } from "@/context/settings-context"
 import { usePathname } from "next/navigation"
 import { useAuth } from "@/context/auth-context"
 import { Button } from "@/components/ui/button"
-import { User, LogOut } from "lucide-react"
+import { User, LogOut, KeyRound } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useRouter } from "next/navigation"
+import { useToast } from "@/hooks/use-toast"
 
 export default function SettingsPage() {
   const { settings, setSettings } = useSettings();
   const pathname = usePathname();
-  const { user, signOut, isAdmin } = useAuth();
+  const { user, signOut, isAdmin, changePassword } = useAuth();
   const router = useRouter();
+  const { toast } = useToast();
 
+  const [oldPassword, setOldPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -33,6 +39,29 @@ export default function SettingsPage() {
         }));
     } else {
         setSettings(prev => ({ ...prev, [name]: value }));
+    }
+  };
+
+  const handlePasswordChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword !== confirmPassword) {
+      toast({ title: "Error", description: "New passwords do not match.", variant: "destructive" });
+      return;
+    }
+    if (newPassword.length < 4) {
+      toast({ title: "Error", description: "Password must be at least 4 characters long.", variant: "destructive" });
+      return;
+    }
+
+    const { error } = await changePassword(oldPassword, newPassword);
+
+    if (error) {
+      toast({ title: "Password Change Failed", description: error, variant: "destructive" });
+    } else {
+      toast({ title: "Success", description: "Your password has been changed." });
+      setOldPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
     }
   };
 
@@ -125,6 +154,36 @@ export default function SettingsPage() {
                   </CardContent>
                 </fieldset>
             </Card>
+
+            {isAdmin && user?.id === 'super-admin-id' && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Security</CardTitle>
+                  <CardDescription>Change your super admin password.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <form onSubmit={handlePasswordChange} className="space-y-4 max-w-sm">
+                    <div className="space-y-2">
+                      <Label htmlFor="oldPassword">Old Password</Label>
+                      <Input id="oldPassword" type="password" value={oldPassword} onChange={(e) => setOldPassword(e.target.value)} required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="newPassword">New Password</Label>
+                      <Input id="newPassword" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                      <Input id="confirmPassword" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
+                    </div>
+                    <Button type="submit">
+                      <KeyRound className="mr-2 h-4 w-4" />
+                      Change Password
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
+            )}
+
           </div>
            <footer className="text-center text-sm text-muted-foreground mt-auto pt-4">
             {settings.footerName}
