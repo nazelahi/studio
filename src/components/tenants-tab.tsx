@@ -2,7 +2,7 @@
 "use client"
 
 import * as React from "react"
-import { MoreHorizontal, PlusCircle, Image as ImageIcon, Mail, Phone, Home, ChevronDown, Copy, X, Search, FileText, Check } from "lucide-react"
+import { MoreHorizontal, PlusCircle, Image as ImageIcon, Mail, Phone, Home, ChevronDown, Copy, X, Search, FileText, Check, UserPlus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog"
@@ -35,6 +35,17 @@ export function TenantsTab() {
   
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
   const [selectedTenantForSheet, setSelectedTenantForSheet] = React.useState<Tenant | null>(null);
+
+  const [searchTerm, setSearchTerm] = React.useState("");
+
+  const filteredTenants = React.useMemo(() => {
+    if (!searchTerm) return tenants;
+    return tenants.filter(tenant => 
+      tenant.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      tenant.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      tenant.property.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [tenants, searchTerm]);
 
 
   const allTenantsForFinder = React.useMemo(() => {
@@ -191,64 +202,49 @@ export function TenantsTab() {
   return (
     <>
       <Card className="mt-4">
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle>Tenants</CardTitle>
-            <CardDescription>
-              Manage your tenants and their information.
-            </CardDescription>
-          </div>
-          {isAdmin && 
-            <Dialog open={open} onOpenChange={handleOpenChange}>
-              <DialogTrigger asChild>
-                <Button size="sm" className="gap-2" onClick={() => setEditingTenant(null)}>
-                  <PlusCircle className="h-4 w-4" />
-                  Add Tenant
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-[600px]">
-                <DialogHeader>
-                  <DialogTitle>{editingTenant ? 'Edit Tenant' : 'Add New Tenant'}</DialogTitle>
-                  <DialogDescription>
-                    Fill in the form below or find a saved tenant to pre-fill the fields.
-                  </DialogDescription>
-                </DialogHeader>
-                <form ref={formRef} onSubmit={handleSaveTenant} className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4">
-                  <div className="md:col-span-2 space-y-4">
-                      <div className="flex flex-col items-center gap-4">
-                        <Avatar className="h-24 w-24">
-                            <AvatarImage src={previewImage ?? "https://placehold.co/96x96.png"} alt="Tenant Avatar" data-ai-hint="person avatar"/>
-                            <AvatarFallback><ImageIcon className="text-muted-foreground h-12 w-12"/></AvatarFallback>
-                        </Avatar>
-                        <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
-                            Upload Image
-                        </Button>
-                        <Input
-                            ref={fileInputRef}
-                            type="file"
-                            className="hidden"
-                            accept="image/*"
-                            onChange={handleImageUpload}
-                        />
-                      </div>
+        <CardHeader>
+          <CardTitle>Tenant Management</CardTitle>
+          <CardDescription>
+            View, add, edit, and manage all of your tenant information in one place.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between gap-4 mb-6">
+              <div className="relative w-full max-w-sm">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input 
+                  placeholder="Search by name, email, or property..." 
+                  className="pl-9"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+               {isAdmin && 
+                <Dialog open={open} onOpenChange={handleOpenChange}>
+                  <DialogTrigger asChild>
+                    <Button onClick={() => setEditingTenant(null)}>
+                      <PlusCircle className="mr-2 h-4 w-4" />
+                      Add Tenant
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[600px]">
+                    <DialogHeader>
+                      <DialogTitle>{editingTenant ? 'Edit Tenant' : 'Add New Tenant'}</DialogTitle>
+                      <DialogDescription>
+                        {editingTenant ? "Update the tenant's information below." : "Fill in the form to add a new tenant to your property list."}
+                      </DialogDescription>
+                    </DialogHeader>
+                    <form ref={formRef} onSubmit={handleSaveTenant} className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-6 py-4">
                       
-                      <Card className="bg-secondary/50">
-                        <CardHeader className="pb-2">
-                            <CardTitle className="text-base flex justify-between items-center">
-                                Quick Find Tenant
-                                <Badge variant="secondary">{allTenantsForFinder.length} saved</Badge>
-                            </CardTitle>
-                            <CardDescription className="text-xs">
-                                Find an existing tenant to quickly copy their information into empty fields.
-                            </CardDescription>
-                        </CardHeader>
-                        <CardContent>
-                          <Popover open={isFinderOpen} onOpenChange={setIsFinderOpen}>
+                      {!editingTenant && (
+                        <div className="md:col-span-2">
+                          <Label>Start with existing data (optional)</Label>
+                           <Popover open={isFinderOpen} onOpenChange={setIsFinderOpen}>
                               <PopoverTrigger asChild>
-                                <Button variant="outline" role="combobox" aria-expanded={isFinderOpen} className="w-full justify-between">
-                                  <span className="flex items-center gap-2">
-                                    <Search className="h-4 w-4 text-muted-foreground" />
-                                    Find and copy tenant info...
+                                <Button variant="outline" role="combobox" aria-expanded={isFinderOpen} className="w-full justify-between mt-1">
+                                  <span className="flex items-center gap-2 text-muted-foreground">
+                                    <UserPlus className="h-4 w-4" />
+                                    Copy info from an existing tenant...
                                   </span>
                                   <ChevronDown className="h-4 w-4 shrink-0 opacity-50"/>
                                 </Button>
@@ -276,7 +272,7 @@ export function TenantsTab() {
                                                     <div className="text-xs text-muted-foreground">{tenant.property} &middot; ${tenant.rent}</div>
                                                 </div>
                                             </div>
-                                            <Button variant="ghost" size="sm" className="h-auto px-2 py-1">
+                                            <Button variant="ghost" size="sm" className="h-auto px-2 py-1 text-xs">
                                                 <Copy className="h-3 w-3 mr-1"/>
                                                 Copy
                                             </Button>
@@ -287,57 +283,75 @@ export function TenantsTab() {
                                 </Command>
                               </PopoverContent>
                             </Popover>
-                        </CardContent>
-                      </Card>
-                  </div>
+                        </div>
+                      )}
 
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Full Name</Label>
-                    <Input id="name" name="name" defaultValue={editingTenant?.name} required />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email Address</Label>
-                    <Input id="email" name="email" type="email" defaultValue={editingTenant?.email} required />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Phone Number</Label>
-                    <Input id="phone" name="phone" type="tel" defaultValue={editingTenant?.phone} />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="property">Apartment / Unit</Label>
-                    <Input id="property" name="property" defaultValue={editingTenant?.property} required />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="rent">Rent Amount</Label>
-                    <Input
-                      id="rent"
-                      name="rent"
-                      type="number"
-                      defaultValue={editingTenant?.rent}
-                      required
-                      className="[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="joinDate">Join Date</Label>
-                    <Input id="joinDate" name="joinDate" type="date" defaultValue={editingTenant?.joinDate} required />
-                  </div>
-                  <div className="space-y-2 md:col-span-2">
-                    <Label htmlFor="notes">Notes</Label>
-                    <Textarea id="notes" name="notes" defaultValue={editingTenant?.notes} placeholder="Any relevant notes about the tenant..."/>
-                  </div>
-                  <DialogFooter className="md:col-span-2">
-                    <DialogClose asChild>
-                      <Button variant="outline">Cancel</Button>
-                    </DialogClose>
-                    <Button type="submit">Save Tenant</Button>
-                  </DialogFooter>
-                </form>
-              </DialogContent>
-            </Dialog>
-          }
-        </CardHeader>
-        <CardContent>
+                      <div className="md:col-span-2 flex flex-col items-center gap-3">
+                        <Avatar className="h-24 w-24 border">
+                            <AvatarImage src={previewImage ?? undefined} alt="Tenant Avatar" data-ai-hint="person avatar"/>
+                            <AvatarFallback><ImageIcon className="text-muted-foreground h-10 w-10"/></AvatarFallback>
+                        </Avatar>
+                        <Button type="button" size="sm" variant="outline" onClick={() => fileInputRef.current?.click()}>
+                            Change Photo
+                        </Button>
+                        <Input
+                            ref={fileInputRef}
+                            name="avatar"
+                            type="file"
+                            className="hidden"
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                        />
+                      </div>
+
+
+                      <div className="space-y-2">
+                        <Label htmlFor="name">Full Name</Label>
+                        <Input id="name" name="name" defaultValue={editingTenant?.name} required />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="email">Email Address</Label>
+                        <Input id="email" name="email" type="email" defaultValue={editingTenant?.email} required />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="phone">Phone Number</Label>
+                        <Input id="phone" name="phone" type="tel" defaultValue={editingTenant?.phone} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="property">Apartment / Unit</Label>
+                        <Input id="property" name="property" defaultValue={editingTenant?.property} required />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="rent">Rent Amount</Label>
+                        <Input
+                          id="rent"
+                          name="rent"
+                          type="number"
+                          defaultValue={editingTenant?.rent}
+                          required
+                          className="[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="joinDate">Join Date</Label>
+                        <Input id="joinDate" name="joinDate" type="date" defaultValue={editingTenant?.joinDate} required />
+                      </div>
+                      <div className="space-y-2 md:col-span-2">
+                        <Label htmlFor="notes">Notes</Label>
+                        <Textarea id="notes" name="notes" defaultValue={editingTenant?.notes} placeholder="Any relevant notes about the tenant..."/>
+                      </div>
+                      <DialogFooter className="md:col-span-2 mt-4">
+                        <DialogClose asChild>
+                          <Button variant="outline">Cancel</Button>
+                        </DialogClose>
+                        <Button type="submit">Save Tenant</Button>
+                      </DialogFooter>
+                    </form>
+                  </DialogContent>
+                </Dialog>
+              }
+          </div>
+
           {loading ? <TableSkeleton /> : (
               <Table>
               <TableHeader>
@@ -353,7 +367,7 @@ export function TenantsTab() {
                   </TableRow>
               </TableHeader>
               <TableBody>
-                  {tenants.map((tenant) => (
+                  {filteredTenants.length > 0 ? filteredTenants.map((tenant) => (
                   <TableRow key={tenant.id}>
                       <TableCell>
                       <div className="flex items-center gap-3">
@@ -440,7 +454,13 @@ export function TenantsTab() {
                       </DropdownMenu>
                       </TableCell>
                   </TableRow>
-                  ))}
+                  )) : (
+                    <TableRow>
+                        <TableCell colSpan={6} className="text-center h-24">
+                            No tenants found.
+                        </TableCell>
+                    </TableRow>
+                  )}
               </TableBody>
               </Table>
           )}
@@ -456,3 +476,5 @@ export function TenantsTab() {
     </>
   );
 }
+
+    
