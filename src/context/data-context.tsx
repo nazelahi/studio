@@ -3,7 +3,7 @@
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import type { Tenant, Expense, RentEntry } from '@/types';
-import { parseISO, startOfMonth, isFuture, getMonth, getYear } from 'date-fns';
+import { parseISO, getMonth, getYear } from 'date-fns';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 
@@ -20,9 +20,11 @@ interface DataContextType extends AppData {
   addExpense: (expense: Omit<Expense, 'id'>) => Promise<void>;
   updateExpense: (expense: Expense) => Promise<void>;
   deleteExpense: (expenseId: string) => Promise<void>;
+  deleteMultipleExpenses: (expenseIds: string[]) => Promise<void>;
   addRentEntry: (rentEntry: Omit<RentEntry, 'id' | 'tenantId' | 'avatar' | 'year' | 'month' | 'dueDate'>, year: number, month: number) => Promise<void>;
   updateRentEntry: (rentEntry: RentEntry) => Promise<void>;
   deleteRentEntry: (rentEntryId: string) => Promise<void>;
+  deleteMultipleRentEntries: (rentEntryIds: string[]) => Promise<void>;
   syncTenantsForMonth: (year: number, month: number) => Promise<number>;
   loading: boolean;
 }
@@ -190,6 +192,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
         if (error) handleError(error, 'deleting expense');
     };
 
+    const deleteMultipleExpenses = async (expenseIds: string[]) => {
+        if (!supabase || expenseIds.length === 0) return;
+        const { error } = await supabase.from('expenses').delete().in('id', expenseIds);
+        if (error) handleError(error, 'deleting multiple expenses');
+    }
+
     const addRentEntry = async (rentEntryData: Omit<RentEntry, 'id' | 'tenantId' | 'avatar' | 'year' | 'month' | 'dueDate' | 'created_at'>, year: number, month: number) => {
         if (!supabase) return;
 
@@ -236,6 +244,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
         const { error } = await supabase.from('rent_entries').delete().eq('id', rentEntryId);
         if (error) handleError(error, 'deleting rent entry');
     };
+
+    const deleteMultipleRentEntries = async (rentEntryIds: string[]) => {
+        if (!supabase || rentEntryIds.length === 0) return;
+        const { error } = await supabase.from('rent_entries').delete().in('id', rentEntryIds);
+        if (error) handleError(error, 'deleting multiple rent entries');
+    }
     
     const syncTenantsForMonth = async (year: number, month: number): Promise<number> => {
         if (!supabase) return 0;
@@ -266,8 +280,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
         
         const filteredTenantsToSync = tenantsToSync.filter(tenant => {
              if (!tenant.joinDate) return false;
-            const joinDate = parseISO(tenant.joinDate);
-            return joinDate <= selectedMonthStartDate;
+            try {
+                const joinDate = parseISO(tenant.joinDate);
+                return joinDate <= selectedMonthStartDate;
+            } catch {
+                return false;
+            }
         });
         
         if (filteredTenantsToSync.length === 0) {
@@ -297,7 +315,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     };
 
     return (
-        <DataContext.Provider value={{ ...data, addTenant, updateTenant, deleteTenant, addExpense, updateExpense, deleteExpense, addRentEntry, updateRentEntry, deleteRentEntry, syncTenantsForMonth, loading }}>
+        <DataContext.Provider value={{ ...data, addTenant, updateTenant, deleteTenant, addExpense, updateExpense, deleteExpense, deleteMultipleExpenses, addRentEntry, updateRentEntry, deleteRentEntry, deleteMultipleRentEntries, syncTenantsForMonth, loading }}>
             {children}
         </DataContext.Provider>
     );

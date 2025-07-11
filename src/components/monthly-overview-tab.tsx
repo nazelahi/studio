@@ -15,13 +15,14 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
-import { format, parseISO, startOfMonth } from "date-fns"
+import { format, parseISO } from "date-fns"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "./ui/alert-dialog"
 import { useData } from "@/context/data-context"
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "./ui/command"
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
 import { Skeleton } from "./ui/skeleton"
+import { Checkbox } from "./ui/checkbox"
 
 type HistoricalTenant = {
     uniqueId: string;
@@ -70,7 +71,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
   const [selectedMonth, setSelectedMonth] = React.useState(months[currentMonthIndex]);
   const { toast } = useToast();
 
-  const { tenants, expenses, rentData, addRentEntry, updateRentEntry, deleteRentEntry, addExpense, updateExpense, deleteExpense, syncTenantsForMonth, loading } = useData();
+  const { tenants, expenses, rentData, addRentEntry, updateRentEntry, deleteRentEntry, addExpense, updateExpense, deleteExpense, syncTenantsForMonth, loading, deleteMultipleRentEntries, deleteMultipleExpenses } = useData();
 
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = React.useState(false);
   const [editingExpense, setEditingExpense] = React.useState<Expense | null>(null);
@@ -81,12 +82,34 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
   const [isTenantFinderOpen, setIsTenantFinderOpen] = React.useState(false);
   const [selectedHistoricalTenant, setSelectedHistoricalTenant] = React.useState<HistoricalTenant | null>(null);
   
+  const [selectedRentEntryIds, setSelectedRentEntryIds] = React.useState<string[]>([]);
+  const [selectedExpenseIds, setSelectedExpenseIds] = React.useState<string[]>([]);
+
   const formRef = React.useRef<HTMLFormElement>(null);
 
 
   const filteredTenantsForMonth = React.useMemo(() => {
     return rentData.filter(entry => entry.month === months.indexOf(selectedMonth) && entry.year === year);
   }, [rentData, selectedMonth, year]);
+
+  const filteredExpenses = React.useMemo(() => {
+    return expenses.filter(expense => {
+        if (!expense.date) return false;
+        try {
+            const expenseDate = parseISO(expense.date);
+            return expenseDate.getMonth() === months.indexOf(selectedMonth) && expenseDate.getFullYear() === year;
+        } catch {
+            return false;
+        }
+      });
+  }, [expenses, selectedMonth, year]);
+  
+  // Clear selections when month or year changes
+  React.useEffect(() => {
+    setSelectedRentEntryIds([]);
+    setSelectedExpenseIds([]);
+  }, [selectedMonth, year]);
+
 
   const historicalTenants = React.useMemo(() => {
     const allTenantsMap = new Map<string, HistoricalTenant>();
@@ -221,6 +244,16 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
             });
         }
     };
+    
+  const handleMassDeleteRentEntries = async () => {
+    await deleteMultipleRentEntries(selectedRentEntryIds);
+    toast({
+      title: `${selectedRentEntryIds.length} Rent Entries Deleted`,
+      description: "The selected entries have been permanently removed.",
+      variant: "destructive"
+    });
+    setSelectedRentEntryIds([]);
+  }
 
   // Expense Handlers
   const handleSaveExpense = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -263,6 +296,16 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
     }
     setIsExpenseDialogOpen(isOpen);
   };
+  
+  const handleMassDeleteExpenses = async () => {
+    await deleteMultipleExpenses(selectedExpenseIds);
+    toast({
+      title: `${selectedExpenseIds.length} Expenses Deleted`,
+      description: "The selected expenses have been permanently removed.",
+      variant: "destructive"
+    });
+    setSelectedExpenseIds([]);
+  }
 
   const totalRentCollected = filteredTenantsForMonth
     .filter(t => t.status === 'Paid')
@@ -270,16 +313,6 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
   
   const totalRentExpected = filteredTenantsForMonth.reduce((acc, t) => acc + t.rent, 0);
   const collectionRate = totalRentExpected > 0 ? (totalRentCollected / totalRentExpected) * 100 : 0;
-
-  const filteredExpenses = expenses.filter(expense => {
-    if (!expense.date) return false;
-    try {
-        const expenseDate = parseISO(expense.date);
-        return expenseDate.getMonth() === months.indexOf(selectedMonth) && expenseDate.getFullYear() === year;
-    } catch {
-        return false;
-    }
-  });
 
   const totalExpenses = filteredExpenses.reduce((acc, expense) => acc + expense.amount, 0);
   const netResult = totalRentCollected - totalExpenses;
@@ -347,6 +380,28 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                         <CardDescription>Rent payment status for {month} {year}.</CardDescription>
                     </div>
                     <div className="flex items-center gap-2">
+                        {selectedRentEntryIds.length > 0 && (
+                           <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button size="sm" variant="destructive" className="gap-2">
+                                <Trash2 className="h-4 w-4" />
+                                Delete Selected ({selectedRentEntryIds.length})
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This action cannot be undone. This will permanently delete {selectedRentEntryIds.length} selected rent entries.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleMassDeleteRentEntries}>Delete</AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
                         <Button size="sm" variant="outline" className="gap-2" onClick={handleSyncTenants}>
                             <RefreshCw className="h-4 w-4" />
                             Sync Tenants
@@ -442,7 +497,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="paymentDate">Date</Label>
-                                        <Input id="paymentDate" name="paymentDate" type="date" defaultValue={editingRentEntry?.paymentDate || ''} />
+                                        <Input id="paymentDate" name="paymentDate" type="date" defaultValue={editingRentEntry?.paymentDate ? format(parseISO(editingRentEntry.paymentDate), 'yyyy-MM-dd') : ''} />
                                     </div>
                                     <div className="space-y-2">
                                         <Label htmlFor="collectedBy">Collect by</Label>
@@ -481,6 +536,18 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                       <Table>
                         <TableHeader>
                           <TableRow>
+                            <TableHead className="w-10">
+                                <Checkbox
+                                    checked={selectedRentEntryIds.length === filteredTenantsForMonth.length}
+                                    onCheckedChange={(checked) => {
+                                        if (checked) {
+                                            setSelectedRentEntryIds(filteredTenantsForMonth.map(t => t.id));
+                                        } else {
+                                            setSelectedRentEntryIds([]);
+                                        }
+                                    }}
+                                />
+                            </TableHead>
                             <TableHead>Name</TableHead>
                             <TableHead>Flat</TableHead>
                             <TableHead className="hidden sm:table-cell">Month</TableHead>
@@ -494,7 +561,17 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                         </TableHeader>
                         <TableBody>
                           {filteredTenantsForMonth.map((entry) => (
-                            <TableRow key={entry.id}>
+                            <TableRow key={entry.id} data-state={selectedRentEntryIds.includes(entry.id) && "selected"}>
+                              <TableCell>
+                                  <Checkbox
+                                      checked={selectedRentEntryIds.includes(entry.id)}
+                                      onCheckedChange={(checked) => {
+                                          setSelectedRentEntryIds(prev => 
+                                              checked ? [...prev, entry.id] : prev.filter(id => id !== entry.id)
+                                          );
+                                      }}
+                                  />
+                              </TableCell>
                               <TableCell className="font-medium">{entry.name}</TableCell>
                               <TableCell><Badge variant="outline">{entry.property}</Badge></TableCell>
                               <TableCell className="hidden sm:table-cell">{months[entry.month]}</TableCell>
@@ -559,58 +636,82 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                       <CardTitle>Expenses - {month} {year}</CardTitle>
                       <CardDescription>Property-related expenses for {month} {year}.</CardDescription>
                     </div>
-                     <Dialog open={isExpenseDialogOpen} onOpenChange={handleExpenseOpenChange}>
-                      <DialogTrigger asChild>
-                        <Button size="sm" className="gap-2" onClick={() => setEditingExpense(null)}>
-                          <PlusCircle className="h-4 w-4" />
-                          Add Expense
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>{editingExpense ? 'Edit Expense' : 'Add New Expense'}</DialogTitle>
-                          <DialogDescription>
-                            Fill in the form below to {editingExpense ? 'update the' : 'add a new'} expense.
-                          </DialogDescription>
-                        </DialogHeader>
-                        <form onSubmit={handleSaveExpense} className="grid gap-4 py-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="date">Date</Label>
-                            <Input id="date" name="date" type="date" defaultValue={editingExpense?.date || new Date().toISOString().split('T')[0]} required />
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="category">Category</Label>
-                            <Input id="category" name="category" defaultValue={editingExpense?.category} placeholder="e.g., Maintenance" required />
-                          </div>
-                           <div className="space-y-2">
-                            <Label htmlFor="amount">Amount</Label>
-                            <Input id="amount" name="amount" type="number" step="0.01" defaultValue={editingExpense?.amount} placeholder="0.00" required />
-                          </div>
-                           <div className="space-y-2">
-                            <Label htmlFor="status">Status</Label>
-                            <Select name="status" defaultValue={editingExpense?.status || 'Pending'}>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select status" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="Pending">Pending</SelectItem>
-                                <SelectItem value="Reimbursed">Reimbursed</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="description">Description</Label>
-                            <Textarea id="description" name="description" defaultValue={editingExpense?.description} placeholder="Describe the expense..." />
-                          </div>
-                          <DialogFooter>
-                            <DialogClose asChild>
-                               <Button variant="outline">Cancel</Button>
-                            </DialogClose>
-                            <Button type="submit">Save Expense</Button>
-                          </DialogFooter>
-                        </form>
-                      </DialogContent>
-                    </Dialog>
+                    <div className="flex items-center gap-2">
+                       {selectedExpenseIds.length > 0 && (
+                           <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button size="sm" variant="destructive" className="gap-2">
+                                <Trash2 className="h-4 w-4" />
+                                Delete Selected ({selectedExpenseIds.length})
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This action cannot be undone. This will permanently delete {selectedExpenseIds.length} selected expenses.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleMassDeleteExpenses}>Delete</AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        )}
+                         <Dialog open={isExpenseDialogOpen} onOpenChange={handleExpenseOpenChange}>
+                          <DialogTrigger asChild>
+                            <Button size="sm" className="gap-2" onClick={() => setEditingExpense(null)}>
+                              <PlusCircle className="h-4 w-4" />
+                              Add Expense
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>{editingExpense ? 'Edit Expense' : 'Add New Expense'}</DialogTitle>
+                              <DialogDescription>
+                                Fill in the form below to {editingExpense ? 'update the' : 'add a new'} expense.
+                              </DialogDescription>
+                            </DialogHeader>
+                            <form onSubmit={handleSaveExpense} className="grid gap-4 py-4">
+                              <div className="space-y-2">
+                                <Label htmlFor="date">Date</Label>
+                                <Input id="date" name="date" type="date" defaultValue={editingExpense?.date || new Date().toISOString().split('T')[0]} required />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="category">Category</Label>
+                                <Input id="category" name="category" defaultValue={editingExpense?.category} placeholder="e.g., Maintenance" required />
+                              </div>
+                               <div className="space-y-2">
+                                <Label htmlFor="amount">Amount</Label>
+                                <Input id="amount" name="amount" type="number" step="0.01" defaultValue={editingExpense?.amount} placeholder="0.00" required />
+                              </div>
+                               <div className="space-y-2">
+                                <Label htmlFor="status">Status</Label>
+                                <Select name="status" defaultValue={editingExpense?.status || 'Pending'}>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select status" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="Pending">Pending</SelectItem>
+                                    <SelectItem value="Reimbursed">Reimbursed</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="description">Description</Label>
+                                <Textarea id="description" name="description" defaultValue={editingExpense?.description} placeholder="Describe the expense..." />
+                              </div>
+                              <DialogFooter>
+                                <DialogClose asChild>
+                                   <Button variant="outline">Cancel</Button>
+                                </DialogClose>
+                                <Button type="submit">Save Expense</Button>
+                              </DialogFooter>
+                            </form>
+                          </DialogContent>
+                        </Dialog>
+                    </div>
                   </CardHeader>
                   <CardContent>
                     {filteredExpenses.length > 0 ? (
@@ -618,6 +719,18 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                         <Table>
                           <TableHeader>
                             <TableRow>
+                               <TableHead className="w-10">
+                                    <Checkbox
+                                        checked={selectedExpenseIds.length === filteredExpenses.length}
+                                        onCheckedChange={(checked) => {
+                                            if (checked) {
+                                                setSelectedExpenseIds(filteredExpenses.map(e => e.id));
+                                            } else {
+                                                setSelectedExpenseIds([]);
+                                            }
+                                        }}
+                                    />
+                                </TableHead>
                               <TableHead>Details</TableHead>
                               <TableHead>Amount</TableHead>
                               <TableHead>Status</TableHead>
@@ -626,7 +739,17 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                           </TableHeader>
                           <TableBody>
                             {filteredExpenses.map((expense) => (
-                              <TableRow key={expense.id}>
+                              <TableRow key={expense.id} data-state={selectedExpenseIds.includes(expense.id) && "selected"}>
+                                <TableCell>
+                                    <Checkbox
+                                        checked={selectedExpenseIds.includes(expense.id)}
+                                        onCheckedChange={(checked) => {
+                                            setSelectedExpenseIds(prev => 
+                                                checked ? [...prev, expense.id] : prev.filter(id => id !== expense.id)
+                                            );
+                                        }}
+                                    />
+                                </TableCell>
                                 <TableCell>
                                     <div className="font-medium">{expense.category}</div>
                                     <div className="text-sm text-muted-foreground hidden sm:block">{expense.description}</div>
@@ -745,3 +868,5 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
     </Tabs>
   )
 }
+
+    
