@@ -1,0 +1,13 @@
+# Netlify configuration file for a Next.js project.
+
+[build]
+  # This command tells Netlify how to build your site.
+  command = "next build"
+  
+  # This is the directory that Netlify will publish.
+  # For Next.js, it's the .next directory.
+  publish = ".next"
+
+[dev]
+  # This sets the development server port to be consistent.
+  port = 3000
