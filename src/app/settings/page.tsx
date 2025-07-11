@@ -140,8 +140,8 @@ export default function SettingsPage() {
                                   <Input id="tab-tenants" name="tabNames.tenants" value={settings.tabNames.tenants} onChange={handleInputChange} />
                               </div>
                               <div className="space-y-2">
-                                  <Label htmlFor="tab-whatsapp" className="font-normal text-muted-foreground">{settings.page_settings.app_settings.whatsapp_tab_label}</Label>
-                                  <Input id="tab-whatsapp" name="tabNames.whatsapp" value={settings.tabNames.whatsapp} onChange={handleInputChange} />
+                                  <Label htmlFor="tab-integrations" className="font-normal text-muted-foreground">{settings.page_settings.app_settings.integrations_tab_label}</Label>
+                                  <Input id="tab-integrations" name="tabNames.integrations" value={settings.tabNames.integrations} onChange={handleInputChange} />
                               </div>
                               <div className="space-y-2">
                                   <Label htmlFor="tab-reports" className="font-normal text-muted-foreground">{settings.page_settings.app_settings.reports_tab_label}</Label>

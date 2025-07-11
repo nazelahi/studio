@@ -5,7 +5,7 @@ import * as React from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { MonthlyOverviewTab } from "@/components/monthly-overview-tab"
 import { TenantsTab } from "@/components/tenants-tab"
-import { WhatsappTab } from "@/components/whatsapp-tab"
+import { IntegrationsTab } from "@/components/integrations-tab"
 import { ReportsTab } from "@/components/reports-tab"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useSettings } from "@/context/settings-context"
@@ -39,7 +39,7 @@ export default function DashboardTabs() {
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview">{settings.tabNames.overview}</TabsTrigger>
           <TabsTrigger value="tenants">{settings.tabNames.tenants}</TabsTrigger>
-          <TabsTrigger value="whatsapp">{settings.tabNames.whatsapp}</TabsTrigger>
+          <TabsTrigger value="integrations">{settings.tabNames.integrations}</TabsTrigger>
           <TabsTrigger value="reports">{settings.tabNames.reports}</TabsTrigger>
         </TabsList>
         <TabsContent value="overview">
@@ -48,8 +48,8 @@ export default function DashboardTabs() {
         <TabsContent value="tenants">
           <TenantsTab />
         </TabsContent>
-        <TabsContent value="whatsapp">
-            <WhatsappTab />
+        <TabsContent value="integrations">
+            <IntegrationsTab />
         </TabsContent>
          <TabsContent value="reports">
             <ReportsTab year={parseInt(selectedYear)} />

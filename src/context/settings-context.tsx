@@ -6,7 +6,7 @@ import React, { createContext, useContext, useState, ReactNode, useEffect } from
 interface TabNames {
     overview: string;
     tenants: string;
-    whatsapp: string;
+    integrations: string;
     reports: string;
 }
 
@@ -32,7 +32,7 @@ interface PageSettings {
         tab_names_label: string;
         overview_tab_label: string;
         tenants_tab_label: string;
-        whatsapp_tab_label: string;
+        integrations_tab_label: string;
         reports_tab_label: string;
         footer_name_label: string;
     };
@@ -87,7 +87,7 @@ const defaultSettings: AppSettings = {
     tabNames: {
         overview: "Overview",
         tenants: "Tenants",
-        whatsapp: "WhatsApp",
+        integrations: "Integrations",
         reports: "Reports",
     },
     footerName: "© 2024 RentFlow. All Rights Reserved.",
@@ -111,7 +111,7 @@ const defaultSettings: AppSettings = {
             tab_names_label: "Tab Names",
             overview_tab_label: "Overview Tab",
             tenants_tab_label: "Tenants Tab",
-            whatsapp_tab_label: "WhatsApp Tab",
+            integrations_tab_label: "Integrations Tab",
             reports_tab_label: "Reports Tab",
             footer_name_label: "Footer Name",
         },
