@@ -1,3 +1,4 @@
+
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
@@ -34,26 +35,40 @@ const defaultSettings: AppSettings = {
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
-    const [settings, setSettings] = useState<AppSettings>(() => {
-        if (typeof window === 'undefined') {
-            return defaultSettings;
-        }
-        try {
-            const item = window.localStorage.getItem('appSettings');
-            return item ? JSON.parse(item) : defaultSettings;
-        } catch (error) {
-            console.error(error);
-            return defaultSettings;
-        }
-    });
+    const [settings, setSettings] = useState<AppSettings>(defaultSettings);
+    const [isMounted, setIsMounted] = useState(false);
 
     useEffect(() => {
+        setIsMounted(true);
         try {
-            window.localStorage.setItem('appSettings', JSON.stringify(settings));
+            const item = window.localStorage.getItem('appSettings');
+            if (item) {
+                setSettings(JSON.parse(item));
+            }
         } catch (error) {
-            console.error(error);
+            console.error("Failed to parse settings from localStorage", error);
         }
-    }, [settings]);
+    }, []);
+    
+    useEffect(() => {
+        if (isMounted) {
+            try {
+                window.localStorage.setItem('appSettings', JSON.stringify(settings));
+            } catch (error) {
+                console.error("Failed to save settings to localStorage", error);
+            }
+        }
+    }, [settings, isMounted]);
+
+    if (!isMounted) {
+        // Render with default settings on the server and during initial client render
+        // to avoid hydration mismatch. You can optionally render a loading skeleton here.
+        return (
+            <SettingsContext.Provider value={{ settings: defaultSettings, setSettings }}>
+                {children}
+            </SettingsContext.Provider>
+        );
+    }
 
     return (
         <SettingsContext.Provider value={{ settings, setSettings }}>
