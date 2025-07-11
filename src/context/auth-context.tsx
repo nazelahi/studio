@@ -79,10 +79,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     // Super admin check
-    if (email === 'admin' && password === '1234') {
+    if (email === 'admin@gmail.com' && password === '1234') {
       const mockUser = {
         id: 'super-admin-id',
-        email: 'admin',
+        email: 'admin@gmail.com',
         user_metadata: { role: 'admin' },
         app_metadata: {},
         aud: 'authenticated',
@@ -132,6 +132,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Handle loading and routing
   if (loading) {
+     return (
+        <div className="flex justify-center items-center h-screen w-screen">
+          <LoaderCircle className="h-12 w-12 animate-spin text-primary" />
+        </div>
+      );
+  }
+
+  // If we are on a public route, we don't need to check for a user
+  if (publicRoutes.includes(pathname)) {
+    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  }
+
+  // If there's no user and we're not on a public route, redirect to login
+  if (!user) {
+     if (typeof window !== 'undefined') {
+        router.push('/login');
+     }
+     // Render a loader while redirecting
      return (
         <div className="flex justify-center items-center h-screen w-screen">
           <LoaderCircle className="h-12 w-12 animate-spin text-primary" />
