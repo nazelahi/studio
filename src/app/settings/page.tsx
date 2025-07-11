@@ -158,6 +158,23 @@ export default function SettingsPage() {
 
               <Card className="group-disabled:opacity-50">
                   <CardHeader>
+                    <CardTitle>{settings.page_settings.overview_settings.title}</CardTitle>
+                    <CardDescription>{settings.page_settings.overview_settings.description}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="grid md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                          <Label htmlFor="overview-financial-title">{settings.page_settings.overview_settings.financial_title_label}</Label>
+                          <Input id="overview-financial-title" name="page_overview.financial_overview_title" value={settings.page_overview.financial_overview_title} onChange={handleInputChange} />
+                      </div>
+                      <div className="space-y-2">
+                          <Label htmlFor="overview-financial-desc">{settings.page_settings.overview_settings.financial_description_label}</Label>
+                          <Input id="overview-financial-desc" name="page_overview.financial_overview_description" value={settings.page_overview.financial_overview_description} onChange={handleInputChange} />
+                      </div>
+                  </CardContent>
+              </Card>
+
+              <Card className="group-disabled:opacity-50">
+                  <CardHeader>
                     <CardTitle>{settings.page_settings.tenant_settings.title}</CardTitle>
                     <CardDescription>{settings.page_settings.tenant_settings.description}</CardDescription>
                   </CardHeader>

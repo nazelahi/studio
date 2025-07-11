@@ -18,6 +18,11 @@ interface PageDashboard {
     user_menu_logout: string;
 }
 
+interface PageOverview {
+    financial_overview_title: string;
+    financial_overview_description: string;
+}
+
 interface PageSettings {
     title: string;
     app_settings: {
@@ -30,6 +35,12 @@ interface PageSettings {
         whatsapp_tab_label: string;
         reports_tab_label: string;
         footer_name_label: string;
+    };
+    overview_settings: {
+        title: string;
+        description: string;
+        financial_title_label: string;
+        financial_description_label: string;
     };
     tenant_settings: {
         title: string;
@@ -61,6 +72,7 @@ interface AppSettings {
   tabNames: TabNames;
   footerName: string;
   page_dashboard: PageDashboard;
+  page_overview: PageOverview;
   page_settings: PageSettings;
   page_tenants: PageTenants;
 }
@@ -86,6 +98,10 @@ const defaultSettings: AppSettings = {
         user_menu_tooltip: "Toggle user menu",
         user_menu_logout: "Log out",
     },
+    page_overview: {
+        financial_overview_title: "Financial Overview",
+        financial_overview_description: "A summary of your income and expenses for the month.",
+    },
     page_settings: {
         title: "Settings",
         app_settings: {
@@ -98,6 +114,12 @@ const defaultSettings: AppSettings = {
             whatsapp_tab_label: "WhatsApp Tab",
             reports_tab_label: "Reports Tab",
             footer_name_label: "Footer Name",
+        },
+        overview_settings: {
+            title: "Overview Page Settings",
+            description: "Customize the text on the monthly overview page.",
+            financial_title_label: "Financial Overview Title",
+            financial_description_label: "Financial Overview Description",
         },
         tenant_settings: {
             title: "Tenant Page Settings",

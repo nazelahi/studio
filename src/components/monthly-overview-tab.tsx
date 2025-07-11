@@ -26,6 +26,7 @@ import { Checkbox } from "./ui/checkbox"
 import { TenantDetailSheet } from "./tenant-detail-sheet"
 import * as XLSX from 'xlsx';
 import { useAuth } from "@/context/auth-context"
+import { useSettings } from "@/context/settings-context"
 
 
 type HistoricalTenant = {
@@ -77,6 +78,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
   const [selectedMonth, setSelectedMonth] = React.useState(months[currentMonthIndex]);
   const { toast } = useToast();
   const { isAdmin } = useAuth();
+  const { settings } = useSettings();
 
   const { tenants, expenses, rentData, addRentEntry, addRentEntriesBatch, updateRentEntry, deleteRentEntry, addExpense, updateExpense, deleteExpense, syncTenantsForMonth, loading, deleteMultipleRentEntries, deleteMultipleExpenses } = useData();
 
@@ -847,8 +849,8 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
             
             <div className="mt-6 space-y-6">
                 <div className="text-center">
-                    <h3 className="text-2xl font-bold tracking-tight">Financial Overview - {month} {year}</h3>
-                    <p className="text-muted-foreground">A summary of your income and expenses for the month.</p>
+                    <h3 className="text-2xl font-bold tracking-tight">{settings.page_overview.financial_overview_title} - {month} {year}</h3>
+                    <p className="text-muted-foreground">{settings.page_overview.financial_overview_description}</p>
                 </div>
                 <div className="grid gap-6 md:grid-cols-3">
                     <Card>
