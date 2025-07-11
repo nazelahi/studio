@@ -534,12 +534,6 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                             Sync Tenants
                         </Button>
                         <Dialog open={isRentDialogOpen} onOpenChange={handleRentOpenChange}>
-                          <DialogTrigger asChild>
-                             <Button size="sm" className="gap-2">
-                              <PlusCircle className="h-4 w-4" />
-                              Add Rent
-                            </Button>
-                          </DialogTrigger>
                             <DialogContent>
                                 <DialogHeader>
                                     <DialogTitle>{editingRentEntry ? 'Edit Rent Entry' : 'Add New Rent Entry'}</DialogTitle>
@@ -1030,5 +1024,3 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
     </>
   )
 }
-
-    
