@@ -45,6 +45,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     const fetchData = useCallback(async () => {
         if (!supabase) {
+            console.log("Supabase not initialized, skipping fetch.");
             setLoading(false);
             return;
         }
@@ -59,7 +60,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
             if (tenantsRes.error) throw tenantsRes.error;
             if (expensesRes.error) throw expensesRes.error;
             if (rentDataRes.error) throw rentDataRes.error;
-
+            
             setData({
                 tenants: tenantsRes.data as Tenant[],
                 expenses: expensesRes.data as Expense[],
@@ -94,8 +95,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
                     console.log('Successfully subscribed to real-time updates!');
                 }
                 if (err) {
-                    console.error("Realtime subscription error:", err);
-                    handleError(new Error("Realtime was unable to connect to the project database"), 'subscribing to real-time updates');
+                    const dbError = err as any;
+                    console.error("Realtime subscription error:", dbError);
+                    handleError(new Error(dbError.message || "Realtime was unable to connect to the project database"), 'subscribing to real-time updates');
                 }
             });
 
@@ -114,7 +116,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
         }
 
         if (newTenant) {
-            // Automatically add a rent entry for the current month
             const joinDate = parseISO(newTenant.joinDate);
             const month = getMonth(joinDate);
             const year = getYear(joinDate);
@@ -144,7 +145,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
             return;
         }
 
-        // Also update future, unpaid rent entries
         const { error: rentUpdateError } = await supabase
             .from('rent_entries')
             .update({
@@ -165,7 +165,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const deleteTenant = async (tenantId: string) => {
         if (!supabase) return;
         
-        // Only delete the tenant, not their rent history.
         const { error } = await supabase.from('tenants').delete().eq('id', tenantId);
         if (error) {
             handleError(error, 'deleting tenant');
@@ -194,10 +193,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const addRentEntry = async (rentEntryData: Omit<RentEntry, 'id' | 'tenantId' | 'avatar' | 'year' | 'month' | 'dueDate' | 'created_at'>, year: number, month: number) => {
         if (!supabase) return;
 
-        // Check for an existing tenant based on name and property
         let { data: existingTenant } = await supabase.from('tenants').select('id, avatar').eq('name', rentEntryData.name).eq('property', rentEntryData.property).maybeSingle();
 
-        // If tenant doesn't exist, create one
         if (!existingTenant) {
             const newTenantData = {
                 name: rentEntryData.name,
@@ -244,21 +241,40 @@ export function DataProvider({ children }: { children: ReactNode }) {
         if (!supabase) return 0;
         const selectedMonthStartDate = new Date(year, month, 1);
 
-        const tenantsInMonth = data.rentData
-            .filter(entry => entry.month === month && entry.year === year)
-            .map(entry => entry.tenantId);
-
-        const tenantsToSync = data.tenants.filter(tenant => {
-            if (!tenant.joinDate) return false;
-            const joinDate = parseISO(tenant.joinDate);
-            return !tenantsInMonth.includes(tenant.id) && joinDate <= selectedMonthStartDate;
-        });
+        const {data: rentDataForMonth, error: rentDataError} = await supabase
+            .from('rent_entries')
+            .select('tenantId')
+            .eq('month', month)
+            .eq('year', year);
         
-        if (tenantsToSync.length === 0) {
+        if (rentDataError) {
+            handleError(rentDataError, 'fetching rent data for sync');
             return 0;
         }
 
-        const newRentEntries = tenantsToSync.map(tenant => ({
+        const tenantsInMonth = rentDataForMonth.map(entry => entry.tenantId);
+
+        const {data: tenantsToSync, error: tenantsError} = await supabase
+            .from('tenants')
+            .select('*')
+            .not('id', 'in', `(${tenantsInMonth.join(',')})`);
+            
+        if (tenantsError) {
+             handleError(tenantsError, 'fetching tenants for sync');
+            return 0;
+        }
+        
+        const filteredTenantsToSync = tenantsToSync.filter(tenant => {
+             if (!tenant.joinDate) return false;
+            const joinDate = parseISO(tenant.joinDate);
+            return joinDate <= selectedMonthStartDate;
+        });
+        
+        if (filteredTenantsToSync.length === 0) {
+            return 0;
+        }
+
+        const newRentEntries = filteredTenantsToSync.map(tenant => ({
             tenantId: tenant.id,
             name: tenant.name,
             property: tenant.property,
@@ -277,7 +293,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
             return 0;
         }
 
-        return tenantsToSync.length;
+        return filteredTenantsToSync.length;
     };
 
     return (
@@ -294,3 +310,5 @@ export function useData() {
   }
   return context;
 }
+
+    
