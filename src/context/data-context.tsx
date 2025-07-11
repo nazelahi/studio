@@ -254,45 +254,51 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const syncTenantsForMonth = async (year: number, month: number): Promise<number> => {
         if (!supabase) return 0;
         const selectedMonthStartDate = new Date(year, month, 1);
-
-        const {data: rentDataForMonth, error: rentDataError} = await supabase
+        
+        // 1. Get all tenant IDs that *already* have a rent entry for the selected month/year.
+        const { data: rentDataForMonth, error: rentDataError } = await supabase
             .from('rent_entries')
             .select('tenantId')
-            .eq('month', month)
-            .eq('year', year);
-        
+            .eq('year', year)
+            .eq('month', month);
+
         if (rentDataError) {
             handleError(rentDataError, 'fetching rent data for sync');
             return 0;
         }
+        const existingTenantIds = new Set(rentDataForMonth.map(e => e.tenantId));
 
-        const tenantsInMonth = rentDataForMonth.map(entry => entry.tenantId);
-
-        const {data: tenantsToSync, error: tenantsError} = await supabase
+        // 2. Get all tenants whose join date is on or before the selected month.
+        const { data: allTenants, error: tenantsError } = await supabase
             .from('tenants')
-            .select('*')
-            .not('id', 'in', `(${tenantsInMonth.join(',')})`);
-            
+            .select('*');
+
         if (tenantsError) {
-             handleError(tenantsError, 'fetching tenants for sync');
+            handleError(tenantsError, 'fetching tenants for sync');
             return 0;
         }
-        
-        const filteredTenantsToSync = tenantsToSync.filter(tenant => {
-             if (!tenant.joinDate) return false;
+
+        // 3. Filter down to tenants who are active for the month but don't have an entry yet.
+        const tenantsToSync = allTenants.filter(tenant => {
+            if (existingTenantIds.has(tenant.id)) {
+                return false; // Already has an entry
+            }
+            if (!tenant.joinDate) return false;
             try {
                 const joinDate = parseISO(tenant.joinDate);
+                // Tenant is active if their join date is before or on the first day of the selected month
                 return joinDate <= selectedMonthStartDate;
             } catch {
-                return false;
+                return false; // Invalid joinDate
             }
         });
-        
-        if (filteredTenantsToSync.length === 0) {
-            return 0;
-        }
 
-        const newRentEntries = filteredTenantsToSync.map(tenant => ({
+        if (tenantsToSync.length === 0) {
+            return 0; // No new tenants to sync for this month.
+        }
+        
+        // 4. Create new rent entries for the filtered tenants.
+        const newRentEntries = tenantsToSync.map(tenant => ({
             tenantId: tenant.id,
             name: tenant.name,
             property: tenant.property,
@@ -300,19 +306,20 @@ export function DataProvider({ children }: { children: ReactNode }) {
             dueDate: new Date(year, month, 1).toISOString().split("T")[0],
             status: "Pending" as const,
             avatar: tenant.avatar,
-            year,
-            month,
+            year: year,
+            month: month,
         }));
-        
+
         const { error } = await supabase.from('rent_entries').insert(newRentEntries);
 
         if (error) {
-            handleError(error, 'syncing tenants');
+            handleError(error, 'syncing tenants to rent roll');
             return 0;
         }
 
-        return filteredTenantsToSync.length;
+        return tenantsToSync.length;
     };
+
 
     return (
         <DataContext.Provider value={{ ...data, addTenant, updateTenant, deleteTenant, addExpense, updateExpense, deleteExpense, deleteMultipleExpenses, addRentEntry, updateRentEntry, deleteRentEntry, deleteMultipleRentEntries, syncTenantsForMonth, loading }}>
@@ -328,5 +335,3 @@ export function useData() {
   }
   return context;
 }
-
-    
