@@ -20,6 +20,7 @@ import { Mail, Phone, Home, Calendar, DollarSign, FileText, Download, Printer, I
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { format, parseISO } from 'date-fns';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface TenantDetailSheetProps {
   tenant: Tenant | null;
