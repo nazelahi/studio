@@ -20,11 +20,9 @@ import { Skeleton } from "./ui/skeleton"
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "./ui/command"
 import { TenantDetailSheet } from "./tenant-detail-sheet"
-import { useProtection } from "@/context/protection-context"
 
 export function TenantsTab() {
   const { tenants, addTenant, updateTenant, deleteTenant, loading } = useData();
-  const { withProtection } = useProtection();
   const [open, setOpen] = React.useState(false);
   const [editingTenant, setEditingTenant] = React.useState<Tenant | null>(null);
   const { toast } = useToast();
@@ -112,21 +110,17 @@ export function TenantsTab() {
   }
 
   const handleEdit = (tenant: Tenant) => {
-    withProtection(() => {
-        setEditingTenant(tenant);
-        setPreviewImage(tenant.avatar);
-        setOpen(true);
-    });
+    setEditingTenant(tenant);
+    setPreviewImage(tenant.avatar);
+    setOpen(true);
   };
 
   const handleDelete = async (tenantId: string) => {
-     withProtection(async () => {
-        await deleteTenant(tenantId);
-        toast({
-            title: 'Tenant Deleted',
-            description: "The tenant's information has been deleted.",
-            variant: 'destructive'
-        });
+    await deleteTenant(tenantId);
+    toast({
+        title: 'Tenant Deleted',
+        description: "The tenant's information has been deleted.",
+        variant: 'destructive'
     });
   }
 
@@ -197,7 +191,7 @@ export function TenantsTab() {
           </div>
           <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>
-              <Button size="sm" className="gap-2" onClick={() => withProtection(() => setEditingTenant(null))}>
+              <Button size="sm" className="gap-2" onClick={() => setEditingTenant(null)}>
                 <PlusCircle className="h-4 w-4" />
                 Add Tenant
               </Button>

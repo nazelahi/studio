@@ -25,7 +25,6 @@ import { Skeleton } from "./ui/skeleton"
 import { Checkbox } from "./ui/checkbox"
 import { TenantDetailSheet } from "./tenant-detail-sheet"
 import * as XLSX from 'xlsx';
-import { useProtection } from "@/context/protection-context"
 
 
 type HistoricalTenant = {
@@ -78,7 +77,6 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
   const { toast } = useToast();
 
   const { tenants, expenses, rentData, addRentEntry, addRentEntriesBatch, updateRentEntry, deleteRentEntry, addExpense, updateExpense, deleteExpense, syncTenantsForMonth, loading, deleteMultipleRentEntries, deleteMultipleExpenses } = useData();
-  const { withProtection } = useProtection();
 
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = React.useState(false);
   const [editingExpense, setEditingExpense] = React.useState<Expense | null>(null);
@@ -501,7 +499,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                         {selectedRentEntryIds.length > 0 && (
                            <AlertDialog>
                             <AlertDialogTrigger asChild>
-                              <Button size="sm" variant="destructive" className="gap-2" onClick={() => withProtection(() => {})}>
+                              <Button size="sm" variant="destructive" className="gap-2">
                                 <Trash2 className="h-4 w-4" />
                                 Delete Selected ({selectedRentEntryIds.length})
                               </Button>
@@ -520,7 +518,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                             </AlertDialogContent>
                           </AlertDialog>
                         )}
-                         <Button size="sm" variant="outline" className="gap-2" onClick={() => withProtection(handleImportClick)}>
+                         <Button size="sm" variant="outline" className="gap-2" onClick={handleImportClick}>
                             <Upload className="h-4 w-4" />
                             Import
                         </Button>
@@ -531,11 +529,17 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                             accept=".xlsx, .csv"
                             onChange={handleFileChange}
                         />
-                        <Button size="sm" variant="outline" className="gap-2" onClick={() => withProtection(handleSyncTenants)}>
+                        <Button size="sm" variant="outline" className="gap-2" onClick={handleSyncTenants}>
                             <RefreshCw className="h-4 w-4" />
                             Sync Tenants
                         </Button>
                         <Dialog open={isRentDialogOpen} onOpenChange={handleRentOpenChange}>
+                            <DialogTrigger asChild>
+                                <Button size="sm" className="gap-2">
+                                    <PlusCircle className="h-4 w-4" />
+                                    Add Rent
+                                </Button>
+                            </DialogTrigger>
                             <DialogContent>
                                 <DialogHeader>
                                     <DialogTitle>{editingRentEntry ? 'Edit Rent Entry' : 'Add New Rent Entry'}</DialogTitle>
@@ -714,13 +718,13 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                     <FileText className="h-4 w-4" />
                                     <span className="sr-only">View Details</span>
                                   </Button>
-                                  <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => withProtection(() => handleEditRentEntry(entry))}>
+                                  <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => handleEditRentEntry(entry)}>
                                     <Pencil className="h-4 w-4" />
                                     <span className="sr-only">Edit</span>
                                   </Button>
                                    <AlertDialog>
                                       <AlertDialogTrigger asChild>
-                                        <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive" onClick={(e) => withProtection(() => {}, e)}>
+                                        <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive">
                                           <Trash2 className="h-4 w-4" />
                                           <span className="sr-only">Delete</span>
                                         </Button>
@@ -767,7 +771,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                        {selectedExpenseIds.length > 0 && (
                            <AlertDialog>
                             <AlertDialogTrigger asChild>
-                              <Button size="sm" variant="destructive" className="gap-2" onClick={() => withProtection(() => {})}>
+                              <Button size="sm" variant="destructive" className="gap-2">
                                 <Trash2 className="h-4 w-4" />
                                 Delete Selected ({selectedExpenseIds.length})
                               </Button>
@@ -788,7 +792,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                         )}
                          <Dialog open={isExpenseDialogOpen} onOpenChange={handleExpenseOpenChange}>
                           <DialogTrigger asChild>
-                            <Button size="sm" className="gap-2" onClick={() => withProtection(() => setEditingExpense(null))}>
+                            <Button size="sm" className="gap-2" onClick={() => setEditingExpense(null)}>
                               <PlusCircle className="h-4 w-4" />
                               Add Expense
                             </Button>
@@ -912,13 +916,13 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                 </TableCell>
                                 <TableCell>
                                   <div className="flex items-center gap-2">
-                                     <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => withProtection(() => handleEditExpense(expense))}>
+                                     <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => handleEditExpense(expense)}>
                                         <Pencil className="h-4 w-4" />
                                         <span className="sr-only">Edit</span>
                                      </Button>
                                      <AlertDialog>
                                         <AlertDialogTrigger asChild>
-                                           <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive" onClick={(e) => withProtection(() => {}, e)}>
+                                           <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive">
                                             <Trash2 className="h-4 w-4" />
                                             <span className="sr-only">Delete</span>
                                           </Button>
