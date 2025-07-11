@@ -537,6 +537,132 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                             <RefreshCw className="h-4 w-4" />
                             Sync Tenants
                         </Button>
+                        <Dialog open={isRentDialogOpen} onOpenChange={handleRentOpenChange}>
+                          <DialogTrigger asChild>
+                            <Button size="sm" className="gap-2" onClick={() => {
+                              setEditingRentEntry(null);
+                              setSelectedHistoricalTenant(null);
+                            }}>
+                              <PlusCircle className="h-4 w-4" />
+                              Add Entry
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                              <DialogHeader>
+                                  <DialogTitle>{editingRentEntry ? 'Edit Rent Entry' : 'Add New Rent Entry'}</DialogTitle>
+                                  <DialogDescription>
+                                      {editingRentEntry ? 'Update the entry below.' : 'Fill in the form or find a saved tenant to add a new entry.'}
+                                  </DialogDescription>
+                              </DialogHeader>
+                                  <form ref={formRef} onSubmit={handleSaveRentEntry} className="grid gap-4 py-4">
+                                  {!editingRentEntry && (
+                                      <>
+                                      <div className="space-y-2">
+                                      <Label>Find Saved Tenant</Label>
+                                      <Popover open={isTenantFinderOpen} onOpenChange={setIsTenantFinderOpen}>
+                                          <PopoverTrigger asChild>
+                                          <Button variant="outline" role="combobox" aria-expanded={isTenantFinderOpen} className="w-full justify-between">
+                                              {selectedHistoricalTenant ? `Selected: ${selectedHistoricalTenant.name}` : "Select a past tenant..."}
+                                              <div className="flex items-center">
+                                              <Badge variant="secondary" className="mr-2">{historicalTenants.length}</Badge>
+                                              <ChevronDown className="h-4 w-4 shrink-0 opacity-50"/>
+                                              </div>
+                                          </Button>
+                                          </PopoverTrigger>
+                                          <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                          <Command>
+                                              <CommandInput placeholder="Search tenant..." />
+                                              <CommandEmpty>No tenant found.</CommandEmpty>
+                                              <CommandList>
+                                              <CommandGroup>
+                                                  {historicalTenants.map((tenant) => (
+                                                  <CommandItem
+                                                      key={tenant.uniqueId}
+                                                      value={`${tenant.name} ${tenant.property}`}
+                                                      onSelect={() => handleSelectHistoricalTenant(tenant)}
+                                                      className="flex justify-between items-center"
+                                                  >
+                                                      <div className="flex items-center gap-3">
+                                                          <Avatar className="h-8 w-8">
+                                                              <AvatarImage src={tenant.avatar} />
+                                                              <AvatarFallback>{tenant.name.charAt(0)}</AvatarFallback>
+                                                          </Avatar>
+                                                          <div>
+                                                              <div className="font-medium">{tenant.name} - <span className="text-muted-foreground">{tenant.property}</span></div>
+                                                              <div className="text-xs text-muted-foreground">
+                                                                  Last seen: {months[tenant.lastSeen.month].substring(0,3)} {tenant.lastSeen.year} &middot; {tenant.rent.toLocaleString('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 })}
+                                                              </div>
+                                                          </div>
+                                                      </div>
+                                                  </CommandItem>
+                                                  ))}
+                                              </CommandGroup>
+                                              </CommandList>
+                                          </Command>
+                                          </PopoverContent>
+                                      </Popover>
+                                      </div>
+
+                                      {selectedHistoricalTenant && (
+                                      <Card className="bg-secondary/50 relative">
+                                          <Button variant="ghost" size="icon" className="absolute top-1 right-1 h-6 w-6" onClick={handleClearSelectedTenant}>
+                                              <X className="h-4 w-4" />
+                                              <span className="sr-only">Clear selection</span>
+                                          </Button>
+                                          <CardHeader className="pb-2">
+                                              <CardTitle className="text-base">Tenant Preview</CardTitle>
+                                          </CardHeader>
+                                          <CardContent className="text-sm space-y-1">
+                                              <p><strong>Name:</strong> {selectedHistoricalTenant.name}</p>
+                                              <p><strong>Apartment:</strong> {selectedHistoricalTenant.property}</p>
+                                              <p><strong>Rent:</strong> {selectedHistoricalTenant.rent.toLocaleString('en-US', { style: 'currency', currency: 'USD' })}</p>
+                                          </CardContent>
+                                      </Card>
+                                      )}
+                                      </>
+                                  )}
+                                  <div className="space-y-2">
+                                      <Label htmlFor="name">Name</Label>
+                                      <Input id="name" name="name" defaultValue={editingRentEntry?.name} placeholder="e.g., John Doe" required />
+                                  </div>
+                                  <div className="space-y-2">
+                                      <Label htmlFor="property">Flat</Label>
+                                      <Input id="property" name="property" defaultValue={editingRentEntry?.property} placeholder="e.g., Flat-1" required />
+                                  </div>
+                                  <div className="space-y-2">
+                                      <Label htmlFor="paymentDate">Date</Label>
+                                      <Input id="paymentDate" name="paymentDate" type="date" defaultValue={editingRentEntry?.paymentDate ? format(parseISO(editingRentEntry.paymentDate), 'yyyy-MM-dd') : ''} />
+                                  </div>
+                                  <div className="space-y-2">
+                                      <Label htmlFor="collectedBy">Collect by</Label>
+                                      <Input id="collectedBy" name="collectedBy" defaultValue={editingRentEntry?.collectedBy} placeholder="e.g., Admin" />
+                                  </div>
+                                  <div className="space-y-2">
+                                      <Label htmlFor="amount">Amount</Label>
+                                      <Input id="amount" name="amount" type="number" step="0.01" defaultValue={editingRentEntry?.rent} placeholder="0.00" required />
+                                  </div>
+                                  <div className="space-y-2">
+                                      <Label htmlFor="status">Status</Label>
+                                      <Select name="status" defaultValue={editingRentEntry?.status || 'Pending'}>
+                                      <SelectTrigger>
+                                          <SelectValue placeholder="Select status" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                          <SelectItem value="Paid">Paid</SelectItem>
+                                          <SelectItem value="Pending">Pending</SelectItem>
+                                          <SelectItem value="Overdue">Overdue</SelectItem>
+                                      </SelectContent>
+                                      </Select>
+                                  </div>
+                                  <DialogFooter>
+                                      <DialogClose asChild>
+                                          <Button variant="outline">Cancel</Button>
+                                      </DialogClose>
+                                      <Button type="submit">Save Entry</Button>
+                                  </DialogFooter>
+                              </form>
+                          </DialogContent>
+                        </Dialog>
                     </div>}
                   </CardHeader>
                   <CardContent className="p-0">
@@ -556,12 +682,9 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                     }}
                                 />
                             </TableHead>}
-                            <TableHead>Name</TableHead>
-                            <TableHead>Flat</TableHead>
-                            <TableHead className="hidden sm:table-cell">Month</TableHead>
-                            <TableHead className="hidden sm:table-cell">Year</TableHead>
-                            <TableHead>Date</TableHead>
-                            <TableHead>Collect by</TableHead>
+                            <TableHead>Tenant</TableHead>
+                            <TableHead className="hidden sm:table-cell">Collected By</TableHead>
+                            <TableHead className="hidden sm:table-cell">Payment Date</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead>Amount</TableHead>
                             <TableHead>Actions</TableHead>
@@ -580,19 +703,29 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                       }}
                                   />
                               </TableCell>}
-                              <TableCell className="font-medium">{entry.name}</TableCell>
-                              <TableCell><Badge variant="outline">{entry.property}</Badge></TableCell>
-                              <TableCell className="hidden sm:table-cell">{months[entry.month]}</TableCell>
-                              <TableCell className="hidden sm:table-cell">{entry.year}</TableCell>
-                              <TableCell>{entry.paymentDate ? format(parseISO(entry.paymentDate), "dd MMM yyyy") : '-'}</TableCell>
-                              <TableCell>{entry.collectedBy || '-'}</TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-3">
+                                  <Avatar className="hidden h-9 w-9 sm:flex">
+                                    <AvatarImage src={entry.avatar} alt="Avatar" data-ai-hint="person avatar"/>
+                                    <AvatarFallback>{entry.name.charAt(0)}</AvatarFallback>
+                                  </Avatar>
+                                  <div className="grid gap-1">
+                                    <p className="text-sm font-medium leading-none">{entry.name}</p>
+                                    <p className="text-sm text-muted-foreground">
+                                      {entry.property}
+                                    </p>
+                                  </div>
+                                </div>
+                              </TableCell>
+                              <TableCell className="hidden sm:table-cell">{entry.collectedBy || '-'}</TableCell>
+                              <TableCell className="hidden sm:table-cell">{entry.paymentDate ? format(parseISO(entry.paymentDate), "dd MMM yyyy") : '-'}</TableCell>
                               <TableCell>
                                 <Badge className={getStatusBadge(entry.status)} variant="outline">
                                   {getStatusIcon(entry.status)}
                                   {entry.status}
                                 </Badge>
                               </TableCell>
-                              <TableCell>{entry.rent.toLocaleString('en-US', { style: 'currency', currency: 'BDT', minimumFractionDigits: 2 }).replace('BDT', '৳')}</TableCell>
+                              <TableCell>${entry.rent.toFixed(2)}</TableCell>
                               <TableCell>
                                 <div className="flex items-center gap-1">
                                   <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => handleViewDetails(entry)}>
@@ -637,9 +770,9 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                     )}
                   </CardContent>
                   {filteredTenantsForMonth.length > 0 && (
-                     <CardFooter className="bg-primary/90 text-primary-foreground font-bold text-lg p-4 mt-4 rounded-b-lg flex justify-between">
-                        <span>Total for {month} {year}</span>
-                        <span>{totalRentCollected.toLocaleString('en-US', { style: 'currency', currency: 'BDT', minimumFractionDigits: 2 }).replace('BDT', '৳')}</span>
+                     <CardFooter className="bg-secondary p-4 flex justify-between">
+                        <div className="font-semibold">Total Rent Collected</div>
+                        <div className="font-bold text-lg text-primary">${totalRentCollected.toFixed(2)}</div>
                      </CardFooter>
                   )}
                 </Card>
@@ -792,7 +925,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                     <div className="font-medium">{expense.category}</div>
                                     <div className="text-sm text-muted-foreground hidden sm:block">{expense.description}</div>
                                 </TableCell>
-                                <TableCell>{expense.amount.toLocaleString('en-US', { style: 'currency', currency: 'BDT', minimumFractionDigits: 2 }).replace('BDT', '৳')}</TableCell>
+                                <TableCell>${expense.amount.toFixed(2)}</TableCell>
                                 <TableCell>
                                   <Badge className={getExpenseStatusBadge(expense.status)}>
                                     {expense.status}
@@ -835,7 +968,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                         <div className="flex justify-end items-center mt-4 pt-4 border-t">
                           <div className="text-lg font-bold flex items-center gap-2">
                             <DollarSign className="h-5 w-5 text-muted-foreground" />
-                            <span>Total: {totalExpenses.toLocaleString('en-US', { style: 'currency', currency: 'BDT', minimumFractionDigits: 2 }).replace('BDT', '৳')}</span>
+                            <span>Total: ${totalExpenses.toFixed(2)}</span>
                           </div>
                         </div>
                       </>
@@ -860,7 +993,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                         </CardHeader>
                         <CardContent>
                             <div className="text-3xl font-bold" style={{ color: 'hsl(var(--chart-1))' }}>
-                                {totalRentExpected.toLocaleString('en-US', { style: 'currency', currency: 'BDT', minimumFractionDigits: 2 }).replace('BDT', '৳')}
+                                ${totalRentExpected.toFixed(2)}
                             </div>
                         </CardContent>
                     </Card>
@@ -871,7 +1004,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                         </CardHeader>
                         <CardContent>
                             <div className="text-3xl font-bold text-destructive">
-                                {totalExpenses.toLocaleString('en-US', { style: 'currency', currency: 'BDT', minimumFractionDigits: 2 }).replace('BDT', '৳')}
+                                ${totalExpenses.toFixed(2)}
                             </div>
                         </CardContent>
                     </Card>
@@ -882,7 +1015,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                         </CardHeader>
                         <CardContent>
                             <div className={`text-3xl font-bold ${netResult >= 0 ? 'text-success' : 'text-destructive'}`}>
-                                {netResult >= 0 ? '+' : ''}{netResult.toLocaleString('en-US', { style: 'currency', currency: 'BDT', minimumFractionDigits: 2 }).replace('BDT', '৳')}
+                                {netResult >= 0 ? '+' : ''}${netResult.toFixed(2)}
                             </div>
                         </CardContent>
                     </Card>
@@ -896,7 +1029,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                         <div className="border-t sm:border-t-0 sm:border-l border-border w-full sm:w-auto h-auto sm:h-12 my-2 sm:my-0"></div>
                         <div className="p-2">
                             <p className="text-sm text-secondary-foreground font-semibold">Available for Deposit</p>
-                            <p className="text-2xl font-bold text-success">{amountForDeposit.toLocaleString('en-US', { style: 'currency', currency: 'BDT', minimumFractionDigits: 2 }).replace('BDT', '৳')}</p>
+                            <p className="text-2xl font-bold text-success">${amountForDeposit.toFixed(2)}</p>
                         </div>
                     </CardContent>
                 </Card>
@@ -913,123 +1046,9 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
           onOpenChange={setIsSheetOpen}
       />
     )}
-     <Dialog open={isRentDialogOpen} onOpenChange={handleRentOpenChange}>
-        <DialogContent>
-            <DialogHeader>
-                <DialogTitle>{editingRentEntry ? 'Edit Rent Entry' : 'Add New Rent Entry'}</DialogTitle>
-                <DialogDescription>
-                    {editingRentEntry ? 'Update the entry below.' : 'Fill in the form or find a saved tenant to add a new entry.'}
-                </DialogDescription>
-            </DialogHeader>
-                <form ref={formRef} onSubmit={handleSaveRentEntry} className="grid gap-4 py-4">
-                {!editingRentEntry && (
-                    <>
-                    <div className="space-y-2">
-                    <Label>Find Saved Tenant</Label>
-                    <Popover open={isTenantFinderOpen} onOpenChange={setIsTenantFinderOpen}>
-                        <PopoverTrigger asChild>
-                        <Button variant="outline" role="combobox" aria-expanded={isTenantFinderOpen} className="w-full justify-between">
-                            {selectedHistoricalTenant ? `Selected: ${selectedHistoricalTenant.name}` : "Select a past tenant..."}
-                            <div className="flex items-center">
-                            <Badge variant="secondary" className="mr-2">{historicalTenants.length}</Badge>
-                            <ChevronDown className="h-4 w-4 shrink-0 opacity-50"/>
-                            </div>
-                        </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                        <Command>
-                            <CommandInput placeholder="Search tenant..." />
-                            <CommandEmpty>No tenant found.</CommandEmpty>
-                            <CommandList>
-                            <CommandGroup>
-                                {historicalTenants.map((tenant) => (
-                                <CommandItem
-                                    key={tenant.uniqueId}
-                                    value={`${tenant.name} ${tenant.property}`}
-                                    onSelect={() => handleSelectHistoricalTenant(tenant)}
-                                    className="flex justify-between items-center"
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <Avatar className="h-8 w-8">
-                                            <AvatarImage src={tenant.avatar} />
-                                            <AvatarFallback>{tenant.name.charAt(0)}</AvatarFallback>
-                                        </Avatar>
-                                        <div>
-                                            <div className="font-medium">{tenant.name} - <span className="text-muted-foreground">{tenant.property}</span></div>
-                                            <div className="text-xs text-muted-foreground">
-                                                Last seen: {months[tenant.lastSeen.month].substring(0,3)} {tenant.lastSeen.year} &middot; {tenant.rent.toLocaleString('en-US', { style: 'currency', currency: 'BDT', minimumFractionDigits: 0 }).replace('BDT', '৳')}
-                                            </div>
-                                        </div>
-                                    </div>
-                                </CommandItem>
-                                ))}
-                            </CommandGroup>
-                            </CommandList>
-                        </Command>
-                        </PopoverContent>
-                    </Popover>
-                    </div>
-
-                    {selectedHistoricalTenant && (
-                    <Card className="bg-secondary/50 relative">
-                        <Button variant="ghost" size="icon" className="absolute top-1 right-1 h-6 w-6" onClick={handleClearSelectedTenant}>
-                            <X className="h-4 w-4" />
-                            <span className="sr-only">Clear selection</span>
-                        </Button>
-                        <CardHeader className="pb-2">
-                            <CardTitle className="text-base">Tenant Preview</CardTitle>
-                        </CardHeader>
-                        <CardContent className="text-sm space-y-1">
-                            <p><strong>Name:</strong> {selectedHistoricalTenant.name}</p>
-                            <p><strong>Apartment:</strong> {selectedHistoricalTenant.property}</p>
-                            <p><strong>Rent:</strong> {selectedHistoricalTenant.rent.toLocaleString('en-US', { style: 'currency', currency: 'BDT', minimumFractionDigits: 2 }).replace('BDT', '৳')}</p>
-                        </CardContent>
-                    </Card>
-                    )}
-                    </>
-                )}
-                <div className="space-y-2">
-                    <Label htmlFor="name">Name</Label>
-                    <Input id="name" name="name" defaultValue={editingRentEntry?.name} placeholder="e.g., John Doe" required />
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="property">Flat</Label>
-                    <Input id="property" name="property" defaultValue={editingRentEntry?.property} placeholder="e.g., Flat-1" required />
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="paymentDate">Date</Label>
-                    <Input id="paymentDate" name="paymentDate" type="date" defaultValue={editingRentEntry?.paymentDate ? format(parseISO(editingRentEntry.paymentDate), 'yyyy-MM-dd') : ''} />
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="collectedBy">Collect by</Label>
-                    <Input id="collectedBy" name="collectedBy" defaultValue={editingRentEntry?.collectedBy} placeholder="e.g., Admin" />
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="amount">Amount</Label>
-                    <Input id="amount" name="amount" type="number" step="0.01" defaultValue={editingRentEntry?.rent} placeholder="0.00" required />
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="status">Status</Label>
-                    <Select name="status" defaultValue={editingRentEntry?.status || 'Pending'}>
-                    <SelectTrigger>
-                        <SelectValue placeholder="Select status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="Paid">Paid</SelectItem>
-                        <SelectItem value="Pending">Pending</SelectItem>
-                        <SelectItem value="Overdue">Overdue</SelectItem>
-                    </SelectContent>
-                    </Select>
-                </div>
-                <DialogFooter>
-                    <DialogClose asChild>
-                        <Button variant="outline">Cancel</Button>
-                    </DialogClose>
-                    <Button type="submit">Save Entry</Button>
-                </DialogFooter>
-            </form>
-        </DialogContent>
-    </Dialog>
+     
     </>
   )
 }
+
+    
