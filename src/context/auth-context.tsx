@@ -23,8 +23,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const publicRoutes = ['/login'];
-
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -135,14 +133,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(null);
       setSession(null);
       setIsAdmin(false);
-      router.push('/login');
+      // No need to push to login, as it's a dialog now
       return;
     }
 
     if (supabase) {
       await supabase.auth.signOut();
     }
-    router.push('/');
+    setUser(null);
+    setSession(null);
+    setIsAdmin(false);
   };
 
   const changePassword = async (oldPass: string, newPass: string) => {
@@ -158,17 +158,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const value = { user, session, isAdmin, signIn, signOut, changePassword };
 
-  useEffect(() => {
-    if (!loading && !user && !publicRoutes.includes(pathname)) {
-      // User is not logged in and not on a public page, redirect to login
-      // but only if we are NOT on a public page. For this app, any non-login page is protected.
-      // router.push('/login'); 
-      // We no longer redirect, we just show the read-only view.
-    } else if (!loading && user && pathname === '/login') {
-      // If user is logged in and tries to access login page, redirect to home
-      router.push('/');
-    }
-  }, [user, loading, pathname, router]);
+  // This effect can be removed as we are no longer redirecting automatically
+  // useEffect(() => {
+  //   if (!loading && user && pathname === '/login') {
+  //     router.push('/');
+  //   }
+  // }, [user, loading, pathname, router]);
 
 
   if (loading) {

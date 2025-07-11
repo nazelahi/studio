@@ -1,22 +1,25 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import * as React from "react";
 import { useAuth } from "@/context/auth-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Logo } from "@/components/icons";
 import { LoaderCircle } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
-export default function LoginPage() {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+interface LoginDialogProps {
+  isOpen: boolean;
+  onOpenChange: (isOpen: boolean) => void;
+}
+
+export function LoginDialog({ isOpen, onOpenChange }: LoginDialogProps) {
+  const [email, setEmail] = React.useState('');
+  const [password, setPassword] = React.useState('');
+  const [loading, setLoading] = React.useState(false);
   const { signIn } = useAuth();
-  const router = useRouter();
   const { toast } = useToast();
 
   const handleSignIn = async (e: React.FormEvent) => {
@@ -27,8 +30,8 @@ export default function LoginPage() {
       if (error) {
         throw new Error(error);
       }
-      router.push('/');
       toast({ title: "Login Successful", description: "You are now signed in." });
+      onOpenChange(false); // Close dialog on success
     } catch (error: any) {
       toast({
         title: "Login Failed",
@@ -40,40 +43,43 @@ export default function LoginPage() {
     }
   };
 
-  const handleSignUp = async () => {
+  const handleSignUp = () => {
     toast({
         title: "Sign Up Unavailable",
         description: "Please contact an administrator to create an account.",
     });
   };
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-screen w-screen">
-          <LoaderCircle className="h-12 w-12 animate-spin text-primary" />
-      </div>
-    );
-  }
+  React.useEffect(() => {
+    if (!isOpen) {
+        setEmail('');
+        setPassword('');
+        setLoading(false);
+    }
+  }, [isOpen]);
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-secondary">
-      <div className="w-full max-w-md mx-auto">
-        <div className="text-center mb-6">
-             <Logo className="h-12 w-12 mx-auto text-primary" />
-             <h1 className="text-3xl font-bold mt-2">RentFlow</h1>
-             <p className="text-muted-foreground">Admin Login</p>
-        </div>
-        <Card>
-          <CardHeader>
-            <CardTitle>Welcome Back</CardTitle>
-            <CardDescription>Enter your credentials to access the admin dashboard.</CardDescription>
-          </CardHeader>
-          <CardContent>
+    <Dialog open={isOpen} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+            <div className="flex flex-col items-center text-center mb-4">
+               <Logo className="h-12 w-12 mx-auto text-primary" />
+               <DialogTitle className="text-3xl font-bold mt-2">RentFlow</DialogTitle>
+               <DialogDescription className="text-muted-foreground">Admin Login</DialogDescription>
+            </div>
+        </DialogHeader>
+
+        {loading ? (
+            <div className="flex justify-center items-center h-48">
+                <LoaderCircle className="h-12 w-12 animate-spin text-primary" />
+            </div>
+        ) : (
+            <>
             <form onSubmit={handleSignIn} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email-dialog">Email</Label>
                 <Input
-                  id="email"
+                  id="email-dialog"
                   type="email"
                   placeholder="admin@gmail.com"
                   value={email}
@@ -82,9 +88,9 @@ export default function LoginPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password-dialog">Password</Label>
                 <Input
-                  id="password"
+                  id="password-dialog"
                   type="password"
                   placeholder="••••••••"
                   value={password}
@@ -96,15 +102,15 @@ export default function LoginPage() {
                 {loading ? "Signing In..." : "Sign In"}
               </Button>
             </form>
-          </CardContent>
-        </Card>
-        <div className="mt-4 text-center text-sm">
-          Don't have an account?{" "}
-          <button onClick={handleSignUp} className="underline text-primary">
-            Contact Admin
-          </button>
-        </div>
-      </div>
-    </div>
+            <div className="mt-4 text-center text-sm">
+                Don't have an account?{" "}
+                <button onClick={handleSignUp} className="underline text-primary">
+                    Contact Admin
+                </button>
+            </div>
+            </>
+        )}
+      </DialogContent>
+    </Dialog>
   );
 }

@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import * as React from "react"
 import { useSettings } from "@/context/settings-context"
 import { usePathname } from "next/navigation"
 import { Logo } from "@/components/icons"
@@ -9,13 +10,13 @@ import { useAuth } from "@/context/auth-context"
 import { Button } from "@/components/ui/button"
 import { User, LogOut } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { useRouter } from "next/navigation"
+import { LoginDialog } from "@/components/login-dialog"
 
 export default function HomePage() {
   const { settings } = useSettings();
   const pathname = usePathname();
   const { user, signOut } = useAuth();
-  const router = useRouter();
+  const [isLoginOpen, setIsLoginOpen] = React.useState(false);
 
   return (
     <div className="flex min-h-screen w-full flex-col">
@@ -59,7 +60,7 @@ export default function HomePage() {
             </DropdownMenuContent>
           </DropdownMenu>
         ) : (
-          <Button onClick={() => router.push('/login')}>Sign In</Button>
+           <Button onClick={() => setIsLoginOpen(true)}>Sign In</Button>
         )}
       </header>
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
@@ -68,6 +69,7 @@ export default function HomePage() {
           {settings.footerName}
         </footer>
       </main>
+      <LoginDialog isOpen={isLoginOpen} onOpenChange={setIsLoginOpen} />
     </div>
   )
 }
