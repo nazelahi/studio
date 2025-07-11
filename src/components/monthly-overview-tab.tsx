@@ -717,17 +717,11 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                   />
                               </TableCell>}
                               <TableCell>
-                                <div className="flex items-center gap-3">
-                                  <Avatar className="hidden h-9 w-9 sm:flex">
-                                    <AvatarImage src={entry.avatar} alt="Avatar" data-ai-hint="person avatar"/>
-                                    <AvatarFallback>{entry.name.charAt(0)}</AvatarFallback>
-                                  </Avatar>
-                                  <div className="grid gap-1">
-                                    <p className="text-sm font-medium leading-none">{entry.name}</p>
-                                    <p className="text-sm text-muted-foreground">
-                                      {entry.property}
-                                    </p>
-                                  </div>
+                                <div className="grid gap-1">
+                                  <p className="text-sm font-medium leading-none">{entry.name}</p>
+                                  <p className="text-sm text-muted-foreground">
+                                    {entry.property}
+                                  </p>
                                 </div>
                               </TableCell>
                               <TableCell className="hidden sm:table-cell">{entry.collectedBy || '-'}</TableCell>
