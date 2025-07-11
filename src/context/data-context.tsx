@@ -164,17 +164,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     const deleteTenant = async (tenantId: string) => {
         if (!supabase) return;
-
-        // First, delete all related rent entries
-        const { error: rentError } = await supabase.from('rent_entries').delete().eq('tenantId', tenantId);
-        if (rentError) {
-            handleError(rentError, 'deleting tenant rent entries');
-            return; // Stop if we can't delete dependencies
-        }
         
-        // Then, delete the tenant
+        // Only delete the tenant, not their rent history.
         const { error } = await supabase.from('tenants').delete().eq('id', tenantId);
-        if (error) handleError(error, 'deleting tenant');
+        if (error) {
+            handleError(error, 'deleting tenant');
+        }
     };
 
     const addExpense = async (expense: Omit<Expense, 'id' | 'created_at'>) => {
