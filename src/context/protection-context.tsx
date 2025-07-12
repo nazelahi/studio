@@ -1,7 +1,9 @@
+
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
-import { PasscodeDialog } from '@/components/passcode-dialog';
+import { useAuth } from './auth-context';
+import { LoginDialog } from '@/components/login-dialog';
 
 interface ProtectionContextType {
   isUnlocked: boolean;
@@ -11,42 +13,33 @@ interface ProtectionContextType {
 const ProtectionContext = createContext<ProtectionContextType | undefined>(undefined);
 
 export function ProtectionProvider({ children }: { children: ReactNode }) {
-    const [isUnlocked, setIsUnlocked] = useState(false);
-    const [isPasscodeDialogOpen, setIsPasscodeDialogOpen] = useState(false);
-    const [pendingAction, setPendingAction] = useState<(() => void) | null>(null);
-
+    const { isAdmin } = useAuth();
+    const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false);
+    
+    // The action should only be triggered if the user is an admin.
+    // If not, we prompt them to log in.
     const withProtection = useCallback((action: () => void, event?: React.MouseEvent) => {
         if(event) {
-            // This is needed to stop some actions from proceeding in ShadCN components like AlertDialogTrigger
             event.preventDefault();
             event.stopPropagation();
         }
 
-        if (isUnlocked) {
+        if (isAdmin) {
             action();
         } else {
-            setPendingAction(() => action);
-            setIsPasscodeDialogOpen(true);
+            setIsLoginDialogOpen(true);
         }
-    }, [isUnlocked]);
+    }, [isAdmin]);
 
-    const handleSuccess = () => {
-        setIsUnlocked(true);
-        if (pendingAction) {
-            pendingAction();
-            setPendingAction(null);
-        }
-    };
-
-    const value = { isUnlocked, withProtection };
+    // isUnlocked is now directly tied to the isAdmin state from the AuthContext.
+    const value = { isUnlocked: isAdmin, withProtection };
 
     return (
         <ProtectionContext.Provider value={value}>
             {children}
-            <PasscodeDialog
-                isOpen={isPasscodeDialogOpen}
-                onOpenChange={setIsPasscodeDialogOpen}
-                onSuccess={handleSuccess}
+            <LoginDialog 
+                isOpen={isLoginDialogOpen}
+                onOpenChange={setIsLoginDialogOpen}
             />
         </ProtectionContext.Provider>
     );

@@ -2,23 +2,50 @@
 "use client";
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { useProtection } from './protection-context';
+import { supabase } from '@/lib/supabase';
+import type { User, Session } from '@supabase/supabase-js';
 
 interface AuthContextType {
+  user: User | null;
   isAdmin: boolean;
+  signIn: (email: string, password: string) => Promise<{ error: string | null }>;
+  signOut: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const { isUnlocked } = useProtection();
+  const [user, setUser] = useState<User | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    setIsAdmin(isUnlocked);
-  }, [isUnlocked]);
+    const getSession = async () => {
+        const { data: { session } } = await supabase.auth.getSession();
+        setUser(session?.user ?? null);
+        setIsAdmin(!!session?.user);
+    };
+    getSession();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user ?? null);
+      setIsAdmin(!!session?.user);
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
+
+  const signIn = async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    return { error: error ? error.message : null };
+  };
+
+  const signOut = async () => {
+    await supabase.auth.signOut();
+  };
   
-  const value = { isAdmin };
+  const value = { user, isAdmin, signIn, signOut };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

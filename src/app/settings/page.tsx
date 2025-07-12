@@ -2,7 +2,7 @@
 "use client"
 
 import Link from "next/link"
-import React, { useState } from "react"
+import React, { useState, useTransition } from "react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
@@ -11,21 +11,20 @@ import { useSettings } from "@/context/settings-context"
 import { usePathname } from "next/navigation"
 import { useAuth } from "@/context/auth-context"
 import { Button } from "@/components/ui/button"
-import { User, LogOut, KeyRound, MapPin, Trash2, Menu, Settings, LockKeyhole } from "lucide-react"
+import { User, LogOut, KeyRound, MapPin, Trash2, Menu, Settings, LockKeyhole, LoaderCircle, LogIn } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useToast } from "@/hooks/use-toast"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from "@/components/ui/sheet"
-import { useData } from "@/context/data-context"
-import { useProtection } from "@/context/protection-context"
-
+import { updatePropertySettingsAction } from "./actions"
+import { LoginDialog } from "@/components/login-dialog"
 
 export default function SettingsPage() {
   const { settings, setSettings } = useSettings();
-  const { updatePropertySettings } = useData();
   const pathname = usePathname();
-  const { isAdmin } = useAuth();
+  const { user, isAdmin, signOut } = useAuth();
   const { toast } = useToast();
-  const { withProtection } = useProtection();
+  const [isPending, startTransition] = useTransition();
+  const [isLoginDialogOpen, setIsLoginDialogOpen] = React.useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -44,26 +43,39 @@ export default function SettingsPage() {
     });
   };
 
-  const handleSavePropertyDetails = () => {
-     withProtection(async () => {
-        await updatePropertySettings({
-          house_name: settings.houseName,
-          house_address: settings.houseAddress
-        });
-        toast({
-          title: 'Property Details Saved',
-          description: 'Your house name and address have been updated.',
-        });
-     })
+  const handleSavePropertyDetails = (formData: FormData) => {
+     if (!isAdmin) {
+        toast({ title: 'Unauthorized', description: 'You must be logged in as an admin to perform this action.', variant: 'destructive'});
+        return;
+     }
+
+     startTransition(async () => {
+        const result = await updatePropertySettingsAction(formData);
+        if (result?.error) {
+            toast({ title: 'Error Saving Settings', description: result.error, variant: 'destructive'});
+        } else {
+            toast({ title: 'Property Details Saved', description: 'Your house name and address have been updated.' });
+        }
+     });
   };
 
   const handleSaveAppSettings = () => {
-    withProtection(() => {
-        // The settings are saved automatically by the useEffect in SettingsProvider
-        toast({
-            title: 'Application Settings Saved',
-            description: 'Your changes have been saved to this browser.',
-        });
+     if (!isAdmin) {
+        toast({ title: 'Unauthorized', description: 'You must be logged in as an admin to perform this action.', variant: 'destructive'});
+        return;
+     }
+    // The settings are saved automatically by the useEffect in SettingsProvider
+    toast({
+        title: 'Application Settings Saved',
+        description: 'Your changes have been saved to this browser.',
+    });
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    toast({
+      title: "Signed Out",
+      description: "You have been successfully signed out.",
     });
   };
 
@@ -138,11 +150,35 @@ export default function SettingsPage() {
                 <p className="truncate">{settings.houseAddress}</p>
             </div>
         </div>
-        <div>
-           <Button variant="outline" onClick={(e) => withProtection(() => {}, e)}>
-            <LockKeyhole className="mr-2 h-4 w-4" />
-            {isAdmin ? "Unlocked" : "Admin"}
-          </Button>
+        <div className="flex items-center gap-2">
+           {user ? (
+             <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="secondary" size="icon" className="rounded-full">
+                  <User className="h-5 w-5" />
+                  <span className="sr-only">Toggle user menu</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => router.push('/settings')}>
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>Settings</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Log out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+           ) : (
+            <Button variant="outline" onClick={() => setIsLoginDialogOpen(true)}>
+              <LogIn className="mr-2 h-4 w-4" />
+              Admin Login
+            </Button>
+           )}
         </div>
       </header>
        <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
@@ -151,64 +187,79 @@ export default function SettingsPage() {
           </div>
           <div className="mx-auto grid w-full max-w-6xl items-start gap-6">
             <div className="group grid gap-6">
+              <form action={handleSavePropertyDetails}>
+                <fieldset disabled={!isAdmin} className="group">
+                    <Card className="group-disabled:opacity-50">
+                        <CardHeader>
+                            <CardTitle>{settings.page_settings.property_details.title}</CardTitle>
+                            <CardDescription>{settings.page_settings.property_details.description}</CardDescription>
+                        </CardHeader>
+                        <CardContent className="grid md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="houseName">{settings.page_settings.property_details.house_name_label}</Label>
+                                <Input id="houseName" name="houseName" value={settings.houseName} onChange={handleInputChange} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="houseAddress">{settings.page_settings.property_details.house_address_label}</Label>
+                                <Input id="houseAddress" name="houseAddress" value={settings.houseAddress} onChange={handleInputChange} />
+                            </div>
+                        </CardContent>
+                        <CardFooter>
+                            <Button type="submit" disabled={isPending}>
+                               {isPending && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
+                               Save
+                            </Button>
+                        </CardFooter>
+                    </Card>
+                </fieldset>
+              </form>
+
               <Card>
-                <CardHeader>
-                    <CardTitle>{settings.page_settings.property_details.title}</CardTitle>
-                    <CardDescription>{settings.page_settings.property_details.description}</CardDescription>
-                </CardHeader>
-                <CardContent className="grid md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="houseName">{settings.page_settings.property_details.house_name_label}</Label>
-                        <Input id="houseName" name="houseName" value={settings.houseName} onChange={handleInputChange} />
+                  <fieldset disabled={!isAdmin} className="group">
+                    <div className="group-disabled:opacity-50">
+                        <CardHeader>
+                            <CardTitle>{settings.page_settings.app_settings.title}</CardTitle>
+                            <CardDescription>{settings.page_settings.app_settings.description}</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            <div className="space-y-2">
+                                <Label htmlFor="appName">{settings.page_settings.app_settings.header_name_label}</Label>
+                                <Input id="appName" name="appName" value={settings.appName} onChange={handleInputChange} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="footerName">{settings.page_settings.app_settings.footer_name_label}</Label>
+                                <Input id="footerName" name="footerName" value={settings.footerName} onChange={handleInputChange} />
+                            </div>
+                        </CardContent>
+                        <CardFooter>
+                            <Button onClick={handleSaveAppSettings}>Save</Button>
+                        </CardFooter>
                     </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="houseAddress">{settings.page_settings.property_details.house_address_label}</Label>
-                        <Input id="houseAddress" name="houseAddress" value={settings.houseAddress} onChange={handleInputChange} />
-                    </div>
-                </CardContent>
-                <CardFooter>
-                    <Button onClick={handleSavePropertyDetails}>Save</Button>
-                </CardFooter>
+                  </fieldset>
               </Card>
 
               <Card>
-                  <CardHeader>
-                      <CardTitle>{settings.page_settings.app_settings.title}</CardTitle>
-                      <CardDescription>{settings.page_settings.app_settings.description}</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                      <div className="space-y-2">
-                          <Label htmlFor="appName">{settings.page_settings.app_settings.header_name_label}</Label>
-                          <Input id="appName" name="appName" value={settings.appName} onChange={handleInputChange} />
-                      </div>
-                      <div className="space-y-2">
-                          <Label htmlFor="footerName">{settings.page_settings.app_settings.footer_name_label}</Label>
-                          <Input id="footerName" name="footerName" value={settings.footerName} onChange={handleInputChange} />
-                      </div>
-                  </CardContent>
-                   <CardFooter>
-                    <Button onClick={handleSaveAppSettings}>Save</Button>
-                </CardFooter>
-              </Card>
-
-              <Card>
-                  <CardHeader>
-                    <CardTitle>{settings.page_settings.overview_settings.title}</CardTitle>
-                    <CardDescription>{settings.page_settings.overview_settings.description}</CardDescription>
-                  </CardHeader>
-                  <CardContent className="grid md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                          <Label htmlFor="overview-financial-title">{settings.page_settings.overview_settings.financial_title_label}</Label>
-                          <Input id="overview-financial-title" name="page_overview.financial_overview_title" value={settings.page_overview.financial_overview_title} onChange={handleInputChange} />
-                      </div>
-                      <div className="space-y-2">
-                          <Label htmlFor="overview-financial-desc">{settings.page_settings.overview_settings.financial_description_label}</Label>
-                          <Input id="overview-financial-desc" name="page_overview.financial_overview_description" value={settings.page_overview.financial_overview_description} onChange={handleInputChange} />
-                      </div>
-                  </CardContent>
-                   <CardFooter>
-                    <Button onClick={handleSaveAppSettings}>Save</Button>
-                </CardFooter>
+                <fieldset disabled={!isAdmin} className="group">
+                    <div className="group-disabled:opacity-50">
+                        <CardHeader>
+                            <CardTitle>{settings.page_settings.overview_settings.title}</CardTitle>
+                            <CardDescription>{settings.page_settings.overview_settings.description}</CardDescription>
+                        </CardHeader>
+                        <CardContent className="grid md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="overview-financial-title">{settings.page_settings.overview_settings.financial_title_label}</Label>
+                                <Input id="overview-financial-title" name="page_overview.financial_overview_title" value={settings.page_overview.financial_overview_title} onChange={handleInputChange} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="overview-financial-desc">{settings.page_settings.overview_settings.financial_description_label}</Label>
+                                <Input id="overview-financial-desc" name="page_overview.financial_overview_description" value={settings.page_overview.financial_overview_description} onChange={handleInputChange} />
+                            </div>
+                        </CardContent>
+                        <CardFooter>
+                            <Button onClick={handleSaveAppSettings}>Save</Button>
+                        </CardFooter>
+                    </div>
+                  </fieldset>
               </Card>
 
             </div>
@@ -218,6 +269,7 @@ export default function SettingsPage() {
             {settings.footerName}
           </footer>
         </main>
+        <LoginDialog isOpen={isLoginDialogOpen} onOpenChange={setIsLoginDialogOpen} />
       </div>
   )
 }

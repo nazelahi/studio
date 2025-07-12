@@ -1,3 +1,4 @@
+
 import type {Metadata} from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
@@ -26,11 +27,11 @@ export default function RootLayout({
       <body className="font-body antialiased">
         <DataProvider>
           <SettingsProvider>
-            <ProtectionProvider>
-              <AuthProvider>
+            <AuthProvider>
+              <ProtectionProvider>
                 {children}
-              </AuthProvider>
-            </ProtectionProvider>
+              </ProtectionProvider>
+            </AuthProvider>
           </SettingsProvider>
         </DataProvider>
         <Toaster />
