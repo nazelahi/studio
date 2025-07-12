@@ -1,169 +1,198 @@
--- Drop existing tables if they exist to start fresh
-DROP TABLE IF EXISTS public.property_settings, public.work_details, public.tenants, public.expenses, public.rent_entries, public.deposits, public.notices, public.zakat_transactions, public.zakat_bank_details CASCADE;
-
--- Create property_settings table
-CREATE TABLE public.property_settings (
-    id bigint PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
-    house_name text,
-    house_address text,
-    bank_name text,
-    bank_account_number text,
-    bank_logo_url text,
-    owner_name text,
-    owner_photo_url text
-);
-
--- Seed initial property_settings data
-INSERT INTO public.property_settings (id, house_name, house_address) VALUES (1, 'My Property', '123 Main St, Anytown, USA');
-
-
--- Create work_details table
-CREATE TABLE public.work_details (
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    title text NOT NULL,
-    description text,
-    category text,
-    status text NOT NULL DEFAULT 'To Do'::text,
-    assigned_to_id uuid,
-    product_cost numeric,
-    worker_cost numeric,
-    due_date date,
-    created_at timestamp with time zone DEFAULT now() NOT NULL
-);
-
 -- Create tenants table
-CREATE TABLE public.tenants (
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    name text NOT NULL,
-    email text NOT NULL,
-    phone text,
-    property text NOT NULL,
-    rent numeric NOT NULL,
-    join_date date NOT NULL,
-    notes text,
-    status text DEFAULT 'Active'::text,
-    avatar text,
-    type text,
-    documents jsonb,
-    created_at timestamp with time zone DEFAULT now() NOT NULL
-);
+create table
+  public.tenants (
+    id uuid not null default gen_random_uuid (),
+    created_at timestamp with time zone not null default now(),
+    name text not null,
+    email text not null,
+    phone text null,
+    property text not null,
+    rent real not null,
+    join_date date not null,
+    notes text null,
+    status text not null,
+    avatar text not null,
+    type text null,
+    documents jsonb null,
+    constraint tenants_pkey primary key (id)
+  ) tablespace pg_default;
+
+-- RLS policies for tenants
+alter table public.tenants enable row level security;
+create policy "Enable read access for all users" on public.tenants for select using (true);
+create policy "Enable insert for admins" on public.tenants for insert to service_role with check (true);
+create policy "Enable update for admins" on public.tenants for update to service_role using (true);
+create policy "Enable delete for admins" on public.tenants for delete to service_role using (true);
 
 
 -- Create expenses table
-CREATE TABLE public.expenses (
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    date date NOT NULL,
-    category text NOT NULL,
-    amount numeric NOT NULL,
-    description text,
-    status text DEFAULT 'Due'::text,
-    created_at timestamp with time zone DEFAULT now() NOT NULL
-);
+create table
+  public.expenses (
+    id uuid not null default gen_random_uuid (),
+    created_at timestamp with time zone not null default now(),
+    date date not null,
+    category text not null,
+    amount real not null,
+    description text not null,
+    status text not null,
+    constraint expenses_pkey primary key (id)
+  ) tablespace pg_default;
+
+-- RLS policies for expenses
+alter table public.expenses enable row level security;
+create policy "Enable read access for all users" on public.expenses for select using (true);
+create policy "Enable insert for admins" on public.expenses for insert to service_role with check (true);
+create policy "Enable update for admins" on public.expenses for update to service_role using (true);
+create policy "Enable delete for admins" on public.expenses for delete to service_role using (true);
 
 -- Create rent_entries table
-CREATE TABLE public.rent_entries (
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    tenant_id uuid REFERENCES public.tenants(id) ON DELETE CASCADE,
-    name text NOT NULL,
-    property text NOT NULL,
-    rent numeric NOT NULL,
-    due_date date NOT NULL,
-    status text DEFAULT 'Pending'::text,
-    avatar text,
-    year integer NOT NULL,
-    month integer NOT NULL,
-    payment_date date,
-    collected_by text,
-    created_at timestamp with time zone DEFAULT now() NOT NULL
-);
+create table
+  public.rent_entries (
+    id uuid not null default gen_random_uuid (),
+    created_at timestamp with time zone not null default now(),
+    tenant_id uuid null,
+    name text not null,
+    property text not null,
+    rent real not null,
+    due_date date not null,
+    status text not null,
+    avatar text not null,
+    year real not null,
+    month real not null,
+    payment_date date null,
+    collected_by text null,
+    constraint rent_entries_pkey primary key (id),
+    constraint rent_entries_tenant_id_fkey foreign key (tenant_id) references tenants (id) on delete set null
+  ) tablespace pg_default;
+
+-- RLS policies for rent_entries
+alter table public.rent_entries enable row level security;
+create policy "Enable read access for all users" on public.rent_entries for select using (true);
+create policy "Enable insert for admins" on public.rent_entries for insert to service_role with check (true);
+create policy "Enable update for admins" on public.rent_entries for update to service_role using (true);
+create policy "Enable delete for admins" on public.rent_entries for delete to service_role using (true);
+
 
 -- Create deposits table
-CREATE TABLE public.deposits (
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    year integer NOT NULL,
-    month integer NOT NULL,
-    amount numeric NOT NULL,
-    deposit_date date NOT NULL,
-    receipt_url text,
-    created_at timestamp with time zone DEFAULT now() NOT NULL
-);
+create table
+  public.deposits (
+    id uuid not null default gen_random_uuid (),
+    created_at timestamp with time zone not null default now(),
+    year real not null,
+    month real not null,
+    amount real not null,
+    deposit_date date not null,
+    receipt_url text null,
+    constraint deposits_pkey primary key (id),
+    constraint deposits_year_month_key unique (year, month)
+  ) tablespace pg_default;
+
+-- RLS policies for deposits
+alter table public.deposits enable row level security;
+create policy "Enable read access for all users" on public.deposits for select using (true);
+create policy "Enable insert for admins" on public.deposits for insert to service_role with check (true);
+create policy "Enable update for admins" on public.deposits for update to service_role using (true);
+create policy "Enable delete for admins" on public.deposits for delete to service_role using (true);
+
 
 -- Create notices table
-CREATE TABLE public.notices (
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    year integer NOT NULL,
-    month integer NOT NULL,
-    content text NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL
-);
+create table
+  public.notices (
+    id uuid not null default gen_random_uuid (),
+    created_at timestamp with time zone not null default now(),
+    year real not null,
+    month real not null,
+    content text not null,
+    constraint notices_pkey primary key (id),
+    constraint notices_year_month_key unique (year, month)
+  ) tablespace pg_default;
+  
+-- RLS policies for notices
+alter table public.notices enable row level security;
+create policy "Enable read access for all users" on public.notices for select using (true);
+create policy "Enable insert for admins" on public.notices for insert to service_role with check (true);
+create policy "Enable update for admins" on public.notices for update to service_role using (true);
+create policy "Enable delete for admins" on public.notices for delete to service_role using (true);
+
 
 -- Create zakat_transactions table
-CREATE TABLE public.zakat_transactions (
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    transaction_date date NOT NULL,
-    type text NOT NULL,
-    amount numeric NOT NULL,
-    source_or_recipient text NOT NULL,
-    description text,
-    receipt_url text,
-    created_at timestamp with time zone DEFAULT now() NOT NULL
-);
+create table
+  public.zakat_transactions (
+    id uuid not null default gen_random_uuid (),
+    created_at timestamp with time zone not null default now(),
+    transaction_date date not null,
+    type text not null,
+    amount real not null,
+    source_or_recipient text not null,
+    description text null,
+    receipt_url text null,
+    constraint zakat_transactions_pkey primary key (id)
+  ) tablespace pg_default;
+
+-- RLS policies for zakat_transactions
+alter table public.zakat_transactions enable row level security;
+create policy "Enable read access for all users" on public.zakat_transactions for select using (true);
+create policy "Enable all actions for admins" on public.zakat_transactions for all to service_role using (true) with check (true);
 
 
 -- Create zakat_bank_details table
-CREATE TABLE public.zakat_bank_details (
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    bank_name text NOT NULL,
-    account_number text NOT NULL,
-    account_holder text,
-    logo_url text,
-    location text,
-    created_at timestamp with time zone DEFAULT now() NOT NULL
-);
+create table
+  public.zakat_bank_details (
+    id uuid not null default gen_random_uuid (),
+    created_at timestamp with time zone not null default now(),
+    bank_name text not null,
+    account_number text not null,
+    account_holder text null,
+    logo_url text null,
+    location text null,
+    constraint zakat_bank_details_pkey primary key (id)
+  ) tablespace pg_default;
+  
+-- RLS policies for zakat_bank_details
+alter table public.zakat_bank_details enable row level security;
+create policy "Enable read access for all users" on public.zakat_bank_details for select using (true);
+create policy "Enable all actions for admins" on public.zakat_bank_details for all to service_role using (true) with check (true);
 
 
--- RLS Policies for property_settings
-ALTER TABLE public.property_settings ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow all users to read property settings" ON public.property_settings FOR SELECT USING (true);
-CREATE POLICY "Allow admin users to update property settings" ON public.property_settings FOR UPDATE USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
+-- Create property_settings table
+create table
+  public.property_settings (
+    id bigint generated by default as identity,
+    created_at timestamp with time zone not null default now(),
+    house_name text null,
+    house_address text null,
+    bank_name text null,
+    bank_account_number text null,
+    bank_logo_url text null,
+    owner_name text null,
+    owner_photo_url text null,
+    constraint property_settings_pkey primary key (id)
+  ) tablespace pg_default;
+  
+-- RLS policies for property_settings
+alter table public.property_settings enable row level security;
+create policy "Enable read access for all users" on public.property_settings for select using (true);
+create policy "Enable update for admins" on public.property_settings for update to service_role using (true);
+-- Note: Insert and Delete are typically not needed for a single settings row. 
+-- You can create one row manually in the Supabase Studio.
 
-
--- RLS Policies for work_details
-ALTER TABLE public.work_details ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow all users to read work details" ON public.work_details FOR SELECT USING (true);
-CREATE POLICY "Allow admin users to manage work details" ON public.work_details FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
-
--- RLS Policies for tenants
-ALTER TABLE public.tenants ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow all users to read tenants" ON public.tenants FOR SELECT USING (true);
-CREATE POLICY "Allow admin users to manage tenants" ON public.tenants FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
-
--- RLS Policies for expenses
-ALTER TABLE public.expenses ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow all users to read expenses" ON public.expenses FOR SELECT USING (true);
-CREATE POLICY "Allow admin users to manage expenses" ON public.expenses FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
-
--- RLS Policies for rent_entries
-ALTER TABLE public.rent_entries ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow all users to read rent entries" ON public.rent_entries FOR SELECT USING (true);
-CREATE POLICY "Allow admin users to manage rent entries" ON public.rent_entries FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
-
--- RLS Policies for deposits
-ALTER TABLE public.deposits ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow all users to read deposits" ON public.deposits FOR SELECT USING (true);
-CREATE POLICY "Allow admin users to manage deposits" ON public.deposits FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
-
--- RLS Policies for notices
-ALTER TABLE public.notices ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow all users to read notices" ON public.notices FOR SELECT USING (true);
-CREATE POLICY "Allow admin users to manage notices" ON public.notices FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
-
--- RLS Policies for zakat_transactions
-ALTER TABLE public.zakat_transactions ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow all users to read zakat transactions" ON public.zakat_transactions FOR SELECT USING (true);
-CREATE POLICY "Allow admin users to manage zakat transactions" ON public.zakat_transactions FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
-
--- RLS Policies for zakat_bank_details
-ALTER TABLE public.zakat_bank_details ENABLE ROW LEVEL SECURITY;
-CREATE POLICY "Allow all users to read zakat bank details" ON public.zakat_bank_details FOR SELECT USING (true);
-CREATE POLICY "Allow admin users to manage zakat bank details" ON public.zakat_bank_details FOR ALL USING (auth.role() = 'service_role') WITH CHECK (auth.role() = 'service_role');
+-- Create work_details table
+create table
+  public.work_details (
+    id uuid not null default gen_random_uuid (),
+    created_at timestamp with time zone not null default now(),
+    title text not null,
+    description text null,
+    category text null,
+    status text not null,
+    assigned_to_id text null,
+    product_cost real null,
+    worker_cost real null,
+    due_date date null,
+    constraint work_details_pkey primary key (id)
+  ) tablespace pg_default;
+  
+-- RLS policies for work_details
+alter table public.work_details enable row level security;
+create policy "Enable read access for all users" on public.work_details for select using (true);
+create policy "Enable all actions for admins" on public.work_details for all to service_role using (true) with check (true);
