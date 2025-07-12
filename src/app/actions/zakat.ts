@@ -146,10 +146,45 @@ export async function saveZakatBankDetailAction(formData: FormData) {
     const supabaseAdmin = getSupabaseAdmin();
     const detailId = formData.get('detailId') as string | undefined;
 
+    const logoFile = formData.get('logoFile') as File | null;
+    let logoUrl: string | null = formData.get('logo_url') as string || null;
+
+    if (logoFile && logoFile.size > 0) {
+        const fileExt = logoFile.name.split('.').pop();
+        const filePath = `bank-logos/${Date.now()}.${fileExt}`;
+
+        const { error: uploadError } = await supabaseClient.storage
+            .from('zakat-receipts') // Using the same bucket for simplicity
+            .upload(filePath, logoFile);
+
+        if (uploadError) {
+            console.error('Supabase storage logo upload error:', uploadError);
+            return { error: `Failed to upload logo: ${uploadError.message}` };
+        }
+
+        const { data: publicUrlData } = supabaseClient.storage
+            .from('zakat-receipts')
+            .getPublicUrl(filePath);
+
+        logoUrl = publicUrlData.publicUrl;
+
+        const oldLogoUrl = formData.get('oldLogoUrl') as string | undefined;
+        if (oldLogoUrl) {
+            try {
+                const oldLogoPath = new URL(oldLogoUrl).pathname.split('/zakat-receipts/')[1];
+                await supabaseClient.storage.from('zakat-receipts').remove([oldLogoPath]);
+            } catch (e) {
+                console.error("Could not parse or delete old Zakat bank logo from storage:", e);
+            }
+        }
+    }
+
     const data = {
         bank_name: formData.get('bank_name') as string,
         account_number: formData.get('account_number') as string,
         account_holder: formData.get('account_holder') as string,
+        location: formData.get('location') as string || null,
+        logo_url: logoUrl,
     };
 
     let error;
@@ -183,6 +218,16 @@ export async function deleteZakatBankDetailAction(formData: FormData) {
 
     if (!detailId) {
         return { error: 'Detail ID is missing.' };
+    }
+    
+    const logoUrl = formData.get('logoUrl') as string | undefined;
+    if (logoUrl) {
+        try {
+            const logoPath = new URL(logoUrl).pathname.split('/zakat-receipts/')[1];
+            await supabaseClient.storage.from('zakat-receipts').remove([logoPath]);
+        } catch(e) {
+            console.error("Could not parse or delete logo from storage on delete:", e);
+        }
     }
 
     const { error } = await supabaseAdmin

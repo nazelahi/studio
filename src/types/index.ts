@@ -55,6 +55,8 @@ export type ZakatBankDetail = {
   bank_name: string;
   account_number: string;
   account_holder?: string;
+  logo_url?: string;
+  location?: string;
   created_at?: string;
 };
 

@@ -6,7 +6,7 @@ import * as React from "react"
 import { useData } from "@/context/data-context"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { PlusCircle, Edit, Trash2, ArrowUpCircle, ArrowDownCircle, Banknote, LoaderCircle, Settings, Landmark, Eye, Upload, ImageIcon } from "lucide-react"
+import { PlusCircle, Edit, Trash2, ArrowUpCircle, ArrowDownCircle, Banknote, LoaderCircle, Settings, Landmark, Eye, Upload, ImageIcon, MapPin } from "lucide-react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter as UiTableFooter } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { format, parseISO, getYear } from "date-fns"
@@ -23,6 +23,7 @@ import { Skeleton } from "./ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs"
 import { useSettings } from "@/context/settings-context"
 import { cn } from "@/lib/utils"
+import { Avatar, AvatarImage, AvatarFallback } from "./ui/avatar"
 
 const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'BDT' }).format(amount).replace('BDT', '৳');
@@ -47,7 +48,10 @@ export function ZakatTab() {
   const [receiptPreview, setReceiptPreview] = React.useState<string | null>(null);
   const [receiptFile, setReceiptFile] = React.useState<File | null>(null);
   const receiptInputRef = React.useRef<HTMLInputElement>(null);
-  const formRef = React.useRef<HTMLFormElement>(null);
+  
+  const [logoPreview, setLogoPreview] = React.useState<string | null>(null);
+  const [logoFile, setLogoFile] = React.useState<File | null>(null);
+  const logoInputRef = React.useRef<HTMLInputElement>(null);
 
   const handleTxOpenChange = (isOpen: boolean) => {
     if (!isOpen) {
@@ -57,6 +61,15 @@ export function ZakatTab() {
     }
     setIsTxDialogOpen(isOpen);
   };
+  
+  const handleBankDetailOpenChange = (isOpen: boolean) => {
+    if (!isOpen) {
+        setEditingBankDetail(null);
+        setLogoFile(null);
+        setLogoPreview(null);
+    }
+    setIsBankDetailDialogOpen(isOpen);
+  }
 
   const handleEditTx = (transaction: ZakatTransaction) => {
     setEditingTransaction(transaction);
@@ -112,17 +125,31 @@ export function ZakatTab() {
     }
   };
   
+  const handleLogoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+        setLogoFile(file);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            setLogoPreview(reader.result as string);
+        };
+        reader.readAsDataURL(file);
+    }
+  };
+
   const handleSaveBankDetail = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
+     if (logoFile) {
+        formData.append('logoFile', logoFile);
+    }
     startBankDetailTransition(async () => {
         const result = await saveZakatBankDetailAction(formData);
         if (result.error) {
              toast({ title: 'Error Saving Zakat Detail', description: result.error, variant: 'destructive'});
         } else {
              toast({ title: 'Zakat Detail Saved', description: 'The Zakat bank detail has been saved successfully.' });
-             setIsBankDetailDialogOpen(false);
-             setEditingBankDetail(null);
+             handleBankDetailOpenChange(false);
         }
     });
   }
@@ -140,6 +167,7 @@ export function ZakatTab() {
 
   const handleEditBankDetail = (detail: ZakatBankDetail) => {
     setEditingBankDetail(detail);
+    setLogoPreview(detail.logo_url || null);
     setIsBankDetailDialogOpen(true);
   }
   
@@ -335,18 +363,25 @@ export function ZakatTab() {
                  <Table>
                     <TableHeader>
                         <TableRow>
+                            <TableHead>Logo</TableHead>
                             <TableHead>Bank Name</TableHead>
                             <TableHead>Account Number</TableHead>
-                            <TableHead>Account Holder</TableHead>
+                            <TableHead>Location</TableHead>
                             {isAdmin && <TableHead className="w-24 text-right">Actions</TableHead>}
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {settings.zakatBankDetails.map(detail => (
                             <TableRow key={detail.id}>
+                                <TableCell>
+                                    <Avatar>
+                                        <AvatarImage src={detail.logo_url} alt={detail.bank_name} data-ai-hint="logo bank"/>
+                                        <AvatarFallback><Banknote className="h-4 w-4"/></AvatarFallback>
+                                    </Avatar>
+                                </TableCell>
                                 <TableCell>{detail.bank_name}</TableCell>
                                 <TableCell>{detail.account_number}</TableCell>
-                                <TableCell>{detail.account_holder || '-'}</TableCell>
+                                <TableCell>{detail.location || '-'}</TableCell>
                                 {isAdmin && (
                                     <TableCell className="text-right">
                                         <div className="flex items-center justify-end gap-1">
@@ -366,7 +401,7 @@ export function ZakatTab() {
                                                     </AlertDialogHeader>
                                                     <AlertDialogFooter>
                                                         <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                        <form onSubmit={(e) => { e.preventDefault(); const fd = new FormData(); fd.set('detailId', detail.id); handleDeleteBankDetail(fd); }}>
+                                                        <form onSubmit={(e) => { e.preventDefault(); const fd = new FormData(); fd.set('detailId', detail.id); fd.set('logoUrl', detail.logo_url || ''); handleDeleteBankDetail(fd); }}>
                                                             <AlertDialogAction type="submit" disabled={isBankDetailPending}>Delete</AlertDialogAction>
                                                         </form>
                                                     </AlertDialogFooter>
@@ -395,7 +430,7 @@ export function ZakatTab() {
                             Log a new Zakat {dialogTransactionType}.
                         </DialogDescription>
                     </DialogHeader>
-                    <form ref={formRef} onSubmit={handleSaveTx}>
+                    <form onSubmit={handleSaveTx}>
                         <input type="hidden" name="type" value={dialogTransactionType} />
                         {editingTransaction && <input type="hidden" name="transactionId" value={editingTransaction.id} />}
                         {editingTransaction?.receipt_url && <input type="hidden" name="receipt_url" value={editingTransaction.receipt_url} />}
@@ -448,17 +483,37 @@ export function ZakatTab() {
                 </DialogContent>
             </Dialog>
 
-            <Dialog open={isBankDetailDialogOpen} onOpenChange={setIsBankDetailDialogOpen}>
+            <Dialog open={isBankDetailDialogOpen} onOpenChange={handleBankDetailOpenChange}>
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>{editingBankDetail ? 'Edit' : 'Add'} Zakat Bank Account</DialogTitle>
                     </DialogHeader>
                     <form onSubmit={handleSaveBankDetail}>
                         {editingBankDetail && <input type="hidden" name="detailId" value={editingBankDetail.id} />}
-                        <div className="grid gap-4 py-4">
+                        {editingBankDetail?.logo_url && <input type="hidden" name="logo_url" value={editingBankDetail.logo_url} />}
+                        {editingBankDetail?.logo_url && <input type="hidden" name="oldLogoUrl" value={editingBankDetail.logo_url} />}
+                        <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-2">
+                           <div className="space-y-2">
+                                <Label>Bank Logo</Label>
+                                <div className="flex items-center gap-4">
+                                    <Avatar className="h-20 w-20 rounded-md">
+                                        <AvatarImage src={logoPreview} data-ai-hint="logo bank"/>
+                                        <AvatarFallback className="rounded-md"><Banknote className="h-8 w-8"/></AvatarFallback>
+                                    </Avatar>
+                                    <Button type="button" variant="outline" onClick={() => logoInputRef.current?.click()}>
+                                        <Upload className="mr-2 h-4 w-4"/>
+                                        Upload Logo
+                                    </Button>
+                                    <Input ref={logoInputRef} type="file" name="logoFile" className="hidden" accept="image/*" onChange={handleLogoFileChange} />
+                                </div>
+                            </div>
                             <div className="space-y-2">
                                 <Label htmlFor="bank_name">Bank Name</Label>
                                 <Input id="bank_name" name="bank_name" defaultValue={editingBankDetail?.bank_name} required />
+                            </div>
+                             <div className="space-y-2">
+                                <Label htmlFor="location">Location / Branch</Label>
+                                <Input id="location" name="location" defaultValue={editingBankDetail?.location || ''} placeholder="e.g., Main Branch, Dhaka"/>
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="account_number">Account Number</Label>
@@ -466,7 +521,7 @@ export function ZakatTab() {
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="account_holder">Account Holder Name (Optional)</Label>
-                                <Input id="account_holder" name="account_holder" defaultValue={editingBankDetail?.account_holder} />
+                                <Input id="account_holder" name="account_holder" defaultValue={editingBankDetail?.account_holder || ''} />
                             </div>
                         </div>
                          <DialogFooter>
