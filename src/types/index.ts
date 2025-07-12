@@ -73,4 +73,11 @@ export type ZakatTransaction = {
   created_at?: string;
 }
 
+export type Notice = {
+  id: string;
+  year: number;
+  month: number;
+  content: string;
+  created_at?: string;
+}
     

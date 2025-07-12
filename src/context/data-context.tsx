@@ -3,7 +3,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
-import type { Tenant, Expense, RentEntry, PropertySettings, Deposit, ZakatTransaction } from '@/types';
+import type { Tenant, Expense, RentEntry, PropertySettings, Deposit, ZakatTransaction, Notice } from '@/types';
 import { parseISO, getMonth, getYear } from 'date-fns';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
@@ -15,6 +15,7 @@ interface AppData {
   propertySettings: PropertySettings | null;
   deposits: Deposit[];
   zakatTransactions: ZakatTransaction[];
+  notices: Notice[];
 }
 
 type NewRentEntry = Omit<RentEntry, 'id' | 'avatar' | 'year' | 'month' | 'dueDate' | 'created_at'>;
@@ -44,7 +45,7 @@ interface DataContextType extends AppData {
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
 export function DataProvider({ children }: { children: ReactNode }) {
-    const [data, setData] = useState<AppData>({ tenants: [], expenses: [], rentData: [], propertySettings: null, deposits: [], zakatTransactions: [] });
+    const [data, setData] = useState<AppData>({ tenants: [], expenses: [], rentData: [], propertySettings: null, deposits: [], zakatTransactions: [], notices: [] });
     const [loading, setLoading] = useState(true);
     const { toast } = useToast();
 
@@ -64,17 +65,18 @@ export function DataProvider({ children }: { children: ReactNode }) {
         try {
             if (!supabase) {
                 console.log("Supabase not initialized, loading local data.");
-                setData({ tenants: [], expenses: [], rentData: [], propertySettings: null, deposits: [], zakatTransactions: [] });
+                setData({ tenants: [], expenses: [], rentData: [], propertySettings: null, deposits: [], zakatTransactions: [], notices: [] });
                 return;
             }
 
-            const [tenantsRes, expensesRes, rentDataRes, propertySettingsRes, depositsRes, zakatRes] = await Promise.all([
+            const [tenantsRes, expensesRes, rentDataRes, propertySettingsRes, depositsRes, zakatRes, noticesRes] = await Promise.all([
                 supabase.from('tenants').select('*'),
                 supabase.from('expenses').select('*'),
                 supabase.from('rent_entries').select('*'),
                 supabase.from('property_settings').select('*').eq('id', 1).maybeSingle(),
                 supabase.from('deposits').select('*'),
-                supabase.from('zakat_transactions').select('*')
+                supabase.from('zakat_transactions').select('*'),
+                supabase.from('notices').select('*'),
             ]);
 
             if (tenantsRes.error) throw tenantsRes.error;
@@ -82,6 +84,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
             if (rentDataRes.error) throw rentDataRes.error;
             if (depositsRes.error) throw depositsRes.error;
             if (zakatRes.error) throw zakatRes.error;
+            if (noticesRes.error) throw noticesRes.error;
             if (propertySettingsRes.error && propertySettingsRes.error.code !== 'PGRST116') {
                  throw propertySettingsRes.error;
             }
@@ -93,6 +96,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
                 propertySettings: propertySettingsRes.data as PropertySettings,
                 deposits: depositsRes.data as Deposit[],
                 zakatTransactions: zakatRes.data as ZakatTransaction[],
+                notices: noticesRes.data as Notice[],
             });
         } catch (error) {
             handleError(error, 'fetching data');

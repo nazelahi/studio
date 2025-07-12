@@ -3,12 +3,12 @@
 "use client"
 
 import * as React from "react"
-import type { Tenant, Expense, RentEntry, Deposit } from "@/types"
+import type { Tenant, Expense, RentEntry, Deposit, Notice } from "@/types"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { DollarSign, Banknote, ArrowUpCircle, ArrowDownCircle, PlusCircle, Trash2, Pencil, CheckCircle, XCircle, AlertCircle, RefreshCw, ChevronDown, Copy, X, FileText, Upload, Building, Landmark, CalendarCheck, Edit, Eye, Image as ImageIcon } from "lucide-react"
+import { DollarSign, Banknote, ArrowUpCircle, ArrowDownCircle, PlusCircle, Trash2, Pencil, CheckCircle, XCircle, AlertCircle, RefreshCw, ChevronDown, Copy, X, FileText, Upload, Building, Landmark, CalendarCheck, Edit, Eye, Image as ImageIcon, Megaphone } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog"
@@ -30,6 +30,7 @@ import { useAuth } from "@/context/auth-context"
 import { useSettings } from "@/context/settings-context"
 import Link from "next/link"
 import { logDepositAction, deleteDepositAction } from "@/app/actions/deposits"
+import { saveNoticeAction, deleteNoticeAction } from "@/app/actions/notices"
 import { supabase } from "@/lib/supabase"
 
 
@@ -85,7 +86,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
   const { isAdmin } = useAuth();
   const { settings } = useSettings();
 
-  const { tenants, expenses, rentData, deposits, addRentEntry, addRentEntriesBatch, updateRentEntry, deleteRentEntry, addExpense, updateExpense, deleteExpense, syncTenantsForMonth, loading, deleteMultipleRentEntries, deleteMultipleExpenses, refreshData } = useData();
+  const { tenants, expenses, rentData, deposits, notices, addRentEntry, addRentEntriesBatch, updateRentEntry, deleteRentEntry, addExpense, updateExpense, deleteExpense, syncTenantsForMonth, loading, deleteMultipleRentEntries, deleteMultipleExpenses, refreshData } = useData();
 
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = React.useState(false);
   const [editingExpense, setEditingExpense] = React.useState<Expense | null>(null);
@@ -110,6 +111,9 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
   const [receiptFile, setReceiptFile] = React.useState<File | null>(null);
   const [isUploading, setIsUploading] = React.useState(false);
   const [depositAmount, setDepositAmount] = React.useState('');
+  
+  const [isNoticeDialogOpen, setIsNoticeDialogOpen] = React.useState(false);
+  const [isNoticePending, startNoticeTransition] = React.useTransition();
 
 
   const formRef = React.useRef<HTMLFormElement>(null);
@@ -136,6 +140,11 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
   const loggedDeposit = React.useMemo(() => {
     return deposits.find(d => d.year === year && d.month === months.indexOf(selectedMonth));
   }, [deposits, year, selectedMonth]);
+
+  const monthlyNotice = React.useMemo(() => {
+    return notices.find(n => n.year === year && n.month === months.indexOf(selectedMonth));
+  }, [notices, year, selectedMonth]);
+
 
   // Clear selections when month or year changes
   React.useEffect(() => {
@@ -568,6 +577,35 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
     }
     setIsDepositDialogOpen(isOpen);
   };
+  
+  const handleSaveNotice = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+
+    startNoticeTransition(async () => {
+        const result = await saveNoticeAction(formData);
+        if (result.error) {
+            toast({ title: 'Error saving notice', description: result.error, variant: 'destructive' });
+        } else {
+            toast({ title: 'Notice Saved', description: 'The monthly notice has been updated.' });
+            setIsNoticeDialogOpen(false);
+        }
+    });
+  }
+  
+  const handleDeleteNotice = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+
+    startNoticeTransition(async () => {
+        const result = await deleteNoticeAction(formData);
+        if (result.error) {
+            toast({ title: 'Error deleting notice', description: result.error, variant: 'destructive' });
+        } else {
+            toast({ title: 'Notice Deleted', description: 'The monthly notice has been removed.', variant: 'destructive' });
+        }
+    });
+  }
 
   if (loading) {
     return (
@@ -1126,6 +1164,67 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
             </Tabs>
             
             <div className="mt-6 space-y-6">
+                 <Card>
+                    <CardHeader className="flex flex-row items-center justify-between gap-4 p-4">
+                       <div className="flex items-center gap-3">
+                           <Megaphone className="h-6 w-6 text-primary" />
+                           <h3 className="text-lg font-semibold">Monthly Notice</h3>
+                       </div>
+                        {isAdmin && (
+                            <Dialog open={isNoticeDialogOpen} onOpenChange={setIsNoticeDialogOpen}>
+                                <DialogTrigger asChild>
+                                    <Button size="sm" variant="outline">
+                                        {monthlyNotice ? <Edit className="mr-2 h-4 w-4" /> : <PlusCircle className="mr-2 h-4 w-4" />}
+                                        {monthlyNotice ? 'Edit Notice' : 'Add Notice'}
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                    <DialogHeader>
+                                        <DialogTitle>{monthlyNotice ? 'Edit' : 'Add'} Monthly Notice</DialogTitle>
+                                        <DialogDescription>
+                                            This notice will be displayed on the overview for {month}, {year}.
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                    <form onSubmit={handleSaveNotice}>
+                                        <input type="hidden" name="year" value={year} />
+                                        <input type="hidden" name="month" value={months.indexOf(month)} />
+                                        {monthlyNotice && <input type="hidden" name="noticeId" value={monthlyNotice.id} />}
+                                        <div className="grid gap-4 py-4">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="notice-content">Notice Content</Label>
+                                                <Textarea id="notice-content" name="content" rows={5} defaultValue={monthlyNotice?.content} required />
+                                            </div>
+                                        </div>
+                                        <DialogFooter>
+                                            <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
+                                            <Button type="submit" disabled={isNoticePending}>Save Notice</Button>
+                                        </DialogFooter>
+                                    </form>
+                                </DialogContent>
+                            </Dialog>
+                        )}
+                    </CardHeader>
+                    {monthlyNotice?.content ? (
+                        <CardContent className="p-4 pt-0">
+                            <p className="text-sm text-muted-foreground whitespace-pre-wrap">{monthlyNotice.content}</p>
+                            {isAdmin && (
+                                <form onSubmit={handleDeleteNotice} className="mt-4">
+                                    <input type="hidden" name="noticeId" value={monthlyNotice.id} />
+                                    <Button type="submit" size="sm" variant="destructive" disabled={isNoticePending}>
+                                        <Trash2 className="mr-2 h-4 w-4" />
+                                        Delete Notice
+                                    </Button>
+                                </form>
+                            )}
+                        </CardContent>
+                    ) : (
+                         <CardContent className="p-4 pt-0">
+                            <p className="text-sm text-muted-foreground">No notice for this month.</p>
+                         </CardContent>
+                    )}
+                 </Card>
+
+
                 <div className="text-center">
                     <h3 className="text-2xl font-bold tracking-tight">{settings.page_overview.financial_overview_title} - {month} {year}</h3>
                     <p className="text-muted-foreground">{settings.page_overview.financial_overview_description}</p>
