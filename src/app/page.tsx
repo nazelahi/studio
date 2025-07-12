@@ -9,7 +9,7 @@ import { Logo } from "@/components/icons"
 import DashboardTabs from "@/components/dashboard-tabs"
 import { useAuth } from "@/context/auth-context"
 import { Button } from "@/components/ui/button"
-import { User, LogOut, MapPin, Menu, Settings } from "lucide-react"
+import { User, LogOut, MapPin, Menu, Settings, LogIn } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from "@/components/ui/sheet"
 import { useToast } from "@/hooks/use-toast"
@@ -45,6 +45,13 @@ export default function HomePage() {
         router.push('/settings');
     }, e);
   };
+  
+  const handleLogIn = (e: React.MouseEvent) => {
+     withProtection(() => {
+        // This will not run if user is not admin,
+        // but withProtection will trigger the login dialog.
+     }, e);
+  }
   
   const handleTabChange = (value: string) => {
     setActiveTab(value);
@@ -150,17 +157,30 @@ export default function HomePage() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel>My Account</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleNavigateToSettings}>
-              <Settings className="mr-2 h-4 w-4" />
-              <span>Settings</span>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleSignOut}>
-              <LogOut className="mr-2 h-4 w-4" />
-              <span>Log out</span>
-            </DropdownMenuItem>
+             {isAdmin ? (
+                <>
+                    <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleNavigateToSettings}>
+                      <Settings className="mr-2 h-4 w-4" />
+                      <span>Settings</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleSignOut}>
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>Log out</span>
+                    </DropdownMenuItem>
+                </>
+             ) : (
+                <>
+                    <DropdownMenuLabel>Guest</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleLogIn}>
+                        <LogIn className="mr-2 h-4 w-4" />
+                        <span>Admin Log in</span>
+                    </DropdownMenuItem>
+                </>
+             )}
           </DropdownMenuContent>
         </DropdownMenu>
       </header>

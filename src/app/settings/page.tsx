@@ -11,12 +11,13 @@ import { useSettings } from "@/context/settings-context"
 import { usePathname, useRouter } from "next/navigation"
 import { useAuth } from "@/context/auth-context"
 import { Button } from "@/components/ui/button"
-import { User, LogOut, MapPin, Menu, Settings, LoaderCircle } from "lucide-react"
+import { User, LogOut, MapPin, Menu, Settings, LoaderCircle, LogIn } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useToast } from "@/hooks/use-toast"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from "@/components/ui/sheet"
 import { updatePropertySettingsAction, updateUserCredentialsAction } from "./actions"
 import { Separator } from "@/components/ui/separator"
+import { useProtection } from "@/context/protection-context"
 
 export default function SettingsPage() {
   const { settings, setSettings } = useSettings();
@@ -26,6 +27,7 @@ export default function SettingsPage() {
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
   const [isCredentialsPending, startCredentialsTransition] = useTransition();
+  const { withProtection } = useProtection();
   
   const [newEmail, setNewEmail] = useState(user?.email || '');
   const [newPassword, setNewPassword] = useState('');
@@ -81,6 +83,13 @@ export default function SettingsPage() {
     });
     router.push('/');
   };
+
+  const handleLogIn = (e: React.MouseEvent) => {
+     withProtection(() => {
+        // This will not run if user is not admin,
+        // but withProtection will trigger the login dialog.
+     }, e);
+  }
   
   const handleSaveCredentials = (formData: FormData) => {
     if (!user) {
@@ -192,17 +201,30 @@ export default function SettingsPage() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel>My Account</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => router.push('/settings')}>
-              <Settings className="mr-2 h-4 w-4" />
-              <span>Settings</span>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleSignOut}>
-              <LogOut className="mr-2 h-4 w-4" />
-              <span>Log out</span>
-            </DropdownMenuItem>
+             {isAdmin ? (
+                <>
+                    <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => router.push('/settings')}>
+                      <Settings className="mr-2 h-4 w-4" />
+                      <span>Settings</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleSignOut}>
+                      <LogOut className="mr-2 h-4 w-4" />
+                      <span>Log out</span>
+                    </DropdownMenuItem>
+                </>
+             ) : (
+                <>
+                    <DropdownMenuLabel>Guest</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={handleLogIn}>
+                        <LogIn className="mr-2 h-4 w-4" />
+                        <span>Admin Log in</span>
+                    </DropdownMenuItem>
+                </>
+             )}
           </DropdownMenuContent>
         </DropdownMenu>
       </header>
