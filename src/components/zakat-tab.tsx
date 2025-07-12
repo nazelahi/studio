@@ -18,12 +18,15 @@ import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { saveZakatTransactionAction, deleteZakatTransactionAction } from "@/app/actions/zakat"
-import { updatePropertySettingsAction } from "@/app/settings/actions"
+import { saveZakatBankDetailAction } from "@/app/settings/actions"
 import type { ZakatTransaction } from "@/types"
 import { Skeleton } from "./ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs"
 import { useSettings } from "@/context/settings-context"
 import { cn } from "@/lib/utils"
+import { useRouter } from "next/navigation"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
+
 
 const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'BDT' }).format(amount).replace('BDT', '৳');
@@ -33,13 +36,12 @@ export function ZakatTab() {
   const { zakatTransactions, loading, refreshData } = useData();
   const { isAdmin } = useAuth();
   const { settings } = useSettings();
+  const router = useRouter();
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [editingTransaction, setEditingTransaction] = React.useState<ZakatTransaction | null>(null);
   const [dialogTransactionType, setDialogTransactionType] = React.useState<'inflow' | 'outflow'>('inflow');
   const [isPending, startTransition] = React.useTransition();
-  const [isDetailsPending, startDetailsTransition] = React.useTransition();
-  const [isDetailsDialogOpen, setIsDetailsDialogOpen] = React.useState(false);
 
   const [receiptPreview, setReceiptPreview] = React.useState<string | null>(null);
   const [receiptFile, setReceiptFile] = React.useState<File | null>(null);
@@ -96,18 +98,6 @@ export function ZakatTab() {
       }
     });
   };
-  
-  const handleSaveDetails = (formData: FormData) => {
-    startDetailsTransition(async () => {
-        const result = await updatePropertySettingsAction(formData);
-        if (result?.error) {
-            toast({ title: 'Error Saving Settings', description: result.error, variant: 'destructive'});
-        } else {
-            toast({ title: 'Zakat Bank Details Saved', description: 'Your Zakat bank details have been updated.' });
-            setIsDetailsDialogOpen(false);
-        }
-     });
-  };
 
   const handleReceiptFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -150,7 +140,7 @@ export function ZakatTab() {
             <TableHead className="text-primary-foreground">{type === 'inflow' ? 'Source' : 'Recipient'}</TableHead>
             <TableHead className="hidden sm:table-cell text-primary-foreground">Description</TableHead>
             <TableHead className="text-right text-primary-foreground">Amount</TableHead>
-            <TableHead className="text-primary-foreground">Actions</TableHead>
+            <TableHead className="text-primary-foreground w-28">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -300,55 +290,23 @@ export function ZakatTab() {
                 <CardTitle className="text-base">Zakat Bank Details</CardTitle>
             </div>
             {isAdmin && (
-                <Dialog open={isDetailsDialogOpen} onOpenChange={setIsDetailsDialogOpen}>
-                    <DialogTrigger asChild>
-                        <Button variant="outline" size="sm"> <Settings className="mr-2 h-4 w-4" />Change Details</Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>Update Zakat Bank Details</DialogTitle>
-                            <DialogDescription>
-                                Enter the bank details for Zakat funds.
-                            </DialogDescription>
-                        </DialogHeader>
-                        <form action={handleSaveDetails}>
-                            <input type="hidden" name="houseName" value={settings.houseName} />
-                            <input type="hidden" name="houseAddress" value={settings.houseAddress} />
-                            <input type="hidden" name="bankName" value={settings.bankName} />
-                            <input type="hidden" name="bankAccountNumber" value={settings.bankAccountNumber} />
-                            <div className="grid gap-4 py-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="zakatBankName">Zakat Bank Name</Label>
-                                    <Input id="zakatBankName" name="zakatBankName" defaultValue={settings.zakatBankName} />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="zakatBankAccountNumber">Zakat Bank Account Number</Label>
-                                    <Input id="zakatBankAccountNumber" name="zakatBankAccountNumber" defaultValue={settings.zakatBankAccountNumber} />
-                                </div>
-                            </div>
-                            <DialogFooter>
-                                <DialogClose asChild>
-                                    <Button variant="outline" type="button">Cancel</Button>
-                                </DialogClose>
-                                <Button type="submit" disabled={isDetailsPending}>
-                                    {isDetailsPending && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
-                                    Save Details
-                                </Button>
-                            </DialogFooter>
-                        </form>
-                    </DialogContent>
-                </Dialog>
+                <Button variant="outline" size="sm" onClick={() => router.push('/settings?tab=zakat')}> <Settings className="mr-2 h-4 w-4" />Manage Details</Button>
             )}
         </CardHeader>
-        <CardContent className="grid sm:grid-cols-2 gap-4">
-                <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">Bank Name</p>
-                <p className="font-semibold">{settings.zakatBankName || "Not Set"}</p>
-            </div>
-            <div className="space-y-1">
-                <p className="text-sm font-medium text-muted-foreground">Account Number</p>
-                <p className="font-semibold">{settings.zakatBankAccountNumber || "Not Set"}</p>
-            </div>
+        <CardContent>
+           {settings.zakatBankDetails.length > 0 ? (
+                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {settings.zakatBankDetails.map(detail => (
+                        <div key={detail.id} className="p-4 rounded-lg border bg-secondary/50">
+                            <p className="font-bold text-secondary-foreground">{detail.bank_name}</p>
+                            <p className="text-sm text-muted-foreground">A/C: {detail.account_number}</p>
+                            {detail.account_holder && <p className="text-sm text-muted-foreground">Holder: {detail.account_holder}</p>}
+                        </div>
+                    ))}
+                </div>
+           ) : (
+                <p className="text-sm text-muted-foreground">No Zakat bank details have been set up yet. An admin can add them in the settings.</p>
+           )}
         </CardContent>
       </Card>
       

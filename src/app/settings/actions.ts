@@ -34,9 +34,7 @@ export async function updatePropertySettingsAction(formData: FormData) {
     const houseAddress = formData.get('houseAddress') as string;
     const bankName = formData.get('bankName') as string;
     const bankAccountNumber = formData.get('bankAccountNumber') as string;
-    const zakatBankName = formData.get('zakatBankName') as string;
-    const zakatBankAccountNumber = formData.get('zakatBankAccountNumber') as string;
-
+    
     const { error } = await supabaseAdmin
         .from('property_settings')
         .update({ 
@@ -44,8 +42,6 @@ export async function updatePropertySettingsAction(formData: FormData) {
             house_address: houseAddress,
             bank_name: bankName,
             bank_account_number: bankAccountNumber,
-            zakat_bank_name: zakatBankName,
-            zakat_bank_account_number: zakatBankAccountNumber,
         })
         .eq('id', 1);
 
@@ -56,6 +52,64 @@ export async function updatePropertySettingsAction(formData: FormData) {
 
     revalidatePath('/settings');
     revalidatePath('/');
+    
+    return { success: true };
+}
+
+export async function saveZakatBankDetailAction(formData: FormData) {
+    const supabaseAdmin = getSupabaseAdmin();
+    const detailId = formData.get('detailId') as string | undefined;
+
+    const data = {
+        bank_name: formData.get('bank_name') as string,
+        account_number: formData.get('account_number') as string,
+        account_holder: formData.get('account_holder') as string,
+    };
+
+    let error;
+
+    if (detailId) {
+        const { error: updateError } = await supabaseAdmin
+            .from('zakat_bank_details')
+            .update(data)
+            .eq('id', detailId);
+        error = updateError;
+    } else {
+        const { error: insertError } = await supabaseAdmin
+            .from('zakat_bank_details')
+            .insert(data);
+        error = insertError;
+    }
+
+    if (error) {
+        console.error('Supabase error saving Zakat bank detail:', error);
+        return { error: error.message };
+    }
+    
+    revalidatePath('/settings');
+    
+    return { success: true };
+}
+
+export async function deleteZakatBankDetailAction(formData: FormData) {
+    const supabaseAdmin = getSupabaseAdmin();
+    const detailId = formData.get('detailId') as string;
+
+    if (!detailId) {
+        return { error: 'Detail ID is missing.' };
+    }
+
+    const { error } = await supabaseAdmin
+        .from('zakat_bank_details')
+        .delete()
+        .eq('id', detailId);
+
+    if (error) {
+        console.error('Supabase error deleting Zakat bank detail:', error);
+        return { error: error.message };
+    }
+    
+    revalidatePath('/settings');
     
     return { success: true };
 }
