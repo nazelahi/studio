@@ -27,6 +27,7 @@ import { TenantDetailSheet } from "./tenant-detail-sheet"
 import * as XLSX from 'xlsx';
 import { useAuth } from "@/context/auth-context"
 import { useSettings } from "@/context/settings-context"
+import Link from "next/link"
 
 
 type HistoricalTenant = {
