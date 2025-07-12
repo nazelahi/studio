@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
@@ -38,7 +39,8 @@ interface PageSettings {
 
 interface TabNames {
     overview: string;
-    tenants: string;
+    contacts: string;
+    work: string;
     integrations: string;
     reports: string;
     zakat: string;
@@ -75,7 +77,8 @@ const defaultSettings: AppSettings = {
     footerName: "© 2024 RentFlow. All Rights Reserved.",
     tabNames: {
         overview: "Overview",
-        tenants: "Tenants",
+        contacts: "Contacts",
+        work: "Work",
         integrations: "Integrations",
         reports: "Reports",
         zakat: "Zakat",

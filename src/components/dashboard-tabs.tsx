@@ -5,12 +5,13 @@
 import * as React from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { MonthlyOverviewTab } from "@/components/monthly-overview-tab"
-import { TenantsTab } from "@/components/tenants-tab"
+import { ContactsTab } from "@/components/contacts-tab"
 import { IntegrationsTab } from "@/components/integrations-tab"
 import { ReportsTab } from "@/components/reports-tab"
 import { ZakatTab } from "@/components/zakat-tab"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useSettings } from "@/context/settings-context"
+import { WorkDetailsTab } from "./work-details-tab"
 
 export default function DashboardTabs() {
   const { settings } = useSettings();
@@ -38,9 +39,10 @@ export default function DashboardTabs() {
         </div>
       </div>
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-6">
           <TabsTrigger value="overview">{settings.tabNames.overview}</TabsTrigger>
-          <TabsTrigger value="tenants">{settings.tabNames.tenants}</TabsTrigger>
+          <TabsTrigger value="contacts">{settings.tabNames.contacts}</TabsTrigger>
+          <TabsTrigger value="work">{settings.tabNames.work}</TabsTrigger>
           <TabsTrigger value="integrations">{settings.tabNames.integrations}</TabsTrigger>
           <TabsTrigger value="reports">{settings.tabNames.reports}</TabsTrigger>
           <TabsTrigger value="zakat">{settings.tabNames.zakat}</TabsTrigger>
@@ -48,8 +50,11 @@ export default function DashboardTabs() {
         <TabsContent value="overview">
           <MonthlyOverviewTab year={parseInt(selectedYear)} />
         </TabsContent>
-        <TabsContent value="tenants">
-          <TenantsTab />
+        <TabsContent value="contacts">
+          <ContactsTab />
+        </TabsContent>
+        <TabsContent value="work">
+          <WorkDetailsTab />
         </TabsContent>
         <TabsContent value="integrations">
             <IntegrationsTab />

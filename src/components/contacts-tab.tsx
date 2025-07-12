@@ -24,7 +24,7 @@ import { format, parseISO } from "date-fns"
 import { Badge } from "./ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
 
-export function TenantsTab() {
+export function ContactsTab() {
   const { tenants, addTenant, updateTenant, deleteTenant, loading } = useData();
   const { isAdmin } = useAuth();
   const { settings } = useSettings();
@@ -109,13 +109,13 @@ export function TenantsTab() {
       if (editingTenant) {
         await updateTenant({ ...editingTenant, ...tenantData }, documentFiles);
         toast({
-          title: 'Tenant Updated',
+          title: 'Contact Updated',
           description: `${tenantData.name}'s information has been successfully updated.`,
         });
       } else {
         await addTenant(tenantData, documentFiles);
         toast({
-          title: 'Tenant Added',
+          title: 'Contact Added',
           description: `${tenantData.name} has been successfully added.`,
         });
       }
@@ -125,7 +125,7 @@ export function TenantsTab() {
     } catch (error) {
        toast({
         title: 'Save Failed',
-        description: "An error occurred while saving the tenant.",
+        description: "An error occurred while saving the contact.",
         variant: "destructive"
       });
     } finally {
@@ -158,7 +158,7 @@ export function TenantsTab() {
         setExistingDocuments(tenant.documents || []);
         setDocumentFiles([]);
     }
-    toast({ title: 'Tenant Info Copied', description: `Data from ${tenant.name} has been pre-filled.`});
+    toast({ title: 'Contact Info Copied', description: `Data from ${tenant.name} has been pre-filled.`});
     setIsFinderOpen(false);
   };
 
@@ -178,8 +178,8 @@ export function TenantsTab() {
   const handleDelete = async (tenantId: string) => {
     await deleteTenant(tenantId);
     toast({
-        title: 'Tenant Deleted',
-        description: "The tenant's information has been deleted.",
+        title: 'Contact Deleted',
+        description: "The contact's information has been deleted.",
         variant: 'destructive'
     });
   }
@@ -221,9 +221,9 @@ export function TenantsTab() {
     <>
       <Card className="mt-4 border-0 shadow-none">
         <CardHeader>
-          <CardTitle>Tenants</CardTitle>
+          <CardTitle>Contacts</CardTitle>
           <CardDescription>
-            Manage your tenants and their information.
+            Manage your tenants and service providers.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -231,7 +231,7 @@ export function TenantsTab() {
               <div className="relative w-full sm:max-w-xs">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input 
-                  placeholder="Search tenants..."
+                  placeholder="Search contacts..."
                   className="pl-9"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -242,14 +242,14 @@ export function TenantsTab() {
                   <DialogTrigger asChild>
                     <Button onClick={() => setEditingTenant(null)} className="w-full sm:w-auto">
                       <PlusCircle className="mr-2 h-4 w-4" />
-                      Add Tenant
+                      Add Contact
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-xl">
                     <DialogHeader>
-                      <DialogTitle>{editingTenant ? 'Edit Tenant' : 'Add New Tenant'}</DialogTitle>
+                      <DialogTitle>{editingTenant ? 'Edit Contact' : 'Add New Contact'}</DialogTitle>
                       <DialogDescription>
-                        {editingTenant ? "Update the tenant's information below." : "Fill in the form to add a new tenant to your property list."}
+                        {editingTenant ? "Update the contact's information below." : "Fill in the form to add a new contact."}
                       </DialogDescription>
                     </DialogHeader>
                     <form ref={formRef} onSubmit={handleSaveTenant} className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-6 py-4 max-h-[70vh] overflow-y-auto pr-2">
@@ -262,15 +262,15 @@ export function TenantsTab() {
                                 <Button variant="outline" role="combobox" aria-expanded={isFinderOpen} className="w-full justify-between mt-1">
                                   <span className="flex items-center gap-2 text-muted-foreground">
                                     <UserPlus className="h-4 w-4" />
-                                    Copy info from an existing tenant...
+                                    Copy info from an existing contact...
                                   </span>
                                   <ChevronDown className="h-4 w-4 shrink-0 opacity-50"/>
                                 </Button>
                               </PopoverTrigger>
                               <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
                                 <Command>
-                                  <CommandInput placeholder="Search tenant..." />
-                                  <CommandEmpty>No tenant found.</CommandEmpty>
+                                  <CommandInput placeholder="Search contact..." />
+                                  <CommandEmpty>No contact found.</CommandEmpty>
                                   <CommandList>
                                     <CommandGroup>
                                       {allTenantsForFinder.map((tenant) => (
@@ -333,7 +333,7 @@ export function TenantsTab() {
                       </div>
                        <div className="space-y-2">
                         <Label htmlFor="type">Type</Label>
-                        <Input id="type" name="type" placeholder="e.g. Electrician, Plumber" defaultValue={editingTenant?.type} />
+                        <Input id="type" name="type" placeholder="e.g. Tenant, Electrician" defaultValue={editingTenant?.type} />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="phone">Phone Number</Label>
@@ -373,11 +373,11 @@ export function TenantsTab() {
                       </div>
                       <div className="space-y-2 md:col-span-2">
                         <Label htmlFor="notes">Notes</Label>
-                        <Textarea id="notes" name="notes" defaultValue={editingTenant?.notes} placeholder="Any relevant notes about the tenant..."/>
+                        <Textarea id="notes" name="notes" defaultValue={editingTenant?.notes} placeholder="Any relevant notes about the contact..."/>
                       </div>
 
                       <div className="space-y-2 md:col-span-2">
-                         <Label>Tenant Documents</Label>
+                         <Label>Documents</Label>
                          <div className="border border-dashed rounded-lg p-4">
                             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mb-4">
                                {existingDocuments.map((docUrl) => (
@@ -420,7 +420,7 @@ export function TenantsTab() {
                         </DialogClose>
                         <Button type="submit" disabled={isUploading}>
                            {isUploading && <LoaderCircle className="animate-spin mr-2"/>}
-                           Save Tenant
+                           Save Contact
                         </Button>
                       </DialogFooter>
                     </form>
@@ -500,7 +500,7 @@ export function TenantsTab() {
                     </Card>
                   )) : (
                     <div className="col-span-full text-center text-muted-foreground py-10">
-                        No tenants found.
+                        No contacts found.
                     </div>
                   )}
                 </div>

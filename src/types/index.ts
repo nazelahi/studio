@@ -80,4 +80,16 @@ export type Notice = {
   content: string;
   created_at?: string;
 }
+
+export type WorkDetail = {
+  id: string;
+  title: string;
+  description?: string;
+  category?: string;
+  status: 'To Do' | 'In Progress' | 'Completed';
+  assigned_to_id?: string;
+  cost?: number;
+  due_date?: string;
+  created_at?: string;
+};
     
