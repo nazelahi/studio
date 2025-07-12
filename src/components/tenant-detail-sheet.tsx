@@ -117,28 +117,28 @@ export function TenantDetailSheet({
 
   return (
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
-      <SheetContent className="sm:max-w-lg w-full flex flex-col">
-        <SheetHeader className="text-left">
+      <SheetContent className="sm:max-w-lg w-full flex flex-col p-0">
+        <SheetHeader className="text-left sr-only">
           <SheetTitle>Tenant Details</SheetTitle>
           <SheetDescription>
             A quick overview of the tenant's information.
           </SheetDescription>
         </SheetHeader>
-        <Separator />
-        <div ref={sheetContentRef} className="flex-grow overflow-y-auto p-1 -m-1 bg-background">
-          <div className="space-y-6 py-4">
-             <div className="flex flex-col items-center text-center space-y-2">
-                <Avatar className="h-24 w-24 border-2 border-primary/20">
-                    <AvatarImage src={tenant.avatar} alt={tenant.name} data-ai-hint="person avatar" />
-                    <AvatarFallback><ImageIcon className="h-12 w-12 text-muted-foreground" /></AvatarFallback>
-                </Avatar>
-                <div>
-                    <h2 className="text-2xl font-bold">{tenant.name}</h2>
-                    <p className="text-muted-foreground">{tenant.property}</p>
+
+        <div ref={sheetContentRef} className="flex-grow overflow-y-auto bg-background">
+           <div className="relative">
+                <div className="aspect-w-16 aspect-h-9">
+                    <img src={tenant.avatar} alt={tenant.name} className="w-full h-48 object-cover" data-ai-hint="person avatar" />
+                </div>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                <div className="absolute bottom-0 left-0 p-6">
+                    <h2 className="text-3xl font-bold text-white">{tenant.name}</h2>
+                    <p className="text-white/80">{tenant.property}</p>
                     <Badge className={`mt-2 ${getStatusBadge(tenant.status)}`}>{tenant.status}</Badge>
                 </div>
             </div>
 
+          <div className="space-y-6 p-6">
             <Card>
                 <CardHeader>
                     <CardTitle className="text-base">Contact Information</CardTitle>
@@ -207,7 +207,7 @@ export function TenantDetailSheet({
           </div>
         </div>
         <Separator />
-        <SheetFooter className="mt-auto">
+        <SheetFooter className="mt-auto p-6 bg-background">
           <div className="flex w-full justify-end gap-2">
             <Button variant="outline" onClick={handleDownloadPdf}>
               <Download className="mr-2 h-4 w-4" />
