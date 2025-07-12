@@ -6,7 +6,7 @@ import { useData } from "@/context/data-context"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { PlusCircle, Edit, Trash2, ArrowUpCircle, ArrowDownCircle, Banknote, LoaderCircle, Settings, Landmark, Eye, Upload, ImageIcon } from "lucide-react"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter as UiTableFooter } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { format, parseISO, getYear } from "date-fns"
 import { useToast } from "@/hooks/use-toast"
@@ -137,7 +137,10 @@ export function ZakatTab() {
     )
   }
 
-  const TransactionTable = ({ transactions, type }: { transactions: ZakatTransaction[], type: 'inflow' | 'outflow' }) => (
+  const TransactionTable = ({ transactions, type }: { transactions: ZakatTransaction[], type: 'inflow' | 'outflow' }) => {
+    const totalAmount = transactions.reduce((acc, tx) => acc + tx.amount, 0);
+
+    return (
      <Table>
         <TableHeader>
           <TableRow>
@@ -205,8 +208,21 @@ export function ZakatTab() {
             </TableRow>
           )}
         </TableBody>
+        {transactions.length > 0 && (
+            <UiTableFooter>
+                <TableRow>
+                    <TableCell colSpan={isAdmin ? 3 : 2}></TableCell>
+                    <TableCell className="text-right font-bold">Total</TableCell>
+                    <TableCell className={`text-right font-bold ${type === 'inflow' ? 'text-green-600' : 'text-red-600'}`}>
+                        {formatCurrency(totalAmount)}
+                    </TableCell>
+                    {isAdmin && <TableCell />}
+                </TableRow>
+            </UiTableFooter>
+        )}
       </Table>
   );
+}
 
   return (
     <div className="pt-4 space-y-6">
