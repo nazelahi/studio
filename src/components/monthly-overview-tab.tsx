@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { DollarSign, Banknote, ArrowUpCircle, ArrowDownCircle, PlusCircle, Trash2, Pencil, CheckCircle, XCircle, AlertCircle, RefreshCw, ChevronDown, Copy, X, FileText, Upload, Building, Bank, CalendarCheck, Edit } from "lucide-react"
+import { DollarSign, Banknote, ArrowUpCircle, ArrowDownCircle, PlusCircle, Trash2, Pencil, CheckCircle, XCircle, AlertCircle, RefreshCw, ChevronDown, Copy, X, FileText, Upload, Building, Landmark, CalendarCheck, Edit } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog"
@@ -1086,7 +1086,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                     <CardHeader className="flex flex-row items-center justify-between gap-4">
                         <div className="flex items-center gap-4">
                             <div className="flex-shrink-0 bg-primary/10 p-3 rounded-full">
-                               <Bank className="h-6 w-6 text-primary" />
+                               <Landmark className="h-6 w-6 text-primary" />
                             </div>
                             <div>
                                 <CardTitle>Bank Deposit Information</CardTitle>
@@ -1182,3 +1182,5 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
     </>
   )
 }
+
+    
