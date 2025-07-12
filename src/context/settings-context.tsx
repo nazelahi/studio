@@ -1,9 +1,4 @@
 
-
-
-
-
-
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
@@ -151,14 +146,12 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         refreshData();
     }, [refreshData]);
 
-    // Effect for loading local-storage settings (runs once on mount)
     useEffect(() => {
         setIsMounted(true);
         try {
             const item = window.localStorage.getItem('appSettings');
             if (item) {
                 const storedSettings = JSON.parse(item);
-                // Use a functional update to avoid stale state issues
                 setSettings(prev => deepMerge(prev, storedSettings));
             }
         } catch (error) {
@@ -166,40 +159,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         }
     }, []);
 
-    // Effect for syncing database settings (runs when dependencies change)
-    useEffect(() => {
-      // Don't run until auth and data have been loaded
-      if (authLoading || dataLoading) {
-        return;
-      }
-      
-      setSettings(prev => {
-        const newDbSettings = {
-          houseName: propertySettings?.house_name,
-          houseAddress: propertySettings?.house_address,
-          bankName: propertySettings?.bank_name,
-          bankAccountNumber: propertySettings?.bank_account_number,
-          zakatBankDetails: zakatBankDetails,
-        };
-
-        // If admin is logged in and we have DB settings, use them.
-        // Otherwise, fall back to the default settings for DB-related fields.
-        return {
-          ...prev,
-          houseName: isAdmin && newDbSettings.houseName ? newDbSettings.houseName : defaultSettings.houseName,
-          houseAddress: isAdmin && newDbSettings.houseAddress ? newDbSettings.houseAddress : defaultSettings.houseAddress,
-          bankName: isAdmin && newDbSettings.bankName ? newDbSettings.bankName : defaultSettings.bankName,
-          bankAccountNumber: isAdmin && newDbSettings.bankAccountNumber ? newDbSettings.bankAccountNumber : defaultSettings.bankAccountNumber,
-          zakatBankDetails: isAdmin && newDbSettings.zakatBankDetails ? newDbSettings.zakatBankDetails : defaultSettings.zakatBankDetails,
-        };
-      });
-
-    }, [propertySettings, zakatBankDetails, dataLoading, authLoading, isAdmin]);
-    
-    // Effect for saving local-storage settings (runs when settings change after mount)
     useEffect(() => {
         if (isMounted) {
-            // Destructure to separate DB-managed settings from local settings
             const { houseName, houseAddress, bankName, bankAccountNumber, zakatBankDetails, ...localSettings } = settings;
             try {
                 window.localStorage.setItem('appSettings', JSON.stringify(localSettings));
@@ -208,6 +169,34 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
             }
         }
     }, [settings, isMounted]);
+
+
+    useEffect(() => {
+        if (dataLoading || authLoading) {
+            return;
+        }
+
+        if (isAdmin && propertySettings) {
+            setSettings(prev => ({
+                ...prev,
+                houseName: propertySettings.house_name || defaultSettings.houseName,
+                houseAddress: propertySettings.house_address || defaultSettings.houseAddress,
+                bankName: propertySettings.bank_name || defaultSettings.bankName,
+                bankAccountNumber: propertySettings.bank_account_number || defaultSettings.bankAccountNumber,
+                zakatBankDetails: zakatBankDetails || defaultSettings.zakatBankDetails,
+            }));
+        } else {
+            setSettings(prev => ({
+                ...prev,
+                houseName: defaultSettings.houseName,
+                houseAddress: defaultSettings.houseAddress,
+                bankName: defaultSettings.bankName,
+                bankAccountNumber: defaultSettings.bankAccountNumber,
+                zakatBankDetails: defaultSettings.zakatBankDetails,
+            }));
+        }
+
+    }, [isAdmin, propertySettings, zakatBankDetails, dataLoading, authLoading]);
 
     const loading = !isMounted || dataLoading || authLoading;
 
