@@ -33,8 +33,13 @@ export default function SettingsPage() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   
+  // State for images currently displayed (mix of existing URLs and new file blobs)
   const [houseImages, setHouseImages] = useState<string[]>(settings.houseImages || []);
   const [newImageFiles, setNewImageFiles] = useState<File[]>([]);
+  
+  // State to track the original list of image URLs on page load
+  const [initialHouseImages, setInitialHouseImages] = useState<string[]>([]);
+  
   const imageInputRef = React.useRef<HTMLInputElement>(null);
 
   React.useEffect(() => {
@@ -44,8 +49,13 @@ export default function SettingsPage() {
   }, [user]);
 
   React.useEffect(() => {
-    setHouseImages(settings.houseImages || []);
-  }, [settings.houseImages]);
+    const images = settings.houseImages || [];
+    setHouseImages(images);
+    // Set the initial list only once when settings are loaded
+    if (initialHouseImages.length === 0) {
+      setInitialHouseImages(images);
+    }
+  }, [settings.houseImages, initialHouseImages.length]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -85,6 +95,9 @@ export default function SettingsPage() {
         
         // Append new files
         newImageFiles.forEach(file => formData.append('new_house_images', file));
+        
+        // Append initial list of images for comparison on the server
+        formData.append('initial_house_images', JSON.stringify(initialHouseImages));
 
         const result = await updatePropertySettingsAction(formData);
         if (result?.error) {
@@ -92,7 +105,7 @@ export default function SettingsPage() {
         } else {
             toast({ title: 'Property Details Saved', description: 'Your property and bank details have been updated.' });
             setNewImageFiles([]);
-            refreshSettings(); // This will pull the new image URLs from DB
+            refreshSettings(); // This will pull the new image URLs from DB and reset initialHouseImages
         }
      });
   };

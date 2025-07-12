@@ -44,7 +44,7 @@ export async function updatePropertySettingsAction(formData: FormData) {
     const uploadedUrls: string[] = [];
 
     for (const file of newImageFiles) {
-        if (file.size > 0) {
+        if (file && file.size > 0) {
             const fileExt = file.name.split('.').pop();
             const filePath = `property/${Date.now()}-${Math.random()}.${fileExt}`;
 
@@ -75,20 +75,29 @@ export async function updatePropertySettingsAction(formData: FormData) {
     if (imagesToDelete.length > 0) {
         const pathsToDelete = imagesToDelete.map((url: string) => {
             try {
-                return new URL(url).pathname.split('/property-images/')[1];
+                // Correctly parse the path from the public URL
+                const urlObject = new URL(url);
+                const pathParts = urlObject.pathname.split('/property-images/');
+                return pathParts[1] ? `property-images/${pathParts[1]}` : null;
             } catch (e) {
                 console.error('Could not parse image URL for deletion', e);
                 return null;
             }
-        }).filter(Boolean);
+        }).filter((p): p is string => p !== null);
 
         if (pathsToDelete.length > 0) {
-            const { error: storageError } = await supabaseAdmin.storage
-                .from('property-images')
-                .remove(pathsToDelete as string[]);
-            
-            if (storageError) {
-                console.error('Non-fatal: Could not delete old images from storage', storageError);
+            // The path should not start with the bucket name again for the remove call
+            const finalPathsToDelete = pathsToDelete.map(p => p.replace('property-images/', ''));
+
+            if (finalPathsToDelete.length > 0) {
+                 const { error: storageError } = await supabaseAdmin.storage
+                    .from('property-images')
+                    .remove(finalPathsToDelete);
+                
+                if (storageError) {
+                    // Log as non-fatal, as the main update can still proceed
+                    console.error('Non-fatal: Could not delete old images from storage', storageError);
+                }
             }
         }
     }
