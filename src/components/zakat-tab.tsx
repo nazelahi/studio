@@ -190,27 +190,6 @@ export function ZakatTab() {
                 <p className="text-2xl font-bold text-blue-800 mt-2">{formatCurrency(availableZakat)}</p>
             </div>
         </CardContent>
-         <CardFooter>
-            <Card className="w-full">
-                <CardHeader className="flex flex-row items-center justify-between">
-                    <div className="flex items-center gap-3">
-                        <Landmark className="h-6 w-6 text-primary" />
-                        <CardTitle className="text-base">Zakat Bank Details</CardTitle>
-                    </div>
-                    {isAdmin && <Button variant="outline" size="sm" onClick={() => router.push('/settings')}> <Settings className="mr-2 h-4 w-4" />Change Details</Button>}
-                </CardHeader>
-                <CardContent className="grid sm:grid-cols-2 gap-4">
-                     <div className="space-y-1">
-                        <p className="text-sm font-medium text-muted-foreground">Bank Name</p>
-                        <p className="font-semibold">{settings.zakatBankName || "Not Set"}</p>
-                    </div>
-                    <div className="space-y-1">
-                        <p className="text-sm font-medium text-muted-foreground">Account Number</p>
-                        <p className="font-semibold">{settings.zakatBankAccountNumber || "Not Set"}</p>
-                    </div>
-                </CardContent>
-            </Card>
-        </CardFooter>
       </Card>
       
       <Tabs defaultValue="inflow" className="w-full">
@@ -247,6 +226,26 @@ export function ZakatTab() {
             </Card>
         </TabsContent>
       </Tabs>
+
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+            <div className="flex items-center gap-3">
+                <Landmark className="h-6 w-6 text-primary" />
+                <CardTitle className="text-base">Zakat Bank Details</CardTitle>
+            </div>
+            {isAdmin && <Button variant="outline" size="sm" onClick={() => router.push('/settings')}> <Settings className="mr-2 h-4 w-4" />Change Details</Button>}
+        </CardHeader>
+        <CardContent className="grid sm:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">Bank Name</p>
+                <p className="font-semibold">{settings.zakatBankName || "Not Set"}</p>
+            </div>
+            <div className="space-y-1">
+                <p className="text-sm font-medium text-muted-foreground">Account Number</p>
+                <p className="font-semibold">{settings.zakatBankAccountNumber || "Not Set"}</p>
+            </div>
+        </CardContent>
+      </Card>
       
       {isAdmin && (
         <Dialog open={isDialogOpen} onOpenChange={handleOpenChange}>
