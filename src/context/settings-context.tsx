@@ -23,6 +23,11 @@ interface PageOverview {
     financial_overview_description: string;
 }
 
+interface BankAccount {
+    name: string;
+    accountNumber: string;
+}
+
 interface PageSettings {
     title: string;
     property_details: {
@@ -35,11 +40,6 @@ interface PageSettings {
         title: string;
         description: string;
         header_name_label: string;
-        tab_names_label: string;
-        overview_tab_label: string;
-        tenants_tab_label: string;
-        integrations_tab_label: string;
-        reports_tab_label: string;
         footer_name_label: string;
     };
     overview_settings: {
@@ -47,6 +47,13 @@ interface PageSettings {
         description: string;
         financial_title_label: string;
         financial_description_label: string;
+    };
+    bank_account_settings: {
+        title: string;
+        description: string;
+        bank_name_label: string;
+        account_number_label: string;
+        add_button: string;
     };
     security_settings: {
         title: string;
@@ -64,6 +71,7 @@ interface AppSettings {
   houseAddress: string;
   tabNames: TabNames;
   footerName: string;
+  bankAccounts: BankAccount[];
   page_dashboard: PageDashboard;
   page_overview: PageOverview;
   page_settings: PageSettings;
@@ -85,6 +93,10 @@ const defaultSettings: AppSettings = {
         reports: "Reports",
     },
     footerName: "© 2024 RentFlow. All Rights Reserved.",
+    bankAccounts: [
+        { name: "Main Bank", accountNumber: "123456789" },
+        { name: "Secondary Bank", accountNumber: "987654321" },
+    ],
     page_dashboard: {
         nav_dashboard: "Dashboard",
         nav_settings: "Settings",
@@ -108,11 +120,6 @@ const defaultSettings: AppSettings = {
             title: "Application Settings",
             description: "Customize the names and labels used throughout the application.",
             header_name_label: "Header Name",
-            tab_names_label: "Tab Names",
-            overview_tab_label: "Overview Tab",
-            tenants_tab_label: "Tenants Tab",
-            integrations_tab_label: "Integrations Tab",
-            reports_tab_label: "Reports Tab",
             footer_name_label: "Footer Name",
         },
         overview_settings: {
@@ -120,6 +127,13 @@ const defaultSettings: AppSettings = {
             description: "Customize the text on the monthly overview page.",
             financial_title_label: "Financial Overview Title",
             financial_description_label: "Financial Overview Description",
+        },
+        bank_account_settings: {
+            title: "Bank Accounts",
+            description: "Manage bank accounts for deposits.",
+            bank_name_label: "Bank Name",
+            account_number_label: "Account Number",
+            add_button: "Add Account",
         },
         security_settings: {
             title: "Security",

@@ -184,27 +184,6 @@ export default function SettingsPage() {
                           <Input id="appName" name="appName" value={settings.appName} onChange={handleInputChange} />
                       </div>
                       <div className="space-y-2">
-                          <Label>{settings.page_settings.app_settings.tab_names_label}</Label>
-                          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                              <div className="space-y-2">
-                                  <Label htmlFor="tab-overview" className="font-normal text-muted-foreground">{settings.page_settings.app_settings.overview_tab_label}</Label>
-                                  <Input id="tab-overview" name="tabNames.overview" value={settings.tabNames.overview} onChange={handleInputChange} />
-                              </div>
-                              <div className="space-y-2">
-                                  <Label htmlFor="tab-tenants" className="font-normal text-muted-foreground">{settings.page_settings.app_settings.tenants_tab_label}</Label>
-                                  <Input id="tab-tenants" name="tabNames.tenants" value={settings.tabNames.tenants} onChange={handleInputChange} />
-                              </div>
-                              <div className="space-y-2">
-                                  <Label htmlFor="tab-integrations" className="font-normal text-muted-foreground">{settings.page_settings.app_settings.integrations_tab_label}</Label>
-                                  <Input id="tab-integrations" name="tabNames.integrations" value={settings.tabNames.integrations} onChange={handleInputChange} />
-                              </div>
-                              <div className="space-y-2">
-                                  <Label htmlFor="tab-reports" className="font-normal text-muted-foreground">{settings.page_settings.app_settings.reports_tab_label}</Label>
-                                  <Input id="tab-reports" name="tabNames.reports" value={settings.tabNames.reports} onChange={handleInputChange} />
-                              </div>
-                          </div>
-                      </div>
-                      <div className="space-y-2">
                           <Label htmlFor="footerName">{settings.page_settings.app_settings.footer_name_label}</Label>
                           <Input id="footerName" name="footerName" value={settings.footerName} onChange={handleInputChange} />
                       </div>
