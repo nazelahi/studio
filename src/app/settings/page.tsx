@@ -167,12 +167,14 @@ export default function SettingsPage() {
           >
             {settings.page_dashboard.nav_dashboard}
           </Link>
-          <Link
-            href="/settings"
-            className={`transition-colors hover:text-foreground text-foreground`}
-          >
-            {settings.page_dashboard.nav_settings}
-          </Link>
+          {isAdmin && (
+            <Link
+              href="/settings"
+              className={`transition-colors hover:text-foreground text-foreground`}
+            >
+              {settings.page_dashboard.nav_settings}
+            </Link>
+          )}
         </nav>
         <Sheet>
           <SheetTrigger asChild>
@@ -197,12 +199,14 @@ export default function SettingsPage() {
               <Link href="/" className={`hover:text-foreground text-muted-foreground`}>
                 {settings.page_dashboard.nav_dashboard}
               </Link>
-              <Link
-                href="/settings"
-                className={`hover:text-foreground text-foreground`}
-              >
-                {settings.page_dashboard.nav_settings}
-              </Link>
+              {isAdmin && (
+                <Link
+                  href="/settings"
+                  className={`hover:text-foreground text-foreground`}
+                >
+                  {settings.page_dashboard.nav_settings}
+                </Link>
+              )}
             </nav>
           </SheetContent>
         </Sheet>
