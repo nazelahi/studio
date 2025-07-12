@@ -33,6 +33,7 @@ import { logDepositAction, deleteDepositAction } from "@/app/actions/deposits"
 import { saveNoticeAction, deleteNoticeAction } from "@/app/actions/notices"
 import { supabase } from "@/lib/supabase"
 import { cn } from "@/lib/utils"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip"
 
 
 type HistoricalTenant = {
@@ -657,7 +658,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
   }
 
   return (
-    <>
+    <TooltipProvider>
     <Tabs value={selectedMonth} onValueChange={setSelectedMonth} className="w-full pt-4">
       {/* Mobile View: Dropdown */}
       <div className="md:hidden mb-4">
@@ -720,10 +721,15 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                             </AlertDialogContent>
                           </AlertDialog>
                         )}
-                         <Button size="sm" variant="outline" className="gap-2" onClick={handleImportClick}>
-                            <Upload className="h-4 w-4" />
-                            Import
-                        </Button>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button size="icon" variant="outline" onClick={handleImportClick}>
+                                    <Upload className="h-4 w-4" />
+                                    <span className="sr-only">Import from file</span>
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Import</TooltipContent>
+                        </Tooltip>
                         <input
                             type="file"
                             ref={fileInputRef}
@@ -731,19 +737,30 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                             accept=".xlsx, .csv"
                             onChange={handleFileChange}
                         />
-                        <Button size="sm" variant="outline" className="gap-2" onClick={handleSyncTenants}>
-                            <RefreshCw className="h-4 w-4" />
-                            Sync
-                        </Button>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button size="icon" variant="outline" onClick={handleSyncTenants}>
+                                    <RefreshCw className="h-4 w-4" />
+                                    <span className="sr-only">Sync tenants</span>
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Sync</TooltipContent>
+                        </Tooltip>
+
                         <Dialog open={isRentDialogOpen} onOpenChange={handleRentOpenChange}>
                           <DialogTrigger asChild>
-                            <Button size="sm" className="gap-2" onClick={() => {
-                              setEditingRentEntry(null);
-                              setSelectedHistoricalTenant(null);
-                            }}>
-                              <PlusCircle className="h-4 w-4" />
-                              Add Entry
-                            </Button>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button size="icon" onClick={() => {
+                                        setEditingRentEntry(null);
+                                        setSelectedHistoricalTenant(null);
+                                        }}>
+                                        <PlusCircle className="h-4 w-4" />
+                                        <span className="sr-only">Add new entry</span>
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Add Entry</TooltipContent>
+                            </Tooltip>
                           </DialogTrigger>
                           <DialogContent>
                               <DialogHeader>
@@ -1003,10 +1020,15 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                         )}
                          <Dialog open={isExpenseDialogOpen} onOpenChange={handleExpenseOpenChange}>
                           <DialogTrigger asChild>
-                            <Button size="sm" className="gap-2" onClick={() => setEditingExpense(null)}>
-                              <PlusCircle className="h-4 w-4" />
-                              Add Expense
-                            </Button>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button size="icon" onClick={() => setEditingExpense(null)}>
+                                        <PlusCircle className="h-4 w-4" />
+                                        <span className="sr-only">Add new expense</span>
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Add Expense</TooltipContent>
+                            </Tooltip>
                           </DialogTrigger>
                           <DialogContent>
                             <DialogHeader>
@@ -1317,6 +1339,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                 <DialogTrigger asChild>
                                     <Button size="icon" variant="secondary" className="h-8 w-8">
                                         {loggedDeposit ? <Edit className="h-4 w-4" /> : <PlusCircle className="h-4 w-4" />}
+                                        <span className="sr-only">{loggedDeposit ? 'Edit Deposit' : 'Log Deposit'}</span>
                                     </Button>
                                 </DialogTrigger>
                                 <DialogContent>
@@ -1453,6 +1476,6 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
       />
     )}
      
-    </>
+    </TooltipProvider>
   )
 }
