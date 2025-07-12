@@ -235,8 +235,8 @@ export function WorkDetailsTab({ year }: { year: number }) {
           <TableHeader>
             <TableRow className="bg-primary hover:bg-primary/90">
               <TableHead className="text-primary-foreground">Work Category</TableHead>
-              <TableHead className="text-primary-foreground">Product Price</TableHead>
-              <TableHead className="text-primary-foreground">Worker Cost</TableHead>
+              <TableHead className="text-primary-foreground hidden sm:table-cell">Product Price</TableHead>
+              <TableHead className="text-primary-foreground hidden sm:table-cell">Worker Cost</TableHead>
               <TableHead className="text-primary-foreground">Status</TableHead>
               <TableHead className="text-right text-primary-foreground">Total Cost</TableHead>
               {isAdmin && <TableHead className="text-primary-foreground w-24">Actions</TableHead>}
@@ -256,8 +256,8 @@ export function WorkDetailsTab({ year }: { year: number }) {
                 return (
                   <TableRow key={work.id}>
                     <TableCell className="font-medium">{work.title}</TableCell>
-                    <TableCell>{formatCurrency(work.product_cost)}</TableCell>
-                    <TableCell>{formatCurrency(work.worker_cost)}</TableCell>
+                    <TableCell className="hidden sm:table-cell">{formatCurrency(work.product_cost)}</TableCell>
+                    <TableCell className="hidden sm:table-cell">{formatCurrency(work.worker_cost)}</TableCell>
                     <TableCell>
                         <div className={cn("p-2 rounded-md text-center", isCompleted ? 'bg-green-200' : 'bg-transparent')}>
                           {isCompleted ? 'Paid' : work.status}
@@ -307,9 +307,8 @@ export function WorkDetailsTab({ year }: { year: number }) {
             {filteredWorkDetails.length > 0 && (
                 <TableFooter>
                     <TableRow className="bg-lime-500 hover:bg-lime-500/90 font-bold">
-                        <TableCell colSpan={4} className="text-white">Total for {year}</TableCell>
-                        <TableCell className="text-right text-white">{formatCurrency(yearlyTotal)}</TableCell>
-                        {isAdmin && <TableCell />}
+                        <TableCell colSpan={isAdmin ? 4 : 3} className="text-white text-right sm:text-left">Total for {year}</TableCell>
+                        <TableCell colSpan={isAdmin ? 2 : 2} className="text-right text-white">{formatCurrency(yearlyTotal)}</TableCell>
                     </TableRow>
                 </TableFooter>
             )}

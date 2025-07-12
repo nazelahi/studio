@@ -976,9 +976,8 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                         </TableBody>
                          <TableFooter>
                             <TableRow className="bg-lime-500 hover:bg-lime-500/90 font-bold">
-                                <TableCell colSpan={isAdmin ? 4 : 3} className="text-white">Total Rent Collected</TableCell>
-                                <TableCell colSpan={2} className="text-right text-white">৳{totalRentCollected.toFixed(2)}</TableCell>
-                                <TableCell className="text-primary-foreground"></TableCell>
+                                <TableCell colSpan={isAdmin ? 4 : 3} className="text-white text-right sm:text-left">Total Rent Collected</TableCell>
+                                <TableCell colSpan={isAdmin ? 3 : 3} className="text-right text-white">৳{totalRentCollected.toFixed(2)}</TableCell>
                             </TableRow>
                         </TableFooter>
                       </Table>
@@ -1181,9 +1180,9 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                         </TableBody>
                         <TableFooter>
                             <TableRow className="bg-lime-500 hover:bg-lime-500/90 font-bold">
-                                <TableCell colSpan={isAdmin ? 2 : 1} className="text-white">Total Expenses</TableCell>
-                                <TableCell className="text-left text-white">৳{totalExpenses.toFixed(2)}</TableCell>
-                                <TableCell colSpan={2}></TableCell>
+                                <TableCell colSpan={isAdmin ? 2 : 1} className="text-white text-right sm:text-left">Total Expenses</TableCell>
+                                <TableCell colSpan={2} className="text-right text-white">৳{totalExpenses.toFixed(2)}</TableCell>
+                                {isAdmin && <TableCell />}
                             </TableRow>
                         </TableFooter>
                       </Table>
