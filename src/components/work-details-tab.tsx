@@ -276,7 +276,16 @@ export function WorkDetailsTab() {
                         )}
                     </TableCell>
                     <TableCell>{work.due_date ? format(parseISO(work.due_date), 'dd MMM, yyyy') : '-'}</TableCell>
-                    <TableCell className="text-right">{totalCost > 0 ? `৳${totalCost.toFixed(2)}` : '-'}</TableCell>
+                    <TableCell className="text-right">
+                        {totalCost > 0 ? (
+                            <div>
+                                <div className="font-medium">৳{totalCost.toFixed(2)}</div>
+                                <div className="text-xs text-muted-foreground">
+                                    P: ৳{work.product_cost?.toFixed(2) || '0.00'} | W: ৳{work.worker_cost?.toFixed(2) || '0.00'}
+                                </div>
+                            </div>
+                        ) : '-'}
+                    </TableCell>
                     {isAdmin && (
                       <TableCell>
                          <div className="flex items-center justify-end gap-1">
