@@ -242,21 +242,6 @@ export default function SettingsPage() {
                               <Input id="bankAccountNumber" name="bankAccountNumber" value={settings.bankAccountNumber} onChange={handleInputChange} />
                           </div>
                       </CardContent>
-                      <Separator />
-                      <CardHeader>
-                        <CardTitle>Zakat Bank Details</CardTitle>
-                        <CardDescription>Enter the bank details for Zakat funds.</CardDescription>
-                      </CardHeader>
-                       <CardContent className="grid md:grid-cols-2 gap-4">
-                         <div className="space-y-2">
-                              <Label htmlFor="zakatBankName">Zakat Bank Name</Label>
-                              <Input id="zakatBankName" name="zakatBankName" value={settings.zakatBankName} onChange={handleInputChange} />
-                          </div>
-                          <div className="space-y-2">
-                              <Label htmlFor="zakatBankAccountNumber">Zakat Bank Account Number</Label>
-                              <Input id="zakatBankAccountNumber" name="zakatBankAccountNumber" value={settings.zakatBankAccountNumber} onChange={handleInputChange} />
-                          </div>
-                      </CardContent>
                       <CardFooter>
                           <Button type="submit" disabled={isPending}>
                              {isPending && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
