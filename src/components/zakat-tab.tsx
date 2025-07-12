@@ -68,13 +68,15 @@ export function ZakatTab() {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = async (formData: FormData) => {
-    const result = await deleteZakatTransactionAction(formData);
-    if (result.error) {
-      toast({ title: 'Error deleting transaction', description: result.error, variant: 'destructive' });
-    } else {
-      toast({ title: 'Transaction Deleted', description: 'The Zakat transaction has been removed.' });
-    }
+  const handleDelete = (formData: FormData) => {
+    startTransition(async () => {
+        const result = await deleteZakatTransactionAction(formData);
+        if (result.error) {
+        toast({ title: 'Error deleting transaction', description: result.error, variant: 'destructive' });
+        } else {
+        toast({ title: 'Transaction Deleted', description: 'The Zakat transaction has been removed.' });
+        }
+    });
   };
 
   const handleSave = (event: React.FormEvent<HTMLFormElement>) => {
@@ -187,10 +189,10 @@ export function ZakatTab() {
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <form action={handleDelete}>
+                                <form onSubmit={(e) => { e.preventDefault(); handleDelete(new FormData(e.currentTarget)); }}>
                                     <input type="hidden" name="transactionId" value={tx.id} />
                                     {tx.receipt_url && <input type="hidden" name="receiptUrl" value={tx.receipt_url} />}
-                                    <AlertDialogAction type="submit">Delete</AlertDialogAction>
+                                    <AlertDialogAction type="submit" disabled={isPending}>Delete</AlertDialogAction>
                                 </form>
                             </AlertDialogFooter>
                         </AlertDialogContent>
@@ -378,7 +380,7 @@ export function ZakatTab() {
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="description">Description</Label>
-                            <Textarea id="description" name="description" defaultValue={editingTransaction?.description} placeholder="Optional notes..."/>
+                            <Textarea id="description" name="description" defaultValue={editingTransaction?.description || ""} placeholder="Optional notes..."/>
                         </div>
                         <div className="space-y-2">
                             <Label>Receipt</Label>
