@@ -5,15 +5,25 @@ import { createClient } from '@supabase/supabase-js'
 import { revalidatePath } from 'next/cache'
 import 'dotenv/config'
 
+// This function creates a Supabase client with admin privileges.
+// It uses the service_role key and is intended for server-side use only
+// where row-level security needs to be bypassed.
 const getSupabaseAdmin = () => {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
     if (!supabaseUrl || !supabaseServiceKey) {
-        throw new Error('Supabase credentials are not configured on the server.');
+        throw new Error('Supabase URL or service role key is not configured on the server. Please check your environment variables.');
     }
     
-    return createClient(supabaseUrl, supabaseServiceKey);
+    // The `auth` option with `autoRefreshToken: false` and `persistSession: false`
+    // is crucial for server-side clients to prevent session-related issues.
+    return createClient(supabaseUrl, supabaseServiceKey, {
+        auth: {
+            autoRefreshToken: false,
+            persistSession: false,
+        },
+    });
 }
 
 export async function logDepositAction(formData: FormData) {
