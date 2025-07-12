@@ -295,8 +295,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         if (!supabase) return;
 
         const newEntriesWithDetails = await Promise.all(rentEntriesData.map(async (rentEntryData) => {
-            const fullEntryData = rentEntryData as NewRentEntry;
-            let tenantInfo = { id: fullEntryData.tenant_id, avatar: fullEntryData.avatar };
+            let tenantInfo = { id: (rentEntryData as NewRentEntry).tenant_id, avatar: (rentEntryData as NewRentEntry).avatar };
 
             if (!tenantInfo.id) {
                 let { data: existingTenant } = await supabase
