@@ -24,24 +24,10 @@ import { saveWorkDetailAction, deleteWorkDetailAction } from "@/app/actions/work
 import { format, parseISO } from "date-fns"
 import { cn } from "@/lib/utils"
 
-const getStatusBadgeVariant = (status: WorkDetail['status']) => {
-    switch (status) {
-        case 'Completed': return 'bg-green-100 text-green-800 border-green-200';
-        case 'In Progress': return 'bg-blue-100 text-blue-800 border-blue-200';
-        case 'To Do': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-        default: return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-}
-
-const getStatusIcon = (status: WorkDetail['status']) => {
-    switch (status) {
-        case 'Completed': return <CheckCircle className="h-4 w-4 mr-2" />;
-        case 'In Progress': return <Construction className="h-4 w-4 mr-2 animate-pulse" />;
-        case 'To Do': return <Calendar className="h-4 w-4 mr-2" />;
-        default: return null;
-    }
-}
-
+const formatCurrency = (amount?: number) => {
+    if (amount === undefined || amount === null) return '-';
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'BDT' }).format(amount).replace('BDT', '৳');
+};
 
 export function WorkDetailsTab() {
   const { workDetails, tenants, loading } = useData();
@@ -106,6 +92,10 @@ export function WorkDetailsTab() {
     setAssignedContact(contact);
     setIsContactFinderOpen(false);
   };
+  
+  const grandTotal = React.useMemo(() => {
+    return workDetails.reduce((acc, work) => acc + (work.product_cost || 0) + (work.worker_cost || 0), 0);
+  }, [workDetails]);
 
 
   return (
@@ -227,13 +217,13 @@ export function WorkDetailsTab() {
       <CardContent>
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead>Work Item</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Assigned To</TableHead>
-              <TableHead>Due Date</TableHead>
-              <TableHead className="text-right">Total Cost</TableHead>
-              {isAdmin && <TableHead>Actions</TableHead>}
+            <TableRow className="bg-primary hover:bg-primary/90">
+              <TableHead className="text-primary-foreground">Work Category</TableHead>
+              <TableHead className="text-primary-foreground">Product Price</TableHead>
+              <TableHead className="text-primary-foreground">Worker Cost</TableHead>
+              <TableHead className="text-primary-foreground">Status</TableHead>
+              <TableHead className="text-right text-primary-foreground">Total Cost</TableHead>
+              {isAdmin && <TableHead className="text-primary-foreground w-24">Actions</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -245,47 +235,19 @@ export function WorkDetailsTab() {
                 ))
             ) : workDetails.length > 0 ? (
               workDetails.map((work) => {
-                const assigned = work.assigned_to_id ? tenants.find(t => t.id === work.assigned_to_id) : null;
                 const totalCost = (work.product_cost || 0) + (work.worker_cost || 0);
+                const isCompleted = work.status === 'Completed';
                 return (
                   <TableRow key={work.id}>
+                    <TableCell className="font-medium">{work.title}</TableCell>
+                    <TableCell>{formatCurrency(work.product_cost)}</TableCell>
+                    <TableCell>{formatCurrency(work.worker_cost)}</TableCell>
                     <TableCell>
-                      <div className="font-medium">{work.title}</div>
-                      <div className="text-sm text-muted-foreground">{work.category || 'General'}</div>
+                        <div className={cn("p-2 rounded-md text-center", isCompleted ? 'bg-green-200' : 'bg-transparent')}>
+                          {isCompleted ? 'Paid' : work.status}
+                        </div>
                     </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className={getStatusBadgeVariant(work.status)}>
-                        {getStatusIcon(work.status)}
-                        {work.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                        {assigned ? (
-                            <div className="flex items-center gap-2">
-                                <Avatar className="h-8 w-8">
-                                    <AvatarImage src={assigned.avatar} />
-                                    <AvatarFallback>{assigned.name.charAt(0)}</AvatarFallback>
-                                </Avatar>
-                                <div>
-                                    <div className="font-medium">{assigned.name}</div>
-                                    <div className="text-sm text-muted-foreground">{assigned.property}</div>
-                                </div>
-                            </div>
-                        ) : (
-                            <span className="text-muted-foreground">-</span>
-                        )}
-                    </TableCell>
-                    <TableCell>{work.due_date ? format(parseISO(work.due_date), 'dd MMM, yyyy') : '-'}</TableCell>
-                    <TableCell className="text-right">
-                        {totalCost > 0 ? (
-                            <div>
-                                <div className="font-medium">৳{totalCost.toFixed(2)}</div>
-                                <div className="text-xs text-muted-foreground">
-                                    P: ৳{work.product_cost?.toFixed(2) || '0.00'} | W: ৳{work.worker_cost?.toFixed(2) || '0.00'}
-                                </div>
-                            </div>
-                        ) : '-'}
-                    </TableCell>
+                    <TableCell className="text-right font-bold">{formatCurrency(totalCost)}</TableCell>
                     {isAdmin && (
                       <TableCell>
                          <div className="flex items-center justify-end gap-1">
@@ -326,8 +288,19 @@ export function WorkDetailsTab() {
               </TableRow>
             )}
           </TableBody>
+            {workDetails.length > 0 && (
+                <tfoot>
+                    <TableRow className="bg-amber-500 hover:bg-amber-500/90 font-bold">
+                        <TableCell colSpan={4} className="text-white">Total</TableCell>
+                        <TableCell className="text-right text-white">{formatCurrency(grandTotal)}</TableCell>
+                        {isAdmin && <TableCell />}
+                    </TableRow>
+                </tfoot>
+            )}
         </Table>
       </CardContent>
     </Card>
   )
 }
+
+    
