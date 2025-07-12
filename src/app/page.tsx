@@ -92,7 +92,7 @@ export default function HomePage() {
       <header className="sticky top-0 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6 z-50">
         <nav className="hidden flex-col gap-6 text-lg font-medium md:flex md:flex-row md:items-center md:gap-5 md:text-sm lg:gap-6">
           <Link
-            href="#"
+            href="/"
             className="flex items-center gap-2 text-lg font-semibold md:text-base"
           >
             <Logo className="h-6 w-6 text-primary" />
@@ -143,8 +143,16 @@ export default function HomePage() {
             </nav>
           </SheetContent>
         </Sheet>
+
+        <div className="flex-1 text-center min-w-0">
+          <h1 className="text-base sm:text-lg font-bold tracking-tight text-primary truncate">{settings.houseName}</h1>
+          <div className="flex items-center justify-center gap-2 mt-1 text-xs text-muted-foreground">
+            <MapPin className="h-3 w-3 flex-shrink-0" />
+            <p className="truncate">{settings.houseAddress}</p>
+          </div>
+        </div>
         
-        <div className="flex items-center gap-4 ml-auto">
+        <div className="flex items-center gap-4">
             <div className="flex flex-col items-end">
                 <h1 className="text-sm font-bold tracking-tight text-primary truncate">{settings.ownerName}</h1>
                 <p className="text-xs text-muted-foreground">Property Owner</p>
@@ -189,14 +197,6 @@ export default function HomePage() {
         </div>
       </header>
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-        <div className="text-center">
-            <h1 className="text-3xl font-bold tracking-tight text-primary">{settings.houseName}</h1>
-            <div className="flex items-center justify-center gap-2 mt-1 text-muted-foreground">
-                <MapPin className="h-4 w-4 flex-shrink-0" />
-                <p>{settings.houseAddress}</p>
-            </div>
-        </div>
-
         <DashboardTabs
           year={parseInt(selectedYear)}
           activeTab={activeTab}
