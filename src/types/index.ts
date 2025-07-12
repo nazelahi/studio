@@ -60,4 +60,14 @@ export type Deposit = {
   created_at?: string;
 }
 
+export type ZakatTransaction = {
+  id: string;
+  transaction_date: string;
+  type: 'inflow' | 'outflow';
+  amount: number;
+  source_or_recipient: string;
+  description?: string;
+  created_at?: string;
+}
+
     

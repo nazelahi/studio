@@ -41,6 +41,7 @@ interface TabNames {
     tenants: string;
     integrations: string;
     reports: string;
+    zakat: string;
 }
 
 interface AppSettings {
@@ -73,6 +74,7 @@ const defaultSettings: AppSettings = {
         tenants: "Tenants",
         integrations: "Integrations",
         reports: "Reports",
+        zakat: "Zakat",
     },
     page_dashboard: {
         nav_dashboard: "Dashboard",
