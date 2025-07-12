@@ -492,13 +492,29 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
   return (
     <>
     <Tabs value={selectedMonth} onValueChange={setSelectedMonth} className="w-full pt-4">
-      <div className="overflow-x-auto pb-2">
-        <TabsList className="grid w-max grid-cols-12 gap-1">
+      {/* Mobile View: Dropdown */}
+      <div className="md:hidden mb-4">
+        <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select Month" />
+          </SelectTrigger>
+          <SelectContent>
+            {months.map(month => (
+              <SelectItem key={month} value={month}>{month}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Desktop View: Tabs */}
+      <div className="hidden md:block">
+        <TabsList className="grid w-full grid-cols-12">
             {months.map(month => (
             <TabsTrigger key={month} value={month}>{month}</TabsTrigger>
             ))}
         </TabsList>
       </div>
+      
       {months.map(month => (
         <TabsContent key={month} value={month}>
           <div className="mt-6">
