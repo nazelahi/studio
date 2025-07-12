@@ -7,7 +7,7 @@ import { useAuth } from "@/context/auth-context"
 import { useToast } from "@/hooks/use-toast"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
@@ -15,11 +15,12 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { PlusCircle, Edit, Trash2, LoaderCircle } from "lucide-react"
+import { PlusCircle, Edit, Trash2, LoaderCircle, ExternalLink } from "lucide-react"
 import type { WorkDetail, Tenant } from "@/types"
 import { saveWorkDetailAction, deleteWorkDetailAction } from "@/app/actions/work"
-import { format, parseISO } from "date-fns"
+import { format, parseISO, getYear } from "date-fns"
 import { cn } from "@/lib/utils"
+import { useRouter } from "next/navigation"
 
 const formatCurrency = (amount?: number) => {
     if (amount === undefined || amount === null) return '-';
@@ -29,16 +30,29 @@ const formatCurrency = (amount?: number) => {
 const workCategories = ["Plumbing", "Electrical", "Painting", "Cleaning", "Appliance Repair", "General Maintenance", "Other"];
 
 
-export function WorkDetailsTab() {
+export function WorkDetailsTab({ year }: { year: number }) {
   const { workDetails, loading } = useData();
   const { isAdmin } = useAuth();
   const { toast } = useToast();
+  const router = useRouter();
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [editingWork, setEditingWork] = React.useState<WorkDetail | null>(null);
   const [isPending, startTransition] = React.useTransition();
 
   const [workCategory, setWorkCategory] = React.useState('');
   const [customWorkCategory, setCustomWorkCategory] = React.useState('');
+  
+  const filteredWorkDetails = React.useMemo(() => {
+    return workDetails.filter(work => {
+      const workDate = work.due_date ? parseISO(work.due_date) : work.created_at ? parseISO(work.created_at) : null;
+      if (!workDate) {
+        // Decide if items without a date should be shown for the current year or not at all.
+        // Here, we include them if we are viewing the current year.
+        return year === new Date().getFullYear();
+      }
+      return getYear(workDate) === year;
+    });
+  }, [workDetails, year]);
 
   React.useEffect(() => {
     if (editingWork) {
@@ -103,111 +117,117 @@ export function WorkDetailsTab() {
     });
   };
   
-  const grandTotal = React.useMemo(() => {
-    return workDetails.reduce((acc, work) => acc + (work.product_cost || 0) + (work.worker_cost || 0), 0);
-  }, [workDetails]);
+  const yearlyTotal = React.useMemo(() => {
+    return filteredWorkDetails.reduce((acc, work) => acc + (work.product_cost || 0) + (work.worker_cost || 0), 0);
+  }, [filteredWorkDetails]);
 
 
   return (
     <Card className="mt-4">
       <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between">
         <div>
-          <CardTitle>Work Details</CardTitle>
+          <CardTitle>Work Details for {year}</CardTitle>
           <CardDescription>Track maintenance, repairs, and other jobs for the property.</CardDescription>
         </div>
-        {isAdmin && (
-            <Dialog open={isDialogOpen} onOpenChange={handleOpenChange}>
-                <DialogTrigger asChild>
-                    <Button>
-                        <PlusCircle className="mr-2 h-4 w-4" />
-                        Add Work Item
-                    </Button>
-                </DialogTrigger>
-                <DialogContent>
-                    <DialogHeader>
-                        <DialogTitle>{editingWork ? 'Edit Work Item' : 'Add New Work Item'}</DialogTitle>
-                        <DialogDescription>Fill in the details for the job below.</DialogDescription>
-                    </DialogHeader>
-                    <form onSubmit={handleSave}>
-                        {editingWork && <input type="hidden" name="workId" value={editingWork.id} />}
-                        <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto pr-2">
-                            <div className="space-y-2">
-                                <Label htmlFor="title">Title</Label>
-                                <Input id="title" name="title" defaultValue={editingWork?.title} required />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="description">Description</Label>
-                                <Textarea id="description" name="description" defaultValue={editingWork?.description || ''} />
-                            </div>
-                             <div className="grid grid-cols-2 gap-4">
-                               <div className="space-y-2">
-                                    <Label htmlFor="category">Category</Label>
-                                    <Select value={workCategory} onValueChange={setWorkCategory}>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select a category" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {workCategories.map(cat => (
-                                                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                 <div className="space-y-2">
-                                    <Label htmlFor="due_date">Due Date</Label>
-                                    <Input id="due_date" name="due_date" type="date" defaultValue={editingWork?.due_date ? format(parseISO(editingWork.due_date), 'yyyy-MM-dd') : ''} />
-                                </div>
-                            </div>
-                            
-                            {workCategory === 'Other' && (
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => router.push('/work-report')}>
+            View Full Report
+            <ExternalLink className="ml-2 h-4 w-4" />
+          </Button>
+          {isAdmin && (
+              <Dialog open={isDialogOpen} onOpenChange={handleOpenChange}>
+                  <DialogTrigger asChild>
+                      <Button>
+                          <PlusCircle className="mr-2 h-4 w-4" />
+                          Add Work Item
+                      </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                      <DialogHeader>
+                          <DialogTitle>{editingWork ? 'Edit Work Item' : 'Add New Work Item'}</DialogTitle>
+                          <DialogDescription>Fill in the details for the job below.</DialogDescription>
+                      </DialogHeader>
+                      <form onSubmit={handleSave}>
+                          {editingWork && <input type="hidden" name="workId" value={editingWork.id} />}
+                          <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto pr-2">
+                              <div className="space-y-2">
+                                  <Label htmlFor="title">Title</Label>
+                                  <Input id="title" name="title" defaultValue={editingWork?.title} required />
+                              </div>
+                              <div className="space-y-2">
+                                  <Label htmlFor="description">Description</Label>
+                                  <Textarea id="description" name="description" defaultValue={editingWork?.description || ''} />
+                              </div>
+                              <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
-                                  <Label htmlFor="customCategory">Custom Category</Label>
-                                  <Input 
-                                    id="customCategory" 
-                                    name="customCategory" 
-                                    value={customWorkCategory}
-                                    onChange={(e) => setCustomWorkCategory(e.target.value)}
-                                    placeholder="Enter custom category" 
-                                    required 
-                                  />
-                                </div>
-                            )}
+                                      <Label htmlFor="category">Category</Label>
+                                      <Select value={workCategory} onValueChange={setWorkCategory}>
+                                          <SelectTrigger>
+                                              <SelectValue placeholder="Select a category" />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                              {workCategories.map(cat => (
+                                                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                                              ))}
+                                          </SelectContent>
+                                      </Select>
+                                  </div>
+                                  <div className="space-y-2">
+                                      <Label htmlFor="due_date">Due Date</Label>
+                                      <Input id="due_date" name="due_date" type="date" defaultValue={editingWork?.due_date ? format(parseISO(editingWork.due_date), 'yyyy-MM-dd') : new Date(year, new Date().getMonth()).toISOString().split('T')[0]} />
+                                  </div>
+                              </div>
+                              
+                              {workCategory === 'Other' && (
+                                  <div className="space-y-2">
+                                    <Label htmlFor="customCategory">Custom Category</Label>
+                                    <Input 
+                                      id="customCategory" 
+                                      name="customCategory" 
+                                      value={customWorkCategory}
+                                      onChange={(e) => setCustomWorkCategory(e.target.value)}
+                                      placeholder="Enter custom category" 
+                                      required 
+                                    />
+                                  </div>
+                              )}
 
-                             <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="product_cost">Product Cost</Label>
-                                    <Input id="product_cost" name="product_cost" type="number" step="0.01" defaultValue={editingWork?.product_cost || ''} placeholder="0.00" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="worker_cost">Worker Cost</Label>
-                                    <Input id="worker_cost" name="worker_cost" type="number" step="0.01" defaultValue={editingWork?.worker_cost || ''} placeholder="0.00" />
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="status">Status</Label>
-                                <Select name="status" defaultValue={editingWork?.status || 'To Do'}>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select status" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="To Do">To Do</SelectItem>
-                                        <SelectItem value="In Progress">In Progress</SelectItem>
-                                        <SelectItem value="Completed">Completed</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
-                        <DialogFooter>
-                            <DialogClose asChild><Button type="button" variant="outline" disabled={isPending}>Cancel</Button></DialogClose>
-                            <Button type="submit" disabled={isPending}>
-                               {isPending && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
-                               Save
-                            </Button>
-                        </DialogFooter>
-                    </form>
-                </DialogContent>
-            </Dialog>
-        )}
+                              <div className="grid grid-cols-2 gap-4">
+                                  <div className="space-y-2">
+                                      <Label htmlFor="product_cost">Product Cost</Label>
+                                      <Input id="product_cost" name="product_cost" type="number" step="0.01" defaultValue={editingWork?.product_cost || ''} placeholder="0.00" />
+                                  </div>
+                                  <div className="space-y-2">
+                                      <Label htmlFor="worker_cost">Worker Cost</Label>
+                                      <Input id="worker_cost" name="worker_cost" type="number" step="0.01" defaultValue={editingWork?.worker_cost || ''} placeholder="0.00" />
+                                  </div>
+                              </div>
+                              <div className="space-y-2">
+                                  <Label htmlFor="status">Status</Label>
+                                  <Select name="status" defaultValue={editingWork?.status || 'To Do'}>
+                                      <SelectTrigger>
+                                          <SelectValue placeholder="Select status" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                          <SelectItem value="To Do">To Do</SelectItem>
+                                          <SelectItem value="In Progress">In Progress</SelectItem>
+                                          <SelectItem value="Completed">Completed</SelectItem>
+                                      </SelectContent>
+                                  </Select>
+                              </div>
+                          </div>
+                          <DialogFooter>
+                              <DialogClose asChild><Button type="button" variant="outline" disabled={isPending}>Cancel</Button></DialogClose>
+                              <Button type="submit" disabled={isPending}>
+                                {isPending && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
+                                Save
+                              </Button>
+                          </DialogFooter>
+                      </form>
+                  </DialogContent>
+              </Dialog>
+          )}
+        </div>
       </CardHeader>
       <CardContent>
         <Table>
@@ -228,8 +248,8 @@ export function WorkDetailsTab() {
                         <TableCell colSpan={6}><div className="h-8 bg-muted rounded animate-pulse w-full"></div></TableCell>
                     </TableRow>
                 ))
-            ) : workDetails.length > 0 ? (
-              workDetails.map((work) => {
+            ) : filteredWorkDetails.length > 0 ? (
+              filteredWorkDetails.map((work) => {
                 const totalCost = (work.product_cost || 0) + (work.worker_cost || 0);
                 const isCompleted = work.status === 'Completed';
                 return (
@@ -278,19 +298,19 @@ export function WorkDetailsTab() {
             ) : (
               <TableRow>
                 <TableCell colSpan={6} className="text-center h-24 text-muted-foreground">
-                  No work items found.
+                  No work items found for {year}.
                 </TableCell>
               </TableRow>
             )}
           </TableBody>
-            {workDetails.length > 0 && (
-                <tfoot>
+            {filteredWorkDetails.length > 0 && (
+                <TableFooter>
                     <TableRow className="bg-amber-500 hover:bg-amber-500/90 font-bold">
-                        <TableCell colSpan={4} className="text-white">Total</TableCell>
-                        <TableCell className="text-right text-white">{formatCurrency(grandTotal)}</TableCell>
+                        <TableCell colSpan={4} className="text-white">Total for {year}</TableCell>
+                        <TableCell className="text-right text-white">{formatCurrency(yearlyTotal)}</TableCell>
                         {isAdmin && <TableCell />}
                     </TableRow>
-                </tfoot>
+                </TableFooter>
             )}
         </Table>
       </CardContent>

@@ -54,7 +54,7 @@ export default function DashboardTabs() {
           <ContactsTab />
         </TabsContent>
         <TabsContent value="work">
-          <WorkDetailsTab />
+          <WorkDetailsTab year={parseInt(selectedYear)} />
         </TabsContent>
         <TabsContent value="integrations">
             <IntegrationsTab />
