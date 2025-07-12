@@ -16,6 +16,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { useToast } from "@/hooks/use-toast"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from "@/components/ui/sheet"
 import { updatePropertySettingsAction, updateUserCredentialsAction } from "./actions"
+import { Separator } from "@/components/ui/separator"
 
 export default function SettingsPage() {
   const { settings, setSettings } = useSettings();
@@ -228,8 +229,8 @@ export default function SettingsPage() {
                           </div>
                       </CardContent>
                       <CardHeader>
-                        <CardTitle>Bank Details</CardTitle>
-                        <CardDescription>Enter the bank details for monthly deposits.</CardDescription>
+                        <CardTitle>Rental Bank Details</CardTitle>
+                        <CardDescription>Enter the bank details for monthly rent deposits.</CardDescription>
                       </CardHeader>
                       <CardContent className="grid md:grid-cols-2 gap-4">
                          <div className="space-y-2">
@@ -239,6 +240,21 @@ export default function SettingsPage() {
                           <div className="space-y-2">
                               <Label htmlFor="bankAccountNumber">Bank Account Number</Label>
                               <Input id="bankAccountNumber" name="bankAccountNumber" value={settings.bankAccountNumber} onChange={handleInputChange} />
+                          </div>
+                      </CardContent>
+                      <Separator />
+                      <CardHeader>
+                        <CardTitle>Zakat Bank Details</CardTitle>
+                        <CardDescription>Enter the bank details for Zakat funds.</CardDescription>
+                      </CardHeader>
+                       <CardContent className="grid md:grid-cols-2 gap-4">
+                         <div className="space-y-2">
+                              <Label htmlFor="zakatBankName">Zakat Bank Name</Label>
+                              <Input id="zakatBankName" name="zakatBankName" value={settings.zakatBankName} onChange={handleInputChange} />
+                          </div>
+                          <div className="space-y-2">
+                              <Label htmlFor="zakatBankAccountNumber">Zakat Bank Account Number</Label>
+                              <Input id="zakatBankAccountNumber" name="zakatBankAccountNumber" value={settings.zakatBankAccountNumber} onChange={handleInputChange} />
                           </div>
                       </CardContent>
                       <CardFooter>

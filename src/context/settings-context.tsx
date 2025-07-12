@@ -50,6 +50,8 @@ interface AppSettings {
   houseAddress: string;
   bankName: string;
   bankAccountNumber: string;
+  zakatBankName: string;
+  zakatBankAccountNumber: string;
   footerName: string;
   tabNames: TabNames;
   page_dashboard: PageDashboard;
@@ -68,6 +70,8 @@ const defaultSettings: AppSettings = {
     houseAddress: "123 Ocean View Drive, Miami, FL 33139",
     bankName: "",
     bankAccountNumber: "",
+    zakatBankName: "",
+    zakatBankAccountNumber: "",
     footerName: "© 2024 RentFlow. All Rights Reserved.",
     tabNames: {
         overview: "Overview",
@@ -158,7 +162,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
           houseName: propertySettings.house_name || prev.houseName,
           houseAddress: propertySettings.house_address || prev.houseAddress,
           bankName: propertySettings.bank_name || prev.bankName,
-          bankAccountNumber: propertySettings.bank_account_number || prev.bankAccountNumber
+          bankAccountNumber: propertySettings.bank_account_number || prev.bankAccountNumber,
+          zakatBankName: propertySettings.zakat_bank_name || prev.zakatBankName,
+          zakatBankAccountNumber: propertySettings.zakat_bank_account_number || prev.zakatBankAccountNumber,
         }))
       }
     }, [propertySettings, dataLoading]);
@@ -166,7 +172,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         if (isMounted) {
             // Save all settings EXCEPT database-driven ones to local storage
-            const { houseName, houseAddress, bankName, bankAccountNumber, ...localSettings } = settings;
+            const { houseName, houseAddress, bankName, bankAccountNumber, zakatBankName, zakatBankAccountNumber, ...localSettings } = settings;
             try {
                 window.localStorage.setItem('appSettings', JSON.stringify(localSettings));
             } catch (error) {

@@ -5,7 +5,7 @@ import * as React from "react"
 import { useData } from "@/context/data-context"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { PlusCircle, Edit, Trash2, ArrowUpCircle, ArrowDownCircle, Banknote, LoaderCircle } from "lucide-react"
+import { PlusCircle, Edit, Trash2, ArrowUpCircle, ArrowDownCircle, Banknote, LoaderCircle, Settings, Landmark } from "lucide-react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { format, parseISO } from "date-fns"
@@ -16,11 +16,12 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { saveZakatTransactionAction, deleteZakatTransactionAction } from "@/app/actions/zakat"
 import type { ZakatTransaction } from "@/types"
 import { Skeleton } from "./ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs"
+import { useSettings } from "@/context/settings-context"
+import { useRouter } from "next/navigation"
 
 const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'BDT' }).format(amount).replace('BDT', '৳');
@@ -29,6 +30,8 @@ const formatCurrency = (amount: number) => {
 export function ZakatTab() {
   const { zakatTransactions, loading, refreshData } = useData();
   const { isAdmin } = useAuth();
+  const { settings } = useSettings();
+  const router = useRouter();
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [editingTransaction, setEditingTransaction] = React.useState<ZakatTransaction | null>(null);
@@ -187,6 +190,27 @@ export function ZakatTab() {
                 <p className="text-2xl font-bold text-blue-800 mt-2">{formatCurrency(availableZakat)}</p>
             </div>
         </CardContent>
+         <CardFooter>
+            <Card className="w-full">
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <Landmark className="h-6 w-6 text-primary" />
+                        <CardTitle className="text-base">Zakat Bank Details</CardTitle>
+                    </div>
+                    {isAdmin && <Button variant="outline" size="sm" onClick={() => router.push('/settings')}> <Settings className="mr-2 h-4 w-4" />Change Details</Button>}
+                </CardHeader>
+                <CardContent className="grid sm:grid-cols-2 gap-4">
+                     <div className="space-y-1">
+                        <p className="text-sm font-medium text-muted-foreground">Bank Name</p>
+                        <p className="font-semibold">{settings.zakatBankName || "Not Set"}</p>
+                    </div>
+                    <div className="space-y-1">
+                        <p className="text-sm font-medium text-muted-foreground">Account Number</p>
+                        <p className="font-semibold">{settings.zakatBankAccountNumber || "Not Set"}</p>
+                    </div>
+                </CardContent>
+            </Card>
+        </CardFooter>
       </Card>
       
       <Tabs defaultValue="inflow" className="w-full">

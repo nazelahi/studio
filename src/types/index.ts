@@ -48,6 +48,8 @@ export type PropertySettings = {
   house_address: string;
   bank_name: string;
   bank_account_number: string;
+  zakat_bank_name?: string;
+  zakat_bank_account_number?: string;
 };
 
 export type Deposit = {

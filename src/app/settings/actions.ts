@@ -33,6 +33,8 @@ export async function updatePropertySettingsAction(formData: FormData) {
     const houseAddress = formData.get('houseAddress') as string;
     const bankName = formData.get('bankName') as string;
     const bankAccountNumber = formData.get('bankAccountNumber') as string;
+    const zakatBankName = formData.get('zakatBankName') as string;
+    const zakatBankAccountNumber = formData.get('zakatBankAccountNumber') as string;
     
     const { error } = await supabaseAdmin
         .from('property_settings')
@@ -41,6 +43,8 @@ export async function updatePropertySettingsAction(formData: FormData) {
             house_address: houseAddress,
             bank_name: bankName,
             bank_account_number: bankAccountNumber,
+            zakat_bank_name: zakatBankName,
+            zakat_bank_account_number: zakatBankAccountNumber,
         })
         .eq('id', 1);
 
