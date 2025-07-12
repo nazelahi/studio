@@ -38,3 +38,56 @@ export async function updatePropertySettingsAction(formData: FormData) {
     
     return { success: true };
 }
+
+
+export async function updateUserCredentialsAction(formData: FormData) {
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+        return { error: 'Supabase credentials are not configured on the server. Please check your .env.local file.' };
+    }
+
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+        auth: {
+            autoRefreshToken: false,
+            persistSession: false
+        }
+    });
+
+    // Get the current user from the session cookie
+    const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser();
+
+    if (userError || !user) {
+        return { error: 'Could not authenticate user. Please log in again.' };
+    }
+
+    const updates: { email?: string; password?: string } = {};
+    if (email) {
+        updates.email = email;
+    }
+    if (password) {
+        updates.password = password;
+    }
+    
+    if (Object.keys(updates).length === 0) {
+        return { success: true, message: 'No changes were made.' };
+    }
+
+    const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
+        user.id,
+        updates
+    );
+
+    if (updateError) {
+        console.error('Supabase credentials update error:', updateError);
+        return { error: updateError.message };
+    }
+    
+    revalidatePath('/settings');
+
+    return { success: true };
+}

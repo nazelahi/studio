@@ -15,7 +15,7 @@ import { User, LogOut, KeyRound, MapPin, Trash2, Menu, Settings, LockKeyhole, Lo
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useToast } from "@/hooks/use-toast"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from "@/components/ui/sheet"
-import { updatePropertySettingsAction } from "./actions"
+import { updatePropertySettingsAction, updateUserCredentialsAction } from "./actions"
 import { LoginDialog } from "@/components/login-dialog"
 
 export default function SettingsPage() {
@@ -24,7 +24,18 @@ export default function SettingsPage() {
   const { user, isAdmin, signOut } = useAuth();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
+  const [isCredentialsPending, startCredentialsTransition] = useTransition();
   const [isLoginDialogOpen, setIsLoginDialogOpen] = React.useState(false);
+  
+  const [newEmail, setNewEmail] = useState(user?.email || '');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+
+  React.useEffect(() => {
+    if (user?.email) {
+      setNewEmail(user.email);
+    }
+  }, [user]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -78,6 +89,29 @@ export default function SettingsPage() {
       description: "You have been successfully signed out.",
     });
   };
+  
+  const handleSaveCredentials = (formData: FormData) => {
+    if (!isAdmin) {
+      toast({ title: 'Unauthorized', description: 'You must be logged in as an admin to perform this action.', variant: 'destructive'});
+      return;
+    }
+    
+    if (newPassword && newPassword !== confirmPassword) {
+      toast({ title: 'Error', description: 'Passwords do not match.', variant: 'destructive'});
+      return;
+    }
+
+    startCredentialsTransition(async () => {
+      const result = await updateUserCredentialsAction(formData);
+      if (result?.error) {
+          toast({ title: 'Error Updating Credentials', description: result.error, variant: 'destructive'});
+      } else {
+          toast({ title: 'Credentials Updated', description: 'Your login details have been changed. You may need to log in again.' });
+          setNewPassword('');
+          setConfirmPassword('');
+      }
+   });
+  }
 
   return (
      <div className="flex min-h-screen w-full flex-col">
@@ -208,6 +242,37 @@ export default function SettingsPage() {
                             <Button type="submit" disabled={isPending}>
                                {isPending && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
                                Save
+                            </Button>
+                        </CardFooter>
+                    </Card>
+                </fieldset>
+              </form>
+
+              <form action={handleSaveCredentials}>
+                <fieldset disabled={!isAdmin} className="group">
+                    <Card className="group-disabled:opacity-50">
+                        <CardHeader>
+                            <CardTitle>Admin Credentials</CardTitle>
+                            <CardDescription>Update the email and password for the admin account.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="grid md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="email">Email</Label>
+                                <Input id="email" name="email" type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} required />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="password">New Password</Label>
+                                <Input id="password" name="password" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Leave blank to keep current" />
+                            </div>
+                             <div className="space-y-2 md:col-span-2">
+                                <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                                <Input id="confirmPassword" name="confirmPassword" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm new password" />
+                            </div>
+                        </CardContent>
+                        <CardFooter>
+                            <Button type="submit" disabled={isCredentialsPending}>
+                               {isCredentialsPending && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
+                               Save Credentials
                             </Button>
                         </CardFooter>
                     </Card>
