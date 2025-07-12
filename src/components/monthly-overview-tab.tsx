@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { DollarSign, Banknote, ArrowUpCircle, ArrowDownCircle, PlusCircle, Trash2, Pencil, CheckCircle, XCircle, AlertCircle, RefreshCw, ChevronDown, Copy, X, FileText, Upload } from "lucide-react"
+import { DollarSign, Banknote, ArrowUpCircle, ArrowDownCircle, PlusCircle, Trash2, Pencil, CheckCircle, XCircle, AlertCircle, RefreshCw, ChevronDown, Copy, X, FileText, Upload, Building } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog"
@@ -1058,6 +1058,34 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                             <p className="text-2xl font-bold text-success">৳{amountForDeposit.toFixed(2)}</p>
                         </div>
                     </CardContent>
+                </Card>
+                 <Card>
+                    <CardHeader className="flex flex-row items-center gap-4">
+                        <div className="flex-shrink-0 bg-primary/10 p-3 rounded-full">
+                           <Building className="h-6 w-6 text-primary" />
+                        </div>
+                        <div>
+                            <CardTitle>Bank Deposit Information</CardTitle>
+                            <CardDescription>Details for the monthly bank deposit.</CardDescription>
+                        </div>
+                    </CardHeader>
+                    <CardContent className="grid sm:grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <p className="font-medium text-muted-foreground">Bank Name</p>
+                            <p className="font-semibold text-lg">{settings.bankName || "Not Set"}</p>
+                        </div>
+                         <div>
+                            <p className="font-medium text-muted-foreground">Account Number</p>
+                            <p className="font-semibold text-lg">{settings.bankAccountNumber || "Not Set"}</p>
+                        </div>
+                         <div className="sm:col-span-2">
+                            <p className="font-medium text-muted-foreground">Amount to Deposit</p>
+                            <p className="font-bold text-2xl text-success">৳{amountForDeposit.toFixed(2)}</p>
+                        </div>
+                    </CardContent>
+                    <CardFooter className="text-xs text-muted-foreground">
+                        This information is managed in the <Link href="/settings" className="underline">Settings</Link> page.
+                    </CardFooter>
                 </Card>
             </div>
 

@@ -45,6 +45,8 @@ export type PropertySettings = {
   id: number;
   house_name: string;
   house_address: string;
+  bank_name: string;
+  bank_account_number: string;
 };
 
     

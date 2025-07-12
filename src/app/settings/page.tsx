@@ -59,7 +59,7 @@ export default function SettingsPage() {
         if (result?.error) {
             toast({ title: 'Error Saving Settings', description: result.error, variant: 'destructive'});
         } else {
-            toast({ title: 'Property Details Saved', description: 'Your house name and address have been updated.' });
+            toast({ title: 'Property Details Saved', description: 'Your property and bank details have been updated.' });
         }
      });
   };
@@ -227,10 +227,24 @@ export default function SettingsPage() {
                               <Input id="houseAddress" name="houseAddress" value={settings.houseAddress} onChange={handleInputChange} />
                           </div>
                       </CardContent>
+                      <CardHeader>
+                        <CardTitle>Bank Details</CardTitle>
+                        <CardDescription>Enter the bank details for monthly deposits.</CardDescription>
+                      </CardHeader>
+                      <CardContent className="grid md:grid-cols-2 gap-4">
+                         <div className="space-y-2">
+                              <Label htmlFor="bankName">Bank Name</Label>
+                              <Input id="bankName" name="bankName" value={settings.bankName} onChange={handleInputChange} />
+                          </div>
+                          <div className="space-y-2">
+                              <Label htmlFor="bankAccountNumber">Bank Account Number</Label>
+                              <Input id="bankAccountNumber" name="bankAccountNumber" value={settings.bankAccountNumber} onChange={handleInputChange} />
+                          </div>
+                      </CardContent>
                       <CardFooter>
                           <Button type="submit" disabled={isPending}>
                              {isPending && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
-                             Save
+                             Save Property & Bank Details
                           </Button>
                       </CardFooter>
                   </Card>

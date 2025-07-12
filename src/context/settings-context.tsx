@@ -47,6 +47,8 @@ interface AppSettings {
   appName: string;
   houseName: string;
   houseAddress: string;
+  bankName: string;
+  bankAccountNumber: string;
   footerName: string;
   tabNames: TabNames;
   page_dashboard: PageDashboard;
@@ -63,6 +65,8 @@ const defaultSettings: AppSettings = {
     appName: "RentFlow",
     houseName: "Sunset Apartments",
     houseAddress: "123 Ocean View Drive, Miami, FL 33139",
+    bankName: "",
+    bankAccountNumber: "",
     footerName: "© 2024 RentFlow. All Rights Reserved.",
     tabNames: {
         overview: "Overview",
@@ -81,8 +85,8 @@ const defaultSettings: AppSettings = {
     page_settings: {
         title: "Settings",
         property_details: {
-            title: "Property Details",
-            description: "Set the name and address of your property. This is stored in the database.",
+            title: "Property & Bank Details",
+            description: "Set your property and bank details. This is stored in the database.",
             house_name_label: "House Name",
             house_address_label: "House Address",
         },
@@ -145,20 +149,22 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     }, []);
 
     useEffect(() => {
-      // Once data is loaded from Supabase, update the house name and address
+      // Once data is loaded from Supabase, update the database-driven settings
       if (!dataLoading && propertySettings) {
         setSettings(prev => ({
           ...prev,
           houseName: propertySettings.house_name || prev.houseName,
-          houseAddress: propertySettings.house_address || prev.houseAddress
+          houseAddress: propertySettings.house_address || prev.houseAddress,
+          bankName: propertySettings.bank_name || prev.bankName,
+          bankAccountNumber: propertySettings.bank_account_number || prev.bankAccountNumber
         }))
       }
     }, [propertySettings, dataLoading]);
     
     useEffect(() => {
         if (isMounted) {
-            // Save all settings EXCEPT houseName and houseAddress to local storage
-            const { houseName, houseAddress, ...localSettings } = settings;
+            // Save all settings EXCEPT database-driven ones to local storage
+            const { houseName, houseAddress, bankName, bankAccountNumber, ...localSettings } = settings;
             try {
                 window.localStorage.setItem('appSettings', JSON.stringify(localSettings));
             } catch (error) {

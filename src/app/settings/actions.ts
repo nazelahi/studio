@@ -11,6 +11,8 @@ import 'dotenv/config'
 export async function updatePropertySettingsAction(formData: FormData) {
     const houseName = formData.get('houseName') as string;
     const houseAddress = formData.get('houseAddress') as string;
+    const bankName = formData.get('bankName') as string;
+    const bankAccountNumber = formData.get('bankAccountNumber') as string;
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -24,7 +26,12 @@ export async function updatePropertySettingsAction(formData: FormData) {
     
     const { error } = await supabaseAdmin
         .from('property_settings')
-        .update({ house_name: houseName, house_address: houseAddress })
+        .update({ 
+            house_name: houseName, 
+            house_address: houseAddress,
+            bank_name: bankName,
+            bank_account_number: bankAccountNumber,
+        })
         .eq('id', 1);
 
     if (error) {
