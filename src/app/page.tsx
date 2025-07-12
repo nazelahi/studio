@@ -9,19 +9,19 @@ import { Logo } from "@/components/icons"
 import DashboardTabs from "@/components/dashboard-tabs"
 import { useAuth } from "@/context/auth-context"
 import { Button } from "@/components/ui/button"
-import { User, LogOut, MapPin, Menu, Settings, LogIn } from "lucide-react"
+import { User, LogOut, MapPin, Menu, Settings } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from "@/components/ui/sheet"
-import { LoginDialog } from "@/components/login-dialog"
 import { useToast } from "@/hooks/use-toast"
+import { useProtection } from "@/context/protection-context"
 
 export default function HomePage() {
   const { settings } = useSettings();
   const pathname = usePathname();
   const router = useRouter();
-  const { user, isAdmin, signOut } = useAuth();
-  const [isLoginDialogOpen, setIsLoginDialogOpen] = React.useState(false);
+  const { isAdmin, signOut } = useAuth();
   const { toast } = useToast();
+  const { withProtection } = useProtection();
 
   const handleSignOut = async () => {
     await signOut();
@@ -30,6 +30,12 @@ export default function HomePage() {
       description: "You have been successfully signed out.",
     });
     router.push('/');
+  };
+
+  const handleNavigateToSettings = (e: React.MouseEvent) => {
+    withProtection(() => {
+        router.push('/settings');
+    }, e);
   };
 
   return (
@@ -70,9 +76,9 @@ export default function HomePage() {
             </Button>
           </SheetTrigger>
           <SheetContent side="left">
-             <SheetHeader>
-              <SheetTitle>Navigation Menu</SheetTitle>
-              <SheetDescription>Main navigation links for the application.</SheetDescription>
+            <SheetHeader>
+                <SheetTitle>Navigation Menu</SheetTitle>
+                <SheetDescription>Main navigation links for the application.</SheetDescription>
             </SheetHeader>
             <nav className="grid gap-6 text-lg font-medium">
               <Link
@@ -103,36 +109,27 @@ export default function HomePage() {
                 <p className="truncate">{settings.houseAddress}</p>
             </div>
         </div>
-        <div className="flex items-center gap-2">
-           {user ? (
-             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="secondary" size="icon" className="rounded-full">
-                  <User className="h-5 w-5" />
-                  <span className="sr-only">Toggle user menu</span>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => router.push('/settings')}>
-                  <Settings className="mr-2 h-4 w-4" />
-                  <span>Settings</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleSignOut}>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Log out</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-           ) : (
-            <Button variant="outline" onClick={() => setIsLoginDialogOpen(true)}>
-              <LogIn className="mr-2 h-4 w-4" />
-              Admin Login
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="secondary" size="icon" className="rounded-full">
+              <User className="h-5 w-5" />
+              <span className="sr-only">Toggle user menu</span>
             </Button>
-           )}
-        </div>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>My Account</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleNavigateToSettings}>
+              <Settings className="mr-2 h-4 w-4" />
+              <span>Settings</span>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleSignOut}>
+              <LogOut className="mr-2 h-4 w-4" />
+              <span>Log out</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </header>
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
         <DashboardTabs />
@@ -140,7 +137,6 @@ export default function HomePage() {
           {settings.footerName}
         </footer>
       </main>
-      <LoginDialog isOpen={isLoginDialogOpen} onOpenChange={setIsLoginDialogOpen} />
     </div>
   )
 }

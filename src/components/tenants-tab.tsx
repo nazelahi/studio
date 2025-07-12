@@ -205,9 +205,9 @@ export function TenantsTab() {
     <>
       <Card className="mt-4">
         <CardHeader>
-          <CardTitle>{settings.page_tenants.title}</CardTitle>
+          <CardTitle>Tenants</CardTitle>
           <CardDescription>
-            {settings.page_tenants.description}
+            Manage your tenants and their information.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -215,7 +215,7 @@ export function TenantsTab() {
               <div className="relative w-full sm:max-w-xs">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input 
-                  placeholder={settings.page_tenants.search_placeholder}
+                  placeholder="Search tenants..."
                   className="pl-9"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -226,7 +226,7 @@ export function TenantsTab() {
                   <DialogTrigger asChild>
                     <Button onClick={() => setEditingTenant(null)} className="w-full sm:w-auto">
                       <PlusCircle className="mr-2 h-4 w-4" />
-                      {settings.page_tenants.add_tenant_button}
+                      Add Tenant
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-xl">

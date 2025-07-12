@@ -4,9 +4,9 @@
 import React, { createContext, useContext, useState, ReactNode, useCallback } from 'react';
 import { useAuth } from './auth-context';
 import { LoginDialog } from '@/components/login-dialog';
+import { useToast } from '@/hooks/use-toast';
 
 interface ProtectionContextType {
-  isUnlocked: boolean;
   withProtection: (action: () => void, event?: React.MouseEvent) => void;
 }
 
@@ -15,9 +15,8 @@ const ProtectionContext = createContext<ProtectionContextType | undefined>(undef
 export function ProtectionProvider({ children }: { children: ReactNode }) {
     const { isAdmin } = useAuth();
     const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false);
+    const { toast } = useToast();
     
-    // The action should only be triggered if the user is an admin.
-    // If not, we prompt them to log in.
     const withProtection = useCallback((action: () => void, event?: React.MouseEvent) => {
         if(event) {
             event.preventDefault();
@@ -28,11 +27,15 @@ export function ProtectionProvider({ children }: { children: ReactNode }) {
             action();
         } else {
             setIsLoginDialogOpen(true);
+            toast({
+                title: "Admin Access Required",
+                description: "Please log in to perform this action.",
+                variant: "destructive"
+            })
         }
-    }, [isAdmin]);
+    }, [isAdmin, toast]);
 
-    // isUnlocked is now directly tied to the isAdmin state from the AuthContext.
-    const value = { isUnlocked: isAdmin, withProtection };
+    const value = { withProtection };
 
     return (
         <ProtectionContext.Provider value={value}>

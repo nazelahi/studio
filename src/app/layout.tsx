@@ -25,15 +25,15 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased">
-        <DataProvider>
-          <SettingsProvider>
-            <AuthProvider>
+        <AuthProvider>
+          <DataProvider>
+            <SettingsProvider>
               <ProtectionProvider>
                 {children}
               </ProtectionProvider>
-            </AuthProvider>
-          </SettingsProvider>
-        </DataProvider>
+            </SettingsProvider>
+          </DataProvider>
+        </AuthProvider>
         <Toaster />
       </body>
     </html>
