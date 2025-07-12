@@ -150,7 +150,7 @@ export function ZakatTab() {
             <TableHead className="text-primary-foreground">{type === 'inflow' ? 'Source' : 'Recipient'}</TableHead>
             <TableHead className="hidden sm:table-cell text-primary-foreground">Description</TableHead>
             <TableHead className="text-right text-primary-foreground">Amount</TableHead>
-            {isAdmin && <TableHead className="text-primary-foreground">Actions</TableHead>}
+            <TableHead className="text-primary-foreground">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -163,7 +163,6 @@ export function ZakatTab() {
                 <TableCell className={`text-right font-bold ${tx.type === 'inflow' ? 'text-green-600' : 'text-red-600'}`}>
                   {formatCurrency(tx.amount)}
                 </TableCell>
-                {isAdmin && (
                   <TableCell>
                     <div className="flex items-center gap-1">
                       {tx.receipt_url && (
@@ -173,38 +172,41 @@ export function ZakatTab() {
                             </a>
                         </Button>
                       )}
-                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(tx)}>
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                       <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
-                                <Trash2 className="h-4 w-4" />
-                            </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                <AlertDialogDescription>This will permanently delete this Zakat transaction. This action cannot be undone.</AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <form onSubmit={(e) => { e.preventDefault(); handleDelete(new FormData(e.currentTarget)); }}>
-                                    <input type="hidden" name="transactionId" value={tx.id} />
-                                    {tx.receipt_url && <input type="hidden" name="receiptUrl" value={tx.receipt_url} />}
-                                    <AlertDialogAction type="submit" disabled={isPending}>Delete</AlertDialogAction>
-                                </form>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                       </AlertDialog>
+                      {isAdmin && (
+                        <>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(tx)}>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                           <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                    <AlertDialogDescription>This will permanently delete this Zakat transaction. This action cannot be undone.</AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <form onSubmit={(e) => { e.preventDefault(); handleDelete(new FormData(e.currentTarget)); }}>
+                                        <input type="hidden" name="transactionId" value={tx.id} />
+                                        {tx.receipt_url && <input type="hidden" name="receiptUrl" value={tx.receipt_url} />}
+                                        <AlertDialogAction type="submit" disabled={isPending}>Delete</AlertDialogAction>
+                                    </form>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                           </AlertDialog>
+                        </>
+                      )}
                     </div>
                   </TableCell>
-                )}
               </TableRow>
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={isAdmin ? 5 : 4} className="text-center text-muted-foreground h-24">
+              <TableCell colSpan={5} className="text-center text-muted-foreground h-24">
                 No Zakat {type} transactions recorded.
               </TableCell>
             </TableRow>
@@ -213,11 +215,10 @@ export function ZakatTab() {
         {transactions.length > 0 && (
             <UiTableFooter>
                 <TableRow className="bg-lime-500 hover:bg-lime-500/90 font-bold">
-                    <TableCell colSpan={isAdmin ? 2 : 2} className="text-white text-right sm:text-left">Total</TableCell>
-                    <TableCell colSpan={isAdmin ? 2 : 2} className="text-right text-white">
+                    <TableCell colSpan={3} className="text-white text-right sm:text-left">Total</TableCell>
+                    <TableCell colSpan={2} className="text-right text-white">
                         {formatCurrency(totalAmount)}
                     </TableCell>
-                    {isAdmin && <TableCell />}
                 </TableRow>
             </UiTableFooter>
         )}
