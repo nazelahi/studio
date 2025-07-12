@@ -9,12 +9,13 @@ import { Logo } from "@/components/icons"
 import DashboardTabs from "@/components/dashboard-tabs"
 import { useAuth } from "@/context/auth-context"
 import { Button } from "@/components/ui/button"
-import { User, LogOut, MapPin, Menu, Settings, LogIn } from "lucide-react"
+import { User, LogOut, MapPin, Menu, Settings, LogIn, UserCircle } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from "@/components/ui/sheet"
 import { useToast } from "@/hooks/use-toast"
 import { useProtection } from "@/context/protection-context"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 export default function HomePage() {
   const { settings } = useSettings();
@@ -142,49 +143,60 @@ export default function HomePage() {
             </nav>
           </SheetContent>
         </Sheet>
-        <div className="flex-1 text-center min-w-0">
-            <h1 className="text-base sm:text-lg font-bold tracking-tight text-primary truncate">{settings.houseName}</h1>
-            <div className="flex items-center justify-center gap-2 mt-1 text-xs text-muted-foreground">
-                <MapPin className="h-3 w-3 flex-shrink-0" />
-                <p className="truncate">{settings.houseAddress}</p>
+        
+        <div className="flex items-center gap-4 ml-auto">
+            <div className="flex flex-col items-end">
+                <h1 className="text-sm font-bold tracking-tight text-primary truncate">{settings.ownerName}</h1>
+                <p className="text-xs text-muted-foreground">Property Owner</p>
             </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="secondary" size="icon" className="rounded-full">
+                    <Avatar className="h-9 w-9">
+                        <AvatarImage src={settings.ownerPhotoUrl} data-ai-hint="person avatar" />
+                        <AvatarFallback><UserCircle className="h-5 w-5"/></AvatarFallback>
+                    </Avatar>
+                  <span className="sr-only">Toggle user menu</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                 {isAdmin ? (
+                    <>
+                        <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={handleNavigateToSettings}>
+                          <Settings className="mr-2 h-4 w-4" />
+                          <span>Settings</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={handleSignOut}>
+                          <LogOut className="mr-2 h-4 w-4" />
+                          <span>Log out</span>
+                        </DropdownMenuItem>
+                    </>
+                 ) : (
+                    <>
+                        <DropdownMenuLabel>Guest</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={handleLogIn}>
+                            <LogIn className="mr-2 h-4 w-4" />
+                            <span>Admin Log in</span>
+                        </DropdownMenuItem>
+                    </>
+                 )}
+              </DropdownMenuContent>
+            </DropdownMenu>
         </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="secondary" size="icon" className="rounded-full">
-              <User className="h-5 w-5" />
-              <span className="sr-only">Toggle user menu</span>
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-             {isAdmin ? (
-                <>
-                    <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleNavigateToSettings}>
-                      <Settings className="mr-2 h-4 w-4" />
-                      <span>Settings</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleSignOut}>
-                      <LogOut className="mr-2 h-4 w-4" />
-                      <span>Log out</span>
-                    </DropdownMenuItem>
-                </>
-             ) : (
-                <>
-                    <DropdownMenuLabel>Guest</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={handleLogIn}>
-                        <LogIn className="mr-2 h-4 w-4" />
-                        <span>Admin Log in</span>
-                    </DropdownMenuItem>
-                </>
-             )}
-          </DropdownMenuContent>
-        </DropdownMenu>
       </header>
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+        <div className="text-center">
+            <h1 className="text-3xl font-bold tracking-tight text-primary">{settings.houseName}</h1>
+            <div className="flex items-center justify-center gap-2 mt-1 text-muted-foreground">
+                <MapPin className="h-4 w-4 flex-shrink-0" />
+                <p>{settings.houseAddress}</p>
+            </div>
+        </div>
+
         <DashboardTabs
           year={parseInt(selectedYear)}
           activeTab={activeTab}

@@ -64,6 +64,39 @@ export async function updatePropertySettingsAction(formData: FormData) {
         }
     }
 
+    const ownerPhotoFile = formData.get('ownerPhotoFile') as File | null;
+    let ownerPhotoUrl: string | null = formData.get('owner_photo_url') as string || null;
+
+    if (ownerPhotoFile && ownerPhotoFile.size > 0) {
+        const fileExt = ownerPhotoFile.name.split('.').pop();
+        const filePath = `owner-photos/${Date.now()}.${fileExt}`;
+
+        const { error: uploadError } = await supabaseClient.storage
+            .from('deposit-receipts')
+            .upload(filePath, ownerPhotoFile);
+
+        if (uploadError) {
+            console.error('Supabase owner photo upload error:', uploadError);
+            return { error: `Failed to upload owner photo: ${uploadError.message}` };
+        }
+
+        const { data: publicUrlData } = supabaseClient.storage
+            .from('deposit-receipts')
+            .getPublicUrl(filePath);
+
+        ownerPhotoUrl = publicUrlData.publicUrl;
+
+        const oldOwnerPhotoUrl = formData.get('oldOwnerPhotoUrl') as string | undefined;
+        if (oldOwnerPhotoUrl) {
+            try {
+                const oldPhotoPath = new URL(oldOwnerPhotoUrl).pathname.split('/deposit-receipts/')[1];
+                await supabaseClient.storage.from('deposit-receipts').remove([oldPhotoPath]);
+            } catch (e) {
+                console.error("Could not parse or delete old owner photo from storage:", e);
+            }
+        }
+    }
+
 
     const settingsData = {
         house_name: formData.get('houseName') as string,
@@ -71,6 +104,8 @@ export async function updatePropertySettingsAction(formData: FormData) {
         bank_name: formData.get('bankName') as string,
         bank_account_number: formData.get('bankAccountNumber') as string,
         bank_logo_url: logoUrl,
+        owner_name: formData.get('ownerName') as string,
+        owner_photo_url: ownerPhotoUrl,
     }
     
     const { error } = await supabaseAdmin
@@ -126,3 +161,4 @@ export async function updateUserCredentialsAction(formData: FormData) {
 
     return { success: true };
 }
+

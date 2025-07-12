@@ -49,6 +49,8 @@ export type PropertySettings = {
   bank_name: string;
   bank_account_number: string;
   bank_logo_url?: string;
+  owner_name?: string;
+  owner_photo_url?: string;
 };
 
 export type ZakatBankDetail = {
@@ -102,3 +104,4 @@ export type WorkDetail = {
   due_date?: string;
   created_at?: string;
 };
+

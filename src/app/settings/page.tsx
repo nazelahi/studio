@@ -11,7 +11,7 @@ import { useSettings } from "@/context/settings-context"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/context/auth-context"
 import { Button } from "@/components/ui/button"
-import { User, LogOut, MapPin, Menu, Settings, LoaderCircle, LogIn, Building, KeyRound, Palette, Tag, Landmark, Upload, Banknote } from "lucide-react"
+import { User, LogOut, MapPin, Menu, Settings, LoaderCircle, LogIn, Building, KeyRound, Palette, Tag, Landmark, Upload, Banknote, UserCircle } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useToast } from "@/hooks/use-toast"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
@@ -55,6 +55,10 @@ export default function SettingsPage() {
   const [logoFile, setLogoFile] = React.useState<File | null>(null);
   const logoInputRef = React.useRef<HTMLInputElement>(null);
 
+  const [ownerPhotoPreview, setOwnerPhotoPreview] = React.useState<string | null>(null);
+  const [ownerPhotoFile, setOwnerPhotoFile] = React.useState<File | null>(null);
+  const ownerPhotoInputRef = React.useRef<HTMLInputElement>(null);
+
   React.useEffect(() => {
     if (user?.email) {
       setNewEmail(user.email);
@@ -63,7 +67,8 @@ export default function SettingsPage() {
 
   React.useEffect(() => {
     setLogoPreview(settings.bankLogoUrl || null);
-  }, [settings.bankLogoUrl]);
+    setOwnerPhotoPreview(settings.ownerPhotoUrl || null);
+  }, [settings.bankLogoUrl, settings.ownerPhotoUrl]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -94,11 +99,27 @@ export default function SettingsPage() {
     }
   };
 
+  const handleOwnerPhotoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+        setOwnerPhotoFile(file);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            setOwnerPhotoPreview(reader.result as string);
+        };
+        reader.readAsDataURL(file);
+    }
+  };
+
+
   const handleSavePropertyDetails = (event: React.FormEvent<HTMLFormElement>) => {
      event.preventDefault();
      const formData = new FormData(event.currentTarget);
      if (logoFile) {
         formData.append('logoFile', logoFile);
+     }
+     if (ownerPhotoFile) {
+        formData.append('ownerPhotoFile', ownerPhotoFile);
      }
 
      startTransition(async () => {
@@ -294,6 +315,35 @@ export default function SettingsPage() {
               
               {activeTab === 'property' && (
                 <form onSubmit={handleSavePropertyDetails} className="space-y-6">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Owner Details</CardTitle>
+                            <CardDescription>Set the name and photo of the property owner.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="grid md:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                                <Label htmlFor="ownerName">Owner Name</Label>
+                                <Input id="ownerName" name="ownerName" value={settings.ownerName} onChange={handleInputChange} />
+                            </div>
+                             <div className="space-y-2">
+                                <Label>Owner Photo</Label>
+                                <input type="hidden" name="owner_photo_url" value={settings.ownerPhotoUrl || ''} />
+                                {settings.ownerPhotoUrl && <input type="hidden" name="oldOwnerPhotoUrl" value={settings.ownerPhotoUrl} />}
+                                <div className="flex items-center gap-4">
+                                    <Avatar className="h-20 w-20 rounded-md">
+                                        <AvatarImage src={ownerPhotoPreview} data-ai-hint="person portrait"/>
+                                        <AvatarFallback className="rounded-md"><UserCircle className="h-8 w-8"/></AvatarFallback>
+                                    </Avatar>
+                                    <Button type="button" variant="outline" onClick={() => ownerPhotoInputRef.current?.click()}>
+                                        <Upload className="mr-2 h-4 w-4"/>
+                                        Upload Photo
+                                    </Button>
+                                    <Input ref={ownerPhotoInputRef} type="file" name="ownerPhotoFile" className="hidden" accept="image/*" onChange={handleOwnerPhotoFileChange} />
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
                     <Card>
                         <CardHeader>
                             <CardTitle>Property Details</CardTitle>

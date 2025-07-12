@@ -1,9 +1,9 @@
 
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { useData } from './data-context';
-import type { ZakatBankDetail } from '@/types';
+import type { ZakatBankDetail, PropertySettings as DbPropertySettings } from '@/types';
 import { useAuth } from './auth-context';
 
 interface PageDashboard {
@@ -45,6 +45,8 @@ interface AppSettings {
   bankName: string;
   bankAccountNumber: string;
   bankLogoUrl?: string;
+  ownerName?: string;
+  ownerPhotoUrl?: string;
   zakatBankDetails: ZakatBankDetail[];
   footerName: string;
   tabNames: TabNames;
@@ -62,11 +64,13 @@ interface SettingsContextType {
 
 const defaultSettings: AppSettings = {
     appName: "RentFlow",
-    houseName: "Sunset Apartments",
-    houseAddress: "123 Ocean View Drive, Miami, FL 33139",
+    houseName: "Property Name",
+    houseAddress: "Property Address",
     bankName: "",
     bankAccountNumber: "",
     bankLogoUrl: undefined,
+    ownerName: "Owner Name",
+    ownerPhotoUrl: undefined,
     zakatBankDetails: [],
     footerName: "© 2024 RentFlow. All Rights Reserved.",
     tabNames: {
@@ -129,56 +133,70 @@ const deepMerge = (target: any, source: any) => {
 }
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
+    const [localSettings, setLocalSettings] = useState<Partial<AppSettings>>({});
+    const [dbSettings, setDbSettings] = useState<Partial<DbPropertySettings>>({});
     const [settings, setSettings] = useState<AppSettings>(defaultSettings);
+
     const [isMounted, setIsMounted] = useState(false);
     const { propertySettings, zakatBankDetails, loading: dataLoading, refreshData } = useData();
-    const { loading: authLoading } = useAuth();
+    const { isAdmin, loading: authLoading } = useAuth();
     
-    // Load local (UI) settings from localStorage on initial mount
     useEffect(() => {
         setIsMounted(true);
         try {
             const item = window.localStorage.getItem('appSettings');
             if (item) {
-                const storedSettings = JSON.parse(item);
-                setSettings(prev => deepMerge(prev, storedSettings));
+                setLocalSettings(JSON.parse(item));
             }
         } catch (error) {
             console.error("Failed to parse settings from localStorage", error);
         }
     }, []);
 
-    // Update settings state when DB data changes
     useEffect(() => {
-        if (dataLoading || authLoading) return;
+        if (!dataLoading && propertySettings) {
+            setDbSettings({
+                ...propertySettings,
+                zakatBankDetails: zakatBankDetails,
+            });
+        }
+    }, [propertySettings, zakatBankDetails, dataLoading]);
+    
+    useEffect(() => {
+        const finalSettings = { ...defaultSettings, ...localSettings };
 
-        // Combine DB settings with current state, prioritizing DB values
-        setSettings(prevSettings => ({
-            ...prevSettings,
-            houseName: propertySettings?.house_name || defaultSettings.houseName,
-            houseAddress: propertySettings?.house_address || defaultSettings.houseAddress,
-            bankName: propertySettings?.bank_name || defaultSettings.bankName,
-            bankAccountNumber: propertySettings?.bank_account_number || defaultSettings.bankAccountNumber,
-            bankLogoUrl: propertySettings?.bank_logo_url || defaultSettings.bankLogoUrl,
-            zakatBankDetails: zakatBankDetails || defaultSettings.zakatBankDetails,
-        }));
+        if (isAdmin && Object.keys(dbSettings).length > 0) {
+            finalSettings.houseName = dbSettings.house_name || defaultSettings.houseName;
+            finalSettings.houseAddress = dbSettings.house_address || defaultSettings.houseAddress;
+            finalSettings.bankName = dbSettings.bank_name || defaultSettings.bankName;
+            finalSettings.bankAccountNumber = dbSettings.bank_account_number || defaultSettings.bankAccountNumber;
+            finalSettings.bankLogoUrl = dbSettings.bank_logo_url || defaultSettings.bankLogoUrl;
+            finalSettings.ownerName = dbSettings.owner_name || defaultSettings.ownerName;
+            finalSettings.ownerPhotoUrl = dbSettings.owner_photo_url || defaultSettings.ownerPhotoUrl;
+            finalSettings.zakatBankDetails = (dbSettings as any).zakatBankDetails || defaultSettings.zakatBankDetails;
+        }
 
-    }, [propertySettings, zakatBankDetails, dataLoading, authLoading]);
+        setSettings(finalSettings);
+
+    }, [localSettings, dbSettings, isAdmin]);
+
 
     const handleSetSettings = (newSettingsFunc: React.SetStateAction<AppSettings>) => {
         const newSettings = typeof newSettingsFunc === 'function' ? newSettingsFunc(settings) : newSettingsFunc;
         
-        // Save non-DB settings to local storage
-        const { houseName, houseAddress, bankName, bankAccountNumber, bankLogoUrl, zakatBankDetails, ...localSettings } = newSettings;
+        const { 
+            houseName, houseAddress, bankName, bankAccountNumber, bankLogoUrl, ownerName, ownerPhotoUrl, zakatBankDetails, 
+            ...localSettingsToSave 
+        } = newSettings;
         try {
             const currentLocal = JSON.parse(window.localStorage.getItem('appSettings') || '{}');
-            const newLocal = deepMerge(currentLocal, localSettings);
+            const newLocal = deepMerge(currentLocal, localSettingsToSave);
             window.localStorage.setItem('appSettings', JSON.stringify(newLocal));
+            setLocalSettings(newLocal);
         } catch (error) {
             console.error("Failed to save settings to localStorage", error);
         }
 
-        // Update the full state
         setSettings(newSettings);
     };
 
