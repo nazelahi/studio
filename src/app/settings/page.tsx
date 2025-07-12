@@ -32,27 +32,12 @@ export default function SettingsPage() {
   const [newEmail, setNewEmail] = useState(user?.email || '');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  
-  const [houseImages, setHouseImages] = useState<string[]>(settings.houseImages || []);
-  const [newImageFiles, setNewImageFiles] = useState<File[]>([]);
-  
-  const [initialHouseImages, setInitialHouseImages] = useState<string[]>([]);
-  
-  const imageInputRef = React.useRef<HTMLInputElement>(null);
 
   React.useEffect(() => {
     if (user?.email) {
       setNewEmail(user.email);
     }
   }, [user]);
-
-  React.useEffect(() => {
-    const images = settings.houseImages || [];
-    setHouseImages(images);
-    if (initialHouseImages.length === 0 && images.length > 0) {
-      setInitialHouseImages(images);
-    }
-  }, [settings.houseImages, initialHouseImages.length]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -71,44 +56,13 @@ export default function SettingsPage() {
     });
   };
 
-  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-        const filesToAdd = Array.from(e.target.files);
-        setNewImageFiles(prev => [...prev, ...filesToAdd]);
-        const blobUrls = filesToAdd.map(file => URL.createObjectURL(file));
-        setHouseImages(prev => [...prev, ...blobUrls]);
-    }
-  };
-  
-  const getFileFromUrl = (url: string): File | undefined => {
-    return newImageFiles.find(file => URL.createObjectURL(file) === url);
-  }
-
-  const removeImage = (urlToRemove: string) => {
-    setHouseImages(prev => prev.filter(url => url !== urlToRemove));
-
-    const fileToRemove = getFileFromUrl(urlToRemove);
-    if (fileToRemove) {
-      setNewImageFiles(prev => prev.filter(file => file !== fileToRemove));
-    }
-  }
-
-
   const handleSavePropertyDetails = (formData: FormData) => {
      startTransition(async () => {
-        const existingUrlsToKeep = houseImages.filter(url => !url.startsWith('blob:'));
-        existingUrlsToKeep.forEach(imgUrl => formData.append('existing_house_images', imgUrl));
-        
-        newImageFiles.forEach(file => formData.append('new_house_images', file));
-        
-        formData.append('initial_house_images', JSON.stringify(initialHouseImages));
-
         const result = await updatePropertySettingsAction(formData);
         if (result?.error) {
             toast({ title: 'Error Saving Settings', description: result.error, variant: 'destructive'});
         } else {
             toast({ title: 'Property Details Saved', description: 'Your property and bank details have been updated.' });
-            setNewImageFiles([]);
             refreshSettings(); 
         }
      });
@@ -312,48 +266,12 @@ export default function SettingsPage() {
                             </div>
                           </div>
                       </CardContent>
-                  </Card>
-                  
-                  <Card>
-                    <CardHeader>
-                        <CardTitle>House Pictures</CardTitle>
-                        <CardDescription>Upload pictures for the slideshow on the homepage.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <div className="space-y-4">
-                           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                               {houseImages.map((url, index) => (
-                                   <div key={index} className="relative group aspect-video">
-                                       <img src={url} alt={`House image ${index + 1}`} className="w-full h-full object-cover rounded-md" data-ai-hint="house exterior" />
-                                       <Button type="button" variant="destructive" size="icon" className="absolute top-1 right-1 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => removeImage(url)}>
-                                           <Trash2 className="h-3 w-3" />
-                                       </Button>
-                                   </div>
-                               ))}
-                               <Button type="button" variant="outline" className="flex flex-col items-center justify-center aspect-video" onClick={() => imageInputRef.current?.click()}>
-                                   <Upload className="h-6 w-6 mb-2" />
-                                   <span>Upload More</span>
-                               </Button>
-                               <input
-                                   ref={imageInputRef}
-                                   type="file"
-                                   multiple
-                                   accept="image/*"
-                                   className="hidden"
-                                   onChange={handleImageFileChange}
-                               />
-                           </div>
-                        </div>
-                    </CardContent>
-                  </Card>
-                  
-                  <Card>
-                    <CardFooter>
+                      <CardFooter>
                         <Button type="submit" disabled={isPending}>
                            {isPending && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
-                           Save All Property Settings
+                           Save Property Settings
                         </Button>
-                    </CardFooter>
+                      </CardFooter>
                   </Card>
                 </div>
               </form>

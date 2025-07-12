@@ -55,7 +55,6 @@ interface AppSettings {
   bankAccountNumber: string;
   zakatBankName: string;
   zakatBankAccountNumber: string;
-  houseImages: string[];
   footerName: string;
   tabNames: TabNames;
   page_dashboard: PageDashboard;
@@ -78,7 +77,6 @@ const defaultSettings: AppSettings = {
     bankAccountNumber: "",
     zakatBankName: "",
     zakatBankAccountNumber: "",
-    houseImages: [],
     footerName: "© 2024 RentFlow. All Rights Reserved.",
     tabNames: {
         overview: "Overview",
@@ -155,7 +153,6 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
                 bankAccountNumber: propertySettings.bank_account_number || prev.bankAccountNumber,
                 zakatBankName: propertySettings.zakat_bank_name || prev.zakatBankName,
                 zakatBankAccountNumber: propertySettings.zakat_bank_account_number || prev.zakatBankAccountNumber,
-                houseImages: propertySettings.house_images || [],
             }));
         }
     }, [propertySettings, dataLoading]);
@@ -183,7 +180,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     
     useEffect(() => {
         if (isMounted) {
-            const { houseName, houseAddress, bankName, bankAccountNumber, zakatBankName, zakatBankAccountNumber, houseImages, ...localSettings } = settings;
+            const { houseName, houseAddress, bankName, bankAccountNumber, zakatBankName, zakatBankAccountNumber, ...localSettings } = settings;
             try {
                 window.localStorage.setItem('appSettings', JSON.stringify(localSettings));
             } catch (error) {

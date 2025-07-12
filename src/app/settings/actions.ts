@@ -37,72 +37,6 @@ export async function updatePropertySettingsAction(formData: FormData) {
     const zakatBankName = formData.get('zakatBankName') as string;
     const zakatBankAccountNumber = formData.get('zakatBankAccountNumber') as string;
 
-    // Handle house image uploads
-    const newImageFiles = formData.getAll('new_house_images') as File[];
-    const existingImageUrls = formData.getAll('existing_house_images') as string[];
-
-    const uploadedUrls: string[] = [];
-
-    for (const file of newImageFiles) {
-        if (file && file.size > 0) {
-            const fileExt = file.name.split('.').pop();
-            const filePath = `property/${Date.now()}-${Math.random()}.${fileExt}`;
-
-            const { error: uploadError } = await supabaseAdmin.storage
-                .from('property-images')
-                .upload(filePath, file);
-            
-            if (uploadError) {
-                console.error('Supabase storage upload error:', uploadError);
-                return { error: `Failed to upload image: ${uploadError.message}` };
-            }
-
-            const { data: publicUrlData } = supabaseAdmin.storage
-                .from('property-images')
-                .getPublicUrl(filePath);
-
-            uploadedUrls.push(publicUrlData.publicUrl);
-        }
-    }
-    
-    // Combine existing (kept) URLs with newly uploaded URLs
-    const finalImageUrls = [...existingImageUrls, ...uploadedUrls];
-
-    // Find images to delete from storage
-    const initialImages = JSON.parse(formData.get('initial_house_images') as string || '[]');
-    const imagesToDelete = initialImages.filter((url: string) => !existingImageUrls.includes(url));
-
-    if (imagesToDelete.length > 0) {
-        const pathsToDelete = imagesToDelete.map((url: string) => {
-            try {
-                // Correctly parse the path from the public URL
-                const urlObject = new URL(url);
-                const pathParts = urlObject.pathname.split('/property-images/');
-                return pathParts[1] ? `property-images/${pathParts[1]}` : null;
-            } catch (e) {
-                console.error('Could not parse image URL for deletion', e);
-                return null;
-            }
-        }).filter((p): p is string => p !== null);
-
-        if (pathsToDelete.length > 0) {
-            // The path should not start with the bucket name again for the remove call
-            const finalPathsToDelete = pathsToDelete.map(p => p.replace('property-images/', ''));
-
-            if (finalPathsToDelete.length > 0) {
-                 const { error: storageError } = await supabaseAdmin.storage
-                    .from('property-images')
-                    .remove(finalPathsToDelete);
-                
-                if (storageError) {
-                    // Log as non-fatal, as the main update can still proceed
-                    console.error('Non-fatal: Could not delete old images from storage', storageError);
-                }
-            }
-        }
-    }
-
-
     const { error } = await supabaseAdmin
         .from('property_settings')
         .update({ 
@@ -112,15 +46,11 @@ export async function updatePropertySettingsAction(formData: FormData) {
             bank_account_number: bankAccountNumber,
             zakat_bank_name: zakatBankName,
             zakat_bank_account_number: zakatBankAccountNumber,
-            house_images: finalImageUrls,
         })
         .eq('id', 1);
 
     if (error) {
         console.error('Supabase error:', error);
-        if (error.message.includes('column "house_images" of relation "property_settings" does not exist')) {
-            return { error: 'Database update needed. The "house_images" column is missing. Please run the SQL command in the new schema.sql file in your Supabase SQL Editor.' };
-        }
         return { error: error.message };
     }
 

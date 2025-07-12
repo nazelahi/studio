@@ -1,5 +1,4 @@
 
-
 "use client"
 
 import Link from "next/link"
@@ -16,7 +15,6 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTr
 import { useToast } from "@/hooks/use-toast"
 import { useProtection } from "@/context/protection-context"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ImageSlideshow } from "@/components/image-slideshow"
 
 export default function HomePage() {
   const { settings } = useSettings();
@@ -187,7 +185,6 @@ export default function HomePage() {
         </DropdownMenu>
       </header>
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-        <ImageSlideshow />
         <DashboardTabs
           year={parseInt(selectedYear)}
           activeTab={activeTab}
