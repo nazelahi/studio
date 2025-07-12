@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button"
 import { User, LogOut, MapPin, Menu, Settings } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { LoginDialog } from "@/components/login-dialog"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from "@/components/ui/sheet"
 
 export default function HomePage() {
   const { settings } = useSettings();
@@ -58,6 +58,10 @@ export default function HomePage() {
             </Button>
           </SheetTrigger>
           <SheetContent side="left">
+             <SheetHeader className="sr-only">
+              <SheetTitle>Navigation Menu</SheetTitle>
+              <SheetDescription>Main navigation links for the application.</SheetDescription>
+            </SheetHeader>
             <nav className="grid gap-6 text-lg font-medium">
               <Link
                 href="#"
