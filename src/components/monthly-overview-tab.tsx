@@ -754,7 +754,8 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                     <Button size="icon" onClick={() => {
                                         setEditingRentEntry(null);
                                         setSelectedHistoricalTenant(null);
-                                        }}>
+                                        setIsRentDialogOpen(true);
+                                    }}>
                                         <PlusCircle className="h-4 w-4" />
                                         <span className="sr-only">Add new entry</span>
                                     </Button>
