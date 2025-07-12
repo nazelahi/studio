@@ -2,11 +2,13 @@
 
 
 
+
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import { useData } from './data-context';
 import type { ZakatBankDetail } from '@/types';
+import { useAuth } from './auth-context';
 
 interface PageDashboard {
     nav_dashboard: string;
@@ -142,9 +144,11 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     const [settings, setSettings] = useState<AppSettings>(defaultSettings);
     const [isMounted, setIsMounted] = useState(false);
     const { propertySettings, zakatBankDetails, loading: dataLoading, refreshData } = useData();
+    const { loading: authLoading } = useAuth();
     
     const loadDBSettings = useCallback(() => {
-        if (!dataLoading) {
+        // Only load DB settings once both auth and data fetching are complete
+        if (!authLoading && !dataLoading) {
              setSettings(prev => ({
                 ...prev,
                 houseName: propertySettings?.house_name || prev.houseName,
@@ -154,7 +158,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
                 zakatBankDetails: zakatBankDetails || [],
             }));
         }
-    }, [propertySettings, zakatBankDetails, dataLoading]);
+    }, [propertySettings, zakatBankDetails, dataLoading, authLoading]);
 
     const refreshSettings = useCallback(() => {
         refreshData();
@@ -188,7 +192,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         }
     }, [settings, isMounted]);
 
-    const loading = !isMounted || dataLoading;
+    const loading = !isMounted || dataLoading || authLoading;
 
     const value = {
         settings,

@@ -8,6 +8,7 @@ import type { User, Session } from '@supabase/supabase-js';
 interface AuthContextType {
   user: User | null;
   isAdmin: boolean;
+  loading: boolean;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
 }
@@ -31,7 +32,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
       setIsAdmin(!!session?.user);
-      if(event === "INITIAL_SESSION") setLoading(false);
+      if(event === "INITIAL_SESSION" || event === "SIGNED_IN" || event === "SIGNED_OUT") {
+        setLoading(false);
+      }
     });
 
     return () => {
@@ -40,17 +43,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signIn = async (email: string, password: string) => {
+    setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
+    setLoading(false);
     return { error: error ? error.message : null };
   };
 
   const signOut = async () => {
+    setLoading(true);
     await supabase.auth.signOut();
+    setLoading(false);
   };
   
-  const value = { user, isAdmin, signIn, signOut };
+  const value = { user, isAdmin, loading, signIn, signOut };
 
-  return <AuthContext.Provider value={value}>{loading ? null : children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
