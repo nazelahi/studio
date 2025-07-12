@@ -369,6 +369,10 @@ export function TenantsTab() {
                                     <span className="text-muted-foreground flex items-center gap-2"><Phone className="h-4 w-4"/> Phone:</span>
                                     <span>{tenant.phone || "N/A"}</span>
                                 </div>
+                                <div className="flex justify-between items-center">
+                                    <span className="text-muted-foreground flex items-center gap-2"><Home className="h-4 w-4"/> Flat Name:</span>
+                                    <span>{tenant.property}</span>
+                                </div>
                                 {tenant.type && (
                                     <div className="flex justify-between items-center">
                                         <span className="text-muted-foreground flex items-center gap-2"><Briefcase className="h-4 w-4"/> Type:</span>
@@ -376,14 +380,8 @@ export function TenantsTab() {
                                     </div>
                                 )}
                                 <div className="flex justify-between items-center">
-                                    <span className="text-muted-foreground flex items-center gap-2"><Calendar className="h-4 w-4"/> Created Date:</span>
+                                    <span className="text-muted-foreground flex items-center gap-2"><Calendar className="h-4 w-4"/> Join Date:</span>
                                     <span>{format(parseISO(tenant.joinDate), "MMM dd, yyyy")}</span>
-                                </div>
-                                <div className="flex flex-col">
-                                    <span className="text-muted-foreground flex items-center gap-2 mb-1"><Home className="h-4 w-4"/> Property:</span>
-                                    <ul className="list-disc list-inside pl-2">
-                                        <li>{tenant.property}</li>
-                                    </ul>
                                 </div>
                             </div>
                         </CardContent>
