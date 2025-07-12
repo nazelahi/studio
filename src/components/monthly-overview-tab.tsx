@@ -29,7 +29,7 @@ import * as XLSX from 'xlsx';
 import { useAuth } from "@/context/auth-context"
 import { useSettings } from "@/context/settings-context"
 import Link from "next/link"
-import { logDepositAction } from "@/app/actions/deposits"
+import { logDepositAction, deleteDepositAction } from "@/app/actions/deposits"
 
 
 type HistoricalTenant = {
@@ -461,6 +461,21 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
         refreshData();
     }
   };
+
+  const handleDeleteDeposit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const result = await deleteDepositAction(formData);
+    
+    if (result.error) {
+        toast({ title: "Error", description: result.error, variant: "destructive" });
+    } else {
+        toast({ title: "Success", description: "Bank deposit has been removed.", variant: "destructive" });
+        setIsDepositDialogOpen(false);
+        refreshData();
+    }
+  };
+
 
   const totalRentCollected = filteredTenantsForMonth
     .filter(t => t.status === 'Paid')
@@ -1119,9 +1134,33 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                                 <Input id="deposit-date" name="deposit_date" type="date" defaultValue={loggedDeposit?.deposit_date || new Date().toISOString().split('T')[0]} required />
                                             </div>
                                         </div>
-                                        <DialogFooter>
-                                            <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
-                                            <Button type="submit">Save Deposit</Button>
+                                        <DialogFooter className="justify-between">
+                                            {loggedDeposit ? (
+                                                <AlertDialog>
+                                                    <AlertDialogTrigger asChild>
+                                                        <Button type="button" variant="destructive">Delete</Button>
+                                                    </AlertDialogTrigger>
+                                                    <AlertDialogContent>
+                                                         <AlertDialogHeader>
+                                                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                            <AlertDialogDescription>
+                                                                This will remove the deposit log for {month}, {year}. This action cannot be undone.
+                                                            </AlertDialogDescription>
+                                                        </AlertDialogHeader>
+                                                         <AlertDialogFooter>
+                                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                            <form onSubmit={handleDeleteDeposit}>
+                                                                <input type="hidden" name="depositId" value={loggedDeposit.id} />
+                                                                <AlertDialogAction type="submit">Delete</AlertDialogAction>
+                                                            </form>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
+                                            ) : (<div></div>)}
+                                            <div className="flex gap-2">
+                                                <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
+                                                <Button type="submit">Save Deposit</Button>
+                                            </div>
                                         </DialogFooter>
                                     </form>
                                 </DialogContent>

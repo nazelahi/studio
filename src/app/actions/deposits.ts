@@ -55,3 +55,27 @@ export async function logDepositAction(formData: FormData) {
     
     return { success: true };
 }
+
+
+export async function deleteDepositAction(formData: FormData) {
+    const supabaseAdmin = getSupabaseAdmin();
+    const depositId = formData.get('depositId') as string;
+
+    if (!depositId) {
+        return { error: 'Deposit ID is missing.' };
+    }
+
+    const { error } = await supabaseAdmin
+        .from('deposits')
+        .delete()
+        .eq('id', depositId);
+
+    if (error) {
+        console.error('Supabase delete error:', error);
+        return { error: error.message };
+    }
+
+    revalidatePath('/');
+    
+    return { success: true };
+}
