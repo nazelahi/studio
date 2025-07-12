@@ -111,13 +111,15 @@ export async function deleteZakatTransactionAction(formData: FormData) {
     const receiptUrl = formData.get('receiptUrl') as string;
     if (receiptUrl) {
         try {
-            const receiptPath = new URL(receiptUrl).pathname.split('/zakat-receipts/')[1];
-            const { error: storageError } = await supabaseClient.storage
-                .from('zakat-receipts')
-                .remove([receiptPath]);
-            
-            if (storageError) {
-                 console.error('Supabase storage delete error:', storageError);
+            const receiptPath = new URL(receiptUrl).pathname.split('/storage/v1/object/public/zakat-receipts/')[1];
+            if (receiptPath) {
+                const { error: storageError } = await supabaseClient.storage
+                    .from('zakat-receipts')
+                    .remove([receiptPath]);
+                
+                if (storageError) {
+                    console.error('Supabase storage delete error:', storageError);
+                }
             }
         } catch (e) {
              console.error('Could not parse or delete receipt from storage on delete:', e);
