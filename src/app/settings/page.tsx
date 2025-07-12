@@ -271,7 +271,10 @@ export default function SettingsPage() {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="secondary" size="icon" className="rounded-full">
-              <User className="h-5 w-5" />
+              <Avatar className="h-9 w-9">
+                  <AvatarImage src={settings.ownerPhotoUrl} data-ai-hint="person avatar" />
+                  <AvatarFallback><UserCircle className="h-5 w-5"/></AvatarFallback>
+              </Avatar>
               <span className="sr-only">Toggle user menu</span>
             </Button>
           </DropdownMenuTrigger>
@@ -323,7 +326,8 @@ export default function SettingsPage() {
                         <CardContent className="grid md:grid-cols-2 gap-6">
                             <div className="space-y-2">
                                 <Label htmlFor="ownerName">Owner Name</Label>
-                                <Input id="ownerName" name="ownerName" value={settings.ownerName} onChange={handleInputChange} />
+                                <Input id="ownerName" name="ownerName" defaultValue={settings.ownerName} />
+                                <input type="hidden" name="oldOwnerName" value={settings.ownerName} />
                             </div>
                              <div className="space-y-2">
                                 <Label>Owner Photo</Label>
@@ -352,11 +356,11 @@ export default function SettingsPage() {
                         <CardContent className="grid md:grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="houseName">{settings.page_settings.property_details.house_name_label}</Label>
-                                <Input id="houseName" name="houseName" value={settings.houseName} onChange={handleInputChange} />
+                                <Input id="houseName" name="houseName" defaultValue={settings.houseName} onChange={handleInputChange} />
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="houseAddress">{settings.page_settings.property_details.house_address_label}</Label>
-                                <Input id="houseAddress" name="houseAddress" value={settings.houseAddress} onChange={handleInputChange} />
+                                <Input id="houseAddress" name="houseAddress" defaultValue={settings.houseAddress} onChange={handleInputChange} />
                             </div>
                         </CardContent>
                     </Card>
@@ -370,11 +374,11 @@ export default function SettingsPage() {
                             <div className="space-y-4">
                                <div className="space-y-2">
                                   <Label htmlFor="bankName">Bank Name</Label>
-                                  <Input id="bankName" name="bankName" value={settings.bankName} onChange={handleInputChange} />
+                                  <Input id="bankName" name="bankName" defaultValue={settings.bankName} onChange={handleInputChange} />
                                </div>
                                <div className="space-y-2">
                                   <Label htmlFor="bankAccountNumber">Bank Account Number</Label>
-                                  <Input id="bankAccountNumber" name="bankAccountNumber" value={settings.bankAccountNumber} onChange={handleInputChange} />
+                                  <Input id="bankAccountNumber" name="bankAccountNumber" defaultValue={settings.bankAccountNumber} onChange={handleInputChange} />
                                </div>
                             </div>
                             <div className="space-y-2">
@@ -446,11 +450,11 @@ export default function SettingsPage() {
                     <CardContent className="grid sm:grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="appName">{settings.page_settings.app_settings.header_name_label}</Label>
-                            <Input id="appName" name="appName" value={settings.appName} onChange={handleInputChange} />
+                            <Input id="appName" name="appName" defaultValue={settings.appName} onChange={handleInputChange} />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="footerName">{settings.page_settings.app_settings.footer_name_label}</Label>
-                            <Input id="footerName" name="footerName" value={settings.footerName} onChange={handleInputChange} />
+                            <Input id="footerName" name="footerName" defaultValue={settings.footerName} onChange={handleInputChange} />
                         </div>
                     </CardContent>
                     <CardFooter>
@@ -468,11 +472,11 @@ export default function SettingsPage() {
                     <CardContent className="grid md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="overview-financial-title">{settings.page_settings.overview_settings.financial_title_label}</Label>
-                            <Input id="overview-financial-title" name="page_overview.financial_overview_title" value={settings.page_overview.financial_overview_title} onChange={handleInputChange} />
+                            <Input id="overview-financial-title" name="page_overview.financial_overview_title" defaultValue={settings.page_overview.financial_overview_title} onChange={handleInputChange} />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="overview-financial-desc">{settings.page_settings.overview_settings.financial_description_label}</Label>
-                            <Input id="overview-financial-desc" name="page_overview.financial_overview_description" value={settings.page_overview.financial_overview_description} onChange={handleInputChange} />
+                            <Input id="overview-financial-desc" name="page_overview.financial_overview_description" defaultValue={settings.page_overview.financial_overview_description} onChange={handleInputChange} />
                         </div>
                     </CardContent>
                     <CardFooter>
