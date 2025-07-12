@@ -22,6 +22,20 @@ import { cn } from "@/lib/utils"
 
 type SettingsTab = 'property' | 'account' | 'application' | 'labels';
 
+function AccessDenied() {
+  const router = useRouter();
+  return (
+    <div className="flex h-screen w-full flex-col items-center justify-center bg-background">
+      <div className="text-center">
+        <h1 className="text-3xl font-bold">Access Denied</h1>
+        <p className="text-muted-foreground mt-2">You do not have permission to view this page.</p>
+        <Button onClick={() => router.push('/')} className="mt-6">Go to Dashboard</Button>
+      </div>
+    </div>
+  );
+}
+
+
 export default function SettingsPage() {
   const { settings, setSettings, refreshSettings } = useSettings();
   const pathname = usePathname();
@@ -117,15 +131,7 @@ export default function SettingsPage() {
   }
 
   if (!isAdmin) {
-      return (
-          <div className="flex h-screen w-full flex-col items-center justify-center bg-background">
-              <div className="text-center">
-                  <h1 className="text-3xl font-bold">Access Denied</h1>
-                  <p className="text-muted-foreground mt-2">You do not have permission to view this page.</p>
-                  <Button onClick={() => router.push('/')} className="mt-6">Go to Dashboard</Button>
-              </div>
-          </div>
-      )
+      return <AccessDenied />;
   }
   
   const navigationLinks = (
