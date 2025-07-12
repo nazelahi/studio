@@ -211,8 +211,8 @@ export function TenantsTab() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-between gap-4 mb-6">
-              <div className="relative w-full max-w-sm">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
+              <div className="relative w-full sm:max-w-xs">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input 
                   placeholder={settings.page_tenants.search_placeholder}
@@ -224,7 +224,7 @@ export function TenantsTab() {
                {isAdmin && 
                 <Dialog open={open} onOpenChange={handleOpenChange}>
                   <DialogTrigger asChild>
-                    <Button onClick={() => setEditingTenant(null)}>
+                    <Button onClick={() => setEditingTenant(null)} className="w-full sm:w-auto">
                       <PlusCircle className="mr-2 h-4 w-4" />
                       {settings.page_tenants.add_tenant_button}
                     </Button>
@@ -361,7 +361,7 @@ export function TenantsTab() {
                   <TableHead>Tenant</TableHead>
                   <TableHead className="hidden lg:table-cell">Contact</TableHead>
                   <TableHead className="hidden md:table-cell">Apartment</TableHead>
-                  <TableHead className="hidden md:table-cell">Rent</TableHead>
+                  <TableHead className="hidden sm:table-cell">Rent</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>
                       <span className="sr-only">Actions</span>
@@ -401,7 +401,7 @@ export function TenantsTab() {
                           </div>
                       </TableCell>
                       <TableCell className="hidden md:table-cell">{tenant.property}</TableCell>
-                      <TableCell className="hidden md:table-cell">৳{tenant.rent.toFixed(2)}</TableCell>
+                      <TableCell className="hidden sm:table-cell">৳{tenant.rent.toFixed(2)}</TableCell>
                       <TableCell>
                         {isAdmin ? (
                           <DropdownMenu>

@@ -174,11 +174,11 @@ export function ReportsTab({ year }: { year: number }) {
 
   return (
     <div className="pt-4 space-y-6">
-      <div className="flex flex-wrap items-center gap-4">
-        <h2 className="text-2xl font-bold">Reports</h2>
-        <div className="flex items-center gap-2 flex-grow">
+      <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+        <h2 className="text-2xl font-bold flex-shrink-0">Reports</h2>
+        <div className="flex items-center gap-2 w-full sm:w-auto">
             <Select value={reportType} onValueChange={setReportType}>
-              <SelectTrigger className="w-[180px]">
+              <SelectTrigger className="w-full sm:w-[180px]">
                 <SelectValue placeholder="Select Report Type" />
               </SelectTrigger>
               <SelectContent>
@@ -190,11 +190,11 @@ export function ReportsTab({ year }: { year: number }) {
         <div className="flex items-center gap-2 ml-auto">
           <Button variant="outline" onClick={handleDownloadPdf}>
             <Download className="mr-2 h-4 w-4"/>
-            Download PDF
+            PDF
           </Button>
           <Button variant="outline" onClick={handlePrint}>
             <Printer className="mr-2 h-4 w-4"/>
-            Print Report
+            Print
           </Button>
         </div>
       </div>
@@ -317,8 +317,8 @@ export function ReportsTab({ year }: { year: number }) {
                       <TableHeader>
                         <TableRow>
                           <TableHead>Period</TableHead>
-                          <TableHead>Due Date</TableHead>
-                          <TableHead>Payment Date</TableHead>
+                          <TableHead className="hidden sm:table-cell">Due Date</TableHead>
+                          <TableHead className="hidden md:table-cell">Payment Date</TableHead>
                           <TableHead>Status</TableHead>
                           <TableHead className="text-right">Amount</TableHead>
                         </TableRow>
@@ -327,8 +327,8 @@ export function ReportsTab({ year }: { year: number }) {
                         {tenantReportData.length > 0 ? tenantReportData.map(entry => (
                           <TableRow key={entry.id}>
                             <TableCell className="font-medium">{months[entry.month]} {entry.year}</TableCell>
-                            <TableCell>{format(parseISO(entry.dueDate), "dd MMM yyyy")}</TableCell>
-                            <TableCell>{entry.paymentDate ? format(parseISO(entry.paymentDate), "dd MMM yyyy") : 'N/A'}</TableCell>
+                            <TableCell className="hidden sm:table-cell">{format(parseISO(entry.dueDate), "dd MMM yyyy")}</TableCell>
+                            <TableCell className="hidden md:table-cell">{entry.paymentDate ? format(parseISO(entry.paymentDate), "dd MMM yyyy") : 'N/A'}</TableCell>
                             <TableCell><Badge className={getStatusBadge(entry.status)}>{entry.status}</Badge></TableCell>
                             <TableCell className="text-right">{formatCurrency(entry.rent)}</TableCell>
                           </TableRow>

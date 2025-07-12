@@ -492,11 +492,13 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
   return (
     <>
     <Tabs value={selectedMonth} onValueChange={setSelectedMonth} className="w-full pt-4">
-      <TabsList className="grid w-full grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-12">
-        {months.map(month => (
-          <TabsTrigger key={month} value={month}>{month.substring(0,3)}</TabsTrigger>
-        ))}
-      </TabsList>
+      <div className="overflow-x-auto pb-2">
+        <TabsList className="grid w-max grid-cols-12 gap-1">
+            {months.map(month => (
+            <TabsTrigger key={month} value={month}>{month}</TabsTrigger>
+            ))}
+        </TabsList>
+      </div>
       {months.map(month => (
         <TabsContent key={month} value={month}>
           <div className="mt-6">
@@ -507,18 +509,18 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
               </TabsList>
               <TabsContent value="rent-roll">
                  <Card className="mt-4">
-                  <CardHeader className="flex flex-row items-center justify-between">
+                  <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                      <div>
                         <CardTitle>Rent Roll - {month} {year}</CardTitle>
                         <CardDescription>Rent payment status for {month} {year}.</CardDescription>
                     </div>
-                     {isAdmin && <div className="flex items-center gap-2">
+                     {isAdmin && <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                         {selectedRentEntryIds.length > 0 && (
                            <AlertDialog>
                             <AlertDialogTrigger asChild>
-                              <Button size="sm" variant="destructive" className="gap-2">
+                              <Button size="sm" variant="destructive" className="gap-2 w-full sm:w-auto">
                                 <Trash2 className="h-4 w-4" />
-                                Delete Selected ({selectedRentEntryIds.length})
+                                Delete ({selectedRentEntryIds.length})
                               </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
@@ -548,7 +550,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                         />
                         <Button size="sm" variant="outline" className="gap-2" onClick={handleSyncTenants}>
                             <RefreshCw className="h-4 w-4" />
-                            Sync Tenants
+                            Sync
                         </Button>
                         <Dialog open={isRentDialogOpen} onOpenChange={handleRentOpenChange}>
                           <DialogTrigger asChild>
@@ -696,10 +698,10 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                 />
                             </TableHead>}
                             <TableHead>Tenant</TableHead>
-                            <TableHead className="hidden sm:table-cell">Collected By</TableHead>
+                            <TableHead className="hidden md:table-cell">Collected By</TableHead>
                             <TableHead className="hidden sm:table-cell">Payment Date</TableHead>
                             <TableHead>Status</TableHead>
-                            <TableHead>Amount</TableHead>
+                            <TableHead className="hidden sm:table-cell">Amount</TableHead>
                             <TableHead>Actions</TableHead>
                           </TableRow>
                         </TableHeader>
@@ -722,9 +724,10 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                   <p className="text-sm text-muted-foreground">
                                     {entry.property}
                                   </p>
+                                  <p className="sm:hidden text-sm text-primary font-semibold">৳{entry.rent.toFixed(2)}</p>
                                 </div>
                               </TableCell>
-                              <TableCell className="hidden sm:table-cell">{entry.collectedBy || '-'}</TableCell>
+                              <TableCell className="hidden md:table-cell">{entry.collectedBy || '-'}</TableCell>
                               <TableCell className="hidden sm:table-cell">{entry.paymentDate ? format(parseISO(entry.paymentDate), "dd MMM yyyy") : '-'}</TableCell>
                               <TableCell>
                                 <Badge className={getStatusBadge(entry.status)} variant="outline">
@@ -732,7 +735,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                   {entry.status}
                                 </Badge>
                               </TableCell>
-                              <TableCell>৳{entry.rent.toFixed(2)}</TableCell>
+                              <TableCell className="hidden sm:table-cell">৳{entry.rent.toFixed(2)}</TableCell>
                               <TableCell>
                                 <div className="flex items-center gap-1">
                                   <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => handleViewDetails(entry)}>
@@ -786,18 +789,18 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
               </TabsContent>
               <TabsContent value="expenses">
                 <Card className="mt-4">
-                  <CardHeader className="flex flex-row items-center justify-between">
+                  <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                     <div>
                       <CardTitle>Expenses - {month} {year}</CardTitle>
                       <CardDescription>Property-related expenses for {month} {year}.</CardDescription>
                     </div>
-                    {isAdmin && <div className="flex items-center gap-2">
+                    {isAdmin && <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                        {selectedExpenseIds.length > 0 && (
                            <AlertDialog>
                             <AlertDialogTrigger asChild>
-                              <Button size="sm" variant="destructive" className="gap-2">
+                              <Button size="sm" variant="destructive" className="gap-2 w-full sm:w-auto">
                                 <Trash2 className="h-4 w-4" />
-                                Delete Selected ({selectedExpenseIds.length})
+                                Delete ({selectedExpenseIds.length})
                               </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>

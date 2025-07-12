@@ -11,10 +11,11 @@ import { useSettings } from "@/context/settings-context"
 import { usePathname } from "next/navigation"
 import { useAuth } from "@/context/auth-context"
 import { Button } from "@/components/ui/button"
-import { User, LogOut, KeyRound, MapPin, Trash2 } from "lucide-react"
+import { User, LogOut, KeyRound, MapPin, Trash2, Menu, Settings } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useToast } from "@/hooks/use-toast"
 import { LoginDialog } from "@/components/login-dialog"
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 
 
 export default function SettingsPage() {
@@ -94,11 +95,45 @@ export default function SettingsPage() {
             </Link>
           )}
         </nav>
+        <Sheet>
+          <SheetTrigger asChild>
+            <Button
+              variant="outline"
+              size="icon"
+              className="shrink-0 md:hidden"
+            >
+              <Menu className="h-5 w-5" />
+              <span className="sr-only">Toggle navigation menu</span>
+            </Button>
+          </SheetTrigger>
+          <SheetContent side="left">
+            <nav className="grid gap-6 text-lg font-medium">
+              <Link
+                href="#"
+                className="flex items-center gap-2 text-lg font-semibold"
+              >
+                <Logo className="h-6 w-6 text-primary" />
+                <span className="sr-only">{settings.appName}</span>
+              </Link>
+              <Link href="/" className={`hover:text-foreground ${pathname === '/' ? 'text-foreground' : 'text-muted-foreground'}`}>
+                {settings.page_dashboard.nav_dashboard}
+              </Link>
+              {isAdmin && (
+                <Link
+                  href="/settings"
+                  className={`hover:text-foreground ${pathname === '/settings' ? 'text-foreground' : 'text-muted-foreground'}`}
+                >
+                  {settings.page_dashboard.nav_settings}
+                </Link>
+              )}
+            </nav>
+          </SheetContent>
+        </Sheet>
         <div className="flex-1 text-center">
-            <h1 className="text-lg font-bold tracking-tight text-primary">{settings.houseName}</h1>
+            <h1 className="text-base sm:text-lg font-bold tracking-tight text-primary truncate">{settings.houseName}</h1>
             <div className="flex items-center justify-center gap-2 mt-1 text-xs text-muted-foreground">
                 <MapPin className="h-3 w-3" />
-                <p>{settings.houseAddress}</p>
+                <p className="truncate">{settings.houseAddress}</p>
             </div>
         </div>
         <div>
@@ -113,6 +148,14 @@ export default function SettingsPage() {
                 <DropdownMenuContent align="end">
                 <DropdownMenuLabel>{user.email}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
+                  {isAdmin && (
+                    <DropdownMenuItem asChild>
+                       <Link href="/settings">
+                        <Settings className="mr-2 h-4 w-4" />
+                        <span>{settings.page_dashboard.nav_settings}</span>
+                       </Link>
+                    </DropdownMenuItem>
+                  )}
                 <DropdownMenuItem onClick={signOut}>
                     <LogOut className="mr-2 h-4 w-4" />
                     <span>{settings.page_dashboard.user_menu_logout}</span>
