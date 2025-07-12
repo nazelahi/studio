@@ -88,7 +88,8 @@ export type WorkDetail = {
   category?: string;
   status: 'To Do' | 'In Progress' | 'Completed';
   assigned_to_id?: string;
-  cost?: number;
+  product_cost?: number;
+  worker_cost?: number;
   due_date?: string;
   created_at?: string;
 };

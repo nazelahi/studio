@@ -30,7 +30,8 @@ export async function saveWorkDetailAction(formData: FormData) {
         category: formData.get('category') as string || null,
         status: formData.get('status') as 'To Do' | 'In Progress' | 'Completed',
         assigned_to_id: formData.get('assigned_to_id') as string || null,
-        cost: Number(formData.get('cost')) || null,
+        product_cost: Number(formData.get('product_cost')) || null,
+        worker_cost: Number(formData.get('worker_cost')) || null,
         due_date: formData.get('due_date') as string || null,
     }
     

@@ -139,36 +139,40 @@ export function WorkDetailsTab() {
                                 <Label htmlFor="description">Description</Label>
                                 <Textarea id="description" name="description" defaultValue={editingWork?.description || ''} />
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
-                               <div className="space-y-2">
+                             <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
                                     <Label htmlFor="category">Category</Label>
                                     <Input id="category" name="category" defaultValue={editingWork?.category || ''} placeholder="e.g., Plumbing" />
                                 </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="cost">Cost</Label>
-                                    <Input id="cost" name="cost" type="number" step="0.01" defaultValue={editingWork?.cost || ''} placeholder="0.00" />
-                                </div>
-                            </div>
-                             <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="status">Status</Label>
-                                    <Select name="status" defaultValue={editingWork?.status || 'To Do'}>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select status" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="To Do">To Do</SelectItem>
-                                            <SelectItem value="In Progress">In Progress</SelectItem>
-                                            <SelectItem value="Completed">Completed</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="space-y-2">
+                                 <div className="space-y-2">
                                     <Label htmlFor="due_date">Due Date</Label>
                                     <Input id="due_date" name="due_date" type="date" defaultValue={editingWork?.due_date ? format(parseISO(editingWork.due_date), 'yyyy-MM-dd') : ''} />
                                 </div>
                             </div>
-                             <div className="space-y-2">
+                             <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="product_cost">Product Cost</Label>
+                                    <Input id="product_cost" name="product_cost" type="number" step="0.01" defaultValue={editingWork?.product_cost || ''} placeholder="0.00" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="worker_cost">Worker Cost</Label>
+                                    <Input id="worker_cost" name="worker_cost" type="number" step="0.01" defaultValue={editingWork?.worker_cost || ''} placeholder="0.00" />
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="status">Status</Label>
+                                <Select name="status" defaultValue={editingWork?.status || 'To Do'}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select status" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="To Do">To Do</SelectItem>
+                                        <SelectItem value="In Progress">In Progress</SelectItem>
+                                        <SelectItem value="Completed">Completed</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2">
                                 <Label>Assign To</Label>
                                 <Popover open={isContactFinderOpen} onOpenChange={setIsContactFinderOpen}>
                                     <PopoverTrigger asChild>
@@ -228,7 +232,7 @@ export function WorkDetailsTab() {
               <TableHead>Status</TableHead>
               <TableHead>Assigned To</TableHead>
               <TableHead>Due Date</TableHead>
-              <TableHead className="text-right">Cost</TableHead>
+              <TableHead className="text-right">Total Cost</TableHead>
               {isAdmin && <TableHead>Actions</TableHead>}
             </TableRow>
           </TableHeader>
@@ -242,6 +246,7 @@ export function WorkDetailsTab() {
             ) : workDetails.length > 0 ? (
               workDetails.map((work) => {
                 const assigned = work.assigned_to_id ? tenants.find(t => t.id === work.assigned_to_id) : null;
+                const totalCost = (work.product_cost || 0) + (work.worker_cost || 0);
                 return (
                   <TableRow key={work.id}>
                     <TableCell>
@@ -271,7 +276,7 @@ export function WorkDetailsTab() {
                         )}
                     </TableCell>
                     <TableCell>{work.due_date ? format(parseISO(work.due_date), 'dd MMM, yyyy') : '-'}</TableCell>
-                    <TableCell className="text-right">{work.cost ? `৳${work.cost.toFixed(2)}` : '-'}</TableCell>
+                    <TableCell className="text-right">{totalCost > 0 ? `৳${totalCost.toFixed(2)}` : '-'}</TableCell>
                     {isAdmin && (
                       <TableCell>
                          <div className="flex items-center justify-end gap-1">
@@ -317,5 +322,3 @@ export function WorkDetailsTab() {
     </Card>
   )
 }
-
-    
