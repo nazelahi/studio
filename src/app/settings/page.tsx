@@ -91,7 +91,7 @@ export default function SettingsPage() {
   };
   
   const handleSaveCredentials = (formData: FormData) => {
-    if (!isAdmin) {
+    if (!isAdmin || !user) {
       toast({ title: 'Unauthorized', description: 'You must be logged in as an admin to perform this action.', variant: 'destructive'});
       return;
     }
@@ -256,6 +256,7 @@ export default function SettingsPage() {
                             <CardDescription>Update the email and password for the admin account.</CardDescription>
                         </CardHeader>
                         <CardContent className="grid md:grid-cols-2 gap-4">
+                            <input type="hidden" name="userId" value={user?.id || ''} />
                             <div className="space-y-2">
                                 <Label htmlFor="email">Email</Label>
                                 <Input id="email" name="email" type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} required />
