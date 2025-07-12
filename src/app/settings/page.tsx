@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Logo } from "@/components/icons"
 import { useSettings } from "@/context/settings-context"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { useAuth } from "@/context/auth-context"
 import { Button } from "@/components/ui/button"
 import { User, LogOut, KeyRound, MapPin, Trash2, Menu, Settings, LockKeyhole, LoaderCircle, LogIn } from "lucide-react"
@@ -21,6 +21,7 @@ import { LoginDialog } from "@/components/login-dialog"
 export default function SettingsPage() {
   const { settings, setSettings } = useSettings();
   const pathname = usePathname();
+  const router = useRouter();
   const { user, isAdmin, signOut } = useAuth();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
@@ -151,7 +152,7 @@ export default function SettingsPage() {
             </Button>
           </SheetTrigger>
           <SheetContent side="left">
-             <SheetHeader className="sr-only">
+             <SheetHeader>
               <SheetTitle>Navigation Menu</SheetTitle>
               <SheetDescription>Main navigation links for the application.</SheetDescription>
             </SheetHeader>

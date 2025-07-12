@@ -4,7 +4,7 @@
 import Link from "next/link"
 import * as React from "react"
 import { useSettings } from "@/context/settings-context"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { Logo } from "@/components/icons"
 import DashboardTabs from "@/components/dashboard-tabs"
 import { useAuth } from "@/context/auth-context"
@@ -18,6 +18,7 @@ import { useToast } from "@/hooks/use-toast"
 export default function HomePage() {
   const { settings } = useSettings();
   const pathname = usePathname();
+  const router = useRouter();
   const { user, isAdmin, signOut } = useAuth();
   const [isLoginDialogOpen, setIsLoginDialogOpen] = React.useState(false);
   const { toast } = useToast();
@@ -68,7 +69,7 @@ export default function HomePage() {
             </Button>
           </SheetTrigger>
           <SheetContent side="left">
-             <SheetHeader className="sr-only">
+             <SheetHeader>
               <SheetTitle>Navigation Menu</SheetTitle>
               <SheetDescription>Main navigation links for the application.</SheetDescription>
             </SheetHeader>
