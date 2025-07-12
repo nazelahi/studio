@@ -14,6 +14,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from "@/components/ui/sheet"
 import { useToast } from "@/hooks/use-toast"
 import { useProtection } from "@/context/protection-context"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 export default function HomePage() {
   const { settings } = useSettings();
@@ -22,6 +23,13 @@ export default function HomePage() {
   const { isAdmin, signOut } = useAuth();
   const { toast } = useToast();
   const { withProtection } = useProtection();
+  
+  const currentYear = new Date().getFullYear();
+  const [selectedYear, setSelectedYear] = React.useState(currentYear.toString());
+  const [activeTab, setActiveTab] = React.useState("overview");
+  const [isSheetOpen, setIsSheetOpen] = React.useState(false);
+
+  const years = Array.from({ length: 5 }, (_, i) => (currentYear - i).toString());
 
   const handleSignOut = async () => {
     await signOut();
@@ -37,6 +45,39 @@ export default function HomePage() {
         router.push('/settings');
     }, e);
   };
+  
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    setIsSheetOpen(false); // Close sidebar on selection
+  };
+  
+  const mainNavLinks = (
+    <>
+      <Link href="/" className={`hover:text-foreground ${pathname === '/' ? 'text-foreground' : 'text-muted-foreground'}`}>
+        {settings.page_dashboard.nav_dashboard}
+      </Link>
+      {isAdmin && (
+        <Link
+          href="/settings"
+          className={`hover:text-foreground ${pathname === '/settings' ? 'text-foreground' : 'text-muted-foreground'}`}
+        >
+          {settings.page_dashboard.nav_settings}
+        </Link>
+      )}
+    </>
+  );
+
+  const dashboardNavLinks = (
+    <>
+      <button onClick={() => handleTabChange('overview')} className={`w-full text-left hover:text-foreground ${activeTab === 'overview' ? 'text-foreground' : 'text-muted-foreground'}`}>{settings.tabNames.overview}</button>
+      <button onClick={() => handleTabChange('contacts')} className={`w-full text-left hover:text-foreground ${activeTab === 'contacts' ? 'text-foreground' : 'text-muted-foreground'}`}>{settings.tabNames.tenants}</button>
+      <button onClick={() => handleTabChange('work')} className={`w-full text-left hover:text-foreground ${activeTab === 'work' ? 'text-foreground' : 'text-muted-foreground'}`}>{settings.tabNames.work}</button>
+      <button onClick={() => handleTabChange('integrations')} className={`w-full text-left hover:text-foreground ${activeTab === 'integrations' ? 'text-foreground' : 'text-muted-foreground'}`}>{settings.tabNames.integrations}</button>
+      <button onClick={() => handleTabChange('reports')} className={`w-full text-left hover:text-foreground ${activeTab === 'reports' ? 'text-foreground' : 'text-muted-foreground'}`}>{settings.tabNames.reports}</button>
+      <button onClick={() => handleTabChange('zakat')} className={`w-full text-left hover:text-foreground ${activeTab === 'zakat' ? 'text-foreground' : 'text-muted-foreground'}`}>{settings.tabNames.zakat}</button>
+    </>
+  );
+
 
   return (
     <div className="flex min-h-screen w-full flex-col">
@@ -49,22 +90,9 @@ export default function HomePage() {
             <Logo className="h-6 w-6 text-primary" />
             <span className="sr-only">{settings.appName}</span>
           </Link>
-          <Link
-            href="/"
-            className={`transition-colors hover:text-foreground ${pathname === '/' ? 'text-foreground' : 'text-muted-foreground'}`}
-          >
-            {settings.page_dashboard.nav_dashboard}
-          </Link>
-          {isAdmin && (
-            <Link
-              href="/settings"
-              className={`transition-colors hover:text-foreground ${pathname === '/settings' ? 'text-foreground' : 'text-muted-foreground'}`}
-            >
-              {settings.page_dashboard.nav_settings}
-            </Link>
-          )}
+          {mainNavLinks}
         </nav>
-        <Sheet>
+        <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
           <SheetTrigger asChild>
             <Button
               variant="outline"
@@ -76,29 +104,34 @@ export default function HomePage() {
             </Button>
           </SheetTrigger>
           <SheetContent side="left">
-            <SheetHeader>
-                <SheetTitle>Navigation Menu</SheetTitle>
-                <SheetDescription>Main navigation links for the application.</SheetDescription>
-            </SheetHeader>
             <nav className="grid gap-6 text-lg font-medium">
               <Link
                 href="#"
                 className="flex items-center gap-2 text-lg font-semibold"
               >
                 <Logo className="h-6 w-6 text-primary" />
-                <span className="sr-only">{settings.appName}</span>
+                <span>{settings.appName}</span>
               </Link>
-              <Link href="/" className={`hover:text-foreground ${pathname === '/' ? 'text-foreground' : 'text-muted-foreground'}`}>
-                {settings.page_dashboard.nav_dashboard}
-              </Link>
-              {isAdmin && (
-                <Link
-                  href="/settings"
-                  className={`hover:text-foreground ${pathname === '/settings' ? 'text-foreground' : 'text-muted-foreground'}`}
-                >
-                  {settings.page_dashboard.nav_settings}
-                </Link>
-              )}
+              {mainNavLinks}
+               <div className="border-t pt-6 space-y-2">
+                <p className="text-sm font-semibold text-muted-foreground">Dashboard</p>
+                <div className="flex items-center gap-2">
+                    <span className="text-sm font-medium">Year:</span>
+                    <Select value={selectedYear} onValueChange={setSelectedYear}>
+                        <SelectTrigger className="w-[120px]">
+                            <SelectValue placeholder="Select Year" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {years.map(year => (
+                            <SelectItem key={year} value={year}>{year}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+              </div>
+              <div className="grid gap-4 text-base font-medium">
+                  {dashboardNavLinks}
+              </div>
             </nav>
           </SheetContent>
         </Sheet>
@@ -132,7 +165,14 @@ export default function HomePage() {
         </DropdownMenu>
       </header>
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-        <DashboardTabs />
+        <DashboardTabs
+          year={parseInt(selectedYear)}
+          activeTab={activeTab}
+          onTabChange={setActiveTab}
+          selectedYear={selectedYear}
+          onYearChange={setSelectedYear}
+          years={years}
+        />
         <footer className="text-center text-sm text-muted-foreground mt-auto pt-4">
           {settings.footerName}
         </footer>

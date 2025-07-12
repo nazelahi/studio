@@ -13,54 +13,60 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useSettings } from "@/context/settings-context"
 import { WorkDetailsTab } from "./work-details-tab"
 
-export default function DashboardTabs() {
+interface DashboardTabsProps {
+  year: number;
+  activeTab: string;
+  onTabChange: (tab: string) => void;
+  selectedYear: string;
+  onYearChange: (year: string) => void;
+  years: string[];
+}
+
+
+export default function DashboardTabs({ year, activeTab, onTabChange, selectedYear, onYearChange, years }: DashboardTabsProps) {
   const { settings } = useSettings();
-  const currentYear = new Date().getFullYear();
-  const [selectedYear, setSelectedYear] = React.useState(currentYear.toString());
-  
-  const years = Array.from({ length: 5 }, (_, i) => (currentYear - i).toString());
 
   return (
     <div className="w-full">
-      <div className="flex justify-between items-center mb-4">
-        <div />
-        <div className="flex items-center gap-2">
-           <span className="text-sm font-medium text-muted-foreground">Year:</span>
-           <Select value={selectedYear} onValueChange={setSelectedYear}>
-              <SelectTrigger className="w-[120px]">
-                <SelectValue placeholder="Select Year" />
-              </SelectTrigger>
-              <SelectContent>
-                {years.map(year => (
-                  <SelectItem key={year} value={year}>{year}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+      <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
+        <div className="hidden md:flex justify-between items-center mb-4">
+          <TabsList className="grid w-full grid-cols-6">
+            <TabsTrigger value="overview">{settings.tabNames.overview}</TabsTrigger>
+            <TabsTrigger value="contacts">{settings.tabNames.tenants}</TabsTrigger>
+            <TabsTrigger value="work">{settings.tabNames.work}</TabsTrigger>
+            <TabsTrigger value="integrations">{settings.tabNames.integrations}</TabsTrigger>
+            <TabsTrigger value="reports">{settings.tabNames.reports}</TabsTrigger>
+            <TabsTrigger value="zakat">{settings.tabNames.zakat}</TabsTrigger>
+          </TabsList>
+          <div className="flex items-center gap-2 ml-4">
+            <span className="text-sm font-medium text-muted-foreground">Year:</span>
+            <Select value={selectedYear} onValueChange={onYearChange}>
+                <SelectTrigger className="w-[120px]">
+                  <SelectValue placeholder="Select Year" />
+                </SelectTrigger>
+                <SelectContent>
+                  {years.map(y => (
+                    <SelectItem key={y} value={y}>{y}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+          </div>
         </div>
-      </div>
-      <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-6">
-          <TabsTrigger value="overview">{settings.tabNames.overview}</TabsTrigger>
-          <TabsTrigger value="contacts">{settings.tabNames.tenants}</TabsTrigger>
-          <TabsTrigger value="work">{settings.tabNames.work}</TabsTrigger>
-          <TabsTrigger value="integrations">{settings.tabNames.integrations}</TabsTrigger>
-          <TabsTrigger value="reports">{settings.tabNames.reports}</TabsTrigger>
-          <TabsTrigger value="zakat">{settings.tabNames.zakat}</TabsTrigger>
-        </TabsList>
+
         <TabsContent value="overview">
-          <MonthlyOverviewTab year={parseInt(selectedYear)} />
+          <MonthlyOverviewTab year={year} />
         </TabsContent>
         <TabsContent value="contacts">
           <ContactsTab />
         </TabsContent>
         <TabsContent value="work">
-          <WorkDetailsTab year={parseInt(selectedYear)} />
+          <WorkDetailsTab year={year} />
         </TabsContent>
         <TabsContent value="integrations">
             <IntegrationsTab />
         </TabsContent>
          <TabsContent value="reports">
-            <ReportsTab year={parseInt(selectedYear)} />
+            <ReportsTab year={year} />
         </TabsContent>
          <TabsContent value="zakat">
             <ZakatTab />
