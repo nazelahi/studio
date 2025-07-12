@@ -2,7 +2,7 @@
 "use client"
 
 import * as React from "react"
-import { MoreHorizontal, PlusCircle, Image as ImageIcon, Mail, Phone, Home, ChevronDown, Copy, X, Search, FileText, Check, UserPlus, Calendar, Briefcase } from "lucide-react"
+import { MoreHorizontal, PlusCircle, Image as ImageIcon, Mail, Phone, Home, ChevronDown, Copy, X, Search, FileText, Check, UserPlus, Calendar, Briefcase, Upload, File, Trash2, LoaderCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog"
@@ -30,7 +30,12 @@ export function TenantsTab() {
   const [editingTenant, setEditingTenant] = React.useState<Tenant | null>(null);
   const { toast } = useToast();
   const [previewImage, setPreviewImage] = React.useState<string | null>(null);
+  const [documentFiles, setDocumentFiles] = React.useState<File[]>([]);
+  const [existingDocuments, setExistingDocuments] = React.useState<string[]>([]);
+  const [isUploading, setIsUploading] = React.useState(false);
+
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const docFileInputRef = React.useRef<HTMLInputElement>(null);
   const formRef = React.useRef<HTMLFormElement>(null);
   const [isFinderOpen, setIsFinderOpen] = React.useState(false);
   
@@ -63,9 +68,25 @@ export function TenantsTab() {
       reader.readAsDataURL(file);
     }
   };
+
+  const handleDocumentUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (files) {
+      setDocumentFiles(prev => [...prev, ...Array.from(files)]);
+    }
+  };
+
+  const handleRemoveNewDocument = (index: number) => {
+    setDocumentFiles(prev => prev.filter((_, i) => i !== index));
+  };
+  
+  const handleRemoveExistingDocument = (docUrl: string) => {
+    setExistingDocuments(prev => prev.filter(url => url !== docUrl));
+  };
   
   const handleSaveTenant = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setIsUploading(true);
     const formData = new FormData(event.currentTarget);
     
     const tenantData = {
@@ -78,26 +99,43 @@ export function TenantsTab() {
       notes: formData.get('notes') as string,
       type: formData.get('type') as string,
       avatar: previewImage || editingTenant?.avatar || 'https://placehold.co/80x80.png',
+      documents: existingDocuments, // Start with the ones we didn't remove
       status: editingTenant?.status || 'Pending',
     };
 
-    if (editingTenant) {
-      await updateTenant({ ...editingTenant, ...tenantData });
-      toast({
-        title: 'Tenant Updated',
-        description: `${tenantData.name}'s information has been successfully updated.`,
+    try {
+      if (editingTenant) {
+        await updateTenant({ ...editingTenant, ...tenantData }, documentFiles);
+        toast({
+          title: 'Tenant Updated',
+          description: `${tenantData.name}'s information has been successfully updated.`,
+        });
+      } else {
+        await addTenant(tenantData, documentFiles);
+        toast({
+          title: 'Tenant Added',
+          description: `${tenantData.name} has been successfully added.`,
+        });
+      }
+      
+      setOpen(false);
+      resetDialogState();
+    } catch (error) {
+       toast({
+        title: 'Save Failed',
+        description: "An error occurred while saving the tenant.",
+        variant: "destructive"
       });
-    } else {
-      await addTenant(tenantData);
-      toast({
-        title: 'Tenant Added',
-        description: `${tenantData.name} has been successfully added.`,
-      });
+    } finally {
+        setIsUploading(false);
     }
+  };
 
-    setOpen(false);
+  const resetDialogState = () => {
     setEditingTenant(null);
     setPreviewImage(null);
+    setDocumentFiles([]);
+    setExistingDocuments([]);
   };
   
   const handleSelectTenantToCopy = (tenant: Tenant) => {
@@ -115,6 +153,8 @@ export function TenantsTab() {
         getEl('type').value = tenant.type || '';
         
         setPreviewImage(tenant.avatar);
+        setExistingDocuments(tenant.documents || []);
+        setDocumentFiles([]);
     }
     toast({ title: 'Tenant Info Copied', description: `Data from ${tenant.name} has been pre-filled.`});
     setIsFinderOpen(false);
@@ -128,6 +168,8 @@ export function TenantsTab() {
   const handleEdit = (tenant: Tenant) => {
     setEditingTenant(tenant);
     setPreviewImage(tenant.avatar);
+    setExistingDocuments(tenant.documents || []);
+    setDocumentFiles([]);
     setOpen(true);
   };
 
@@ -142,8 +184,7 @@ export function TenantsTab() {
 
   const handleOpenChange = (isOpen: boolean) => {
     if (!isOpen) {
-      setEditingTenant(null);
-      setPreviewImage(null);
+      resetDialogState();
     }
     setOpen(isOpen);
   };
@@ -203,7 +244,7 @@ export function TenantsTab() {
                         {editingTenant ? "Update the tenant's information below." : "Fill in the form to add a new tenant to your property list."}
                       </DialogDescription>
                     </DialogHeader>
-                    <form ref={formRef} onSubmit={handleSaveTenant} className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-6 py-4">
+                    <form ref={formRef} onSubmit={handleSaveTenant} className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-6 py-4 max-h-[70vh] overflow-y-auto pr-2">
                       
                       {!editingTenant && (
                         <div className="md:col-span-2">
@@ -313,11 +354,53 @@ export function TenantsTab() {
                         <Label htmlFor="notes">Notes</Label>
                         <Textarea id="notes" name="notes" defaultValue={editingTenant?.notes} placeholder="Any relevant notes about the tenant..."/>
                       </div>
+
+                      <div className="space-y-2 md:col-span-2">
+                         <Label>Tenant Documents</Label>
+                         <div className="border border-dashed rounded-lg p-4">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mb-4">
+                               {existingDocuments.map((docUrl) => (
+                                 <div key={docUrl} className="relative group">
+                                    <a href={docUrl} target="_blank" rel="noopener noreferrer">
+                                        <img src={docUrl} alt="Document" className="w-full h-20 object-cover rounded-md" data-ai-hint="document id"/>
+                                    </a>
+                                    <Button type="button" variant="destructive" size="icon" className="absolute -top-2 -right-2 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100" onClick={() => handleRemoveExistingDocument(docUrl)}>
+                                        <Trash2 className="h-4 w-4"/>
+                                    </Button>
+                                 </div>
+                               ))}
+                               {documentFiles.map((file, index) => (
+                                 <div key={index} className="relative group">
+                                    <img src={URL.createObjectURL(file)} alt={file.name} className="w-full h-20 object-cover rounded-md" data-ai-hint="document id"/>
+                                    <Button type="button" variant="destructive" size="icon" className="absolute -top-2 -right-2 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100" onClick={() => handleRemoveNewDocument(index)}>
+                                        <Trash2 className="h-4 w-4"/>
+                                    </Button>
+                                 </div>
+                               ))}
+                            </div>
+                            <Button type="button" variant="outline" className="w-full" onClick={() => docFileInputRef.current?.click()}>
+                                <Upload className="mr-2 h-4 w-4" />
+                                Upload Documents
+                            </Button>
+                             <Input
+                                ref={docFileInputRef}
+                                type="file"
+                                className="hidden"
+                                multiple
+                                accept="image/*,.pdf"
+                                onChange={handleDocumentUpload}
+                            />
+                         </div>
+                      </div>
+
                       <DialogFooter className="md:col-span-2 mt-4">
                         <DialogClose asChild>
-                          <Button variant="outline">Cancel</Button>
+                          <Button variant="outline" disabled={isUploading}>Cancel</Button>
                         </DialogClose>
-                        <Button type="submit">Save Tenant</Button>
+                        <Button type="submit" disabled={isUploading}>
+                           {isUploading && <LoaderCircle className="animate-spin mr-2"/>}
+                           Save Tenant
+                        </Button>
                       </DialogFooter>
                     </form>
                   </DialogContent>

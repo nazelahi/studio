@@ -11,6 +11,7 @@ export type Tenant = {
   status: "Paid" | "Pending" | "Overdue";
   avatar: string;
   type?: string;
+  documents?: string[];
   created_at?: string;
 };
 
@@ -47,3 +48,4 @@ export type PropertySettings = {
 };
 
     
+

@@ -16,7 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import type { Tenant } from "@/types";
-import { Mail, Phone, Home, Calendar, DollarSign, FileText, Download, Printer, ImageIcon } from "lucide-react";
+import { Mail, Phone, Home, Calendar, DollarSign, FileText, Download, Printer, ImageIcon, File as FileIcon } from "lucide-react";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { format, parseISO } from 'date-fns';
@@ -176,6 +176,23 @@ export function TenantDetailSheet({
                     </div>
                 </CardContent>
             </Card>
+
+             {tenant.documents && tenant.documents.length > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-base">Documents</CardTitle>
+                </CardHeader>
+                <CardContent className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  {tenant.documents.map((doc, index) => (
+                    <a key={index} href={doc} target="_blank" rel="noopener noreferrer" className="group">
+                      <div className="aspect-square bg-muted rounded-md flex items-center justify-center group-hover:bg-accent transition-colors">
+                         <img src={doc} alt={`Document ${index + 1}`} className="max-h-full max-w-full object-contain" data-ai-hint="document id" />
+                      </div>
+                    </a>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
 
             {tenant.notes && (
                 <Card>

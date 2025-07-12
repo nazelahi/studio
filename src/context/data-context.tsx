@@ -18,8 +18,8 @@ type NewRentEntry = Omit<RentEntry, 'id' | 'avatar' | 'year' | 'month' | 'dueDat
 
 
 interface DataContextType extends AppData {
-  addTenant: (tenant: Omit<Tenant, 'id'>) => Promise<void>;
-  updateTenant: (tenant: Tenant) => Promise<void>;
+  addTenant: (tenant: Omit<Tenant, 'id'>, files?: File[]) => Promise<void>;
+  updateTenant: (tenant: Tenant, files?: File[]) => Promise<void>;
   deleteTenant: (tenantId: string) => Promise<void>;
   addExpense: (expense: Omit<Expense, 'id'>) => Promise<void>;
   updateExpense: (expense: Expense) => Promise<void>;
@@ -52,15 +52,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
             description: errorMessage,
             variant: 'destructive',
         });
+        throw new Error(errorMessage);
     };
 
     const fetchData = useCallback(async () => {
         setLoading(true);
         try {
-            // Simulate Supabase being unavailable locally if keys are missing
             if (!supabase) {
                 console.log("Supabase not initialized, loading local data.");
-                // Here you could load from localStorage as a fallback if you wish
                 setData({ tenants: [], expenses: [], rentData: [], propertySettings: null });
                 return;
             }
@@ -125,45 +124,89 @@ export function DataProvider({ children }: { children: ReactNode }) {
         };
     }, [fetchData, toast]);
 
-    const addTenant = async (tenantData: Omit<Tenant, 'id'>) => {
-        if (!supabase) return;
+    const uploadFiles = async (tenantId: string, files: File[]): Promise<string[]> => {
+        if (!supabase || files.length === 0) return [];
 
+        const uploadPromises = files.map(async (file) => {
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${tenantId}/${new Date().getTime()}.${fileExt}`;
+            const { error: uploadError, data: uploadData } = await supabase.storage
+                .from('tenant_documents')
+                .upload(fileName, file);
+
+            if (uploadError) {
+                handleError(uploadError, `uploading file ${file.name}`);
+                return null;
+            }
+
+            const { data: publicUrlData } = supabase.storage
+                .from('tenant_documents')
+                .getPublicUrl(uploadData.path);
+                
+            return publicUrlData.publicUrl;
+        });
+
+        const results = await Promise.all(uploadPromises);
+        return results.filter((url): url is string => url !== null);
+    };
+
+    const addTenant = async (tenantData: Omit<Tenant, 'id'>, files: File[] = []) => {
+        if (!supabase) return;
+        
+        // Insert tenant first to get an ID
         const { data: newTenant, error } = await supabase.from('tenants').insert([tenantData]).select().single();
-        if (error) {
+        if (error || !newTenant) {
             handleError(error, 'adding tenant');
             return;
         }
 
-        if (newTenant) {
-            const joinDate = parseISO(newTenant.joinDate);
-            const month = getMonth(joinDate);
-            const year = getYear(joinDate);
+        // Upload files with the new tenant ID
+        const uploadedUrls = await uploadFiles(newTenant.id, files);
+        
+        // Update tenant with document URLs
+        if (uploadedUrls.length > 0) {
+            const { error: updateError } = await supabase
+                .from('tenants')
+                .update({ documents: uploadedUrls })
+                .eq('id', newTenant.id);
 
-            const newRentEntryData = {
-                tenantId: newTenant.id,
-                name: newTenant.name,
-                property: newTenant.property,
-                rent: newTenant.rent,
-                status: 'Pending' as const,
-                avatar: newTenant.avatar,
-                dueDate: new Date(year, month, 1).toISOString().split('T')[0],
-                year,
-                month,
-            };
-            const { error: rentError } = await supabase.from('rent_entries').insert([newRentEntryData]);
-            if (rentError) handleError(rentError, 'auto-creating rent entry');
+            if (updateError) handleError(updateError, 'updating tenant with documents');
         }
+
+        // Auto-create initial rent entry
+        const joinDate = parseISO(newTenant.joinDate);
+        const month = getMonth(joinDate);
+        const year = getYear(joinDate);
+
+        const newRentEntryData = {
+            tenantId: newTenant.id,
+            name: newTenant.name,
+            property: newTenant.property,
+            rent: newTenant.rent,
+            status: 'Pending' as const,
+            avatar: newTenant.avatar,
+            dueDate: new Date(year, month, 1).toISOString().split('T')[0],
+            year,
+            month,
+        };
+        const { error: rentError } = await supabase.from('rent_entries').insert([newRentEntryData]);
+        if (rentError) handleError(rentError, 'auto-creating rent entry');
     };
 
-    const updateTenant = async (updatedTenant: Tenant) => {
+    const updateTenant = async (updatedTenant: Tenant, files: File[] = []) => {
         if (!supabase) return;
         const { id, ...tenantData } = updatedTenant;
-        const { error } = await supabase.from('tenants').update(tenantData).eq('id', id);
+        
+        const uploadedUrls = await uploadFiles(id, files);
+        const finalDocuments = [...(tenantData.documents || []), ...uploadedUrls];
+
+        const { error } = await supabase.from('tenants').update({ ...tenantData, documents: finalDocuments }).eq('id', id);
         if (error) {
             handleError(error, 'updating tenant');
             return;
         }
 
+        // Sync future rent entries
         const { error: rentUpdateError } = await supabase
             .from('rent_entries')
             .update({
@@ -180,6 +223,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
             handleError(rentUpdateError, 'syncing future rent entries');
         }
     };
+
 
     const deleteTenant = async (tenantId: string) => {
         if (!supabase) return;
