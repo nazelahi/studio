@@ -751,10 +751,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                            <DialogTrigger asChild>
                                 <Tooltip>
                                     <TooltipTrigger asChild>
-                                        <Button size="icon" onClick={() => {
-                                            setEditingRentEntry(null);
-                                            setSelectedHistoricalTenant(null);
-                                        }}>
+                                        <Button size="icon">
                                             <PlusCircle className="h-4 w-4" />
                                             <span className="sr-only">Add new entry</span>
                                         </Button>
@@ -1021,7 +1018,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                           <DialogTrigger asChild>
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <Button size="icon" onClick={() => setEditingExpense(null)}>
+                                    <Button size="icon">
                                         <PlusCircle className="h-4 w-4" />
                                         <span className="sr-only">Add new expense</span>
                                     </Button>
