@@ -261,7 +261,10 @@ export function WorkDetailsTab() {
                                     <AvatarImage src={assigned.avatar} />
                                     <AvatarFallback>{assigned.name.charAt(0)}</AvatarFallback>
                                 </Avatar>
-                                <span>{assigned.name}</span>
+                                <div>
+                                    <div className="font-medium">{assigned.name}</div>
+                                    <div className="text-sm text-muted-foreground">{assigned.property}</div>
+                                </div>
                             </div>
                         ) : (
                             <span className="text-muted-foreground">-</span>
@@ -314,3 +317,5 @@ export function WorkDetailsTab() {
     </Card>
   )
 }
+
+    
