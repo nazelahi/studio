@@ -118,6 +118,9 @@ export async function updatePropertySettingsAction(formData: FormData) {
 
     if (error) {
         console.error('Supabase error:', error);
+        if (error.message.includes('column "house_images" of relation "property_settings" does not exist')) {
+            return { error: 'Database update needed. The "house_images" column is missing. Please run the SQL command in the new schema.sql file in your Supabase SQL Editor.' };
+        }
         return { error: error.message };
     }
 
