@@ -1083,15 +1083,12 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                     </CardContent>
                 </Card>
                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between gap-4">
+                    <CardHeader className="flex flex-row items-center justify-between gap-4 border-b p-4">
                         <div className="flex items-center gap-4">
-                            <div className="flex-shrink-0 bg-primary/10 p-3 rounded-full">
+                           <div className="flex-shrink-0 bg-primary/10 p-3 rounded-full">
                                <Landmark className="h-6 w-6 text-primary" />
                             </div>
-                            <div>
-                                <CardTitle>Bank Deposit Information</CardTitle>
-                                <CardDescription>Manage the monthly bank deposit.</CardDescription>
-                            </div>
+                            <h3 className="text-lg font-semibold">Bank Deposit Information</h3>
                         </div>
                         {isAdmin && (
                             <Dialog open={isDepositDialogOpen} onOpenChange={setIsDepositDialogOpen}>
@@ -1131,39 +1128,42 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                             </Dialog>
                         )}
                     </CardHeader>
-                    <CardContent className="grid sm:grid-cols-2 gap-y-4 gap-x-8 text-sm pt-2">
-                        <div>
-                            <p className="font-medium text-muted-foreground">Bank Name</p>
-                            <p className="font-semibold text-lg">{settings.bankName || "Not Set"}</p>
+                    <CardContent className="p-4 grid md:grid-cols-3 gap-6">
+                        <div className="space-y-1">
+                            <p className="text-sm font-medium text-muted-foreground">Bank Name</p>
+                            <p className="font-semibold">{settings.bankName || "Not Set"}</p>
                         </div>
-                         <div>
-                            <p className="font-medium text-muted-foreground">Account Number</p>
-                            <p className="font-semibold text-lg">{settings.bankAccountNumber || "Not Set"}</p>
+                         <div className="space-y-1">
+                            <p className="text-sm font-medium text-muted-foreground">Account Number</p>
+                            <p className="font-semibold">{settings.bankAccountNumber || "Not Set"}</p>
                         </div>
                         {loggedDeposit ? (
-                          <>
-                             <div>
-                                <p className="font-medium text-muted-foreground">Amount Deposited</p>
-                                <p className="font-bold text-2xl text-success">৳{loggedDeposit.amount.toFixed(2)}</p>
-                            </div>
-                             <div>
-                                <p className="font-medium text-muted-foreground">Date of Deposit</p>
-                                <div className="flex items-center gap-2">
-                                    <CalendarCheck className="h-5 w-5 text-muted-foreground"/>
-                                    <p className="font-semibold text-lg">{format(parseISO(loggedDeposit.deposit_date), 'dd MMM, yyyy')}</p>
-                                </div>
-                            </div>
-                          </>
+                          <div className="space-y-1">
+                              <p className="text-sm font-medium text-muted-foreground">Deposit Status</p>
+                              <div className="flex items-center gap-2 text-success font-semibold">
+                                  <CheckCircle className="h-5 w-5" />
+                                  <span>Deposited on {format(parseISO(loggedDeposit.deposit_date), 'dd MMM, yyyy')}</span>
+                              </div>
+                          </div>
                         ) : (
-                         <div className="sm:col-span-2">
-                            <p className="font-medium text-muted-foreground">Amount to Deposit</p>
-                            <p className="font-bold text-2xl text-success">৳{amountForDeposit.toFixed(2)}</p>
-                        </div>
+                          <div className="space-y-1">
+                             <p className="text-sm font-medium text-muted-foreground">Deposit Status</p>
+                             <div className="flex items-center gap-2 text-warning-foreground font-semibold">
+                                 <AlertCircle className="h-5 w-5" />
+                                 <span>Pending Deposit</span>
+                             </div>
+                           </div>
                         )}
                     </CardContent>
-                    <CardFooter className="text-xs text-muted-foreground pt-4">
-                        Bank details are managed in the <Link href="/settings" className="underline">Settings</Link> page.
-                    </CardFooter>
+                     {loggedDeposit ? (
+                        <CardFooter className="bg-success/10 p-4 text-center">
+                            <p className="font-bold text-xl text-success w-full">৳{loggedDeposit.amount.toFixed(2)} Deposited</p>
+                        </CardFooter>
+                     ) : (
+                        <CardFooter className="bg-secondary p-4 text-center">
+                            <p className="font-bold text-xl text-primary w-full">৳{amountForDeposit.toFixed(2)} to Deposit</p>
+                        </CardFooter>
+                     )}
                 </Card>
             </div>
 
@@ -1182,5 +1182,3 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
     </>
   )
 }
-
-    
