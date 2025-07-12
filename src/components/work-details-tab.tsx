@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import * as React from "react"
@@ -305,7 +306,7 @@ export function WorkDetailsTab({ year }: { year: number }) {
           </TableBody>
             {filteredWorkDetails.length > 0 && (
                 <TableFooter>
-                    <TableRow className="bg-amber-500 hover:bg-amber-500/90 font-bold">
+                    <TableRow className="bg-lime-500 hover:bg-lime-500/90 font-bold">
                         <TableCell colSpan={4} className="text-white">Total for {year}</TableCell>
                         <TableCell className="text-right text-white">{formatCurrency(yearlyTotal)}</TableCell>
                         {isAdmin && <TableCell />}

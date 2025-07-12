@@ -975,7 +975,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                           ))}
                         </TableBody>
                          <TableFooter>
-                            <TableRow className="bg-amber-500 hover:bg-amber-500/90 font-bold">
+                            <TableRow className="bg-lime-500 hover:bg-lime-500/90 font-bold">
                                 <TableCell colSpan={isAdmin ? 4 : 3} className="text-white">Total Rent Collected</TableCell>
                                 <TableCell colSpan={2} className="text-right text-white">৳{totalRentCollected.toFixed(2)}</TableCell>
                                 <TableCell className="text-primary-foreground"></TableCell>
@@ -1180,7 +1180,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                           ))}
                         </TableBody>
                         <TableFooter>
-                            <TableRow className="bg-amber-500 hover:bg-amber-500/90 font-bold">
+                            <TableRow className="bg-lime-500 hover:bg-lime-500/90 font-bold">
                                 <TableCell colSpan={isAdmin ? 2 : 1} className="text-white">Total Expenses</TableCell>
                                 <TableCell className="text-left text-white">৳{totalExpenses.toFixed(2)}</TableCell>
                                 <TableCell colSpan={2}></TableCell>
@@ -1338,7 +1338,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                             <Dialog open={isDepositDialogOpen} onOpenChange={handleDepositOpenChange}>
                                 <DialogTrigger asChild>
                                     <Button size="icon" variant="secondary" className="h-8 w-8">
-                                        {loggedDeposit ? <Edit className="h-4 w-4" /> : <PlusCircle className="h-4 w-4" />}
+                                        <PlusCircle className="h-4 w-4" />
                                         <span className="sr-only">{loggedDeposit ? 'Edit Deposit' : 'Log Deposit'}</span>
                                     </Button>
                                 </DialogTrigger>
