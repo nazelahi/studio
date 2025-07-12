@@ -48,13 +48,6 @@ interface PageSettings {
         financial_title_label: string;
         financial_description_label: string;
     };
-    bank_account_settings: {
-        title: string;
-        description: string;
-        bank_name_label: string;
-        account_number_label: string;
-        add_button: string;
-    };
     security_settings: {
         title: string;
         description: string;
@@ -71,7 +64,6 @@ interface AppSettings {
   houseAddress: string;
   tabNames: TabNames;
   footerName: string;
-  bankAccounts: BankAccount[];
   page_dashboard: PageDashboard;
   page_overview: PageOverview;
   page_settings: PageSettings;
@@ -93,10 +85,6 @@ const defaultSettings: AppSettings = {
         reports: "Reports",
     },
     footerName: "© 2024 RentFlow. All Rights Reserved.",
-    bankAccounts: [
-        { name: "Main Bank", accountNumber: "123456789" },
-        { name: "Secondary Bank", accountNumber: "987654321" },
-    ],
     page_dashboard: {
         nav_dashboard: "Dashboard",
         nav_settings: "Settings",
@@ -127,13 +115,6 @@ const defaultSettings: AppSettings = {
             description: "Customize the text on the monthly overview page.",
             financial_title_label: "Financial Overview Title",
             financial_description_label: "Financial Overview Description",
-        },
-        bank_account_settings: {
-            title: "Bank Accounts",
-            description: "Manage bank accounts for deposits.",
-            bank_name_label: "Bank Name",
-            account_number_label: "Account Number",
-            add_button: "Add Account",
         },
         security_settings: {
             title: "Security",

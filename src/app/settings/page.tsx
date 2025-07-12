@@ -28,9 +28,6 @@ export default function SettingsPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoginOpen, setIsLoginOpen] = React.useState(false);
 
-  const [newBankName, setNewBankName] = useState('');
-  const [newAccountNumber, setNewAccountNumber] = useState('');
-
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     const keys = name.split('.');
@@ -69,29 +66,6 @@ export default function SettingsPage() {
       setNewPassword('');
       setConfirmPassword('');
     }
-  };
-
-  const handleAddBankAccount = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newBankName || !newAccountNumber) {
-        toast({ title: "Error", description: "Please fill both bank name and account number.", variant: "destructive" });
-        return;
-    }
-    setSettings(prev => ({
-        ...prev,
-        bankAccounts: [...prev.bankAccounts, { name: newBankName, accountNumber: newAccountNumber }]
-    }));
-    setNewBankName('');
-    setNewAccountNumber('');
-    toast({ title: "Bank Account Added", description: "The new account has been saved." });
-  };
-  
-  const handleDeleteBankAccount = (index: number) => {
-      setSettings(prev => ({
-          ...prev,
-          bankAccounts: prev.bankAccounts.filter((_, i) => i !== index)
-      }));
-      toast({ title: "Bank Account Removed", variant: "destructive" });
   };
 
   return (
@@ -205,39 +179,6 @@ export default function SettingsPage() {
                           <Input id="overview-financial-desc" name="page_overview.financial_overview_description" value={settings.page_overview.financial_overview_description} onChange={handleInputChange} />
                       </div>
                   </CardContent>
-              </Card>
-
-              <Card className="group-disabled:opacity-50">
-                <CardHeader>
-                    <CardTitle>{settings.page_settings.bank_account_settings.title}</CardTitle>
-                    <CardDescription>{settings.page_settings.bank_account_settings.description}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="space-y-4">
-                        {settings.bankAccounts.map((account, index) => (
-                            <div key={index} className="flex items-center justify-between p-2 bg-secondary rounded-md">
-                                <div>
-                                    <p className="font-medium">{account.name}</p>
-                                    <p className="text-sm text-muted-foreground">{account.accountNumber}</p>
-                                </div>
-                                <Button variant="ghost" size="icon" className="text-destructive" onClick={() => handleDeleteBankAccount(index)}>
-                                    <Trash2 className="h-4 w-4" />
-                                </Button>
-                            </div>
-                        ))}
-                    </div>
-                    <form onSubmit={handleAddBankAccount} className="mt-6 flex items-end gap-2">
-                        <div className="flex-grow space-y-2">
-                            <Label htmlFor="newBankName">{settings.page_settings.bank_account_settings.bank_name_label}</Label>
-                            <Input id="newBankName" value={newBankName} onChange={e => setNewBankName(e.target.value)} placeholder="e.g., Central Bank" />
-                        </div>
-                        <div className="flex-grow space-y-2">
-                            <Label htmlFor="newAccountNumber">{settings.page_settings.bank_account_settings.account_number_label}</Label>
-                            <Input id="newAccountNumber" value={newAccountNumber} onChange={e => setNewAccountNumber(e.target.value)} placeholder="e.g., 123-456-789" />
-                        </div>
-                        <Button type="submit">{settings.page_settings.bank_account_settings.add_button}</Button>
-                    </form>
-                </CardContent>
               </Card>
 
               {user && (
