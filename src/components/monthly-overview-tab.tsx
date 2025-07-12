@@ -748,21 +748,20 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                         </Tooltip>
 
                         <Dialog open={isRentDialogOpen} onOpenChange={handleRentOpenChange}>
-                          <DialogTrigger asChild>
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Button size="icon" onClick={() => {
-                                        setEditingRentEntry(null);
-                                        setSelectedHistoricalTenant(null);
-                                        setIsRentDialogOpen(true);
-                                    }}>
-                                        <PlusCircle className="h-4 w-4" />
-                                        <span className="sr-only">Add new entry</span>
-                                    </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>Add Entry</TooltipContent>
-                            </Tooltip>
-                          </DialogTrigger>
+                           <DialogTrigger asChild>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button size="icon" onOpen={() => {
+                                            setEditingRentEntry(null);
+                                            setSelectedHistoricalTenant(null);
+                                        }}>
+                                            <PlusCircle className="h-4 w-4" />
+                                            <span className="sr-only">Add new entry</span>
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Add Entry</TooltipContent>
+                                </Tooltip>
+                            </DialogTrigger>
                           <DialogContent>
                               <DialogHeader>
                                   <DialogTitle>{editingRentEntry ? 'Edit Rent Entry' : 'Add New Rent Entry'}</DialogTitle>
@@ -1022,7 +1021,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                           <DialogTrigger asChild>
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <Button size="icon" onClick={() => setEditingExpense(null)}>
+                                    <Button size="icon">
                                         <PlusCircle className="h-4 w-4" />
                                         <span className="sr-only">Add new expense</span>
                                     </Button>
