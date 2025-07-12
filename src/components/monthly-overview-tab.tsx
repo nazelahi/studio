@@ -471,7 +471,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
     setIsUploading(true);
 
     const formData = new FormData(event.currentTarget);
-    let receiptUrl: string | undefined = loggedDeposit?.receipt_url;
+    let receiptUrl: string | null = loggedDeposit?.receipt_url || null;
     let oldReceiptPath: string | undefined = undefined;
 
     if (receiptFile) {
@@ -494,8 +494,14 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
         receiptUrl = publicUrlData.publicUrl;
 
         if (loggedDeposit?.receipt_url) {
-            oldReceiptPath = new URL(loggedDeposit.receipt_url).pathname.split('/deposit-receipts/')[1];
-            formData.set('oldReceiptPath', oldReceiptPath);
+            try {
+                const url = new URL(loggedDeposit.receipt_url);
+                const pathParts = url.pathname.split('/');
+                oldReceiptPath = pathParts.slice(pathParts.indexOf('deposit-receipts') + 1).join('/');
+                formData.set('oldReceiptPath', oldReceiptPath);
+            } catch (e) {
+                console.error("Error parsing old receipt URL:", e);
+            }
         }
     }
 
@@ -506,8 +512,14 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
     if (result.error) {
         toast({ title: "Error", description: result.error, variant: "destructive" });
         if (receiptUrl && receiptUrl !== loggedDeposit?.receipt_url) {
-            const path = new URL(receiptUrl).pathname.split('/deposit-receipts/')[1];
-            await supabase.storage.from('deposit-receipts').remove([path]);
+            try {
+                const url = new URL(receiptUrl);
+                const pathParts = url.pathname.split('/');
+                const path = pathParts.slice(pathParts.indexOf('deposit-receipts') + 1).join('/');
+                await supabase.storage.from('deposit-receipts').remove([path]);
+            } catch (e) {
+                console.error("Error removing new receipt after failed DB update:", e);
+            }
         }
     } else {
         toast({ title: "Success", description: "Bank deposit has been logged." });
