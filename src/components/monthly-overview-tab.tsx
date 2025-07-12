@@ -6,7 +6,7 @@ import * as React from "react"
 import type { Tenant, Expense, RentEntry, Deposit, Notice } from "@/types"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { DollarSign, Banknote, ArrowUpCircle, ArrowDownCircle, PlusCircle, Trash2, Pencil, CheckCircle, XCircle, AlertCircle, RefreshCw, ChevronDown, Copy, X, FileText, Upload, Building, Landmark, CalendarCheck, Edit, Eye, Image as ImageIcon, Megaphone } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
@@ -32,6 +32,7 @@ import Link from "next/link"
 import { logDepositAction, deleteDepositAction } from "@/app/actions/deposits"
 import { saveNoticeAction, deleteNoticeAction } from "@/app/actions/notices"
 import { supabase } from "@/lib/supabase"
+import { cn } from "@/lib/utils"
 
 
 type HistoricalTenant = {
@@ -63,6 +64,15 @@ const getStatusBadge = (status: RentEntry["status"]) => {
         return "bg-gray-100 text-gray-800 border-gray-200";
     }
 };
+
+const getStatusRowClass = (status: RentEntry["status"]) => {
+    switch(status) {
+        case "Paid": return "bg-green-50/50";
+        case "Overdue": return "bg-red-50/50";
+        default: return "";
+    }
+};
+
 
 const getStatusIcon = (status: RentEntry["status"]) => {
     switch(status) {
@@ -857,8 +867,8 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                     {filteredTenantsForMonth.length > 0 ? (
                       <Table>
                         <TableHeader>
-                          <TableRow>
-                            {isAdmin && <TableHead className="w-10">
+                          <TableRow className="bg-primary hover:bg-primary/90">
+                            {isAdmin && <TableHead className="w-10 text-primary-foreground">
                                 <Checkbox
                                     checked={selectedRentEntryIds.length > 0 && selectedRentEntryIds.length === filteredTenantsForMonth.length}
                                     onCheckedChange={(checked) => {
@@ -870,17 +880,17 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                     }}
                                 />
                             </TableHead>}
-                            <TableHead>Tenant</TableHead>
-                            <TableHead className="hidden md:table-cell">Collected By</TableHead>
-                            <TableHead className="hidden sm:table-cell">Payment Date</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead className="hidden sm:table-cell">Amount</TableHead>
-                            <TableHead>Actions</TableHead>
+                            <TableHead className="text-primary-foreground">Tenant</TableHead>
+                            <TableHead className="hidden md:table-cell text-primary-foreground">Collected By</TableHead>
+                            <TableHead className="hidden sm:table-cell text-primary-foreground">Payment Date</TableHead>
+                            <TableHead className="text-primary-foreground">Status</TableHead>
+                            <TableHead className="hidden sm:table-cell text-primary-foreground">Amount</TableHead>
+                            <TableHead className="text-primary-foreground">Actions</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
                           {filteredTenantsForMonth.map((entry) => (
-                            <TableRow key={entry.id} data-state={isAdmin && selectedRentEntryIds.includes(entry.id) ? "selected" : undefined}>
+                            <TableRow key={entry.id} className={getStatusRowClass(entry.status)} data-state={isAdmin && selectedRentEntryIds.includes(entry.id) ? "selected" : undefined}>
                               {isAdmin && <TableCell>
                                   <Checkbox
                                       checked={selectedRentEntryIds.includes(entry.id)}
@@ -947,17 +957,18 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                             </TableRow>
                           ))}
                         </TableBody>
+                         <TableFooter>
+                            <TableRow className="bg-amber-500 hover:bg-amber-500/90 font-bold">
+                                <TableCell colSpan={isAdmin ? 4 : 3} className="text-white">Total Rent Collected</TableCell>
+                                <TableCell colSpan={2} className="text-right text-white">৳{totalRentCollected.toFixed(2)}</TableCell>
+                                <TableCell className="text-primary-foreground"></TableCell>
+                            </TableRow>
+                        </TableFooter>
                       </Table>
                     ) : (
                       <div className="text-center text-muted-foreground p-10">No rent collection data for {month} {year}.</div>
                     )}
                   </CardContent>
-                  {filteredTenantsForMonth.length > 0 && (
-                     <CardFooter className="bg-secondary p-4 flex justify-between">
-                        <div className="font-semibold">Total Rent Collected</div>
-                        <div className="font-bold text-lg text-primary">৳{totalRentCollected.toFixed(2)}</div>
-                     </CardFooter>
-                  )}
                 </Card>
               </TabsContent>
               <TabsContent value="expenses">
@@ -1067,94 +1078,93 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                         </Dialog>
                     </div>}
                   </CardHeader>
-                  <CardContent>
+                  <CardContent className="p-0">
                     {filteredExpenses.length > 0 ? (
-                      <>
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                               {isAdmin && <TableHead className="w-10">
-                                    <Checkbox
-                                        checked={selectedExpenseIds.length > 0 && selectedExpenseIds.length === filteredExpenses.length}
-                                        onCheckedChange={(checked) => {
-                                            if (checked) {
-                                                setSelectedExpenseIds(filteredExpenses.map(e => e.id));
-                                            } else {
-                                                setSelectedExpenseIds([]);
-                                            }
-                                        }}
-                                    />
-                                </TableHead>}
-                              <TableHead>Details</TableHead>
-                              <TableHead>Amount</TableHead>
-                              <TableHead>Status</TableHead>
-                              <TableHead>Actions</TableHead>
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="bg-primary hover:bg-primary/90">
+                              {isAdmin && <TableHead className="w-10 text-primary-foreground">
+                                  <Checkbox
+                                      checked={selectedExpenseIds.length > 0 && selectedExpenseIds.length === filteredExpenses.length}
+                                      onCheckedChange={(checked) => {
+                                          if (checked) {
+                                              setSelectedExpenseIds(filteredExpenses.map(e => e.id));
+                                          } else {
+                                              setSelectedExpenseIds([]);
+                                          }
+                                      }}
+                                  />
+                              </TableHead>}
+                            <TableHead className="text-primary-foreground">Details</TableHead>
+                            <TableHead className="text-primary-foreground">Amount</TableHead>
+                            <TableHead className="text-primary-foreground">Status</TableHead>
+                            <TableHead className="text-primary-foreground">Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {filteredExpenses.map((expense) => (
+                            <TableRow key={expense.id} className={expense.status === 'Paid' ? 'bg-green-50/50' : ''} data-state={isAdmin && selectedExpenseIds.includes(expense.id) ? "selected" : undefined}>
+                              {isAdmin && <TableCell>
+                                  <Checkbox
+                                      checked={selectedExpenseIds.includes(expense.id)}
+                                      onCheckedChange={(checked) => {
+                                          setSelectedExpenseIds(prev => 
+                                              checked ? [...prev, expense.id] : prev.filter(id => id !== expense.id)
+                                          );
+                                      }}
+                                  />
+                              </TableCell>}
+                              <TableCell>
+                                  <div className="font-medium">{expense.category}</div>
+                                  <div className="text-sm text-muted-foreground hidden sm:block">{expense.description}</div>
+                              </TableCell>
+                              <TableCell>৳{expense.amount.toFixed(2)}</TableCell>
+                              <TableCell>
+                                <Badge className={getExpenseStatusBadge(expense.status)}>
+                                  {expense.status}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                    {isAdmin && <>
+                                      <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => handleEditExpense(expense)}>
+                                        <Pencil className="h-4 w-4" />
+                                        <span className="sr-only">Edit</span>
+                                      </Button>
+                                      <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                            <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive">
+                                            <Trash2 className="h-4 w-4" />
+                                            <span className="sr-only">Delete</span>
+                                          </Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                          <AlertDialogHeader>
+                                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                              This action cannot be undone. This will permanently delete the expense.
+                                            </AlertDialogDescription>
+                                          </AlertDialogHeader>
+                                          <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                            <AlertDialogAction onClick={() => handleDeleteExpense(expense.id)}>Delete</AlertDialogAction>
+                                          </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                      </AlertDialog>
+                                    </>}
+                                </div>
+                              </TableCell>
                             </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {filteredExpenses.map((expense) => (
-                              <TableRow key={expense.id} data-state={isAdmin && selectedExpenseIds.includes(expense.id) ? "selected" : undefined}>
-                                {isAdmin && <TableCell>
-                                    <Checkbox
-                                        checked={selectedExpenseIds.includes(expense.id)}
-                                        onCheckedChange={(checked) => {
-                                            setSelectedExpenseIds(prev => 
-                                                checked ? [...prev, expense.id] : prev.filter(id => id !== expense.id)
-                                            );
-                                        }}
-                                    />
-                                </TableCell>}
-                                <TableCell>
-                                    <div className="font-medium">{expense.category}</div>
-                                    <div className="text-sm text-muted-foreground hidden sm:block">{expense.description}</div>
-                                </TableCell>
-                                <TableCell>৳{expense.amount.toFixed(2)}</TableCell>
-                                <TableCell>
-                                  <Badge className={getExpenseStatusBadge(expense.status)}>
-                                    {expense.status}
-                                  </Badge>
-                                </TableCell>
-                                <TableCell>
-                                  <div className="flex items-center gap-2">
-                                     {isAdmin && <>
-                                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => handleEditExpense(expense)}>
-                                          <Pencil className="h-4 w-4" />
-                                          <span className="sr-only">Edit</span>
-                                        </Button>
-                                        <AlertDialog>
-                                          <AlertDialogTrigger asChild>
-                                             <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive">
-                                              <Trash2 className="h-4 w-4" />
-                                              <span className="sr-only">Delete</span>
-                                            </Button>
-                                          </AlertDialogTrigger>
-                                          <AlertDialogContent>
-                                            <AlertDialogHeader>
-                                              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                              <AlertDialogDescription>
-                                                This action cannot be undone. This will permanently delete the expense.
-                                              </AlertDialogDescription>
-                                            </AlertDialogHeader>
-                                            <AlertDialogFooter>
-                                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                              <AlertDialogAction onClick={() => handleDeleteExpense(expense.id)}>Delete</AlertDialogAction>
-                                            </AlertDialogFooter>
-                                          </AlertDialogContent>
-                                        </AlertDialog>
-                                      </>}
-                                  </div>
-                                </TableCell>
-                              </TableRow>
-                            ))}
-                          </TableBody>
-                        </Table>
-                        <div className="flex justify-end items-center mt-4 pt-4 border-t">
-                          <div className="text-lg font-bold flex items-center gap-2">
-                            <DollarSign className="h-5 w-5 text-muted-foreground" />
-                            <span>Total: ৳{totalExpenses.toFixed(2)}</span>
-                          </div>
-                        </div>
-                      </>
+                          ))}
+                        </TableBody>
+                        <TableFooter>
+                            <TableRow className="bg-amber-500 hover:bg-amber-500/90 font-bold">
+                                <TableCell colSpan={isAdmin ? 2 : 1} className="text-white">Total Expenses</TableCell>
+                                <TableCell className="text-left text-white">৳{totalExpenses.toFixed(2)}</TableCell>
+                                <TableCell colSpan={2}></TableCell>
+                            </TableRow>
+                        </TableFooter>
+                      </Table>
                     ) : (
                       <div className="text-center text-muted-foreground py-10">No expense data for {month} {year}.</div>
                     )}
