@@ -11,7 +11,7 @@ import { useSettings } from "@/context/settings-context"
 import { usePathname, useRouter } from "next/navigation"
 import { useAuth } from "@/context/auth-context"
 import { Button } from "@/components/ui/button"
-import { User, LogOut, KeyRound, MapPin, Trash2, Menu, Settings, LockKeyhole, LoaderCircle, LogIn } from "lucide-react"
+import { User, LogOut, MapPin, Menu, Settings, LoaderCircle, LogIn } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useToast } from "@/hooks/use-toast"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from "@/components/ui/sheet"
@@ -179,10 +179,10 @@ export default function SettingsPage() {
             </nav>
           </SheetContent>
         </Sheet>
-        <div className="flex-1 text-center">
+        <div className="flex-1 text-center min-w-0">
             <h1 className="text-base sm:text-lg font-bold tracking-tight text-primary truncate">{settings.houseName}</h1>
             <div className="flex items-center justify-center gap-2 mt-1 text-xs text-muted-foreground">
-                <MapPin className="h-3 w-3" />
+                <MapPin className="h-3 w-3 flex-shrink-0" />
                 <p className="truncate">{settings.houseAddress}</p>
             </div>
         </div>
@@ -222,7 +222,7 @@ export default function SettingsPage() {
             <h1 className="text-3xl font-semibold">{settings.page_settings.title}</h1>
           </div>
           <div className="mx-auto grid w-full max-w-6xl items-start gap-6">
-            <div className="group grid gap-6">
+            <div className="grid gap-6">
               <form action={handleSavePropertyDetails}>
                 <fieldset disabled={!isAdmin} className="group">
                     <Card className="group-disabled:opacity-50">
@@ -289,7 +289,7 @@ export default function SettingsPage() {
                             <CardTitle>{settings.page_settings.app_settings.title}</CardTitle>
                             <CardDescription>{settings.page_settings.app_settings.description}</CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-6">
+                        <CardContent className="grid sm:grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="appName">{settings.page_settings.app_settings.header_name_label}</Label>
                                 <Input id="appName" name="appName" value={settings.appName} onChange={handleInputChange} />

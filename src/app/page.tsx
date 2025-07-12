@@ -9,7 +9,7 @@ import { Logo } from "@/components/icons"
 import DashboardTabs from "@/components/dashboard-tabs"
 import { useAuth } from "@/context/auth-context"
 import { Button } from "@/components/ui/button"
-import { User, LogOut, MapPin, Menu, Settings, LockKeyhole, LogIn } from "lucide-react"
+import { User, LogOut, MapPin, Menu, Settings, LogIn } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from "@/components/ui/sheet"
 import { LoginDialog } from "@/components/login-dialog"
@@ -96,10 +96,10 @@ export default function HomePage() {
             </nav>
           </SheetContent>
         </Sheet>
-        <div className="flex-1 text-center">
+        <div className="flex-1 text-center min-w-0">
             <h1 className="text-base sm:text-lg font-bold tracking-tight text-primary truncate">{settings.houseName}</h1>
             <div className="flex items-center justify-center gap-2 mt-1 text-xs text-muted-foreground">
-                <MapPin className="h-3 w-3" />
+                <MapPin className="h-3 w-3 flex-shrink-0" />
                 <p className="truncate">{settings.houseAddress}</p>
             </div>
         </div>

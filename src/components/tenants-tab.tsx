@@ -229,7 +229,7 @@ export function TenantsTab() {
                       {settings.page_tenants.add_tenant_button}
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="sm:max-w-[600px]">
+                  <DialogContent className="sm:max-w-xl">
                     <DialogHeader>
                       <DialogTitle>{editingTenant ? 'Edit Tenant' : 'Add New Tenant'}</DialogTitle>
                       <DialogDescription>
@@ -372,19 +372,22 @@ export function TenantsTab() {
                   {filteredTenants.length > 0 ? filteredTenants.map((tenant) => (
                   <TableRow key={tenant.id}>
                       <TableCell>
-                      <div className="flex items-center gap-3">
-                          <Avatar className="h-10 w-10">
-                          <AvatarImage
-                              src={tenant.avatar}
-                              alt={tenant.name}
-                              data-ai-hint="person avatar"
-                          />
-                          <AvatarFallback>
-                              {tenant.name.split(' ').map(n => n[0]).join('')}
-                          </AvatarFallback>
-                          </Avatar>
-                          <div className="font-medium">{tenant.name}</div>
-                      </div>
+                        <div className="flex items-center gap-3">
+                            <Avatar className="h-10 w-10">
+                            <AvatarImage
+                                src={tenant.avatar}
+                                alt={tenant.name}
+                                data-ai-hint="person avatar"
+                            />
+                            <AvatarFallback>
+                                {tenant.name.split(' ').map(n => n[0]).join('')}
+                            </AvatarFallback>
+                            </Avatar>
+                            <div className="flex flex-col">
+                                <span className="font-medium">{tenant.name}</span>
+                                <span className="text-muted-foreground sm:hidden">৳{tenant.rent.toFixed(2)}</span>
+                            </div>
+                        </div>
                       </TableCell>
                       <TableCell className="hidden lg:table-cell">
                           <div className="flex flex-col gap-1">

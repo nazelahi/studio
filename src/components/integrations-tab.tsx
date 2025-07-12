@@ -112,7 +112,7 @@ export function IntegrationsTab() {
           </div>
           <div className="space-y-2">
             <Label>Reminder Schedule</Label>
-            <div className="flex items-center gap-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                 <div className="flex items-center gap-2">
                     <Checkbox id="schedule-before" />
                     <Label htmlFor="schedule-before" className="font-normal">3 days before due date</Label>
@@ -164,7 +164,7 @@ export function IntegrationsTab() {
                         <p className="font-medium text-secondary-foreground">Status: <span className="text-primary font-bold">Ready</span></p>
                         <p className="text-muted-foreground">This will save a JSON file to your computer.</p>
                     </div>
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                         <Button onClick={handleBackup} disabled={isProcessing} className="w-full">
                             {isProcessing ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <HardDriveDownload className="mr-2 h-4 w-4"/>}
                             {isProcessing ? "Processing..." : "Backup to File"}
