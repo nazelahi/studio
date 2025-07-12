@@ -1181,70 +1181,63 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                             <h3 className="text-lg font-semibold">Monthly Notice</h3>
                         </div>
                         {isAdmin && (
-                            <Dialog open={isNoticeDialogOpen} onOpenChange={setIsNoticeDialogOpen}>
-                                <div className="flex items-center gap-1">
-                                    {monthlyNotice ? (
-                                        <>
-                                            <DialogTrigger asChild>
-                                                <Button size="icon" variant="ghost" className="h-8 w-8">
-                                                    <Edit className="h-4 w-4" />
-                                                </Button>
-                                            </DialogTrigger>
-                                            <AlertDialog>
-                                                <AlertDialogTrigger asChild>
-                                                    <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive">
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
-                                                </AlertDialogTrigger>
-                                                <AlertDialogContent>
-                                                    <AlertDialogHeader>
-                                                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                                        <AlertDialogDescription>
-                                                            This action cannot be undone. This will permanently delete the notice for this month.
-                                                        </AlertDialogDescription>
-                                                    </AlertDialogHeader>
-                                                    <AlertDialogFooter>
-                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                        <form onSubmit={handleDeleteNotice}>
-                                                            <input type="hidden" name="noticeId" value={monthlyNotice.id} />
-                                                            <AlertDialogAction type="submit" disabled={isNoticePending}>Delete</AlertDialogAction>
-                                                        </form>
-                                                    </AlertDialogFooter>
-                                                </AlertDialogContent>
-                                            </AlertDialog>
-                                        </>
-                                    ) : (
-                                        <DialogTrigger asChild>
-                                            <Button size="icon" variant="outline" className="h-8 w-8">
-                                                <PlusCircle className="h-4 w-4" />
-                                            </Button>
-                                        </DialogTrigger>
-                                    )}
-                                </div>
-                                <DialogContent>
-                                    <DialogHeader>
-                                        <DialogTitle>{monthlyNotice ? 'Edit' : 'Add'} Monthly Notice</DialogTitle>
-                                        <DialogDescription>
-                                            This notice will be displayed on the overview for {month}, {year}.
-                                        </DialogDescription>
-                                    </DialogHeader>
-                                    <form onSubmit={handleSaveNotice}>
-                                        <input type="hidden" name="year" value={year} />
-                                        <input type="hidden" name="month" value={months.indexOf(month)} />
-                                        {monthlyNotice && <input type="hidden" name="noticeId" value={monthlyNotice.id} />}
-                                        <div className="grid gap-4 py-4">
-                                            <div className="space-y-2">
-                                                <Label htmlFor="notice-content">Notice Content</Label>
-                                                <Textarea id="notice-content" name="content" rows={5} defaultValue={monthlyNotice?.content} required />
+                            <div className="flex items-center gap-1">
+                                <Dialog open={isNoticeDialogOpen} onOpenChange={setIsNoticeDialogOpen}>
+                                    <DialogTrigger asChild>
+                                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => {}}>
+                                            {monthlyNotice ? <Edit className="h-4 w-4" /> : <PlusCircle className="h-4 w-4" />}
+                                        </Button>
+                                    </DialogTrigger>
+                                    <DialogContent>
+                                        <DialogHeader>
+                                            <DialogTitle>{monthlyNotice ? 'Edit' : 'Add'} Monthly Notice</DialogTitle>
+                                            <DialogDescription>
+                                                This notice will be displayed on the overview for {month}, {year}.
+                                            </DialogDescription>
+                                        </DialogHeader>
+                                        <form onSubmit={handleSaveNotice}>
+                                            <input type="hidden" name="year" value={year} />
+                                            <input type="hidden" name="month" value={months.indexOf(month)} />
+                                            {monthlyNotice && <input type="hidden" name="noticeId" value={monthlyNotice.id} />}
+                                            <div className="grid gap-4 py-4">
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="notice-content">Notice Content</Label>
+                                                    <Textarea id="notice-content" name="content" rows={5} defaultValue={monthlyNotice?.content} required />
+                                                </div>
                                             </div>
-                                        </div>
-                                        <DialogFooter>
-                                            <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
-                                            <Button type="submit" disabled={isNoticePending}>Save Notice</Button>
-                                        </DialogFooter>
-                                    </form>
-                                </DialogContent>
-                            </Dialog>
+                                            <DialogFooter>
+                                                <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
+                                                <Button type="submit" disabled={isNoticePending}>Save Notice</Button>
+                                            </DialogFooter>
+                                        </form>
+                                    </DialogContent>
+                                </Dialog>
+
+                                {monthlyNotice && (
+                                     <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                            <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive">
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                    This action cannot be undone. This will permanently delete the notice for this month.
+                                                </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                <form onSubmit={handleDeleteNotice}>
+                                                    <input type="hidden" name="noticeId" value={monthlyNotice.id} />
+                                                    <AlertDialogAction type="submit" disabled={isNoticePending}>Delete</AlertDialogAction>
+                                                </form>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
+                                )}
+                            </div>
                         )}
                     </CardHeader>
                     {monthlyNotice?.content ? (
@@ -1312,17 +1305,17 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                     </CardContent>
                 </Card>
                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between gap-4 border-b p-4">
+                    <CardHeader className="flex flex-row items-center justify-between gap-4 p-4 bg-primary text-primary-foreground">
                         <div className="flex items-center gap-4">
-                           <div className="flex-shrink-0 bg-primary/10 p-3 rounded-full">
-                               <Landmark className="h-6 w-6 text-primary" />
+                           <div className="flex-shrink-0 bg-primary-foreground/10 p-3 rounded-full">
+                               <Landmark className="h-6 w-6 text-primary-foreground" />
                             </div>
                             <h3 className="text-lg font-semibold">Bank Deposit Information</h3>
                         </div>
                         {isAdmin && (
                             <Dialog open={isDepositDialogOpen} onOpenChange={handleDepositOpenChange}>
                                 <DialogTrigger asChild>
-                                    <Button size="sm" variant={loggedDeposit ? 'outline' : 'default'}>
+                                    <Button size="sm" variant={loggedDeposit ? 'outline' : 'secondary'}>
                                         {loggedDeposit ? <Edit className="mr-2 h-4 w-4" /> : <PlusCircle className="mr-2 h-4 w-4" />}
                                         {loggedDeposit ? 'Edit Deposit' : 'Log Deposit'}
                                     </Button>
