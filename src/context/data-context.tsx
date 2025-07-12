@@ -45,10 +45,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const { toast } = useToast();
 
     const handleError = (error: any, context: string) => {
-        console.error(`Error in ${context}:`, error);
+        const errorMessage = error.message || 'An unexpected error occurred.';
+        console.error(`Error in ${context}:`, errorMessage, error);
         toast({
             title: `Error: ${context}`,
-            description: error.message || 'An unexpected error occurred.',
+            description: errorMessage,
             variant: 'destructive',
         });
     };
@@ -65,13 +66,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
                 supabase.from('tenants').select('*'),
                 supabase.from('expenses').select('*'),
                 supabase.from('rent_entries').select('*'),
-                supabase.from('property_settings').select('*').eq('id', 1).single()
+                supabase.from('property_settings').select('*').eq('id', 1).maybeSingle()
             ]);
 
             if (tenantsRes.error) throw tenantsRes.error;
             if (expensesRes.error) throw expensesRes.error;
             if (rentDataRes.error) throw rentDataRes.error;
-            if (propertySettingsRes.error) throw propertySettingsRes.error;
+            // .maybeSingle() doesn't throw an error if not found, but can still have other errors
+            if (propertySettingsRes.error && propertySettingsRes.error.code !== 'PGRST116') {
+                 throw propertySettingsRes.error;
+            }
             
             setData({
                 tenants: tenantsRes.data as Tenant[],
