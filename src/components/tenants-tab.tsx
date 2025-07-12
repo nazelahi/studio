@@ -21,6 +21,7 @@ import { TenantDetailSheet } from "./tenant-detail-sheet"
 import { useAuth } from "@/context/auth-context"
 import { useSettings } from "@/context/settings-context"
 import { format, parseISO } from "date-fns"
+import { Badge } from "./ui/badge"
 
 export function TenantsTab() {
   const { tenants, addTenant, updateTenant, deleteTenant, loading } = useData();
@@ -189,22 +190,28 @@ export function TenantsTab() {
     setOpen(isOpen);
   };
   
+  const getStatusBadge = (status: Tenant['status']) => {
+    switch (status) {
+      case 'Paid':
+        return 'bg-success text-success-foreground hover:bg-success/80';
+      case 'Pending':
+        return 'bg-warning text-warning-foreground hover:bg-warning/80';
+      case 'Overdue':
+        return 'bg-destructive text-destructive-foreground hover:bg-destructive/80';
+      default:
+        return '';
+    }
+  };
+  
   const TenantCardSkeleton = () => (
-    <Card className="flex flex-col">
-      <CardHeader className="flex flex-row justify-end items-center p-2">
-         <Skeleton className="h-6 w-6" />
-      </CardHeader>
-      <CardContent className="flex flex-col items-center text-center p-4 pt-0">
-        <Skeleton className="h-20 w-20 rounded-full mb-4" />
-        <Skeleton className="h-6 w-3/4 mb-1" />
-        <Skeleton className="h-4 w-1/2 mb-4" />
-        <div className="w-full space-y-3">
+    <Card className="flex flex-col overflow-hidden">
+        <Skeleton className="h-40 w-full bg-muted" />
+        <CardContent className="p-4 space-y-3">
             <Skeleton className="h-4 w-full" />
             <Skeleton className="h-4 w-full" />
             <Skeleton className="h-4 w-full" />
             <Skeleton className="h-4 w-full" />
-        </div>
-      </CardContent>
+        </CardContent>
     </Card>
   );
 
@@ -415,57 +422,62 @@ export function TenantsTab() {
             ) : (
                  <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                   {filteredTenants.length > 0 ? filteredTenants.map((tenant) => (
-                    <Card key={tenant.id} className="flex flex-col">
-                        <CardHeader className="flex flex-row justify-end items-center p-2">
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="h-8 w-8">
-                                      <MoreHorizontal className="h-4 w-4" />
-                                      <span className="sr-only">More options</span>
-                                  </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem onClick={() => handleViewDetails(tenant)}>
-                                  <FileText className="mr-2 h-4 w-4" />
-                                  View Details
-                                </DropdownMenuItem>
-                                {isAdmin && <>
-                                  <DropdownMenuSeparator />
-                                  <DropdownMenuItem onClick={() => handleEdit(tenant)}>Edit</DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => handleDelete(tenant.id)} className="text-destructive">
-                                      Delete
-                                  </DropdownMenuItem>
-                                </>}
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                        </CardHeader>
-                        <CardContent className="flex flex-col items-center text-center p-4 pt-0">
-                            <Avatar className="h-20 w-20 mb-4">
-                                <AvatarImage src={tenant.avatar} alt={tenant.name} data-ai-hint="person avatar" />
-                                <AvatarFallback>{tenant.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
-                            </Avatar>
-                            <h3 className="font-semibold text-lg">{tenant.name}</h3>
-                            <p className="text-sm text-muted-foreground mb-4">{tenant.email}</p>
+                    <Card key={tenant.id} className="flex flex-col overflow-hidden shadow-md transition-shadow hover:shadow-lg">
+                        <div className="relative">
+                            <img src={tenant.avatar} alt={tenant.name} className="w-full h-40 object-cover" data-ai-hint="person avatar" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                            <div className="absolute bottom-0 left-0 p-4">
+                                <h3 className="font-bold text-lg text-white" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.7)' }}>{tenant.name}</h3>
+                                <p className="text-sm text-white/90" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.5)' }}>{tenant.property}</p>
+                            </div>
+                             <div className="absolute top-2 right-2">
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                      <Button variant="secondary" size="icon" className="h-8 w-8 rounded-full">
+                                          <MoreHorizontal className="h-4 w-4" />
+                                          <span className="sr-only">More options</span>
+                                      </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuItem onClick={() => handleViewDetails(tenant)}>
+                                      <FileText className="mr-2 h-4 w-4" />
+                                      View Details
+                                    </DropdownMenuItem>
+                                    {isAdmin && <>
+                                      <DropdownMenuSeparator />
+                                      <DropdownMenuItem onClick={() => handleEdit(tenant)}>Edit</DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => handleDelete(tenant.id)} className="text-destructive">
+                                          Delete
+                                      </DropdownMenuItem>
+                                    </>}
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                            </div>
+                        </div>
 
-                            <div className="w-full text-left text-sm space-y-3">
-                                <div className="flex justify-between items-center">
-                                    <span className="text-muted-foreground flex items-center gap-2"><Phone className="h-4 w-4"/> Phone:</span>
-                                    <span>{tenant.phone || "N/A"}</span>
+                        <CardContent className="p-4 flex-grow flex flex-col">
+                            <div className="text-sm space-y-3 flex-grow">
+                                <div className="flex items-center gap-3">
+                                    <Mail className="h-4 w-4 text-muted-foreground" />
+                                    <a href={`mailto:${tenant.email}`} className="truncate text-primary hover:underline">{tenant.email}</a>
                                 </div>
-                                <div className="flex justify-between items-center">
-                                    <span className="text-muted-foreground flex items-center gap-2"><Home className="h-4 w-4"/> Flat Name:</span>
-                                    <span>{tenant.property}</span>
+                                <div className="flex items-center gap-3">
+                                    <Phone className="h-4 w-4 text-muted-foreground"/>
+                                    <a href={`tel:${tenant.phone}`} className="text-primary hover:underline">{tenant.phone || "N/A"}</a>
                                 </div>
                                 {tenant.type && (
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-muted-foreground flex items-center gap-2"><Briefcase className="h-4 w-4"/> Type:</span>
+                                    <div className="flex items-center gap-3">
+                                        <Briefcase className="h-4 w-4 text-muted-foreground"/>
                                         <span>{tenant.type}</span>
                                     </div>
                                 )}
-                                <div className="flex justify-between items-center">
-                                    <span className="text-muted-foreground flex items-center gap-2"><Calendar className="h-4 w-4"/> Join Date:</span>
-                                    <span>{format(parseISO(tenant.joinDate), "MMM dd, yyyy")}</span>
+                                <div className="flex items-center gap-3">
+                                    <Calendar className="h-4 w-4 text-muted-foreground"/>
+                                    <span>Joined: {format(parseISO(tenant.joinDate), "MMM dd, yyyy")}</span>
                                 </div>
+                            </div>
+                            <div className="mt-4 pt-4 border-t">
+                                <Badge className={`${getStatusBadge(tenant.status)} w-full justify-center`}>{tenant.status}</Badge>
                             </div>
                         </CardContent>
                     </Card>
@@ -488,3 +500,4 @@ export function TenantsTab() {
     </>
   );
 }
+
