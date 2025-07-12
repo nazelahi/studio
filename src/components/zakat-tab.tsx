@@ -22,6 +22,7 @@ import type { ZakatTransaction } from "@/types"
 import { Skeleton } from "./ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs"
 import { useSettings } from "@/context/settings-context"
+import { cn } from "@/lib/utils"
 
 const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'BDT' }).format(amount).replace('BDT', '৳');
@@ -72,7 +73,6 @@ export function ZakatTab() {
       toast({ title: 'Error deleting transaction', description: result.error, variant: 'destructive' });
     } else {
       toast({ title: 'Transaction Deleted', description: 'The Zakat transaction has been removed.' });
-      refreshData();
     }
   };
 
@@ -89,7 +89,6 @@ export function ZakatTab() {
         toast({ title: 'Error saving transaction', description: result.error, variant: 'destructive' });
       } else {
         toast({ title: editingTransaction ? 'Transaction Updated' : 'Transaction Added', description: 'Your Zakat transaction has been saved.' });
-        refreshData();
         handleOpenChange(false);
       }
     });
@@ -143,18 +142,18 @@ export function ZakatTab() {
     return (
      <Table>
         <TableHeader>
-          <TableRow>
-            <TableHead>Date</TableHead>
-            <TableHead>{type === 'inflow' ? 'Source' : 'Recipient'}</TableHead>
-            <TableHead>Description</TableHead>
-            <TableHead className="text-right">Amount</TableHead>
-            {isAdmin && <TableHead>Actions</TableHead>}
+          <TableRow className="bg-primary hover:bg-primary/90">
+            <TableHead className="text-primary-foreground">Date</TableHead>
+            <TableHead className="text-primary-foreground">{type === 'inflow' ? 'Source' : 'Recipient'}</TableHead>
+            <TableHead className="text-primary-foreground">Description</TableHead>
+            <TableHead className="text-right text-primary-foreground">Amount</TableHead>
+            {isAdmin && <TableHead className="text-primary-foreground">Actions</TableHead>}
           </TableRow>
         </TableHeader>
         <TableBody>
           {transactions.length > 0 ? (
             transactions.map(tx => (
-              <TableRow key={tx.id}>
+              <TableRow key={tx.id} className={cn(type === 'inflow' ? 'bg-green-50/50' : 'bg-red-50/50')}>
                 <TableCell>{format(parseISO(tx.transaction_date), "dd MMM, yyyy")}</TableCell>
                 <TableCell className="font-medium">{tx.source_or_recipient}</TableCell>
                 <TableCell className="text-muted-foreground">{tx.description || '-'}</TableCell>
@@ -210,10 +209,10 @@ export function ZakatTab() {
         </TableBody>
         {transactions.length > 0 && (
             <UiTableFooter>
-                <TableRow>
-                    <TableCell colSpan={isAdmin ? 3 : 2}></TableCell>
-                    <TableCell className="text-right font-bold">Total</TableCell>
-                    <TableCell className={`text-right font-bold ${type === 'inflow' ? 'text-green-600' : 'text-red-600'}`}>
+                <TableRow className="bg-amber-500 hover:bg-amber-500/90 font-bold">
+                    <TableCell colSpan={isAdmin ? 2 : 1}></TableCell>
+                    <TableCell className="text-white text-right font-bold">Total</TableCell>
+                    <TableCell className="text-right text-white">
                         {formatCurrency(totalAmount)}
                     </TableCell>
                     {isAdmin && <TableCell />}
