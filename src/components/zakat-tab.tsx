@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button"
 import { PlusCircle, Edit, Trash2, ArrowUpCircle, ArrowDownCircle, Banknote, LoaderCircle, Settings, Landmark, Eye, Upload, ImageIcon } from "lucide-react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { format, parseISO } from "date-fns"
+import { format, parseISO, getYear } from "date-fns"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/context/auth-context"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog"
@@ -27,7 +27,7 @@ const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'BDT' }).format(amount).replace('BDT', '৳');
 };
 
-export function ZakatTab() {
+export function ZakatTab({ year }: { year: number }) {
   const { zakatTransactions, loading, refreshData } = useData();
   const { isAdmin } = useAuth();
   const { settings } = useSettings();
@@ -43,6 +43,16 @@ export function ZakatTab() {
   const [receiptFile, setReceiptFile] = React.useState<File | null>(null);
   const receiptInputRef = React.useRef<HTMLInputElement>(null);
   const formRef = React.useRef<HTMLFormElement>(null);
+
+  const filteredTransactions = React.useMemo(() => {
+    return zakatTransactions.filter(tx => {
+        try {
+            return getYear(parseISO(tx.transaction_date)) === year;
+        } catch {
+            return false;
+        }
+    });
+  }, [zakatTransactions, year]);
 
 
   const handleOpenChange = (isOpen: boolean) => {
@@ -121,12 +131,12 @@ export function ZakatTab() {
   };
 
 
-  const totalInflow = zakatTransactions.filter(t => t.type === 'inflow').reduce((acc, curr) => acc + curr.amount, 0);
-  const totalOutflow = zakatTransactions.filter(t => t.type === 'outflow').reduce((acc, curr) => acc + curr.amount, 0);
+  const totalInflow = filteredTransactions.filter(t => t.type === 'inflow').reduce((acc, curr) => acc + curr.amount, 0);
+  const totalOutflow = filteredTransactions.filter(t => t.type === 'outflow').reduce((acc, curr) => acc + curr.amount, 0);
   const availableZakat = totalInflow - totalOutflow;
   
-  const inflowTransactions = zakatTransactions.filter(t => t.type === 'inflow').sort((a,b) => parseISO(b.transaction_date).getTime() - parseISO(a.transaction_date).getTime());
-  const outflowTransactions = zakatTransactions.filter(t => t.type === 'outflow').sort((a,b) => parseISO(b.transaction_date).getTime() - parseISO(a.transaction_date).getTime());
+  const inflowTransactions = filteredTransactions.filter(t => t.type === 'inflow').sort((a,b) => parseISO(b.transaction_date).getTime() - parseISO(a.transaction_date).getTime());
+  const outflowTransactions = filteredTransactions.filter(t => t.type === 'outflow').sort((a,b) => parseISO(b.transaction_date).getTime() - parseISO(a.transaction_date).getTime());
 
 
   if (loading) {
@@ -201,7 +211,7 @@ export function ZakatTab() {
           ) : (
             <TableRow>
               <TableCell colSpan={isAdmin ? 5 : 4} className="text-center text-muted-foreground h-24">
-                No Zakat {type} transactions recorded yet.
+                No Zakat {type} transactions recorded for {year}.
               </TableCell>
             </TableRow>
           )}
@@ -213,8 +223,8 @@ export function ZakatTab() {
     <div className="pt-4 space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Zakat Fund Summary</CardTitle>
-          <CardDescription>An overview of your Zakat funds.</CardDescription>
+          <CardTitle>Zakat Fund Summary for {year}</CardTitle>
+          <CardDescription>An overview of your Zakat funds for the selected year.</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-4 md:grid-cols-3">
             <div className="p-4 bg-green-50 rounded-lg border border-green-200">
@@ -250,8 +260,8 @@ export function ZakatTab() {
             <Card className="mt-4">
                 <CardHeader className="flex flex-row items-center justify-between">
                     <div>
-                        <CardTitle>Zakat Inflow</CardTitle>
-                        <CardDescription>Zakat funds received.</CardDescription>
+                        <CardTitle>Zakat Inflow for {year}</CardTitle>
+                        <CardDescription>Zakat funds received in {year}.</CardDescription>
                     </div>
                     {isAdmin && <Button onClick={() => handleAdd('inflow')}><PlusCircle className="mr-2 h-4 w-4"/>Add Inflow</Button>}
                 </CardHeader>
@@ -264,8 +274,8 @@ export function ZakatTab() {
              <Card className="mt-4">
                 <CardHeader className="flex flex-row items-center justify-between">
                     <div>
-                        <CardTitle>Zakat Outflow</CardTitle>
-                        <CardDescription>Zakat funds distributed.</CardDescription>
+                        <CardTitle>Zakat Outflow for {year}</CardTitle>
+                        <CardDescription>Zakat funds distributed in {year}.</CardDescription>
                     </div>
                     {isAdmin && <Button onClick={() => handleAdd('outflow')}><PlusCircle className="mr-2 h-4 w-4"/>Add Outflow</Button>}
                 </CardHeader>
