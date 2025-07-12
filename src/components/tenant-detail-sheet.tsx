@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import * as React from "react";
@@ -172,7 +173,7 @@ export function TenantDetailSheet({
                     </div>
                     <div className="flex items-center gap-3">
                         <Calendar className="h-4 w-4 text-muted-foreground" />
-                        <span>Joined on: <strong>{format(parseISO(tenant.joinDate), "MMMM dd, yyyy")}</strong></span>
+                        <span>Joined on: <strong>{format(parseISO(tenant.join_date), "MMMM dd, yyyy")}</strong></span>
                     </div>
                 </CardContent>
             </Card>

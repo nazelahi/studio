@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import * as React from "react"
@@ -97,7 +98,7 @@ export function ContactsTab() {
       phone: formData.get('phone') as string,
       property: formData.get('property') as string,
       rent: Number(formData.get('rent')),
-      joinDate: formData.get('joinDate') as string,
+      join_date: formData.get('join_date') as string,
       notes: formData.get('notes') as string,
       type: formData.get('type') as string,
       avatar: previewImage || editingTenant?.avatar || 'https://placehold.co/80x80.png',
@@ -150,7 +151,7 @@ export function ContactsTab() {
         getEl('phone').value = tenant.phone || '';
         getEl('property').value = tenant.property;
         getEl('rent').value = tenant.rent.toString();
-        getEl('joinDate').value = tenant.joinDate;
+        getEl('join_date').value = tenant.join_date;
         getEl('notes').value = tenant.notes || '';
         getEl('type').value = tenant.type || '';
         
@@ -355,8 +356,8 @@ export function ContactsTab() {
                         />
                       </div>
                        <div className="space-y-2">
-                        <Label htmlFor="joinDate">Join Date</Label>
-                        <Input id="joinDate" name="joinDate" type="date" defaultValue={editingTenant?.joinDate} required />
+                        <Label htmlFor="join_date">Join Date</Label>
+                        <Input id="join_date" name="join_date" type="date" defaultValue={editingTenant?.join_date} required />
                       </div>
                       <div className="space-y-2">
                           <Label htmlFor="status">Status</Label>
@@ -490,7 +491,7 @@ export function ContactsTab() {
                                 )}
                                 <div className="flex items-center gap-3">
                                     <Calendar className="h-4 w-4 text-muted-foreground"/>
-                                    <span>Join Date: {format(parseISO(tenant.joinDate), "MMM dd, yyyy")}</span>
+                                    <span>Join Date: {format(parseISO(tenant.join_date), "MMM dd, yyyy")}</span>
                                 </div>
                             </div>
                             <div className="mt-4 pt-4 border-t">

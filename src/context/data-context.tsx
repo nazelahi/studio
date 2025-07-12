@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
@@ -20,7 +21,7 @@ interface AppData {
   workDetails: WorkDetail[];
 }
 
-type NewRentEntry = Omit<RentEntry, 'id' | 'avatar' | 'year' | 'month' | 'dueDate' | 'created_at'>;
+type NewRentEntry = Omit<RentEntry, 'id' | 'avatar' | 'year' | 'month' | 'due_date' | 'created_at'>;
 
 
 interface DataContextType extends AppData {
@@ -32,7 +33,7 @@ interface DataContextType extends AppData {
   deleteExpense: (expenseId: string) => Promise<void>;
   deleteMultipleExpenses: (expenseIds: string[]) => Promise<void>;
   addRentEntry: (rentEntry: NewRentEntry, year: number, month: number) => Promise<void>;
-  addRentEntriesBatch: (rentEntries: Omit<NewRentEntry, 'tenantId' | 'avatar'>[], year: number, month: number) => Promise<void>;
+  addRentEntriesBatch: (rentEntries: Omit<NewRentEntry, 'tenant_id' | 'avatar'>[], year: number, month: number) => Promise<void>;
   updateRentEntry: (rentEntry: RentEntry) => Promise<void>;
   deleteRentEntry: (rentEntryId: string) => Promise<void>;
   deleteMultipleRentEntries: (rentEntryIds: string[]) => Promise<void>;
@@ -199,18 +200,18 @@ export function DataProvider({ children }: { children: ReactNode }) {
         }
 
         // Auto-create initial rent entry
-        const joinDate = parseISO(newTenant.joinDate);
+        const joinDate = parseISO(newTenant.join_date);
         const month = getMonth(joinDate);
         const year = getYear(joinDate);
 
         const newRentEntryData = {
-            tenantId: newTenant.id,
+            tenant_id: newTenant.id,
             name: newTenant.name,
             property: newTenant.property,
             rent: newTenant.rent,
             status: 'Pending' as const,
             avatar: newTenant.avatar,
-            dueDate: new Date(year, month, 1).toISOString().split('T')[0],
+            due_date: new Date(year, month, 1).toISOString().split('T')[0],
             year,
             month,
         };
@@ -240,9 +241,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
                 rent: tenantData.rent,
                 avatar: tenantData.avatar,
             })
-            .eq('tenantId', id)
+            .eq('tenant_id', id)
             .neq('status', 'Paid')
-            .gt('dueDate', new Date().toISOString());
+            .gt('due_date', new Date().toISOString());
 
         if (rentUpdateError) {
             handleError(rentUpdateError, 'syncing future rent entries');
@@ -290,12 +291,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
         await addRentEntriesBatch([entryWithAvatar], year, month);
     };
 
-    const addRentEntriesBatch = async (rentEntriesData: Omit<NewRentEntry, 'tenantId' | 'avatar'>[], year: number, month: number) => {
+    const addRentEntriesBatch = async (rentEntriesData: Omit<NewRentEntry, 'tenant_id' | 'avatar'>[], year: number, month: number) => {
         if (!supabase) return;
 
         const newEntriesWithDetails = await Promise.all(rentEntriesData.map(async (rentEntryData) => {
             const fullEntryData = rentEntryData as NewRentEntry;
-            let tenantInfo = { id: fullEntryData.tenantId, avatar: fullEntryData.avatar };
+            let tenantInfo = { id: fullEntryData.tenant_id, avatar: fullEntryData.avatar };
 
             if (!tenantInfo.id) {
                 let { data: existingTenant } = await supabase
@@ -310,7 +311,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
                         name: rentEntryData.name,
                         property: rentEntryData.property,
                         rent: rentEntryData.rent,
-                        joinDate: new Date(year, month, 1).toISOString().split('T')[0],
+                        join_date: new Date(year, month, 1).toISOString().split('T')[0],
                         avatar: 'https://placehold.co/80x80.png',
                         status: 'Active' as const,
                         email: `${rentEntryData.name.replace(/\s+/g, '.').toLowerCase()}@example.com`,
@@ -328,9 +329,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
             return {
                 ...rentEntryData,
-                tenantId: tenantInfo.id,
+                tenant_id: tenantInfo.id,
                 avatar: tenantInfo.avatar || 'https://placehold.co/80x80.png',
-                dueDate: new Date(year, month, 1).toISOString().split('T')[0],
+                due_date: new Date(year, month, 1).toISOString().split('T')[0],
                 year,
                 month,
             };
@@ -368,7 +369,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         
         const { data: rentDataForMonth, error: rentDataError } = await supabase
             .from('rent_entries')
-            .select('tenantId')
+            .select('tenant_id')
             .eq('year', year)
             .eq('month', month);
 
@@ -376,7 +377,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
             handleError(rentDataError, 'fetching rent data for sync');
             return 0;
         }
-        const existingTenantIds = new Set(rentDataForMonth.map(e => e.tenantId));
+        const existingTenantIds = new Set(rentDataForMonth.map(e => e.tenant_id));
 
         const { data: allTenants, error: tenantsError } = await supabase
             .from('tenants')
@@ -391,9 +392,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
             if (existingTenantIds.has(tenant.id)) {
                 return false; 
             }
-            if (!tenant.joinDate) return false;
+            if (!tenant.join_date) return false;
             try {
-                const joinDate = parseISO(tenant.joinDate);
+                const joinDate = parseISO(tenant.join_date);
                 return joinDate <= selectedMonthStartDate;
             } catch {
                 return false; 
@@ -405,11 +406,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
         }
         
         const newRentEntries = tenantsToSync.map(tenant => ({
-            tenantId: tenant.id,
+            tenant_id: tenant.id,
             name: tenant.name,
             property: tenant.property,
             rent: tenant.rent,
-            dueDate: new Date(year, month, 1).toISOString().split("T")[0],
+            due_date: new Date(year, month, 1).toISOString().split("T")[0],
             status: "Pending" as const,
             avatar: tenant.avatar,
             year: year,

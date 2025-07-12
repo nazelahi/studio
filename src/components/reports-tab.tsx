@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import * as React from "react"
@@ -75,7 +76,7 @@ export function ReportsTab({ year }: { year: number }) {
   const tenantReportData = React.useMemo(() => {
     if (!selectedTenant) return [];
     return rentData
-      .filter(entry => entry.tenantId === selectedTenant)
+      .filter(entry => entry.tenant_id === selectedTenant)
       .sort((a, b) => new Date(a.year, a.month).getTime() - new Date(b.year, b.month).getTime());
   }, [rentData, selectedTenant]);
   
@@ -96,8 +97,8 @@ export function ReportsTab({ year }: { year: number }) {
         .map(e => ({...e, type: 'expense'}));
 
     return [...income, ...outcome].sort((a,b) => {
-        const dateA = a.type === 'income' ? a.paymentDate : a.date;
-        const dateB = b.type === 'income' ? b.paymentDate : b.date;
+        const dateA = a.type === 'income' ? a.payment_date : a.date;
+        const dateB = b.type === 'income' ? b.payment_date : b.date;
         if (!dateA || !dateB) return 0;
         return parseISO(dateA).getTime() - parseISO(dateB).getTime();
     });
@@ -265,7 +266,7 @@ export function ReportsTab({ year }: { year: number }) {
                                 <TableBody>
                                     {monthlyTransactions.length > 0 ? monthlyTransactions.map(tx => (
                                         <TableRow key={tx.id}>
-                                            <TableCell>{format(parseISO(tx.type === 'income' ? tx.paymentDate! : tx.date!), "dd MMM yyyy")}</TableCell>
+                                            <TableCell>{format(parseISO(tx.type === 'income' ? tx.payment_date! : tx.date!), "dd MMM yyyy")}</TableCell>
                                             <TableCell>
                                                 <div className="font-medium">{tx.type === 'income' ? `${tx.name} (${tx.property})` : tx.category}</div>
                                                 {tx.type === 'expense' && <div className="text-sm text-muted-foreground">{tx.description}</div>}
@@ -327,8 +328,8 @@ export function ReportsTab({ year }: { year: number }) {
                         {tenantReportData.length > 0 ? tenantReportData.map(entry => (
                           <TableRow key={entry.id}>
                             <TableCell className="font-medium">{months[entry.month]} {entry.year}</TableCell>
-                            <TableCell className="hidden sm:table-cell">{format(parseISO(entry.dueDate), "dd MMM yyyy")}</TableCell>
-                            <TableCell className="hidden md:table-cell">{entry.paymentDate ? format(parseISO(entry.paymentDate), "dd MMM yyyy") : 'N/A'}</TableCell>
+                            <TableCell className="hidden sm:table-cell">{format(parseISO(entry.due_date), "dd MMM yyyy")}</TableCell>
+                            <TableCell className="hidden md:table-cell">{entry.payment_date ? format(parseISO(entry.payment_date), "dd MMM yyyy") : 'N/A'}</TableCell>
                             <TableCell><Badge className={getStatusBadge(entry.status)}>{entry.status}</Badge></TableCell>
                             <TableCell className="text-right">{formatCurrency(entry.rent)}</TableCell>
                           </TableRow>

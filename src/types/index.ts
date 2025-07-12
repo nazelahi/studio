@@ -7,7 +7,7 @@ export type Tenant = {
   phone?: string;
   property: string;
   rent: number;
-  joinDate: string;
+  join_date: string;
   notes?: string;
   status: "Paid" | "Active" | "Overdue";
   avatar: string;
@@ -28,17 +28,17 @@ export type Expense = {
 
 export type RentEntry = {
     id: string;
-    tenantId: string;
+    tenant_id: string;
     name: string;
     property: string; // "Flat" in the new design
     rent: number; // "Amount"
-    dueDate: string; 
+    due_date: string; 
     status: "Paid" | "Pending" | "Overdue";
     avatar: string;
     year: number;
     month: number; // "Month" as an index
-    paymentDate?: string; // "Date" of collection
-    collectedBy?: string;
+    payment_date?: string; // "Date" of collection
+    collected_by?: string;
     created_at?: string;
 }
 
@@ -104,4 +104,5 @@ export type WorkDetail = {
   due_date?: string;
   created_at?: string;
 };
+
 

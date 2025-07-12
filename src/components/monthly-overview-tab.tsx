@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import * as React from "react"
@@ -132,7 +133,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
 
 
   const filteredTenantsForMonth = React.useMemo(() => {
-    return rentData.filter(entry => entry.month === months.indexOf(selectedMonth) && entry.year === year);
+    return rentData.filter(entry => entry.year === year && entry.month === months.indexOf(selectedMonth));
   }, [rentData, selectedMonth, year]);
 
   const filteredExpenses = React.useMemo(() => {
@@ -195,13 +196,13 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
         if(type === 'rent' && 'year' in entry && 'month' in entry) {
             entryYear = entry.year;
             entryMonth = entry.month;
-        } else if ('joinDate' in entry && entry.joinDate) {
+        } else if ('join_date' in entry && entry.join_date) {
             try {
-                const parsedDate = parseISO(entry.joinDate);
+                const parsedDate = parseISO(entry.join_date);
                 entryYear = parsedDate.getFullYear();
                 entryMonth = parsedDate.getMonth();
             } catch (e) {
-                console.error("Invalid joinDate:", entry.joinDate);
+                console.error("Invalid joinDate:", entry.join_date);
                 return;
             }
         } else {
@@ -212,7 +213,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
 
         if (isMoreRecent) {
             allTenantsMap.set(uniqueId, {
-                id: (entry as any).tenantId || (entry as any).id,
+                id: (entry as any).tenant_id || (entry as any).id,
                 uniqueId,
                 name: entry.name,
                 property: entry.property,
@@ -285,11 +286,11 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
         name: selectedHistoricalTenant?.name || formData.get('name') as string,
         property: selectedHistoricalTenant?.property || formData.get('property') as string,
         rent: Number(formData.get('amount')),
-        paymentDate: formData.get('paymentDate') as string || undefined,
-        collectedBy: formData.get('collectedBy') as string,
+        payment_date: formData.get('payment_date') as string || undefined,
+        collected_by: formData.get('collected_by') as string,
         status: formData.get('status') as RentEntry['status'],
         avatar: selectedHistoricalTenant?.avatar || editingRentEntry?.avatar || 'https://placehold.co/80x80.png',
-        tenantId: selectedHistoricalTenant?.id || editingRentEntry?.tenantId
+        tenant_id: selectedHistoricalTenant?.id || editingRentEntry?.tenant_id
     };
 
     if(editingRentEntry) {
@@ -334,7 +335,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
   }
 
   const handleViewDetails = (entry: RentEntry) => {
-    const tenant = tenants.find(t => t.id === entry.tenantId);
+    const tenant = tenants.find(t => t.id === entry.tenant_id);
     if (tenant) {
       setSelectedTenantForSheet(tenant);
       setIsSheetOpen(true);
@@ -465,8 +466,8 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                 property: String(row.Property || ''),
                 rent: Number(row.Rent || 0),
                 status: status as RentEntry['status'],
-                paymentDate: paymentDate,
-                collectedBy: String(row.CollectedBy || ''),
+                payment_date: paymentDate,
+                collected_by: String(row.CollectedBy || ''),
             };
         }).filter(entry => entry.name && entry.property && entry.rent > 0);
 
@@ -844,12 +845,12 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                       <Input id="property" name="property" defaultValue={editingRentEntry?.property} placeholder="e.g., Flat-1" required disabled={!!selectedHistoricalTenant}/>
                                   </div>
                                   <div className="space-y-2">
-                                      <Label htmlFor="paymentDate">Date</Label>
-                                      <Input id="paymentDate" name="paymentDate" type="date" defaultValue={editingRentEntry?.paymentDate ? format(parseISO(editingRentEntry.paymentDate), 'yyyy-MM-dd') : ''} />
+                                      <Label htmlFor="payment_date">Date</Label>
+                                      <Input id="payment_date" name="payment_date" type="date" defaultValue={editingRentEntry?.payment_date ? format(parseISO(editingRentEntry.payment_date), 'yyyy-MM-dd') : ''} />
                                   </div>
                                   <div className="space-y-2">
-                                      <Label htmlFor="collectedBy">Collect by</Label>
-                                      <Input id="collectedBy" name="collectedBy" defaultValue={editingRentEntry?.collectedBy} placeholder="e.g., Admin" />
+                                      <Label htmlFor="collected_by">Collect by</Label>
+                                      <Input id="collected_by" name="collected_by" defaultValue={editingRentEntry?.collected_by} placeholder="e.g., Admin" />
                                   </div>
                                   <div className="space-y-2">
                                       <Label htmlFor="amount">Amount</Label>
@@ -926,8 +927,8 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                   <p className="sm:hidden text-sm text-primary font-semibold">৳{entry.rent.toFixed(2)}</p>
                                 </div>
                               </TableCell>
-                              <TableCell className="hidden md:table-cell">{entry.collectedBy || '-'}</TableCell>
-                              <TableCell className="hidden sm:table-cell">{entry.paymentDate ? format(parseISO(entry.paymentDate), "dd MMM yyyy") : '-'}</TableCell>
+                              <TableCell className="hidden md:table-cell">{entry.collected_by || '-'}</TableCell>
+                              <TableCell className="hidden sm:table-cell">{entry.payment_date ? format(parseISO(entry.payment_date), "dd MMM yyyy") : '-'}</TableCell>
                               <TableCell>
                                 <Badge className={getStatusBadge(entry.status)} variant="outline">
                                   {getStatusIcon(entry.status)}
