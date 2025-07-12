@@ -5,7 +5,7 @@ import Link from "next/link"
 import React, { useState } from "react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Logo } from "@/components/icons"
 import { useSettings } from "@/context/settings-context"
 import { usePathname } from "next/navigation"
@@ -16,10 +16,12 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { useToast } from "@/hooks/use-toast"
 import { LoginDialog } from "@/components/login-dialog"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from "@/components/ui/sheet"
+import { useData } from "@/context/data-context"
 
 
 export default function SettingsPage() {
   const { settings, setSettings } = useSettings();
+  const { updatePropertySettings } = useData();
   const pathname = usePathname();
   const { user, signOut, isAdmin, changePassword } = useAuth();
   const { toast } = useToast();
@@ -67,6 +69,17 @@ export default function SettingsPage() {
       setNewPassword('');
       setConfirmPassword('');
     }
+  };
+
+  const handleSavePropertyDetails = async () => {
+    await updatePropertySettings({
+      house_name: settings.houseName,
+      house_address: settings.houseAddress
+    });
+    toast({
+      title: 'Property Details Saved',
+      description: 'Your house name and address have been updated.',
+    });
   };
 
   return (
@@ -192,6 +205,9 @@ export default function SettingsPage() {
                         <Input id="houseAddress" name="houseAddress" value={settings.houseAddress} onChange={handleInputChange} />
                     </div>
                 </CardContent>
+                <CardFooter>
+                    <Button onClick={handleSavePropertyDetails}>Save</Button>
+                </CardFooter>
               </Card>
 
               <Card className="group-disabled:opacity-50">
@@ -264,3 +280,5 @@ export default function SettingsPage() {
       </div>
   )
 }
+
+    

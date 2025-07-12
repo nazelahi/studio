@@ -2,7 +2,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
-import type { Tenant, Expense, RentEntry } from '@/types';
+import type { Tenant, Expense, RentEntry, PropertySettings } from '@/types';
 import { parseISO, getMonth, getYear } from 'date-fns';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
@@ -11,6 +11,7 @@ interface AppData {
   tenants: Tenant[];
   expenses: Expense[];
   rentData: RentEntry[];
+  propertySettings: PropertySettings | null;
 }
 
 type NewRentEntry = Omit<RentEntry, 'id' | 'avatar' | 'year' | 'month' | 'dueDate' | 'created_at'>;
@@ -30,6 +31,7 @@ interface DataContextType extends AppData {
   deleteRentEntry: (rentEntryId: string) => Promise<void>;
   deleteMultipleRentEntries: (rentEntryIds: string[]) => Promise<void>;
   syncTenantsForMonth: (year: number, month: number) => Promise<number>;
+  updatePropertySettings: (settings: Omit<PropertySettings, 'id'>) => Promise<void>;
   loading: boolean;
   getAllData: () => AppData;
   restoreAllData: (backupData: AppData) => void;
@@ -38,7 +40,7 @@ interface DataContextType extends AppData {
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
 export function DataProvider({ children }: { children: ReactNode }) {
-    const [data, setData] = useState<AppData>({ tenants: [], expenses: [], rentData: [] });
+    const [data, setData] = useState<AppData>({ tenants: [], expenses: [], rentData: [], propertySettings: null });
     const [loading, setLoading] = useState(true);
     const { toast } = useToast();
 
@@ -59,20 +61,23 @@ export function DataProvider({ children }: { children: ReactNode }) {
         }
         setLoading(true);
         try {
-            const [tenantsRes, expensesRes, rentDataRes] = await Promise.all([
+            const [tenantsRes, expensesRes, rentDataRes, propertySettingsRes] = await Promise.all([
                 supabase.from('tenants').select('*'),
                 supabase.from('expenses').select('*'),
-                supabase.from('rent_entries').select('*')
+                supabase.from('rent_entries').select('*'),
+                supabase.from('property_settings').select('*').eq('id', 1).single()
             ]);
 
             if (tenantsRes.error) throw tenantsRes.error;
             if (expensesRes.error) throw expensesRes.error;
             if (rentDataRes.error) throw rentDataRes.error;
+            if (propertySettingsRes.error) throw propertySettingsRes.error;
             
             setData({
                 tenants: tenantsRes.data as Tenant[],
                 expenses: expensesRes.data as Expense[],
                 rentData: rentDataRes.data as RentEntry[],
+                propertySettings: propertySettingsRes.data as PropertySettings,
             });
         } catch (error) {
             handleError(error, 'fetching data');
@@ -345,6 +350,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
         return tenantsToSync.length;
     };
+    
+    const updatePropertySettings = async (settings: Omit<PropertySettings, 'id'>) => {
+        if (!supabase) return;
+        const { error } = await supabase.from('property_settings').update(settings).eq('id', 1);
+        if (error) handleError(error, 'updating property settings');
+    }
 
     const getAllData = () => {
         return data;
@@ -352,9 +363,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     const restoreAllData = (backupData: AppData) => {
         if (backupData && backupData.tenants && backupData.expenses && backupData.rentData) {
+            // This needs to be extended if property_settings are part of backup/restore
             setData(backupData);
-            // After restoring data, a page reload is the simplest way to ensure all components
-            // are re-rendered with the new state.
             window.location.reload();
         } else {
             handleError(new Error("Invalid backup data format."), "restoring data");
@@ -363,7 +373,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
 
     return (
-        <DataContext.Provider value={{ ...data, addTenant, updateTenant, deleteTenant, addExpense, updateExpense, deleteExpense, deleteMultipleExpenses, addRentEntry, addRentEntriesBatch, updateRentEntry, deleteRentEntry, deleteMultipleRentEntries, syncTenantsForMonth, loading, getAllData, restoreAllData }}>
+        <DataContext.Provider value={{ ...data, addTenant, updateTenant, deleteTenant, addExpense, updateExpense, deleteExpense, deleteMultipleExpenses, addRentEntry, addRentEntriesBatch, updateRentEntry, deleteRentEntry, deleteMultipleRentEntries, syncTenantsForMonth, updatePropertySettings, loading, getAllData, restoreAllData }}>
             {children}
         </DataContext.Provider>
     );
@@ -376,3 +386,5 @@ export function useData() {
   }
   return context;
 }
+
+    

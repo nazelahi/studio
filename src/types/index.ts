@@ -1,3 +1,4 @@
+
 export type Tenant = {
   id: string;
   name: string;
@@ -37,3 +38,11 @@ export type RentEntry = {
     collectedBy?: string;
     created_at?: string;
 }
+
+export type PropertySettings = {
+  id: number;
+  house_name: string;
+  house_address: string;
+};
+
+    

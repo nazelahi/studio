@@ -2,6 +2,7 @@
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import { useData } from './data-context';
 
 interface TabNames {
     overview: string;
@@ -21,11 +22,6 @@ interface PageDashboard {
 interface PageOverview {
     financial_overview_title: string;
     financial_overview_description: string;
-}
-
-interface BankAccount {
-    name: string;
-    accountNumber: string;
 }
 
 interface PageSettings {
@@ -100,7 +96,7 @@ const defaultSettings: AppSettings = {
         title: "Settings",
         property_details: {
             title: "Property Details",
-            description: "Set the name and address of your property.",
+            description: "Set the name and address of your property. This is stored in the database.",
             house_name_label: "House Name",
             house_address_label: "House Address",
         },
@@ -154,25 +150,39 @@ const isObject = (item: any) => {
 export function SettingsProvider({ children }: { children: ReactNode }) {
     const [settings, setSettings] = useState<AppSettings>(defaultSettings);
     const [isMounted, setIsMounted] = useState(false);
+    const { propertySettings, loading: dataLoading } = useData();
 
     useEffect(() => {
         setIsMounted(true);
+        // Load local settings first
         try {
             const item = window.localStorage.getItem('appSettings');
             if (item) {
                 const storedSettings = JSON.parse(item);
-                // Deep merge to ensure all keys from default settings are present
-                setSettings(deepMerge(defaultSettings, storedSettings));
+                setSettings(prev => deepMerge(prev, storedSettings));
             }
         } catch (error) {
             console.error("Failed to parse settings from localStorage", error);
         }
     }, []);
+
+    useEffect(() => {
+      // Once data is loaded from Supabase, update the house name and address
+      if (!dataLoading && propertySettings) {
+        setSettings(prev => ({
+          ...prev,
+          houseName: propertySettings.house_name || prev.houseName,
+          houseAddress: propertySettings.house_address || prev.houseAddress
+        }))
+      }
+    }, [propertySettings, dataLoading]);
     
     useEffect(() => {
         if (isMounted) {
+            // Save all settings EXCEPT houseName and houseAddress to local storage
+            const { houseName, houseAddress, ...localSettings } = settings;
             try {
-                window.localStorage.setItem('appSettings', JSON.stringify(settings));
+                window.localStorage.setItem('appSettings', JSON.stringify(localSettings));
             } catch (error) {
                 console.error("Failed to save settings to localStorage", error);
             }
@@ -180,8 +190,6 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     }, [settings, isMounted]);
 
     if (!isMounted) {
-        // Render with default settings on the server and during initial client render
-        // to avoid hydration mismatch. You can optionally render a loading skeleton here.
         return (
             <SettingsContext.Provider value={{ settings: defaultSettings, setSettings }}>
                 {children}
@@ -203,3 +211,5 @@ export function useSettings() {
   }
   return context;
 }
+
+    
