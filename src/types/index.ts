@@ -10,6 +10,7 @@ export type Tenant = {
   notes?: string;
   status: "Paid" | "Pending" | "Overdue";
   avatar: string;
+  type?: string;
   created_at?: string;
 };
 

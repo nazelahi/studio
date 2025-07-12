@@ -2,14 +2,12 @@
 "use client"
 
 import * as React from "react"
-import { MoreHorizontal, PlusCircle, Image as ImageIcon, Mail, Phone, Home, ChevronDown, Copy, X, Search, FileText, Check, UserPlus } from "lucide-react"
+import { MoreHorizontal, PlusCircle, Image as ImageIcon, Mail, Phone, Home, ChevronDown, Copy, X, Search, FileText, Check, UserPlus, Calendar, Briefcase } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuPortal } from "@/components/ui/dropdown-menu"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar"
-import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -22,6 +20,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { TenantDetailSheet } from "./tenant-detail-sheet"
 import { useAuth } from "@/context/auth-context"
 import { useSettings } from "@/context/settings-context"
+import { format, parseISO } from "date-fns"
 
 export function TenantsTab() {
   const { tenants, addTenant, updateTenant, deleteTenant, loading } = useData();
@@ -77,6 +76,7 @@ export function TenantsTab() {
       rent: Number(formData.get('rent')),
       joinDate: formData.get('joinDate') as string,
       notes: formData.get('notes') as string,
+      type: formData.get('type') as string,
       avatar: previewImage || editingTenant?.avatar || 'https://placehold.co/80x80.png',
       status: editingTenant?.status || 'Pending',
     };
@@ -112,6 +112,7 @@ export function TenantsTab() {
         getEl('rent').value = tenant.rent.toString();
         getEl('joinDate').value = tenant.joinDate;
         getEl('notes').value = tenant.notes || '';
+        getEl('type').value = tenant.type || '';
         
         setPreviewImage(tenant.avatar);
     }
@@ -146,64 +147,30 @@ export function TenantsTab() {
     }
     setOpen(isOpen);
   };
-
-  const handleStatusChange = async (tenant: Tenant, newStatus: "Paid" | "Pending" | "Overdue") => {
-    await updateTenant({ ...tenant, status: newStatus });
-    toast({
-      title: "Status Updated",
-      description: `${tenant.name}'s status has been changed to ${newStatus}.`
-    });
-  };
-
-  const getStatusBadge = (status: Tenant['status']) => {
-    switch (status) {
-      case 'Paid':
-        return 'bg-success text-success-foreground hover:bg-success/80';
-      case 'Pending':
-        return 'bg-warning text-warning-foreground hover:bg-warning/80';
-      case 'Overdue':
-        return 'bg-destructive text-destructive-foreground hover:bg-destructive/80';
-      default:
-        return '';
-    }
-  };
   
-  const TableSkeleton = () => (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead><Skeleton className="h-5 w-24" /></TableHead>
-          <TableHead className="hidden lg:table-cell"><Skeleton className="h-5 w-40" /></TableHead>
-          <TableHead className="hidden md:table-cell"><Skeleton className="h-5 w-20" /></TableHead>
-          <TableHead className="hidden md:table-cell"><Skeleton className="h-5 w-16" /></TableHead>
-          <TableHead><Skeleton className="h-5 w-16" /></TableHead>
-          <TableHead><span className="sr-only">Actions</span></TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {[...Array(5)].map((_, i) => (
-          <TableRow key={i}>
-            <TableCell>
-              <div className="flex items-center gap-3">
-                <Skeleton className="h-10 w-10 rounded-full" />
-                <Skeleton className="h-5 w-32" />
-              </div>
-            </TableCell>
-            <TableCell className="hidden lg:table-cell"><Skeleton className="h-5 w-40" /></TableCell>
-            <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-20" /></TableCell>
-            <TableCell className="hidden md:table-cell"><Skeleton className="h-5 w-16" /></TableCell>
-            <TableCell><Skeleton className="h-6 w-20 rounded-full" /></TableCell>
-            <TableCell><Skeleton className="h-8 w-8" /></TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+  const TenantCardSkeleton = () => (
+    <Card className="flex flex-col">
+      <CardHeader className="flex flex-row justify-end items-center p-2">
+         <Skeleton className="h-6 w-6" />
+      </CardHeader>
+      <CardContent className="flex flex-col items-center text-center p-4 pt-0">
+        <Skeleton className="h-20 w-20 rounded-full mb-4" />
+        <Skeleton className="h-6 w-3/4 mb-1" />
+        <Skeleton className="h-4 w-1/2 mb-4" />
+        <div className="w-full space-y-3">
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-full" />
+        </div>
+      </CardContent>
+    </Card>
   );
 
 
   return (
     <>
-      <Card className="mt-4">
+      <Card className="mt-4 border-0 shadow-none">
         <CardHeader>
           <CardTitle>Tenants</CardTitle>
           <CardDescription>
@@ -315,6 +282,10 @@ export function TenantsTab() {
                         <Label htmlFor="email">Email Address</Label>
                         <Input id="email" name="email" type="email" defaultValue={editingTenant?.email} required />
                       </div>
+                       <div className="space-y-2">
+                        <Label htmlFor="type">Type</Label>
+                        <Input id="type" name="type" placeholder="e.g. Electrician, Plumber" defaultValue={editingTenant?.type} />
+                      </div>
                       <div className="space-y-2">
                         <Label htmlFor="phone">Phone Number</Label>
                         <Input id="phone" name="phone" type="tel" defaultValue={editingTenant?.phone} />
@@ -334,7 +305,7 @@ export function TenantsTab() {
                           className="[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                         />
                       </div>
-                      <div className="space-y-2">
+                      <div className="space-y-2 md:col-span-2">
                         <Label htmlFor="joinDate">Join Date</Label>
                         <Input id="joinDate" name="joinDate" type="date" defaultValue={editingTenant?.joinDate} required />
                       </div>
@@ -353,122 +324,77 @@ export function TenantsTab() {
                 </Dialog>
               }
           </div>
-
-          {loading ? <TableSkeleton /> : (
-              <Table>
-              <TableHeader>
-                  <TableRow>
-                  <TableHead>Tenant</TableHead>
-                  <TableHead className="hidden lg:table-cell">Contact</TableHead>
-                  <TableHead className="hidden md:table-cell">Apartment</TableHead>
-                  <TableHead className="hidden sm:table-cell">Rent</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>
-                      <span className="sr-only">Actions</span>
-                  </TableHead>
-                  </TableRow>
-              </TableHeader>
-              <TableBody>
+          
+            {loading ? (
+                <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                    {[...Array(4)].map((_, i) => <TenantCardSkeleton key={i} />)}
+                </div>
+            ) : (
+                 <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                   {filteredTenants.length > 0 ? filteredTenants.map((tenant) => (
-                  <TableRow key={tenant.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-3">
-                            <Avatar className="h-10 w-10">
-                            <AvatarImage
-                                src={tenant.avatar}
-                                alt={tenant.name}
-                                data-ai-hint="person avatar"
-                            />
-                            <AvatarFallback>
-                                {tenant.name.split(' ').map(n => n[0]).join('')}
-                            </AvatarFallback>
+                    <Card key={tenant.id} className="flex flex-col">
+                        <CardHeader className="flex flex-row justify-end items-center p-2">
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                                      <MoreHorizontal className="h-4 w-4" />
+                                      <span className="sr-only">More options</span>
+                                  </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => handleViewDetails(tenant)}>
+                                  <FileText className="mr-2 h-4 w-4" />
+                                  View Details
+                                </DropdownMenuItem>
+                                {isAdmin && <>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem onClick={() => handleEdit(tenant)}>Edit</DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleDelete(tenant.id)} className="text-destructive">
+                                      Delete
+                                  </DropdownMenuItem>
+                                </>}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                        </CardHeader>
+                        <CardContent className="flex flex-col items-center text-center p-4 pt-0">
+                            <Avatar className="h-20 w-20 mb-4">
+                                <AvatarImage src={tenant.avatar} alt={tenant.name} data-ai-hint="person avatar" />
+                                <AvatarFallback>{tenant.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
                             </Avatar>
-                            <div className="flex flex-col">
-                                <span className="font-medium">{tenant.name}</span>
-                                <span className="text-muted-foreground sm:hidden">৳{tenant.rent.toFixed(2)}</span>
+                            <h3 className="font-semibold text-lg">{tenant.name}</h3>
+                            <p className="text-sm text-muted-foreground mb-4">{tenant.email}</p>
+
+                            <div className="w-full text-left text-sm space-y-3">
+                                <div className="flex justify-between items-center">
+                                    <span className="text-muted-foreground flex items-center gap-2"><Phone className="h-4 w-4"/> Phone:</span>
+                                    <span>{tenant.phone || "N/A"}</span>
+                                </div>
+                                {tenant.type && (
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-muted-foreground flex items-center gap-2"><Briefcase className="h-4 w-4"/> Type:</span>
+                                        <span>{tenant.type}</span>
+                                    </div>
+                                )}
+                                <div className="flex justify-between items-center">
+                                    <span className="text-muted-foreground flex items-center gap-2"><Calendar className="h-4 w-4"/> Created Date:</span>
+                                    <span>{format(parseISO(tenant.joinDate), "MMM dd, yyyy")}</span>
+                                </div>
+                                <div className="flex flex-col">
+                                    <span className="text-muted-foreground flex items-center gap-2 mb-1"><Home className="h-4 w-4"/> Property:</span>
+                                    <ul className="list-disc list-inside pl-2">
+                                        <li>{tenant.property}</li>
+                                    </ul>
+                                </div>
                             </div>
-                        </div>
-                      </TableCell>
-                      <TableCell className="hidden lg:table-cell">
-                          <div className="flex flex-col gap-1">
-                              <div className="flex items-center gap-2">
-                                  <Mail className="h-4 w-4 text-muted-foreground"/>
-                                  <span>{tenant.email}</span>
-                              </div>
-                              {tenant.phone && (
-                                  <div className="flex items-center gap-2">
-                                      <Phone className="h-4 w-4 text-muted-foreground"/>
-                                      <span>{tenant.phone}</span>
-                                  </div>
-                              )}
-                          </div>
-                      </TableCell>
-                      <TableCell className="hidden md:table-cell">{tenant.property}</TableCell>
-                      <TableCell className="hidden sm:table-cell">৳{tenant.rent.toFixed(2)}</TableCell>
-                      <TableCell>
-                        {isAdmin ? (
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                               <Button variant="outline" className={`w-28 justify-start ${getStatusBadge(tenant.status)}`}>
-                                  <span className="truncate">{tenant.status}</span>
-                                  <ChevronDown className="ml-auto h-4 w-4 shrink-0 opacity-50" />
-                               </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="start">
-                                {(["Paid", "Pending", "Overdue"] as const).map(status => (
-                                    <DropdownMenuItem key={status} onSelect={() => handleStatusChange(tenant, status)}>
-                                        <span className="flex items-center justify-between w-full">
-                                            {status}
-                                            {tenant.status === status && <Check className="h-4 w-4" />}
-                                        </span>
-                                    </DropdownMenuItem>
-                                ))}
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        ) : (
-                          <Badge className={getStatusBadge(tenant.status)}>
-                            {tenant.status}
-                          </Badge>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                      <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                          <Button
-                              aria-haspopup="true"
-                              size="icon"
-                              variant="ghost"
-                          >
-                              <MoreHorizontal className="h-4 w-4" />
-                              <span className="sr-only">Toggle menu</span>
-                          </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleViewDetails(tenant)}>
-                              <FileText className="mr-2 h-4 w-4" />
-                              View Details
-                            </DropdownMenuItem>
-                            {isAdmin && <>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem onClick={() => handleEdit(tenant)}>Edit</DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleDelete(tenant.id)} className="text-destructive">
-                                  Delete
-                              </DropdownMenuItem>
-                            </>}
-                          </DropdownMenuContent>
-                      </DropdownMenu>
-                      </TableCell>
-                  </TableRow>
+                        </CardContent>
+                    </Card>
                   )) : (
-                    <TableRow>
-                        <TableCell colSpan={6} className="text-center h-24">
-                            No tenants found.
-                        </TableCell>
-                    </TableRow>
+                    <div className="col-span-full text-center text-muted-foreground py-10">
+                        No tenants found.
+                    </div>
                   )}
-              </TableBody>
-              </Table>
-          )}
+                </div>
+            )}
         </CardContent>
       </Card>
       {selectedTenantForSheet && (
