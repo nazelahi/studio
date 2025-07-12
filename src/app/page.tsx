@@ -9,7 +9,7 @@ import { Logo } from "@/components/icons"
 import DashboardTabs from "@/components/dashboard-tabs"
 import { useAuth } from "@/context/auth-context"
 import { Button } from "@/components/ui/button"
-import { User, LogOut, MapPin, Menu, Settings, LogIn, UserCircle } from "lucide-react"
+import { User, LogOut, MapPin, Menu, Settings, LogIn, UserCircle, LoaderCircle } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
@@ -18,8 +18,18 @@ import { useProtection } from "@/context/protection-context"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
+function FullPageLoader() {
+  return (
+    <div className="flex min-h-screen w-full flex-col items-center justify-center bg-background">
+      <LoaderCircle className="h-10 w-10 animate-spin text-primary" />
+      <p className="mt-4 text-muted-foreground">Loading Property Details...</p>
+    </div>
+  );
+}
+
+
 export default function HomePage() {
-  const { settings } = useSettings();
+  const { settings, loading: settingsLoading } = useSettings();
   const pathname = usePathname();
   const router = useRouter();
   const { isAdmin, user, signOut } = useAuth();
@@ -88,6 +98,9 @@ export default function HomePage() {
     </>
   );
 
+  if (settingsLoading) {
+    return <FullPageLoader />;
+  }
 
   return (
     <div className="flex min-h-screen w-full flex-col">
@@ -235,3 +248,5 @@ export default function HomePage() {
     </div>
   )
 }
+
+    
