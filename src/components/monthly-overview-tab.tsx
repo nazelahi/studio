@@ -685,7 +685,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
       
       {months.map(month => (
         <TabsContent key={month} value={month}>
-          <div className="mt-6">
+          <div className="mt-6 space-y-6">
             <Tabs defaultValue="rent-roll" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="rent-roll">Rent Roll</TabsTrigger>

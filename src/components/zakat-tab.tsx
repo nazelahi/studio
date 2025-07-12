@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import * as React from "react"
@@ -145,7 +146,7 @@ export function ZakatTab() {
           <TableRow className="bg-primary hover:bg-primary/90">
             <TableHead className="text-primary-foreground">Date</TableHead>
             <TableHead className="text-primary-foreground">{type === 'inflow' ? 'Source' : 'Recipient'}</TableHead>
-            <TableHead className="text-primary-foreground">Description</TableHead>
+            <TableHead className="hidden sm:table-cell text-primary-foreground">Description</TableHead>
             <TableHead className="text-right text-primary-foreground">Amount</TableHead>
             {isAdmin && <TableHead className="text-primary-foreground">Actions</TableHead>}
           </TableRow>
@@ -156,7 +157,7 @@ export function ZakatTab() {
               <TableRow key={tx.id} className={cn(type === 'inflow' ? 'bg-green-50/50' : 'bg-red-50/50')}>
                 <TableCell>{format(parseISO(tx.transaction_date), "dd MMM, yyyy")}</TableCell>
                 <TableCell className="font-medium">{tx.source_or_recipient}</TableCell>
-                <TableCell className="text-muted-foreground">{tx.description || '-'}</TableCell>
+                <TableCell className="text-muted-foreground hidden sm:table-cell">{tx.description || '-'}</TableCell>
                 <TableCell className={`text-right font-bold ${tx.type === 'inflow' ? 'text-green-600' : 'text-red-600'}`}>
                   {formatCurrency(tx.amount)}
                 </TableCell>
@@ -210,8 +211,7 @@ export function ZakatTab() {
         {transactions.length > 0 && (
             <UiTableFooter>
                 <TableRow className="bg-amber-500 hover:bg-amber-500/90 font-bold">
-                    <TableCell colSpan={isAdmin ? 2 : 1}></TableCell>
-                    <TableCell className="text-white text-right font-bold">Total</TableCell>
+                    <TableCell colSpan={isAdmin ? 3 : 2} className="text-right text-white">Total</TableCell>
                     <TableCell className="text-right text-white">
                         {formatCurrency(totalAmount)}
                     </TableCell>
