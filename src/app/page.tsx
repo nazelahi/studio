@@ -79,7 +79,7 @@ export default function HomePage() {
       <button onClick={() => handleTabChange('overview')} className={`w-full text-left hover:text-foreground ${activeTab === 'overview' ? 'text-foreground' : 'text-muted-foreground'}`}>{settings.tabNames.overview}</button>
       <button onClick={() => handleTabChange('contacts')} className={`w-full text-left hover:text-foreground ${activeTab === 'contacts' ? 'text-foreground' : 'text-muted-foreground'}`}>{settings.tabNames.tenants}</button>
       <button onClick={() => handleTabChange('work')} className={`w-full text-left hover:text-foreground ${activeTab === 'work' ? 'text-foreground' : 'text-muted-foreground'}`}>{settings.tabNames.work}</button>
-      <button onClick={() => handleTabChange('integrations')} className={`w-full text-left hover:text-foreground ${activeTab === 'integrations' ? 'text-foreground' : 'text-muted-foreground'}`}>{settings.tabNames.integrations}</button>
+      {isAdmin && <button onClick={() => handleTabChange('integrations')} className={`w-full text-left hover:text-foreground ${activeTab === 'integrations' ? 'text-foreground' : 'text-muted-foreground'}`}>{settings.tabNames.integrations}</button>}
       <button onClick={() => handleTabChange('reports')} className={`w-full text-left hover:text-foreground ${activeTab === 'reports' ? 'text-foreground' : 'text-muted-foreground'}`}>{settings.tabNames.reports}</button>
       <button onClick={() => handleTabChange('zakat')} className={`w-full text-left hover:text-foreground ${activeTab === 'zakat' ? 'text-foreground' : 'text-muted-foreground'}`}>{settings.tabNames.zakat}</button>
     </>

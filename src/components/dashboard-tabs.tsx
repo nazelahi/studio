@@ -12,6 +12,8 @@ import { ZakatTab } from "@/components/zakat-tab"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useSettings } from "@/context/settings-context"
 import { WorkDetailsTab } from "./work-details-tab"
+import { useAuth } from "@/context/auth-context"
+import { cn } from "@/lib/utils"
 
 interface DashboardTabsProps {
   year: number;
@@ -25,16 +27,17 @@ interface DashboardTabsProps {
 
 export default function DashboardTabs({ year, activeTab, onTabChange, selectedYear, onYearChange, years }: DashboardTabsProps) {
   const { settings } = useSettings();
+  const { isAdmin } = useAuth();
 
   return (
     <div className="w-full">
       <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
         <div className="hidden md:flex justify-between items-center mb-4">
-          <TabsList className="grid w-full grid-cols-6">
+          <TabsList className={cn("grid w-full", isAdmin ? "grid-cols-6" : "grid-cols-5")}>
             <TabsTrigger value="overview">{settings.tabNames.overview}</TabsTrigger>
             <TabsTrigger value="contacts">{settings.tabNames.tenants}</TabsTrigger>
             <TabsTrigger value="work">{settings.tabNames.work}</TabsTrigger>
-            <TabsTrigger value="integrations">{settings.tabNames.integrations}</TabsTrigger>
+            {isAdmin && <TabsTrigger value="integrations">{settings.tabNames.integrations}</TabsTrigger>}
             <TabsTrigger value="reports">{settings.tabNames.reports}</TabsTrigger>
             <TabsTrigger value="zakat">{settings.tabNames.zakat}</TabsTrigger>
           </TabsList>
