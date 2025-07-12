@@ -15,10 +15,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "./ui/command"
-import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
-import { PlusCircle, Edit, Trash2, LoaderCircle, CheckCircle, Construction, Calendar, ChevronDown, Check } from "lucide-react"
+import { PlusCircle, Edit, Trash2, LoaderCircle } from "lucide-react"
 import type { WorkDetail, Tenant } from "@/types"
 import { saveWorkDetailAction, deleteWorkDetailAction } from "@/app/actions/work"
 import { format, parseISO } from "date-fns"
@@ -30,41 +27,28 @@ const formatCurrency = (amount?: number) => {
 };
 
 export function WorkDetailsTab() {
-  const { workDetails, tenants, loading } = useData();
+  const { workDetails, loading } = useData();
   const { isAdmin } = useAuth();
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [editingWork, setEditingWork] = React.useState<WorkDetail | null>(null);
   const [isPending, startTransition] = React.useTransition();
-  const [isContactFinderOpen, setIsContactFinderOpen] = React.useState(false);
-  const [assignedContact, setAssignedContact] = React.useState<Tenant | null>(null);
 
   const handleOpenChange = (isOpen: boolean) => {
     if (!isOpen) {
       setEditingWork(null);
-      setAssignedContact(null);
     }
     setIsDialogOpen(isOpen);
   };
   
   const handleEdit = (work: WorkDetail) => {
     setEditingWork(work);
-    if (work.assigned_to_id) {
-        const contact = tenants.find(t => t.id === work.assigned_to_id);
-        setAssignedContact(contact || null);
-    }
     setIsDialogOpen(true);
   };
 
   const handleSave = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-
-    if (assignedContact) {
-        formData.set('assigned_to_id', assignedContact.id);
-    } else {
-        formData.delete('assigned_to_id');
-    }
 
     startTransition(async () => {
       const result = await saveWorkDetailAction(formData);
@@ -86,11 +70,6 @@ export function WorkDetailsTab() {
             toast({ title: 'Work Detail Deleted', description: 'The work item has been removed.' });
         }
     });
-  };
-  
-  const handleSelectContact = (contact: Tenant) => {
-    setAssignedContact(contact);
-    setIsContactFinderOpen(false);
   };
   
   const grandTotal = React.useMemo(() => {
@@ -161,45 +140,6 @@ export function WorkDetailsTab() {
                                         <SelectItem value="Completed">Completed</SelectItem>
                                     </SelectContent>
                                 </Select>
-                            </div>
-                            <div className="space-y-2">
-                                <Label>Assign To</Label>
-                                <Popover open={isContactFinderOpen} onOpenChange={setIsContactFinderOpen}>
-                                    <PopoverTrigger asChild>
-                                        <Button variant="outline" role="combobox" className="w-full justify-between font-normal">
-                                            {assignedContact ? (
-                                                <div className="flex items-center gap-2">
-                                                    <Avatar className="h-6 w-6">
-                                                        <AvatarImage src={assignedContact.avatar} />
-                                                        <AvatarFallback>{assignedContact.name.charAt(0)}</AvatarFallback>
-                                                    </Avatar>
-                                                    {assignedContact.name}
-                                                </div>
-                                            ) : "Select a contact..."}
-                                            <ChevronDown className="h-4 w-4 shrink-0 opacity-50"/>
-                                        </Button>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                        <Command>
-                                            <CommandInput placeholder="Search contacts..." />
-                                            <CommandEmpty>No contact found.</CommandEmpty>
-                                            <CommandList>
-                                                <CommandGroup>
-                                                    {tenants.map((contact) => (
-                                                        <CommandItem
-                                                            key={contact.id}
-                                                            value={contact.name}
-                                                            onSelect={() => handleSelectContact(contact)}
-                                                        >
-                                                            <Check className={cn("mr-2 h-4 w-4", assignedContact?.id === contact.id ? "opacity-100" : "opacity-0")} />
-                                                            {contact.name}
-                                                        </CommandItem>
-                                                    ))}
-                                                </CommandGroup>
-                                            </CommandList>
-                                        </Command>
-                                    </PopoverContent>
-                                </Popover>
                             </div>
                         </div>
                         <DialogFooter>
@@ -302,5 +242,3 @@ export function WorkDetailsTab() {
     </Card>
   )
 }
-
-    
