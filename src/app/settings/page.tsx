@@ -1,5 +1,4 @@
 
-
 "use client"
 
 import Link from "next/link"
@@ -12,12 +11,15 @@ import { useSettings } from "@/context/settings-context"
 import { usePathname, useRouter } from "next/navigation"
 import { useAuth } from "@/context/auth-context"
 import { Button } from "@/components/ui/button"
-import { User, LogOut, MapPin, Menu, Settings, LoaderCircle, LogIn, Upload, Trash2, ImageIcon } from "lucide-react"
+import { User, LogOut, MapPin, Menu, Settings, LoaderCircle, LogIn, Building, KeyRound, Palette, Tag } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useToast } from "@/hooks/use-toast"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from "@/components/ui/sheet"
 import { updatePropertySettingsAction, updateUserCredentialsAction } from "./actions"
 import { useProtection } from "@/context/protection-context"
+import { cn } from "@/lib/utils"
+
+type SettingsTab = 'property' | 'account' | 'application' | 'labels';
 
 export default function SettingsPage() {
   const { settings, setSettings, refreshSettings } = useSettings();
@@ -32,6 +34,8 @@ export default function SettingsPage() {
   const [newEmail, setNewEmail] = useState(user?.email || '');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+
+  const [activeTab, setActiveTab] = useState<SettingsTab>('property');
 
   React.useEffect(() => {
     if (user?.email) {
@@ -123,13 +127,34 @@ export default function SettingsPage() {
           </div>
       )
   }
+  
+  const navigationLinks = (
+    <>
+      <button onClick={() => setActiveTab('property')} className={cn("flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary", {'bg-muted text-primary': activeTab === 'property'})}>
+        <Building className="h-4 w-4" />
+        Property
+      </button>
+      <button onClick={() => setActiveTab('account')} className={cn("flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary", {'bg-muted text-primary': activeTab === 'account'})}>
+        <KeyRound className="h-4 w-4" />
+        Account
+      </button>
+      <button onClick={() => setActiveTab('application')} className={cn("flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary", {'bg-muted text-primary': activeTab === 'application'})}>
+        <Palette className="h-4 w-4" />
+        Application
+      </button>
+      <button onClick={() => setActiveTab('labels')} className={cn("flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary", {'bg-muted text-primary': activeTab === 'labels'})}>
+        <Tag className="h-4 w-4" />
+        Page Labels
+      </button>
+    </>
+  );
 
   return (
      <div className="flex min-h-screen w-full flex-col">
        <header className="sticky top-0 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6 z-50">
         <nav className="hidden flex-col gap-6 text-lg font-medium md:flex md:flex-row md:items-center md:gap-5 md:text-sm lg:gap-6">
           <Link
-            href="#"
+            href="/"
             className="flex items-center gap-2 text-lg font-semibold md:text-base"
           >
             <Logo className="h-6 w-6 text-primary" />
@@ -137,13 +162,13 @@ export default function SettingsPage() {
           </Link>
           <Link
             href="/"
-            className={`transition-colors hover:text-foreground ${pathname === '/' ? 'text-foreground' : 'text-muted-foreground'}`}
+            className={`transition-colors hover:text-foreground text-muted-foreground`}
           >
             {settings.page_dashboard.nav_dashboard}
           </Link>
           <Link
             href="/settings"
-            className={`transition-colors hover:text-foreground ${pathname === '/settings' ? 'text-foreground' : 'text-muted-foreground'}`}
+            className={`transition-colors hover:text-foreground text-foreground`}
           >
             {settings.page_dashboard.nav_settings}
           </Link>
@@ -160,24 +185,20 @@ export default function SettingsPage() {
             </Button>
           </SheetTrigger>
           <SheetContent side="left">
-             <SheetHeader>
-              <SheetTitle>Navigation Menu</SheetTitle>
-              <SheetDescription>Main navigation links for the application.</SheetDescription>
-            </SheetHeader>
             <nav className="grid gap-6 text-lg font-medium">
               <Link
-                href="#"
+                href="/"
                 className="flex items-center gap-2 text-lg font-semibold"
               >
                 <Logo className="h-6 w-6 text-primary" />
                 <span className="sr-only">{settings.appName}</span>
               </Link>
-              <Link href="/" className={`hover:text-foreground ${pathname === '/' ? 'text-foreground' : 'text-muted-foreground'}`}>
+              <Link href="/" className={`hover:text-foreground text-muted-foreground`}>
                 {settings.page_dashboard.nav_dashboard}
               </Link>
               <Link
                 href="/settings"
-                className={`hover:text-foreground ${pathname === '/settings' ? 'text-foreground' : 'text-muted-foreground'}`}
+                className={`hover:text-foreground text-foreground`}
               >
                 {settings.page_dashboard.nav_settings}
               </Link>
@@ -230,122 +251,146 @@ export default function SettingsPage() {
           <div className="mx-auto grid w-full max-w-6xl gap-2">
             <h1 className="text-3xl font-semibold">{settings.page_settings.title}</h1>
           </div>
-          <div className="mx-auto grid w-full max-w-6xl items-start gap-6">
+          <div className="mx-auto grid w-full max-w-6xl items-start gap-6 md:grid-cols-[180px_1fr] lg:grid-cols-[250px_1fr]">
+            <nav className="grid gap-4 text-sm text-muted-foreground">
+                {navigationLinks}
+            </nav>
             <div className="grid gap-6">
-              <form action={handleSavePropertyDetails}>
-                <div className="grid gap-6">
-                  <Card>
-                      <CardHeader>
-                          <CardTitle>{settings.page_settings.property_details.title}</CardTitle>
-                          <CardDescription>{settings.page_settings.property_details.description}</CardDescription>
-                      </CardHeader>
-                      <CardContent className="space-y-6">
-                          <div className="grid md:grid-cols-2 gap-4">
-                              <div className="space-y-2">
-                                  <Label htmlFor="houseName">{settings.page_settings.property_details.house_name_label}</Label>
-                                  <Input id="houseName" name="houseName" value={settings.houseName} onChange={handleInputChange} />
-                              </div>
-                              <div className="space-y-2">
-                                  <Label htmlFor="houseAddress">{settings.page_settings.property_details.house_address_label}</Label>
-                                  <Input id="houseAddress" name="houseAddress" value={settings.houseAddress} onChange={handleInputChange} />
-                              </div>
-                          </div>
-
-                          <div>
-                            <h3 className="text-lg font-medium leading-6 text-card-foreground mb-1">Rental Bank Details</h3>
-                            <p className="text-sm text-muted-foreground mb-4">Enter the bank details for monthly rent deposits.</p>
-                             <div className="grid md:grid-cols-2 gap-4">
-                               <div className="space-y-2">
-                                    <Label htmlFor="bankName">Bank Name</Label>
-                                    <Input id="bankName" name="bankName" value={settings.bankName} onChange={handleInputChange} />
+              
+              {activeTab === 'property' && (
+                <form action={handleSavePropertyDetails}>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>{settings.page_settings.property_details.title}</CardTitle>
+                            <CardDescription>{settings.page_settings.property_details.description}</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-6">
+                            <div className="grid md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="houseName">{settings.page_settings.property_details.house_name_label}</Label>
+                                    <Input id="houseName" name="houseName" value={settings.houseName} onChange={handleInputChange} />
                                 </div>
                                 <div className="space-y-2">
-                                    <Label htmlFor="bankAccountNumber">Bank Account Number</Label>
-                                    <Input id="bankAccountNumber" name="bankAccountNumber" value={settings.bankAccountNumber} onChange={handleInputChange} />
+                                    <Label htmlFor="houseAddress">{settings.page_settings.property_details.house_address_label}</Label>
+                                    <Input id="houseAddress" name="houseAddress" value={settings.houseAddress} onChange={handleInputChange} />
                                 </div>
                             </div>
-                          </div>
-                      </CardContent>
-                      <CardFooter>
-                        <Button type="submit" disabled={isPending}>
-                           {isPending && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
-                           Save Property Settings
-                        </Button>
-                      </CardFooter>
-                  </Card>
-                </div>
-              </form>
 
-              <form action={handleSaveCredentials}>
-                  <Card>
-                      <CardHeader>
-                          <CardTitle>Admin Credentials</CardTitle>
-                          <CardDescription>Update the email and password for the admin account.</CardDescription>
-                      </CardHeader>
-                      <CardContent className="grid md:grid-cols-2 gap-4">
-                          <input type="hidden" name="userId" value={user?.id || ''} />
-                          <div className="space-y-2">
-                              <Label htmlFor="email">Email</Label>
-                              <Input id="email" name="email" type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} required />
-                          </div>
-                          <div className="space-y-2">
-                              <Label htmlFor="password">New Password</Label>
-                              <Input id="password" name="password" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Leave blank to keep current" />
-                          </div>
-                           <div className="space-y-2 md:col-span-2">
-                              <Label htmlFor="confirmPassword">Confirm New Password</Label>
-                              <Input id="confirmPassword" name="confirmPassword" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm new password" />
-                          </div>
-                      </CardContent>
-                      <CardFooter>
-                          <Button type="submit" disabled={isCredentialsPending}>
-                             {isCredentialsPending && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
-                             Save Credentials
+                            <div>
+                              <h3 className="text-lg font-medium leading-6 text-card-foreground mb-1">Rental Bank Details</h3>
+                              <p className="text-sm text-muted-foreground mb-4">Enter the bank details for monthly rent deposits.</p>
+                               <div className="grid md:grid-cols-2 gap-4">
+                                 <div className="space-y-2">
+                                      <Label htmlFor="bankName">Bank Name</Label>
+                                      <Input id="bankName" name="bankName" value={settings.bankName} onChange={handleInputChange} />
+                                  </div>
+                                  <div className="space-y-2">
+                                      <Label htmlFor="bankAccountNumber">Bank Account Number</Label>
+                                      <Input id="bankAccountNumber" name="bankAccountNumber" value={settings.bankAccountNumber} onChange={handleInputChange} />
+                                  </div>
+                              </div>
+                            </div>
+
+                             <div>
+                              <h3 className="text-lg font-medium leading-6 text-card-foreground mb-1 mt-6">Zakat Bank Details</h3>
+                              <p className="text-sm text-muted-foreground mb-4">Enter the bank details for Zakat funds.</p>
+                               <div className="grid md:grid-cols-2 gap-4">
+                                 <div className="space-y-2">
+                                      <Label htmlFor="zakatBankName">Zakat Bank Name</Label>
+                                      <Input id="zakatBankName" name="zakatBankName" value={settings.zakatBankName} onChange={handleInputChange} />
+                                  </div>
+                                  <div className="space-y-2">
+                                      <Label htmlFor="zakatBankAccountNumber">Zakat Bank Account Number</Label>
+                                      <Input id="zakatBankAccountNumber" name="zakatBankAccountNumber" value={settings.zakatBankAccountNumber} onChange={handleInputChange} />
+                                  </div>
+                              </div>
+                            </div>
+                        </CardContent>
+                        <CardFooter>
+                          <Button type="submit" disabled={isPending}>
+                             {isPending && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
+                             Save Property Settings
                           </Button>
-                      </CardFooter>
-                  </Card>
-              </form>
+                        </CardFooter>
+                    </Card>
+                </form>
+              )}
 
-              <Card>
-                  <CardHeader>
-                      <CardTitle>{settings.page_settings.app_settings.title}</CardTitle>
-                      <CardDescription>{settings.page_settings.app_settings.description}</CardDescription>
-                  </CardHeader>
-                  <CardContent className="grid sm:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                          <Label htmlFor="appName">{settings.page_settings.app_settings.header_name_label}</Label>
-                          <Input id="appName" name="appName" value={settings.appName} onChange={handleInputChange} />
-                      </div>
-                      <div className="space-y-2">
-                          <Label htmlFor="footerName">{settings.page_settings.app_settings.footer_name_label}</Label>
-                          <Input id="footerName" name="footerName" value={settings.footerName} onChange={handleInputChange} />
-                      </div>
-                  </CardContent>
-                  <CardFooter>
-                      <Button onClick={handleSaveAppSettings}>Save</Button>
-                  </CardFooter>
-              </Card>
+              {activeTab === 'account' && (
+                <form action={handleSaveCredentials}>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Admin Credentials</CardTitle>
+                            <CardDescription>Update the email and password for the admin account.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="grid md:grid-cols-2 gap-4">
+                            <input type="hidden" name="userId" value={user?.id || ''} />
+                            <div className="space-y-2">
+                                <Label htmlFor="email">Email</Label>
+                                <Input id="email" name="email" type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} required />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="password">New Password</Label>
+                                <Input id="password" name="password" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Leave blank to keep current" />
+                            </div>
+                             <div className="space-y-2 md:col-span-2">
+                                <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                                <Input id="confirmPassword" name="confirmPassword" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm new password" />
+                            </div>
+                        </CardContent>
+                        <CardFooter>
+                            <Button type="submit" disabled={isCredentialsPending}>
+                               {isCredentialsPending && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
+                               Save Credentials
+                            </Button>
+                        </CardFooter>
+                    </Card>
+                </form>
+              )}
 
-              <Card>
-                  <CardHeader>
-                      <CardTitle>{settings.page_settings.overview_settings.title}</CardTitle>
-                      <CardDescription>{settings.page_settings.overview_settings.description}</CardDescription>
-                  </CardHeader>
-                  <CardContent className="grid md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                          <Label htmlFor="overview-financial-title">{settings.page_settings.overview_settings.financial_title_label}</Label>
-                          <Input id="overview-financial-title" name="page_overview.financial_overview_title" value={settings.page_overview.financial_overview_title} onChange={handleInputChange} />
-                      </div>
-                      <div className="space-y-2">
-                          <Label htmlFor="overview-financial-desc">{settings.page_settings.overview_settings.financial_description_label}</Label>
-                          <Input id="overview-financial-desc" name="page_overview.financial_overview_description" value={settings.page_overview.financial_overview_description} onChange={handleInputChange} />
-                      </div>
-                  </CardContent>
-                  <CardFooter>
-                      <Button onClick={handleSaveAppSettings}>Save</Button>
-                  </CardFooter>
-              </Card>
-
+              {activeTab === 'application' && (
+                <Card>
+                    <CardHeader>
+                        <CardTitle>{settings.page_settings.app_settings.title}</CardTitle>
+                        <CardDescription>{settings.page_settings.app_settings.description}</CardDescription>
+                    </CardHeader>
+                    <CardContent className="grid sm:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="appName">{settings.page_settings.app_settings.header_name_label}</Label>
+                            <Input id="appName" name="appName" value={settings.appName} onChange={handleInputChange} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="footerName">{settings.page_settings.app_settings.footer_name_label}</Label>
+                            <Input id="footerName" name="footerName" value={settings.footerName} onChange={handleInputChange} />
+                        </div>
+                    </CardContent>
+                    <CardFooter>
+                        <Button onClick={handleSaveAppSettings}>Save</Button>
+                    </CardFooter>
+                </Card>
+              )}
+              
+              {activeTab === 'labels' && (
+                 <Card>
+                    <CardHeader>
+                        <CardTitle>{settings.page_settings.overview_settings.title}</CardTitle>
+                        <CardDescription>{settings.page_settings.overview_settings.description}</CardDescription>
+                    </CardHeader>
+                    <CardContent className="grid md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="overview-financial-title">{settings.page_settings.overview_settings.financial_title_label}</Label>
+                            <Input id="overview-financial-title" name="page_overview.financial_overview_title" value={settings.page_overview.financial_overview_title} onChange={handleInputChange} />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="overview-financial-desc">{settings.page_settings.overview_settings.financial_description_label}</Label>
+                            <Input id="overview-financial-desc" name="page_overview.financial_overview_description" value={settings.page_overview.financial_overview_description} onChange={handleInputChange} />
+                        </div>
+                    </CardContent>
+                    <CardFooter>
+                        <Button onClick={handleSaveAppSettings}>Save</Button>
+                    </CardFooter>
+                </Card>
+              )}
             </div>
 
           </div>
