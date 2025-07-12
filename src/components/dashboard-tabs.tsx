@@ -38,12 +38,12 @@ export default function DashboardTabs() {
         </div>
       </div>
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-4">
+        <TabsList className="grid w-full grid-cols-2 sm:grid-cols-5">
           <TabsTrigger value="overview">{settings.tabNames.overview}</TabsTrigger>
           <TabsTrigger value="tenants">{settings.tabNames.tenants}</TabsTrigger>
           <TabsTrigger value="integrations">{settings.tabNames.integrations}</TabsTrigger>
           <TabsTrigger value="reports">{settings.tabNames.reports}</TabsTrigger>
-          {/* <TabsTrigger value="zakat">{settings.tabNames.zakat}</TabsTrigger> */}
+          <TabsTrigger value="zakat">{settings.tabNames.zakat}</TabsTrigger>
         </TabsList>
         <TabsContent value="overview">
           <MonthlyOverviewTab year={parseInt(selectedYear)} />
@@ -57,9 +57,9 @@ export default function DashboardTabs() {
          <TabsContent value="reports">
             <ReportsTab year={parseInt(selectedYear)} />
         </TabsContent>
-         {/* <TabsContent value="zakat">
+         <TabsContent value="zakat">
             <ZakatTab />
-        </TabsContent> */}
+        </TabsContent>
       </Tabs>
     </div>
   )

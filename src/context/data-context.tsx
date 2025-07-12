@@ -68,20 +68,20 @@ export function DataProvider({ children }: { children: ReactNode }) {
                 return;
             }
 
-            const [tenantsRes, expensesRes, rentDataRes, propertySettingsRes, depositsRes] = await Promise.all([
+            const [tenantsRes, expensesRes, rentDataRes, propertySettingsRes, depositsRes, zakatRes] = await Promise.all([
                 supabase.from('tenants').select('*'),
                 supabase.from('expenses').select('*'),
                 supabase.from('rent_entries').select('*'),
                 supabase.from('property_settings').select('*').eq('id', 1).maybeSingle(),
                 supabase.from('deposits').select('*'),
-                // supabase.from('zakat_transactions').select('*') // Temporarily disabled
+                supabase.from('zakat_transactions').select('*')
             ]);
 
             if (tenantsRes.error) throw tenantsRes.error;
             if (expensesRes.error) throw expensesRes.error;
             if (rentDataRes.error) throw rentDataRes.error;
             if (depositsRes.error) throw depositsRes.error;
-            // if (zakatRes.error) throw zakatRes.error;
+            if (zakatRes.error) throw zakatRes.error;
             if (propertySettingsRes.error && propertySettingsRes.error.code !== 'PGRST116') {
                  throw propertySettingsRes.error;
             }
@@ -92,7 +92,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
                 rentData: rentDataRes.data as RentEntry[],
                 propertySettings: propertySettingsRes.data as PropertySettings,
                 deposits: depositsRes.data as Deposit[],
-                zakatTransactions: [], // Temporarily return empty array
+                zakatTransactions: zakatRes.data as ZakatTransaction[],
             });
         } catch (error) {
             handleError(error, 'fetching data');
