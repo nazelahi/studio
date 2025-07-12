@@ -1,7 +1,4 @@
 
-
-
-
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
@@ -9,6 +6,7 @@ import type { Tenant, Expense, RentEntry, PropertySettings, Deposit, ZakatTransa
 import { parseISO, getMonth, getYear } from 'date-fns';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from './auth-context';
 
 interface AppData {
   tenants: Tenant[];
@@ -52,7 +50,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const [data, setData] = useState<AppData>({ tenants: [], expenses: [], rentData: [], propertySettings: null, deposits: [], zakatTransactions: [], notices: [], workDetails: [], zakatBankDetails: [] });
     const [loading, setLoading] = useState(true);
     const { toast } = useToast();
-
+    const { user, loading: authLoading } = useAuth();
+    
     const handleError = (error: any, context: string) => {
         const errorMessage = error.message || 'An unexpected error occurred.';
         console.error(`Error in ${context}:`, errorMessage, error);
@@ -116,8 +115,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }, [toast]);
 
     useEffect(() => {
-        fetchData();
-    }, [fetchData]);
+        if (!authLoading) {
+            fetchData();
+        }
+    }, [fetchData, authLoading]);
     
     useEffect(() => {
         if (!supabase) return;

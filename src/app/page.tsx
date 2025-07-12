@@ -67,10 +67,27 @@ export default function HomePage() {
   }
   
   const handleTabChange = (value: string) => {
+    // If user is not admin and clicks a protected tab, do nothing or show message.
+    // For now, just prevent switching if not admin and tab is integrations
+    if (!isAdmin && value === 'integrations') {
+      toast({
+        title: "Admin Access Required",
+        description: "You need to be an admin to view this tab.",
+        variant: "destructive"
+      })
+      return;
+    }
     setActiveTab(value);
     setIsSheetOpen(false); // Close sidebar on selection
   };
   
+  // After signing out, if on a protected tab, redirect to overview.
+  React.useEffect(() => {
+    if (!isAdmin && (activeTab === 'integrations')) {
+        setActiveTab('overview');
+    }
+  }, [isAdmin, activeTab]);
+
   const mainNavLinks = (
     <>
       <Link href="/" className={`hover:text-foreground ${pathname === '/' ? 'text-foreground' : 'text-muted-foreground'}`}>
@@ -236,7 +253,7 @@ export default function HomePage() {
         <DashboardTabs
           year={parseInt(selectedYear)}
           activeTab={activeTab}
-          onTabChange={setActiveTab}
+          onTabChange={handleTabChange}
           selectedYear={selectedYear}
           onYearChange={setSelectedYear}
           years={years}
@@ -248,5 +265,3 @@ export default function HomePage() {
     </div>
   )
 }
-
-    
