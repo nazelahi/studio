@@ -38,6 +38,7 @@ export async function logDepositAction(formData: FormData) {
     }
     
     const depositId = formData.get('depositId') as string | undefined;
+    const oldReceiptPath = formData.get('oldReceiptPath') as string | undefined;
 
     let error;
 
@@ -48,6 +49,17 @@ export async function logDepositAction(formData: FormData) {
             .update(depositData)
             .eq('id', depositId);
         error = updateError;
+        
+        // If update was successful and a new receipt was uploaded, delete the old one
+        if (!updateError && oldReceiptPath && depositData.receipt_url !== oldReceiptPath) {
+             const { error: storageError } = await supabaseAdmin.storage
+                .from('deposit-receipts')
+                .remove([oldReceiptPath]);
+            if (storageError) {
+                console.error('Supabase storage delete error (non-fatal):', storageError);
+            }
+        }
+
     } else {
         // Insert new deposit
         const { error: insertError } = await supabaseAdmin

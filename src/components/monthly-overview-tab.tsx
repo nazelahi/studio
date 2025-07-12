@@ -472,10 +472,9 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
 
     const formData = new FormData(event.currentTarget);
     let receiptUrl: string | undefined = loggedDeposit?.receipt_url;
-    let newReceiptUploaded = false;
+    let oldReceiptPath: string | undefined = undefined;
 
     if (receiptFile) {
-        // A new file was selected, upload it
         const fileExt = receiptFile.name.split('.').pop();
         const filePath = `${year}-${months.indexOf(selectedMonth)}/${Date.now()}.${fileExt}`;
         const { error: uploadError } = await supabase.storage
@@ -493,7 +492,11 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
             .getPublicUrl(filePath);
         
         receiptUrl = publicUrlData.publicUrl;
-        newReceiptUploaded = true;
+
+        if (loggedDeposit?.receipt_url) {
+            oldReceiptPath = new URL(loggedDeposit.receipt_url).pathname.split('/deposit-receipts/')[1];
+            formData.set('oldReceiptPath', oldReceiptPath);
+        }
     }
 
     formData.set('receipt_url', receiptUrl || '');
@@ -502,8 +505,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
     
     if (result.error) {
         toast({ title: "Error", description: result.error, variant: "destructive" });
-        // If save fails and we uploaded a new receipt, try to remove it
-        if (newReceiptUploaded && receiptUrl) {
+        if (receiptUrl && receiptUrl !== loggedDeposit?.receipt_url) {
             const path = new URL(receiptUrl).pathname.split('/deposit-receipts/')[1];
             await supabase.storage.from('deposit-receipts').remove([path]);
         }
