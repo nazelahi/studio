@@ -38,15 +38,6 @@ interface PageSettings {
     };
 }
 
-interface TabNames {
-    overview: string;
-    tenants: string;
-    work: string;
-    integrations: string;
-    reports: string;
-    zakat: string;
-}
-
 interface AppSettings {
   appName: string;
   houseName: string;
@@ -117,6 +108,10 @@ const defaultSettings: AppSettings = {
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
 
+const isObject = (item: any) => {
+    return (item && typeof item === 'object' && !Array.isArray(item));
+}
+
 const deepMerge = (target: any, source: any) => {
     const output = { ...target };
     if (isObject(target) && isObject(source)) {
@@ -131,80 +126,95 @@ const deepMerge = (target: any, source: any) => {
     return output;
 }
 
-const isObject = (item: any) => {
-    return (item && typeof item === 'object' && !Array.isArray(item));
-}
-
+// Separate state for local settings to prevent race conditions
+type LocalSettings = Omit<AppSettings, 'houseName' | 'houseAddress' | 'bankName' | 'bankAccountNumber' | 'zakatBankDetails'>;
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
-    const [settings, setSettings] = useState<AppSettings>(defaultSettings);
+    const [localSettings, setLocalSettings] = useState<LocalSettings>(() => {
+        const { houseName, houseAddress, bankName, bankAccountNumber, zakatBankDetails, ...rest } = defaultSettings;
+        return rest;
+    });
+    const [dbSettings, setDbSettings] = useState({
+        houseName: defaultSettings.houseName,
+        houseAddress: defaultSettings.houseAddress,
+        bankName: defaultSettings.bankName,
+        bankAccountNumber: defaultSettings.bankAccountNumber,
+        zakatBankDetails: defaultSettings.zakatBankDetails,
+    });
+
     const [isMounted, setIsMounted] = useState(false);
     const { propertySettings, zakatBankDetails, loading: dataLoading, refreshData } = useData();
     const { isAdmin, loading: authLoading } = useAuth();
     
-    const refreshSettings = useCallback(() => {
-        refreshData();
-    }, [refreshData]);
-
+    // Load local settings from localStorage on mount
     useEffect(() => {
         setIsMounted(true);
         try {
             const item = window.localStorage.getItem('appSettings');
             if (item) {
                 const storedSettings = JSON.parse(item);
-                setSettings(prev => deepMerge(prev, storedSettings));
+                setLocalSettings(prev => deepMerge(prev, storedSettings));
             }
         } catch (error) {
             console.error("Failed to parse settings from localStorage", error);
         }
     }, []);
 
+    // Save local settings to localStorage whenever they change
     useEffect(() => {
         if (isMounted) {
-            const { houseName, houseAddress, bankName, bankAccountNumber, zakatBankDetails, ...localSettings } = settings;
             try {
                 window.localStorage.setItem('appSettings', JSON.stringify(localSettings));
             } catch (error) {
                 console.error("Failed to save settings to localStorage", error);
             }
         }
-    }, [settings, isMounted]);
+    }, [localSettings, isMounted]);
 
-
+    // Effect to update DB-backed settings
     useEffect(() => {
-        if (dataLoading || authLoading) {
-            return;
-        }
+        if (dataLoading || authLoading) return;
 
         if (isAdmin && propertySettings) {
-            setSettings(prev => ({
-                ...prev,
+            setDbSettings({
                 houseName: propertySettings.house_name || defaultSettings.houseName,
                 houseAddress: propertySettings.house_address || defaultSettings.houseAddress,
                 bankName: propertySettings.bank_name || defaultSettings.bankName,
                 bankAccountNumber: propertySettings.bank_account_number || defaultSettings.bankAccountNumber,
                 zakatBankDetails: zakatBankDetails || defaultSettings.zakatBankDetails,
-            }));
+            });
         } else {
-            setSettings(prev => ({
-                ...prev,
+            // Revert to defaults when logged out or no data
+            setDbSettings({
                 houseName: defaultSettings.houseName,
                 houseAddress: defaultSettings.houseAddress,
                 bankName: defaultSettings.bankName,
                 bankAccountNumber: defaultSettings.bankAccountNumber,
                 zakatBankDetails: defaultSettings.zakatBankDetails,
-            }));
+            });
         }
-
     }, [isAdmin, propertySettings, zakatBankDetails, dataLoading, authLoading]);
+    
+    // Combine local and DB settings into the final settings object
+    const combinedSettings = { ...localSettings, ...dbSettings };
 
-    const loading = !isMounted || dataLoading || authLoading;
+    const handleSetSettings = (newSettingsFunc: React.SetStateAction<AppSettings>) => {
+        const newSettings = typeof newSettingsFunc === 'function' ? newSettingsFunc(combinedSettings) : newSettingsFunc;
+        
+        const { houseName, houseAddress, bankName, bankAccountNumber, zakatBankDetails, ...newLocalSettings } = newSettings;
+        
+        setLocalSettings(newLocalSettings);
+
+        // This part is mainly for live updates in the UI before a DB save, 
+        // but the useEffect above is the source of truth from the DB.
+        setDbSettings({ houseName, houseAddress, bankName, bankAccountNumber, zakatBankDetails });
+    };
 
     const value = {
-        settings,
-        setSettings,
-        loading,
-        refreshSettings,
+        settings: combinedSettings,
+        setSettings: handleSetSettings,
+        loading: !isMounted || dataLoading || authLoading,
+        refreshSettings: refreshData,
     };
 
     return (
