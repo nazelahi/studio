@@ -111,12 +111,14 @@ export default function SettingsPage() {
           >
             {settings.page_dashboard.nav_dashboard}
           </Link>
-          <Link
-            href="/settings"
-            className={`transition-colors hover:text-foreground ${pathname === '/settings' ? 'text-foreground' : 'text-muted-foreground'}`}
-          >
-            {settings.page_dashboard.nav_settings}
-          </Link>
+          {isAdmin && (
+            <Link
+              href="/settings"
+              className={`transition-colors hover:text-foreground ${pathname === '/settings' ? 'text-foreground' : 'text-muted-foreground'}`}
+            >
+              {settings.page_dashboard.nav_settings}
+            </Link>
+          )}
         </nav>
         <div className="flex-1 text-center">
             <h1 className="text-lg font-bold tracking-tight text-primary">{settings.houseName}</h1>
