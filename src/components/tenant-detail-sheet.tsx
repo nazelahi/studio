@@ -126,14 +126,14 @@ export function TenantDetailSheet({
         </SheetHeader>
 
         <div ref={sheetContentRef} className="flex-grow overflow-y-auto bg-background">
-           <div className="relative">
-                <div className="aspect-w-16 aspect-h-9">
-                    <img src={tenant.avatar} alt={tenant.name} className="w-full h-48 object-cover" data-ai-hint="person avatar" />
-                </div>
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+           <div className="relative bg-muted">
+                <a href={tenant.avatar} target="_blank" rel="noopener noreferrer" className="block">
+                  <img src={tenant.avatar} alt={tenant.name} className="w-full h-48 object-contain" data-ai-hint="person avatar" />
+                </a>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent pointer-events-none" />
                 <div className="absolute bottom-0 left-0 p-6">
-                    <h2 className="text-3xl font-bold text-white">{tenant.name}</h2>
-                    <p className="text-white/80">{tenant.property}</p>
+                    <h2 className="text-3xl font-bold text-white" style={{ textShadow: '1px 1px 3px rgba(0,0,0,0.7)' }}>{tenant.name}</h2>
+                    <p className="text-white/90" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.7)' }}>{tenant.property}</p>
                     <Badge className={`mt-2 ${getStatusBadge(tenant.status)}`}>{tenant.status}</Badge>
                 </div>
             </div>
