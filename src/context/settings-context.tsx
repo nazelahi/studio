@@ -1,10 +1,9 @@
 
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect, useMemo } from 'react';
 import { useData } from './data-context';
 import type { ZakatBankDetail, PropertySettings as DbPropertySettings } from '@/types';
-import { useAuth } from './auth-context';
 
 interface PageDashboard {
     nav_dashboard: string;
@@ -57,7 +56,7 @@ interface AppSettings {
 
 interface SettingsContextType {
   settings: AppSettings;
-  setSettings: React.Dispatch<React.SetStateAction<AppSettings>>;
+  setSettings: (newSettings: AppSettings) => void;
   loading: boolean;
   refreshSettings: () => void;
 }
@@ -104,7 +103,7 @@ const defaultSettings: AppSettings = {
             footer_name_label: "Footer Name",
         },
         overview_settings: {
-            title: "Overview Page Settings",
+            title: "Overview Settings",
             description: "Customize the text on the monthly overview page. These are saved in your browser.",
             financial_title_label: "Financial Overview Title",
             financial_description_label: "Financial Overview Description",
@@ -133,57 +132,46 @@ const deepMerge = (target: any, source: any) => {
 }
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
-    const [localSettings, setLocalSettings] = useState<Partial<AppSettings>>({});
-    const [dbSettings, setDbSettings] = useState<Partial<DbPropertySettings>>({});
     const [settings, setSettings] = useState<AppSettings>(defaultSettings);
-
     const [isMounted, setIsMounted] = useState(false);
     const { propertySettings, zakatBankDetails, loading: dataLoading, refreshData } = useData();
-    const { loading: authLoading } = useAuth();
     
     useEffect(() => {
         setIsMounted(true);
-        try {
-            const item = window.localStorage.getItem('appSettings');
-            if (item) {
-                setLocalSettings(JSON.parse(item));
-            }
-        } catch (error) {
-            console.error("Failed to parse settings from localStorage", error);
-        }
     }, []);
 
     useEffect(() => {
-        if (!dataLoading && propertySettings) {
-            setDbSettings({
-                ...propertySettings,
-                zakatBankDetails: zakatBankDetails,
-            });
+        if (isMounted) {
+            let localSettings = {};
+            try {
+                const item = window.localStorage.getItem('appSettings');
+                if (item) {
+                    localSettings = JSON.parse(item);
+                }
+            } catch (error) {
+                console.error("Failed to parse settings from localStorage", error);
+            }
+
+            const combinedSettings = deepMerge(defaultSettings, localSettings);
+
+            if (propertySettings) {
+                combinedSettings.houseName = propertySettings.house_name || defaultSettings.houseName;
+                combinedSettings.houseAddress = propertySettings.house_address || defaultSettings.houseAddress;
+                combinedSettings.bankName = propertySettings.bank_name || defaultSettings.bankName;
+                combinedSettings.bankAccountNumber = propertySettings.bank_account_number || defaultSettings.bankAccountNumber;
+                combinedSettings.bankLogoUrl = propertySettings.bank_logo_url || defaultSettings.bankLogoUrl;
+                combinedSettings.ownerName = propertySettings.owner_name || defaultSettings.ownerName;
+                combinedSettings.ownerPhotoUrl = propertySettings.owner_photo_url || defaultSettings.ownerPhotoUrl;
+            }
+            
+            combinedSettings.zakatBankDetails = zakatBankDetails || [];
+
+            setSettings(combinedSettings);
         }
-    }, [propertySettings, zakatBankDetails, dataLoading]);
-    
-    useEffect(() => {
-        const finalSettings = { ...defaultSettings, ...localSettings };
-
-        if (Object.keys(dbSettings).length > 0) {
-            finalSettings.houseName = dbSettings.house_name || defaultSettings.houseName;
-            finalSettings.houseAddress = dbSettings.house_address || defaultSettings.houseAddress;
-            finalSettings.bankName = dbSettings.bank_name || defaultSettings.bankName;
-            finalSettings.bankAccountNumber = dbSettings.bank_account_number || defaultSettings.bankAccountNumber;
-            finalSettings.bankLogoUrl = dbSettings.bank_logo_url || defaultSettings.bankLogoUrl;
-            finalSettings.ownerName = dbSettings.owner_name || defaultSettings.ownerName;
-            finalSettings.ownerPhotoUrl = dbSettings.owner_photo_url || defaultSettings.ownerPhotoUrl;
-            finalSettings.zakatBankDetails = (dbSettings as any).zakatBankDetails || defaultSettings.zakatBankDetails;
-        }
-
-        setSettings(finalSettings);
-
-    }, [localSettings, dbSettings]);
+    }, [isMounted, propertySettings, zakatBankDetails]);
 
 
-    const handleSetSettings = (newSettingsFunc: React.SetStateAction<AppSettings>) => {
-        const newSettings = typeof newSettingsFunc === 'function' ? newSettingsFunc(settings) : newSettingsFunc;
-        
+    const handleSetSettings = (newSettings: AppSettings) => {
         const { 
             houseName, houseAddress, bankName, bankAccountNumber, bankLogoUrl, ownerName, ownerPhotoUrl, zakatBankDetails, 
             ...localSettingsToSave 
@@ -192,7 +180,6 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
             const currentLocal = JSON.parse(window.localStorage.getItem('appSettings') || '{}');
             const newLocal = deepMerge(currentLocal, localSettingsToSave);
             window.localStorage.setItem('appSettings', JSON.stringify(newLocal));
-            setLocalSettings(newLocal);
         } catch (error) {
             console.error("Failed to save settings to localStorage", error);
         }
@@ -203,7 +190,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     const value = {
         settings,
         setSettings: handleSetSettings,
-        loading: !isMounted || dataLoading || authLoading,
+        loading: !isMounted || dataLoading,
         refreshSettings: refreshData,
     };
 
