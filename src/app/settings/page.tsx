@@ -26,7 +26,7 @@ export default function SettingsPage() {
   const { settings, setSettings, refreshSettings } = useSettings();
   const pathname = usePathname();
   const router = useRouter();
-  const { isAdmin, user } = useAuth();
+  const { isAdmin, user, signOut } = useAuth();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
   const [isCredentialsPending, startCredentialsTransition] = useTransition();
@@ -81,7 +81,6 @@ export default function SettingsPage() {
   };
 
   const handleSignOut = async () => {
-    const { signOut } = await import('@/context/auth-context').then(mod => mod.useAuth());
     await signOut();
     toast({
       title: "Signed Out",
