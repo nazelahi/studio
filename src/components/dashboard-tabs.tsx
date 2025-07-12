@@ -58,7 +58,7 @@ export default function DashboardTabs() {
             <ReportsTab year={parseInt(selectedYear)} />
         </TabsContent>
          <TabsContent value="zakat">
-            <ZakatTab year={parseInt(selectedYear)} />
+            <ZakatTab />
         </TabsContent>
       </Tabs>
     </div>
