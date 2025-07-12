@@ -428,7 +428,10 @@ export function TenantsTab() {
                             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                             <div className="absolute bottom-0 left-0 p-4">
                                 <h3 className="font-bold text-lg text-white" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.7)' }}>{tenant.name}</h3>
-                                <p className="text-sm text-white/90" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.5)' }}>{tenant.property}</p>
+                                <div className="flex items-center gap-2">
+                                   <Home className="h-4 w-4 text-white/90" />
+                                   <p className="text-sm text-white/90" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.5)' }}>{tenant.property}</p>
+                                </div>
                             </div>
                              <div className="absolute top-2 right-2">
                                 <DropdownMenu>
@@ -473,7 +476,7 @@ export function TenantsTab() {
                                 )}
                                 <div className="flex items-center gap-3">
                                     <Calendar className="h-4 w-4 text-muted-foreground"/>
-                                    <span>Joined: {format(parseISO(tenant.joinDate), "MMM dd, yyyy")}</span>
+                                    <span>Join Date: {format(parseISO(tenant.joinDate), "MMM dd, yyyy")}</span>
                                 </div>
                             </div>
                             <div className="mt-4 pt-4 border-t">
@@ -500,4 +503,3 @@ export function TenantsTab() {
     </>
   );
 }
-
