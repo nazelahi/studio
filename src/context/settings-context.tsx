@@ -139,7 +139,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 
     const [isMounted, setIsMounted] = useState(false);
     const { propertySettings, zakatBankDetails, loading: dataLoading, refreshData } = useData();
-    const { isAdmin, loading: authLoading } = useAuth();
+    const { loading: authLoading } = useAuth();
     
     useEffect(() => {
         setIsMounted(true);
@@ -165,7 +165,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         const finalSettings = { ...defaultSettings, ...localSettings };
 
-        if (isAdmin && Object.keys(dbSettings).length > 0) {
+        if (Object.keys(dbSettings).length > 0) {
             finalSettings.houseName = dbSettings.house_name || defaultSettings.houseName;
             finalSettings.houseAddress = dbSettings.house_address || defaultSettings.houseAddress;
             finalSettings.bankName = dbSettings.bank_name || defaultSettings.bankName;
@@ -178,7 +178,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 
         setSettings(finalSettings);
 
-    }, [localSettings, dbSettings, isAdmin]);
+    }, [localSettings, dbSettings]);
 
 
     const handleSetSettings = (newSettingsFunc: React.SetStateAction<AppSettings>) => {
