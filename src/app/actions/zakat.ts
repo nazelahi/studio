@@ -4,10 +4,11 @@
 import { createClient } from '@supabase/supabase-js'
 import { revalidatePath } from 'next/cache'
 import 'dotenv/config'
+import { supabase as supabaseClient } from '@/lib/supabase' // Use the client-side configured supabase for storage
 
 // This function creates a Supabase client with admin privileges.
 // It uses the service_role key and is intended for server-side use only
-// where row-level security needs to be bypassed.
+// where row-level security needs to be bypassed for DB operations.
 const getSupabaseAdmin = () => {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -16,8 +17,6 @@ const getSupabaseAdmin = () => {
         throw new Error('Supabase URL or service role key is not configured on the server. Please check your environment variables.');
     }
     
-    // The `auth` option with `autoRefreshToken: false` and `persistSession: false`
-    // is crucial for server-side clients to prevent session-related issues.
     return createClient(supabaseUrl, supabaseServiceKey, {
         auth: {
             autoRefreshToken: false,
@@ -28,6 +27,39 @@ const getSupabaseAdmin = () => {
 
 export async function saveZakatTransactionAction(formData: FormData) {
     const supabaseAdmin = getSupabaseAdmin();
+
+    const receiptFile = formData.get('receiptFile') as File | null;
+    let receiptUrl: string | null = formData.get('receipt_url') as string || null;
+
+    if (receiptFile && receiptFile.size > 0) {
+        const fileExt = receiptFile.name.split('.').pop();
+        const filePath = `${Date.now()}.${fileExt}`;
+
+        const { error: uploadError } = await supabaseClient.storage
+            .from('zakat-receipts')
+            .upload(filePath, receiptFile);
+        
+        if (uploadError) {
+            console.error('Supabase storage upload error:', uploadError);
+            return { error: `Failed to upload receipt: ${uploadError.message}` };
+        }
+
+        const { data: publicUrlData } = supabaseClient.storage
+            .from('zakat-receipts')
+            .getPublicUrl(filePath);
+
+        receiptUrl = publicUrlData.publicUrl;
+
+        const oldReceiptUrl = formData.get('oldReceiptUrl') as string | undefined;
+        if (oldReceiptUrl) {
+            try {
+                const oldReceiptPath = new URL(oldReceiptUrl).pathname.split('/zakat-receipts/')[1];
+                await supabaseClient.storage.from('zakat-receipts').remove([oldReceiptPath]);
+            } catch (e) {
+                 console.error("Could not parse or delete old Zakat receipt from storage:", e)
+            }
+        }
+    }
     
     const transactionData = {
         transaction_date: formData.get('transaction_date') as string,
@@ -35,6 +67,7 @@ export async function saveZakatTransactionAction(formData: FormData) {
         amount: Number(formData.get('amount')),
         source_or_recipient: formData.get('source_or_recipient') as string,
         description: formData.get('description') as string || null,
+        receipt_url: receiptUrl,
     }
     
     const transactionId = formData.get('transactionId') as string | undefined;
@@ -74,6 +107,23 @@ export async function deleteZakatTransactionAction(formData: FormData) {
     if (!transactionId) {
         return { error: 'Transaction ID is missing.' };
     }
+    
+    const receiptUrl = formData.get('receiptUrl') as string;
+    if (receiptUrl) {
+        try {
+            const receiptPath = new URL(receiptUrl).pathname.split('/zakat-receipts/')[1];
+            const { error: storageError } = await supabaseClient.storage
+                .from('zakat-receipts')
+                .remove([receiptPath]);
+            
+            if (storageError) {
+                 console.error('Supabase storage delete error:', storageError);
+            }
+        } catch (e) {
+             console.error('Could not parse or delete receipt from storage on delete:', e);
+        }
+    }
+
 
     const { error } = await supabaseAdmin
         .from('zakat_transactions')

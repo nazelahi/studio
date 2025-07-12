@@ -5,7 +5,7 @@ import * as React from "react"
 import { useData } from "@/context/data-context"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { PlusCircle, Edit, Trash2, ArrowUpCircle, ArrowDownCircle, Banknote, LoaderCircle, Settings, Landmark } from "lucide-react"
+import { PlusCircle, Edit, Trash2, ArrowUpCircle, ArrowDownCircle, Banknote, LoaderCircle, Settings, Landmark, Eye, Upload, ImageIcon } from "lucide-react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { format, parseISO } from "date-fns"
@@ -30,7 +30,7 @@ const formatCurrency = (amount: number) => {
 export function ZakatTab() {
   const { zakatTransactions, loading, refreshData } = useData();
   const { isAdmin } = useAuth();
-  const { settings, setSettings } = useSettings();
+  const { settings } = useSettings();
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [editingTransaction, setEditingTransaction] = React.useState<ZakatTransaction | null>(null);
@@ -39,10 +39,17 @@ export function ZakatTab() {
   const [isDetailsPending, startDetailsTransition] = React.useTransition();
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = React.useState(false);
 
+  const [receiptPreview, setReceiptPreview] = React.useState<string | null>(null);
+  const [receiptFile, setReceiptFile] = React.useState<File | null>(null);
+  const receiptInputRef = React.useRef<HTMLInputElement>(null);
+  const formRef = React.useRef<HTMLFormElement>(null);
+
 
   const handleOpenChange = (isOpen: boolean) => {
     if (!isOpen) {
       setEditingTransaction(null);
+      setReceiptFile(null);
+      setReceiptPreview(null);
     }
     setIsDialogOpen(isOpen);
   };
@@ -50,6 +57,7 @@ export function ZakatTab() {
   const handleEdit = (transaction: ZakatTransaction) => {
     setEditingTransaction(transaction);
     setDialogTransactionType(transaction.type);
+    setReceiptPreview(transaction.receipt_url || null);
     setIsDialogOpen(true);
   };
   
@@ -59,10 +67,7 @@ export function ZakatTab() {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = async (transactionId: string) => {
-    const formData = new FormData();
-    formData.append('transactionId', transactionId);
-
+  const handleDelete = async (formData: FormData) => {
     const result = await deleteZakatTransactionAction(formData);
     if (result.error) {
       toast({ title: 'Error deleting transaction', description: result.error, variant: 'destructive' });
@@ -72,7 +77,13 @@ export function ZakatTab() {
     }
   };
 
-  const handleSave = (formData: FormData) => {
+  const handleSave = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    if (receiptFile) {
+        formData.append('receiptFile', receiptFile);
+    }
+
     startTransition(async () => {
       const result = await saveZakatTransactionAction(formData);
       if (result.error) {
@@ -92,11 +103,23 @@ export function ZakatTab() {
             toast({ title: 'Error Saving Settings', description: result.error, variant: 'destructive'});
         } else {
             toast({ title: 'Zakat Bank Details Saved', description: 'Your Zakat bank details have been updated.' });
-            // The settings context will update automatically via revalidation
             setIsDetailsDialogOpen(false);
         }
      });
   };
+
+  const handleReceiptFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+        setReceiptFile(file);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            setReceiptPreview(reader.result as string);
+        };
+        reader.readAsDataURL(file);
+    }
+  };
+
 
   const totalInflow = zakatTransactions.filter(t => t.type === 'inflow').reduce((acc, curr) => acc + curr.amount, 0);
   const totalOutflow = zakatTransactions.filter(t => t.type === 'outflow').reduce((acc, curr) => acc + curr.amount, 0);
@@ -139,6 +162,13 @@ export function ZakatTab() {
                 {isAdmin && (
                   <TableCell>
                     <div className="flex items-center gap-1">
+                      {tx.receipt_url && (
+                        <Button asChild variant="ghost" size="icon" className="h-8 w-8">
+                           <a href={tx.receipt_url} target="_blank" rel="noopener noreferrer">
+                                <Eye className="h-4 w-4" />
+                            </a>
+                        </Button>
+                      )}
                       <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(tx)}>
                         <Edit className="h-4 w-4" />
                       </Button>
@@ -155,7 +185,11 @@ export function ZakatTab() {
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleDelete(tx.id)}>Delete</AlertDialogAction>
+                                <form action={handleDelete}>
+                                    <input type="hidden" name="transactionId" value={tx.id} />
+                                    {tx.receipt_url && <input type="hidden" name="receiptUrl" value={tx.receipt_url} />}
+                                    <AlertDialogAction type="submit">Delete</AlertDialogAction>
+                                </form>
                             </AlertDialogFooter>
                         </AlertDialogContent>
                        </AlertDialog>
@@ -310,10 +344,12 @@ export function ZakatTab() {
                         Log a new Zakat {dialogTransactionType}.
                     </DialogDescription>
                 </DialogHeader>
-                <form action={handleSave}>
+                <form ref={formRef} onSubmit={handleSave}>
                     <input type="hidden" name="type" value={dialogTransactionType} />
                     {editingTransaction && <input type="hidden" name="transactionId" value={editingTransaction.id} />}
-                    <div className="grid gap-4 py-4">
+                    {editingTransaction?.receipt_url && <input type="hidden" name="receipt_url" value={editingTransaction.receipt_url} />}
+                    {editingTransaction?.receipt_url && <input type="hidden" name="oldReceiptUrl" value={editingTransaction.receipt_url} />}
+                    <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto pr-2">
                         <div className="space-y-2">
                             <Label htmlFor="transaction_date">Date</Label>
                             <Input id="transaction_date" name="transaction_date" type="date" defaultValue={editingTransaction?.transaction_date ? format(parseISO(editingTransaction.transaction_date), 'yyyy-MM-dd') : new Date().toISOString().split('T')[0]} required />
@@ -330,8 +366,25 @@ export function ZakatTab() {
                             <Label htmlFor="description">Description</Label>
                             <Textarea id="description" name="description" defaultValue={editingTransaction?.description} placeholder="Optional notes..."/>
                         </div>
+                        <div className="space-y-2">
+                            <Label>Receipt</Label>
+                            <div className="flex items-center gap-4">
+                                <div className="w-24 h-24 bg-muted rounded-md flex items-center justify-center">
+                                    {receiptPreview ? (
+                                        <img src={receiptPreview} alt="Receipt Preview" className="h-full w-full object-contain rounded-md" data-ai-hint="document receipt"/>
+                                    ) : (
+                                        <ImageIcon className="h-10 w-10 text-muted-foreground" />
+                                    )}
+                                </div>
+                                <Button type="button" variant="outline" onClick={() => receiptInputRef.current?.click()}>
+                                    <Upload className="mr-2 h-4 w-4"/>
+                                    Upload Image
+                                </Button>
+                                <Input ref={receiptInputRef} type="file" className="hidden" accept="image/*" onChange={handleReceiptFileChange} />
+                            </div>
+                        </div>
                     </div>
-                    <DialogFooter>
+                    <DialogFooter className="mt-4">
                         <DialogClose asChild>
                             <Button variant="outline" type="button" disabled={isPending}>Cancel</Button>
                         </DialogClose>

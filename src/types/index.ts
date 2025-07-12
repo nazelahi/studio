@@ -69,6 +69,7 @@ export type ZakatTransaction = {
   amount: number;
   source_or_recipient: string;
   description?: string;
+  receipt_url?: string;
   created_at?: string;
 }
 
