@@ -472,7 +472,6 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
 
     const formData = new FormData(event.currentTarget);
     let receiptUrl: string | null = loggedDeposit?.receipt_url || null;
-    let oldReceiptPath: string | undefined = undefined;
 
     if (receiptFile) {
         const fileExt = receiptFile.name.split('.').pop();
@@ -493,15 +492,9 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
         
         receiptUrl = publicUrlData.publicUrl;
 
+        // Pass the old URL to the action if it exists, for deletion
         if (loggedDeposit?.receipt_url) {
-            try {
-                const url = new URL(loggedDeposit.receipt_url);
-                const pathParts = url.pathname.split('/');
-                oldReceiptPath = pathParts.slice(pathParts.indexOf('deposit-receipts') + 1).join('/');
-                formData.set('oldReceiptPath', oldReceiptPath);
-            } catch (e) {
-                console.error("Error parsing old receipt URL:", e);
-            }
+            formData.set('oldReceiptUrl', loggedDeposit.receipt_url);
         }
     }
 
@@ -511,12 +504,12 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
     
     if (result.error) {
         toast({ title: "Error", description: result.error, variant: "destructive" });
-        if (receiptUrl && receiptUrl !== loggedDeposit?.receipt_url) {
+        // If the DB operation fails, try to clean up the newly uploaded file.
+        if (receiptFile && receiptUrl) {
             try {
-                const url = new URL(receiptUrl);
-                const pathParts = url.pathname.split('/');
-                const path = pathParts.slice(pathParts.indexOf('deposit-receipts') + 1).join('/');
-                await supabase.storage.from('deposit-receipts').remove([path]);
+                const pathToDelete = new URL(receiptUrl).pathname.split('/deposit-receipts/')[1];
+                await supabase.storage.from('deposit-receipts').remove([pathToDelete]);
+                 toast({ title: "Cleanup", description: "Rolling back receipt upload due to database error." });
             } catch (e) {
                 console.error("Error removing new receipt after failed DB update:", e);
             }
@@ -1200,6 +1193,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                         <input type="hidden" name="year" value={year} />
                                         <input type="hidden" name="month" value={months.indexOf(month)} />
                                         {loggedDeposit && <input type="hidden" name="depositId" value={loggedDeposit.id} />}
+                                        {loggedDeposit?.receipt_url && <input type="hidden" name="receipt_url" value={loggedDeposit.receipt_url} />}
                                         <div className="grid gap-4 py-4">
                                             <div className="space-y-2">
                                                 <Label htmlFor="deposit-amount">Amount to Deposit</Label>
@@ -1244,7 +1238,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                                             <AlertDialogCancel>Cancel</AlertDialogCancel>
                                                             <form onSubmit={handleDeleteDeposit}>
                                                                 <input type="hidden" name="depositId" value={loggedDeposit.id} />
-                                                                <input type="hidden" name="receiptPath" value={loggedDeposit.receipt_url ? new URL(loggedDeposit.receipt_url).pathname.split('/deposit-receipts/')[1] : ''} />
+                                                                <input type="hidden" name="receiptPath" value={loggedDeposit.receipt_url} />
                                                                 <AlertDialogAction type="submit">Delete</AlertDialogAction>
                                                             </form>
                                                         </AlertDialogFooter>

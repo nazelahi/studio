@@ -38,7 +38,7 @@ export async function logDepositAction(formData: FormData) {
     }
     
     const depositId = formData.get('depositId') as string | undefined;
-    const oldReceiptPath = formData.get('oldReceiptPath') as string | undefined;
+    const oldReceiptUrl = formData.get('oldReceiptUrl') as string | undefined;
 
     let error;
 
@@ -51,12 +51,18 @@ export async function logDepositAction(formData: FormData) {
         error = updateError;
         
         // If update was successful and a new receipt was uploaded, delete the old one
-        if (!updateError && oldReceiptPath && depositData.receipt_url !== oldReceiptPath) {
-             const { error: storageError } = await supabaseAdmin.storage
-                .from('deposit-receipts')
-                .remove([oldReceiptPath]);
-            if (storageError) {
-                console.error('Supabase storage delete error (non-fatal):', storageError);
+        if (!updateError && oldReceiptUrl && depositData.receipt_url !== oldReceiptUrl) {
+            try {
+                // Extract the path from the full URL for deletion
+                const oldReceiptPath = new URL(oldReceiptUrl).pathname.split('/deposit-receipts/')[1];
+                 const { error: storageError } = await supabaseAdmin.storage
+                    .from('deposit-receipts')
+                    .remove([oldReceiptPath]);
+                if (storageError) {
+                    console.error('Supabase storage delete error (non-fatal):', storageError);
+                }
+            } catch (e) {
+                console.error("Could not parse or delete old receipt from storage:", e)
             }
         }
 
@@ -88,15 +94,20 @@ export async function deleteDepositAction(formData: FormData) {
         return { error: 'Deposit ID is missing.' };
     }
 
-    const receiptPath = formData.get('receiptPath') as string;
-    if (receiptPath) {
-        const { error: storageError } = await supabaseAdmin.storage
-            .from('deposit-receipts')
-            .remove([receiptPath]);
-        
-        if (storageError) {
-             console.error('Supabase storage delete error:', storageError);
-             // Non-fatal, so we don't return here. Just log it.
+    const receiptUrl = formData.get('receiptPath') as string;
+    if (receiptUrl) {
+        try {
+            const receiptPath = new URL(receiptUrl).pathname.split('/deposit-receipts/')[1];
+            const { error: storageError } = await supabaseAdmin.storage
+                .from('deposit-receipts')
+                .remove([receiptPath]);
+            
+            if (storageError) {
+                 console.error('Supabase storage delete error:', storageError);
+                 // Non-fatal, so we don't return here. Just log it.
+            }
+        } catch (e) {
+             console.error('Could not parse or delete receipt from storage on delete:', e);
         }
     }
 
