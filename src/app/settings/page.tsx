@@ -284,66 +284,68 @@ export default function SettingsPage() {
                           <CardTitle>{settings.page_settings.property_details.title}</CardTitle>
                           <CardDescription>{settings.page_settings.property_details.description}</CardDescription>
                       </CardHeader>
-                      <CardContent className="grid md:grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                              <Label htmlFor="houseName">{settings.page_settings.property_details.house_name_label}</Label>
-                              <Input id="houseName" name="houseName" value={settings.houseName} onChange={handleInputChange} />
+                      <CardContent className="space-y-6">
+                          <div className="grid md:grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                  <Label htmlFor="houseName">{settings.page_settings.property_details.house_name_label}</Label>
+                                  <Input id="houseName" name="houseName" value={settings.houseName} onChange={handleInputChange} />
+                              </div>
+                              <div className="space-y-2">
+                                  <Label htmlFor="houseAddress">{settings.page_settings.property_details.house_address_label}</Label>
+                                  <Input id="houseAddress" name="houseAddress" value={settings.houseAddress} onChange={handleInputChange} />
+                              </div>
                           </div>
-                          <div className="space-y-2">
-                              <Label htmlFor="houseAddress">{settings.page_settings.property_details.house_address_label}</Label>
-                              <Input id="houseAddress" name="houseAddress" value={settings.houseAddress} onChange={handleInputChange} />
-                          </div>
-                      </CardContent>
-                      <CardHeader>
-                        <CardTitle>Rental Bank Details</CardTitle>
-                        <CardDescription>Enter the bank details for monthly rent deposits.</CardDescription>
-                      </CardHeader>
-                      <CardContent className="grid md:grid-cols-2 gap-4">
-                         <div className="space-y-2">
-                              <Label htmlFor="bankName">Bank Name</Label>
-                              <Input id="bankName" name="bankName" value={settings.bankName} onChange={handleInputChange} />
-                          </div>
-                          <div className="space-y-2">
-                              <Label htmlFor="bankAccountNumber">Bank Account Number</Label>
-                              <Input id="bankAccountNumber" name="bankAccountNumber" value={settings.bankAccountNumber} onChange={handleInputChange} />
-                          </div>
-                      </CardContent>
-                       <CardHeader>
-                        <CardTitle>House Pictures</CardTitle>
-                        <CardDescription>Upload pictures for the slideshow on the homepage.</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                          <div className="space-y-4">
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                                {houseImages.map((url, index) => (
-                                    <div key={index} className="relative group aspect-video">
-                                        <img src={url} alt={`House image ${index + 1}`} className="w-full h-full object-cover rounded-md" data-ai-hint="house exterior" />
-                                        <Button type="button" variant="destructive" size="icon" className="absolute top-1 right-1 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => removeExistingImage(index)}>
-                                            <Trash2 className="h-3 w-3" />
-                                        </Button>
-                                    </div>
-                                ))}
-                                {newImageFiles.map((file, index) => (
-                                    <div key={index} className="relative group aspect-video">
-                                        <img src={URL.createObjectURL(file)} alt={`New image ${index + 1}`} className="w-full h-full object-cover rounded-md" data-ai-hint="house exterior" />
-                                        <Button type="button" variant="destructive" size="icon" className="absolute top-1 right-1 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => removeNewImage(index)}>
-                                            <Trash2 className="h-3 w-3" />
-                                        </Button>
-                                    </div>
-                                ))}
-                                <Button type="button" variant="outline" className="flex flex-col items-center justify-center aspect-video" onClick={() => imageInputRef.current?.click()}>
-                                    <Upload className="h-6 w-6 mb-2" />
-                                    <span>Upload More</span>
-                                </Button>
-                                <input
-                                    ref={imageInputRef}
-                                    type="file"
-                                    multiple
-                                    accept="image/*"
-                                    className="hidden"
-                                    onChange={handleImageFileChange}
-                                />
+
+                          <div>
+                            <h3 className="text-lg font-medium leading-6 text-card-foreground mb-1">Rental Bank Details</h3>
+                            <p className="text-sm text-muted-foreground mb-4">Enter the bank details for monthly rent deposits.</p>
+                             <div className="grid md:grid-cols-2 gap-4">
+                               <div className="space-y-2">
+                                    <Label htmlFor="bankName">Bank Name</Label>
+                                    <Input id="bankName" name="bankName" value={settings.bankName} onChange={handleInputChange} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="bankAccountNumber">Bank Account Number</Label>
+                                    <Input id="bankAccountNumber" name="bankAccountNumber" value={settings.bankAccountNumber} onChange={handleInputChange} />
+                                </div>
                             </div>
+                          </div>
+
+                          <div>
+                             <h3 className="text-lg font-medium leading-6 text-card-foreground mb-1">House Pictures</h3>
+                             <p className="text-sm text-muted-foreground mb-4">Upload pictures for the slideshow on the homepage.</p>
+                             <div className="space-y-4">
+                                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                                    {houseImages.map((url, index) => (
+                                        <div key={index} className="relative group aspect-video">
+                                            <img src={url} alt={`House image ${index + 1}`} className="w-full h-full object-cover rounded-md" data-ai-hint="house exterior" />
+                                            <Button type="button" variant="destructive" size="icon" className="absolute top-1 right-1 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => removeExistingImage(index)}>
+                                                <Trash2 className="h-3 w-3" />
+                                            </Button>
+                                        </div>
+                                    ))}
+                                    {newImageFiles.map((file, index) => (
+                                        <div key={index} className="relative group aspect-video">
+                                            <img src={URL.createObjectURL(file)} alt={`New image ${index + 1}`} className="w-full h-full object-cover rounded-md" data-ai-hint="house exterior" />
+                                            <Button type="button" variant="destructive" size="icon" className="absolute top-1 right-1 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => removeNewImage(index)}>
+                                                <Trash2 className="h-3 w-3" />
+                                            </Button>
+                                        </div>
+                                    ))}
+                                    <Button type="button" variant="outline" className="flex flex-col items-center justify-center aspect-video" onClick={() => imageInputRef.current?.click()}>
+                                        <Upload className="h-6 w-6 mb-2" />
+                                        <span>Upload More</span>
+                                    </Button>
+                                    <input
+                                        ref={imageInputRef}
+                                        type="file"
+                                        multiple
+                                        accept="image/*"
+                                        className="hidden"
+                                        onChange={handleImageFileChange}
+                                    />
+                                </div>
+                             </div>
                           </div>
                       </CardContent>
                       <CardFooter>
