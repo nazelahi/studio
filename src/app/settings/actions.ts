@@ -3,6 +3,7 @@
 
 import { createClient } from '@supabase/supabase-js'
 import { revalidatePath } from 'next/cache'
+import 'dotenv/config'
 
 // This file is for server-side actions only.
 // It uses the service_role key to have admin privileges.
@@ -15,7 +16,7 @@ export async function updatePropertySettingsAction(formData: FormData) {
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
     if (!supabaseUrl || !supabaseServiceKey) {
-        return { error: 'Supabase credentials are not configured on the server.' };
+        return { error: 'Supabase credentials are not configured on the server. Please check your .env.local file.' };
     }
     
     // Create a Supabase client with service_role privileges
