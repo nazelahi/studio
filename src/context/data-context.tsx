@@ -131,7 +131,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
             const fileExt = file.name.split('.').pop();
             const fileName = `${tenantId}/${new Date().getTime()}.${fileExt}`;
             const { error: uploadError, data: uploadData } = await supabase.storage
-                .from('tenant_documents')
+                .from('tenant-documents')
                 .upload(fileName, file);
 
             if (uploadError) {
@@ -140,7 +140,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
             }
 
             const { data: publicUrlData } = supabase.storage
-                .from('tenant_documents')
+                .from('tenant-documents')
                 .getPublicUrl(uploadData.path);
                 
             return publicUrlData.publicUrl;
