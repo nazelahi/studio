@@ -29,6 +29,7 @@ export default function HomePage() {
       title: "Signed Out",
       description: "You have been successfully signed out.",
     });
+    router.push('/');
   };
 
   return (

@@ -89,6 +89,7 @@ export default function SettingsPage() {
       title: "Signed Out",
       description: "You have been successfully signed out.",
     });
+    router.push('/');
   };
   
   const handleSaveCredentials = (formData: FormData) => {
