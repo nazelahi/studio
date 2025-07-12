@@ -423,8 +423,8 @@ export function TenantsTab() {
                  <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                   {filteredTenants.length > 0 ? filteredTenants.map((tenant) => (
                     <Card key={tenant.id} className="flex flex-col overflow-hidden shadow-md transition-shadow hover:shadow-lg">
-                        <div className="relative">
-                            <img src={tenant.avatar} alt={tenant.name} className="w-full h-40 object-cover" data-ai-hint="person avatar" />
+                        <div className="relative bg-muted">
+                            <img src={tenant.avatar} alt={tenant.name} className="w-full h-40 object-contain" data-ai-hint="person avatar" />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
                             <div className="absolute bottom-0 left-0 p-4">
                                 <h3 className="font-bold text-lg text-white" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.7)' }}>{tenant.name}</h3>
