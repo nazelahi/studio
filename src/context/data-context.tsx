@@ -1,8 +1,9 @@
 
+
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
-import type { Tenant, Expense, RentEntry, PropertySettings } from '@/types';
+import type { Tenant, Expense, RentEntry, PropertySettings, Deposit } from '@/types';
 import { parseISO, getMonth, getYear } from 'date-fns';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
@@ -12,6 +13,7 @@ interface AppData {
   expenses: Expense[];
   rentData: RentEntry[];
   propertySettings: PropertySettings | null;
+  deposits: Deposit[];
 }
 
 type NewRentEntry = Omit<RentEntry, 'id' | 'avatar' | 'year' | 'month' | 'dueDate' | 'created_at'>;
@@ -35,12 +37,13 @@ interface DataContextType extends AppData {
   loading: boolean;
   getAllData: () => AppData;
   restoreAllData: (backupData: AppData) => void;
+  refreshData: () => Promise<void>;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
 export function DataProvider({ children }: { children: ReactNode }) {
-    const [data, setData] = useState<AppData>({ tenants: [], expenses: [], rentData: [], propertySettings: null });
+    const [data, setData] = useState<AppData>({ tenants: [], expenses: [], rentData: [], propertySettings: null, deposits: [] });
     const [loading, setLoading] = useState(true);
     const { toast } = useToast();
 
@@ -60,20 +63,22 @@ export function DataProvider({ children }: { children: ReactNode }) {
         try {
             if (!supabase) {
                 console.log("Supabase not initialized, loading local data.");
-                setData({ tenants: [], expenses: [], rentData: [], propertySettings: null });
+                setData({ tenants: [], expenses: [], rentData: [], propertySettings: null, deposits: [] });
                 return;
             }
 
-            const [tenantsRes, expensesRes, rentDataRes, propertySettingsRes] = await Promise.all([
+            const [tenantsRes, expensesRes, rentDataRes, propertySettingsRes, depositsRes] = await Promise.all([
                 supabase.from('tenants').select('*'),
                 supabase.from('expenses').select('*'),
                 supabase.from('rent_entries').select('*'),
-                supabase.from('property_settings').select('*').eq('id', 1).maybeSingle()
+                supabase.from('property_settings').select('*').eq('id', 1).maybeSingle(),
+                supabase.from('deposits').select('*')
             ]);
 
             if (tenantsRes.error) throw tenantsRes.error;
             if (expensesRes.error) throw expensesRes.error;
             if (rentDataRes.error) throw rentDataRes.error;
+            if (depositsRes.error) throw depositsRes.error;
             if (propertySettingsRes.error && propertySettingsRes.error.code !== 'PGRST116') {
                  throw propertySettingsRes.error;
             }
@@ -83,6 +88,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
                 expenses: expensesRes.data as Expense[],
                 rentData: rentDataRes.data as RentEntry[],
                 propertySettings: propertySettingsRes.data as PropertySettings,
+                deposits: depositsRes.data as Deposit[]
             });
         } catch (error) {
             handleError(error, 'fetching data');
@@ -423,7 +429,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
 
     return (
-        <DataContext.Provider value={{ ...data, addTenant, updateTenant, deleteTenant, addExpense, updateExpense, deleteExpense, deleteMultipleExpenses, addRentEntry, addRentEntriesBatch, updateRentEntry, deleteRentEntry, deleteMultipleRentEntries, syncTenantsForMonth, updatePropertySettings, loading, getAllData, restoreAllData }}>
+        <DataContext.Provider value={{ ...data, addTenant, updateTenant, deleteTenant, addExpense, updateExpense, deleteExpense, deleteMultipleExpenses, addRentEntry, addRentEntriesBatch, updateRentEntry, deleteRentEntry, deleteMultipleRentEntries, syncTenantsForMonth, updatePropertySettings, loading, getAllData, restoreAllData, refreshData: fetchData }}>
             {children}
         </DataContext.Provider>
     );

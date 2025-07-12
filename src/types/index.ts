@@ -1,4 +1,5 @@
 
+
 export type Tenant = {
   id: string;
   name: string;
@@ -49,4 +50,14 @@ export type PropertySettings = {
   bank_account_number: string;
 };
 
+export type Deposit = {
+  id: string;
+  year: number;
+  month: number;
+  amount: number;
+  deposit_date: string;
+  created_at?: string;
+}
+
     
+

@@ -1,0 +1,57 @@
+
+"use server"
+
+import { createClient } from '@supabase/supabase-js'
+import { revalidatePath } from 'next/cache'
+import 'dotenv/config'
+
+const getSupabaseAdmin = () => {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+        throw new Error('Supabase credentials are not configured on the server.');
+    }
+    
+    return createClient(supabaseUrl, supabaseServiceKey);
+}
+
+export async function logDepositAction(formData: FormData) {
+    const supabaseAdmin = getSupabaseAdmin();
+    
+    const depositData = {
+        year: Number(formData.get('year')),
+        month: Number(formData.get('month')),
+        amount: Number(formData.get('amount')),
+        deposit_date: formData.get('deposit_date') as string,
+    }
+    
+    const depositId = formData.get('depositId') as string | undefined;
+
+    let error;
+
+    if (depositId) {
+        // Update existing deposit
+        const { error: updateError } = await supabaseAdmin
+            .from('deposits')
+            .update(depositData)
+            .eq('id', depositId);
+        error = updateError;
+    } else {
+        // Insert new deposit
+        const { error: insertError } = await supabaseAdmin
+            .from('deposits')
+            .insert(depositData);
+        error = insertError;
+    }
+
+    if (error) {
+        console.error('Supabase error:', error);
+        return { error: error.message };
+    }
+
+    // Revalidate the path to show the new data immediately
+    revalidatePath('/');
+    
+    return { success: true };
+}

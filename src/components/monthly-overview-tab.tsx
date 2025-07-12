@@ -1,13 +1,14 @@
 
+
 "use client"
 
 import * as React from "react"
-import type { Tenant, Expense, RentEntry } from "@/types"
+import type { Tenant, Expense, RentEntry, Deposit } from "@/types"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { DollarSign, Banknote, ArrowUpCircle, ArrowDownCircle, PlusCircle, Trash2, Pencil, CheckCircle, XCircle, AlertCircle, RefreshCw, ChevronDown, Copy, X, FileText, Upload, Building } from "lucide-react"
+import { DollarSign, Banknote, ArrowUpCircle, ArrowDownCircle, PlusCircle, Trash2, Pencil, CheckCircle, XCircle, AlertCircle, RefreshCw, ChevronDown, Copy, X, FileText, Upload, Building, Bank, CalendarCheck, Edit } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog"
@@ -28,6 +29,7 @@ import * as XLSX from 'xlsx';
 import { useAuth } from "@/context/auth-context"
 import { useSettings } from "@/context/settings-context"
 import Link from "next/link"
+import { logDepositAction } from "@/app/actions/deposits"
 
 
 type HistoricalTenant = {
@@ -82,7 +84,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
   const { isAdmin } = useAuth();
   const { settings } = useSettings();
 
-  const { tenants, expenses, rentData, addRentEntry, addRentEntriesBatch, updateRentEntry, deleteRentEntry, addExpense, updateExpense, deleteExpense, syncTenantsForMonth, loading, deleteMultipleRentEntries, deleteMultipleExpenses } = useData();
+  const { tenants, expenses, rentData, deposits, addRentEntry, addRentEntriesBatch, updateRentEntry, deleteRentEntry, addExpense, updateExpense, deleteExpense, syncTenantsForMonth, loading, deleteMultipleRentEntries, deleteMultipleExpenses, refreshData } = useData();
 
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = React.useState(false);
   const [editingExpense, setEditingExpense] = React.useState<Expense | null>(null);
@@ -101,6 +103,8 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
 
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
   const [selectedTenantForSheet, setSelectedTenantForSheet] = React.useState<Tenant | null>(null);
+  
+  const [isDepositDialogOpen, setIsDepositDialogOpen] = React.useState(false);
 
   const formRef = React.useRef<HTMLFormElement>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -122,6 +126,10 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
       });
   }, [expenses, selectedMonth, year]);
   
+  const loggedDeposit = React.useMemo(() => {
+    return deposits.find(d => d.year === year && d.month === months.indexOf(selectedMonth));
+  }, [deposits, year, selectedMonth]);
+
   // Clear selections when month or year changes
   React.useEffect(() => {
     setSelectedRentEntryIds([]);
@@ -438,6 +446,20 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
         toast({ title: "Error Reading File", description: "Could not read the selected file.", variant: "destructive" });
     };
     reader.readAsArrayBuffer(file);
+  };
+  
+  const handleSaveDeposit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const result = await logDepositAction(formData);
+    
+    if (result.error) {
+        toast({ title: "Error", description: result.error, variant: "destructive" });
+    } else {
+        toast({ title: "Success", description: "Bank deposit has been logged." });
+        setIsDepositDialogOpen(false);
+        refreshData();
+    }
   };
 
   const totalRentCollected = filteredTenantsForMonth
@@ -1061,16 +1083,55 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                     </CardContent>
                 </Card>
                  <Card>
-                    <CardHeader className="flex flex-row items-center gap-4">
-                        <div className="flex-shrink-0 bg-primary/10 p-3 rounded-full">
-                           <Building className="h-6 w-6 text-primary" />
+                    <CardHeader className="flex flex-row items-center justify-between gap-4">
+                        <div className="flex items-center gap-4">
+                            <div className="flex-shrink-0 bg-primary/10 p-3 rounded-full">
+                               <Bank className="h-6 w-6 text-primary" />
+                            </div>
+                            <div>
+                                <CardTitle>Bank Deposit Information</CardTitle>
+                                <CardDescription>Manage the monthly bank deposit.</CardDescription>
+                            </div>
                         </div>
-                        <div>
-                            <CardTitle>Bank Deposit Information</CardTitle>
-                            <CardDescription>Details for the monthly bank deposit.</CardDescription>
-                        </div>
+                        {isAdmin && (
+                            <Dialog open={isDepositDialogOpen} onOpenChange={setIsDepositDialogOpen}>
+                                <DialogTrigger asChild>
+                                    <Button size="sm" variant={loggedDeposit ? 'outline' : 'default'}>
+                                        {loggedDeposit ? <Edit className="mr-2 h-4 w-4" /> : <PlusCircle className="mr-2 h-4 w-4" />}
+                                        {loggedDeposit ? 'Edit Deposit' : 'Log Deposit'}
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent>
+                                    <DialogHeader>
+                                        <DialogTitle>{loggedDeposit ? 'Edit Deposit' : 'Log New Deposit'}</DialogTitle>
+                                        <DialogDescription>
+                                            Confirm the amount and date for the deposit for {month}, {year}.
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                    <form onSubmit={handleSaveDeposit}>
+                                        <input type="hidden" name="year" value={year} />
+                                        <input type="hidden" name="month" value={months.indexOf(month)} />
+                                        {loggedDeposit && <input type="hidden" name="depositId" value={loggedDeposit.id} />}
+                                        <div className="grid gap-4 py-4">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="deposit-amount">Amount to Deposit</Label>
+                                                <Input id="deposit-amount" name="amount" type="number" step="0.01" defaultValue={loggedDeposit?.amount ?? amountForDeposit.toFixed(2)} required />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="deposit-date">Deposit Date</Label>
+                                                <Input id="deposit-date" name="deposit_date" type="date" defaultValue={loggedDeposit?.deposit_date || new Date().toISOString().split('T')[0]} required />
+                                            </div>
+                                        </div>
+                                        <DialogFooter>
+                                            <DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose>
+                                            <Button type="submit">Save Deposit</Button>
+                                        </DialogFooter>
+                                    </form>
+                                </DialogContent>
+                            </Dialog>
+                        )}
                     </CardHeader>
-                    <CardContent className="grid sm:grid-cols-2 gap-4 text-sm">
+                    <CardContent className="grid sm:grid-cols-2 gap-y-4 gap-x-8 text-sm pt-2">
                         <div>
                             <p className="font-medium text-muted-foreground">Bank Name</p>
                             <p className="font-semibold text-lg">{settings.bankName || "Not Set"}</p>
@@ -1079,13 +1140,29 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                             <p className="font-medium text-muted-foreground">Account Number</p>
                             <p className="font-semibold text-lg">{settings.bankAccountNumber || "Not Set"}</p>
                         </div>
+                        {loggedDeposit ? (
+                          <>
+                             <div>
+                                <p className="font-medium text-muted-foreground">Amount Deposited</p>
+                                <p className="font-bold text-2xl text-success">৳{loggedDeposit.amount.toFixed(2)}</p>
+                            </div>
+                             <div>
+                                <p className="font-medium text-muted-foreground">Date of Deposit</p>
+                                <div className="flex items-center gap-2">
+                                    <CalendarCheck className="h-5 w-5 text-muted-foreground"/>
+                                    <p className="font-semibold text-lg">{format(parseISO(loggedDeposit.deposit_date), 'dd MMM, yyyy')}</p>
+                                </div>
+                            </div>
+                          </>
+                        ) : (
                          <div className="sm:col-span-2">
                             <p className="font-medium text-muted-foreground">Amount to Deposit</p>
                             <p className="font-bold text-2xl text-success">৳{amountForDeposit.toFixed(2)}</p>
                         </div>
+                        )}
                     </CardContent>
-                    <CardFooter className="text-xs text-muted-foreground">
-                        This information is managed in the <Link href="/settings" className="underline">Settings</Link> page.
+                    <CardFooter className="text-xs text-muted-foreground pt-4">
+                        Bank details are managed in the <Link href="/settings" className="underline">Settings</Link> page.
                     </CardFooter>
                 </Card>
             </div>
