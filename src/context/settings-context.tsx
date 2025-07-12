@@ -39,7 +39,7 @@ interface PageSettings {
 
 interface TabNames {
     overview: string;
-    contacts: string;
+    tenants: string;
     work: string;
     integrations: string;
     reports: string;
@@ -77,7 +77,7 @@ const defaultSettings: AppSettings = {
     footerName: "© 2024 RentFlow. All Rights Reserved.",
     tabNames: {
         overview: "Overview",
-        contacts: "Contacts",
+        tenants: "Tenants",
         work: "Work",
         integrations: "Integrations",
         reports: "Reports",

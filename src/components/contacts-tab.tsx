@@ -109,13 +109,13 @@ export function ContactsTab() {
       if (editingTenant) {
         await updateTenant({ ...editingTenant, ...tenantData }, documentFiles);
         toast({
-          title: 'Contact Updated',
+          title: 'Tenant Updated',
           description: `${tenantData.name}'s information has been successfully updated.`,
         });
       } else {
         await addTenant(tenantData, documentFiles);
         toast({
-          title: 'Contact Added',
+          title: 'Tenant Added',
           description: `${tenantData.name} has been successfully added.`,
         });
       }
@@ -125,7 +125,7 @@ export function ContactsTab() {
     } catch (error) {
        toast({
         title: 'Save Failed',
-        description: "An error occurred while saving the contact.",
+        description: "An error occurred while saving the tenant.",
         variant: "destructive"
       });
     } finally {
@@ -158,7 +158,7 @@ export function ContactsTab() {
         setExistingDocuments(tenant.documents || []);
         setDocumentFiles([]);
     }
-    toast({ title: 'Contact Info Copied', description: `Data from ${tenant.name} has been pre-filled.`});
+    toast({ title: 'Tenant Info Copied', description: `Data from ${tenant.name} has been pre-filled.`});
     setIsFinderOpen(false);
   };
 
@@ -178,8 +178,8 @@ export function ContactsTab() {
   const handleDelete = async (tenantId: string) => {
     await deleteTenant(tenantId);
     toast({
-        title: 'Contact Deleted',
-        description: "The contact's information has been deleted.",
+        title: 'Tenant Deleted',
+        description: "The tenant's information has been deleted.",
         variant: 'destructive'
     });
   }
@@ -221,9 +221,9 @@ export function ContactsTab() {
     <>
       <Card className="mt-4 border-0 shadow-none">
         <CardHeader>
-          <CardTitle>Contacts</CardTitle>
+          <CardTitle>Tenants</CardTitle>
           <CardDescription>
-            Manage your tenants and service providers.
+            Manage your tenants and their information.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -231,7 +231,7 @@ export function ContactsTab() {
               <div className="relative w-full sm:max-w-xs">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input 
-                  placeholder="Search contacts..."
+                  placeholder="Search tenants..."
                   className="pl-9"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -242,14 +242,14 @@ export function ContactsTab() {
                   <DialogTrigger asChild>
                     <Button onClick={() => setEditingTenant(null)} className="w-full sm:w-auto">
                       <PlusCircle className="mr-2 h-4 w-4" />
-                      Add Contact
+                      Add Tenant
                     </Button>
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-xl">
                     <DialogHeader>
-                      <DialogTitle>{editingTenant ? 'Edit Contact' : 'Add New Contact'}</DialogTitle>
+                      <DialogTitle>{editingTenant ? 'Edit Tenant' : 'Add New Tenant'}</DialogTitle>
                       <DialogDescription>
-                        {editingTenant ? "Update the contact's information below." : "Fill in the form to add a new contact."}
+                        {editingTenant ? "Update the tenant's information below." : "Fill in the form to add a new tenant."}
                       </DialogDescription>
                     </DialogHeader>
                     <form ref={formRef} onSubmit={handleSaveTenant} className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-6 py-4 max-h-[70vh] overflow-y-auto pr-2">
@@ -262,15 +262,15 @@ export function ContactsTab() {
                                 <Button variant="outline" role="combobox" aria-expanded={isFinderOpen} className="w-full justify-between mt-1">
                                   <span className="flex items-center gap-2 text-muted-foreground">
                                     <UserPlus className="h-4 w-4" />
-                                    Copy info from an existing contact...
+                                    Copy info from an existing tenant...
                                   </span>
                                   <ChevronDown className="h-4 w-4 shrink-0 opacity-50"/>
                                 </Button>
                               </PopoverTrigger>
                               <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
                                 <Command>
-                                  <CommandInput placeholder="Search contact..." />
-                                  <CommandEmpty>No contact found.</CommandEmpty>
+                                  <CommandInput placeholder="Search tenant..." />
+                                  <CommandEmpty>No tenant found.</CommandEmpty>
                                   <CommandList>
                                     <CommandGroup>
                                       {allTenantsForFinder.map((tenant) => (
@@ -373,7 +373,7 @@ export function ContactsTab() {
                       </div>
                       <div className="space-y-2 md:col-span-2">
                         <Label htmlFor="notes">Notes</Label>
-                        <Textarea id="notes" name="notes" defaultValue={editingTenant?.notes} placeholder="Any relevant notes about the contact..."/>
+                        <Textarea id="notes" name="notes" defaultValue={editingTenant?.notes} placeholder="Any relevant notes about the tenant..."/>
                       </div>
 
                       <div className="space-y-2 md:col-span-2">
@@ -420,7 +420,7 @@ export function ContactsTab() {
                         </DialogClose>
                         <Button type="submit" disabled={isUploading}>
                            {isUploading && <LoaderCircle className="animate-spin mr-2"/>}
-                           Save Contact
+                           Save Tenant
                         </Button>
                       </DialogFooter>
                     </form>
@@ -500,7 +500,7 @@ export function ContactsTab() {
                     </Card>
                   )) : (
                     <div className="col-span-full text-center text-muted-foreground py-10">
-                        No contacts found.
+                        No tenants found.
                     </div>
                   )}
                 </div>

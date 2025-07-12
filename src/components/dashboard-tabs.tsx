@@ -41,7 +41,7 @@ export default function DashboardTabs() {
       <Tabs defaultValue="overview" className="w-full">
         <TabsList className="grid w-full grid-cols-2 sm:grid-cols-6">
           <TabsTrigger value="overview">{settings.tabNames.overview}</TabsTrigger>
-          <TabsTrigger value="contacts">{settings.tabNames.contacts}</TabsTrigger>
+          <TabsTrigger value="contacts">{settings.tabNames.tenants}</TabsTrigger>
           <TabsTrigger value="work">{settings.tabNames.work}</TabsTrigger>
           <TabsTrigger value="integrations">{settings.tabNames.integrations}</TabsTrigger>
           <TabsTrigger value="reports">{settings.tabNames.reports}</TabsTrigger>
