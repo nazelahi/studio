@@ -17,61 +17,62 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Label } from "@/components/ui/label"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { saveZakatTransactionAction, deleteZakatTransactionAction } from "@/app/actions/zakat"
-import { saveZakatBankDetailAction } from "@/app/settings/actions"
-import type { ZakatTransaction } from "@/types"
+import { saveZakatTransactionAction, deleteZakatTransactionAction, saveZakatBankDetailAction, deleteZakatBankDetailAction } from "@/app/actions/zakat"
+import type { ZakatTransaction, ZakatBankDetail } from "@/types"
 import { Skeleton } from "./ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs"
 import { useSettings } from "@/context/settings-context"
 import { cn } from "@/lib/utils"
-import { useRouter } from "next/navigation"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
-
 
 const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'BDT' }).format(amount).replace('BDT', '৳');
 };
 
 export function ZakatTab() {
-  const { zakatTransactions, loading, refreshData } = useData();
+  const { zakatTransactions, loading } = useData();
   const { isAdmin } = useAuth();
   const { settings } = useSettings();
-  const router = useRouter();
   const { toast } = useToast();
-  const [isDialogOpen, setIsDialogOpen] = React.useState(false);
+
+  const [isTxDialogOpen, setIsTxDialogOpen] = React.useState(false);
   const [editingTransaction, setEditingTransaction] = React.useState<ZakatTransaction | null>(null);
   const [dialogTransactionType, setDialogTransactionType] = React.useState<'inflow' | 'outflow'>('inflow');
-  const [isPending, startTransition] = React.useTransition();
+  const [isTxPending, startTxTransition] = React.useTransition();
+
+  const [isBankDetailDialogOpen, setIsBankDetailDialogOpen] = React.useState(false);
+  const [editingBankDetail, setEditingBankDetail] = React.useState<ZakatBankDetail | null>(null);
+  const [isBankDetailPending, startBankDetailTransition] = React.useTransition();
+
 
   const [receiptPreview, setReceiptPreview] = React.useState<string | null>(null);
   const [receiptFile, setReceiptFile] = React.useState<File | null>(null);
   const receiptInputRef = React.useRef<HTMLInputElement>(null);
   const formRef = React.useRef<HTMLFormElement>(null);
 
-  const handleOpenChange = (isOpen: boolean) => {
+  const handleTxOpenChange = (isOpen: boolean) => {
     if (!isOpen) {
       setEditingTransaction(null);
       setReceiptFile(null);
       setReceiptPreview(null);
     }
-    setIsDialogOpen(isOpen);
+    setIsTxDialogOpen(isOpen);
   };
 
-  const handleEdit = (transaction: ZakatTransaction) => {
+  const handleEditTx = (transaction: ZakatTransaction) => {
     setEditingTransaction(transaction);
     setDialogTransactionType(transaction.type);
     setReceiptPreview(transaction.receipt_url || null);
-    setIsDialogOpen(true);
+    setIsTxDialogOpen(true);
   };
   
-  const handleAdd = (type: 'inflow' | 'outflow') => {
+  const handleAddTx = (type: 'inflow' | 'outflow') => {
     setEditingTransaction(null);
     setDialogTransactionType(type);
-    setIsDialogOpen(true);
+    setIsTxDialogOpen(true);
   };
 
-  const handleDelete = (formData: FormData) => {
-    startTransition(async () => {
+  const handleDeleteTx = (formData: FormData) => {
+    startTxTransition(async () => {
         const result = await deleteZakatTransactionAction(formData);
         if (result.error) {
         toast({ title: 'Error deleting transaction', description: result.error, variant: 'destructive' });
@@ -81,20 +82,20 @@ export function ZakatTab() {
     });
   };
 
-  const handleSave = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSaveTx = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
     if (receiptFile) {
         formData.append('receiptFile', receiptFile);
     }
 
-    startTransition(async () => {
+    startTxTransition(async () => {
       const result = await saveZakatTransactionAction(formData);
       if (result.error) {
         toast({ title: 'Error saving transaction', description: result.error, variant: 'destructive' });
       } else {
         toast({ title: editingTransaction ? 'Transaction Updated' : 'Transaction Added', description: 'Your Zakat transaction has been saved.' });
-        handleOpenChange(false);
+        handleTxOpenChange(false);
       }
     });
   };
@@ -110,6 +111,42 @@ export function ZakatTab() {
         reader.readAsDataURL(file);
     }
   };
+  
+  const handleSaveBankDetail = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    startBankDetailTransition(async () => {
+        const result = await saveZakatBankDetailAction(formData);
+        if (result.error) {
+             toast({ title: 'Error Saving Zakat Detail', description: result.error, variant: 'destructive'});
+        } else {
+             toast({ title: 'Zakat Detail Saved', description: 'The Zakat bank detail has been saved successfully.' });
+             setIsBankDetailDialogOpen(false);
+             setEditingBankDetail(null);
+        }
+    });
+  }
+  
+  const handleDeleteBankDetail = (formData: FormData) => {
+    startBankDetailTransition(async () => {
+        const result = await deleteZakatBankDetailAction(formData);
+        if (result.error) {
+             toast({ title: 'Error Deleting Zakat Detail', description: result.error, variant: 'destructive'});
+        } else {
+             toast({ title: 'Zakat Detail Deleted', description: 'The Zakat bank detail has been deleted.', variant: 'destructive' });
+        }
+    });
+  }
+
+  const handleEditBankDetail = (detail: ZakatBankDetail) => {
+    setEditingBankDetail(detail);
+    setIsBankDetailDialogOpen(true);
+  }
+  
+  const handleAddBankDetail = () => {
+    setEditingBankDetail(null);
+    setIsBankDetailDialogOpen(true);
+  }
 
 
   const totalInflow = zakatTransactions.filter(t => t.type === 'inflow').reduce((acc, curr) => acc + curr.amount, 0);
@@ -164,7 +201,7 @@ export function ZakatTab() {
                       )}
                       {isAdmin && (
                         <>
-                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(tx)}>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEditTx(tx)}>
                             <Edit className="h-4 w-4" />
                           </Button>
                            <AlertDialog>
@@ -180,10 +217,10 @@ export function ZakatTab() {
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
                                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <form onSubmit={(e) => { e.preventDefault(); handleDelete(new FormData(e.currentTarget)); }}>
+                                    <form onSubmit={(e) => { e.preventDefault(); handleDeleteTx(new FormData(e.currentTarget)); }}>
                                         <input type="hidden" name="transactionId" value={tx.id} />
                                         {tx.receipt_url && <input type="hidden" name="receiptUrl" value={tx.receipt_url} />}
-                                        <AlertDialogAction type="submit" disabled={isPending}>Delete</AlertDialogAction>
+                                        <AlertDialogAction type="submit" disabled={isTxPending}>Delete</AlertDialogAction>
                                     </form>
                                 </AlertDialogFooter>
                             </AlertDialogContent>
@@ -260,7 +297,7 @@ export function ZakatTab() {
                         <CardTitle>Zakat Inflow</CardTitle>
                         <CardDescription>Zakat funds received.</CardDescription>
                     </div>
-                    {isAdmin && <Button onClick={() => handleAdd('inflow')}><PlusCircle className="mr-2 h-4 w-4"/>Add Inflow</Button>}
+                    {isAdmin && <Button onClick={() => handleAddTx('inflow')}><PlusCircle className="mr-2 h-4 w-4"/>Add Inflow</Button>}
                 </CardHeader>
                 <CardContent>
                     <TransactionTable transactions={inflowTransactions} type="inflow" />
@@ -274,7 +311,7 @@ export function ZakatTab() {
                         <CardTitle>Zakat Outflow</CardTitle>
                         <CardDescription>Zakat funds distributed.</CardDescription>
                     </div>
-                    {isAdmin && <Button onClick={() => handleAdd('outflow')}><PlusCircle className="mr-2 h-4 w-4"/>Add Outflow</Button>}
+                    {isAdmin && <Button onClick={() => handleAddTx('outflow')}><PlusCircle className="mr-2 h-4 w-4"/>Add Outflow</Button>}
                 </CardHeader>
                 <CardContent>
                     <TransactionTable transactions={outflowTransactions} type="outflow" />
@@ -290,87 +327,159 @@ export function ZakatTab() {
                 <CardTitle className="text-base">Zakat Bank Details</CardTitle>
             </div>
             {isAdmin && (
-                <Button variant="outline" size="sm" onClick={() => router.push('/settings?tab=zakat')}> <Settings className="mr-2 h-4 w-4" />Manage Details</Button>
+                <Button variant="outline" size="sm" onClick={handleAddBankDetail}> <PlusCircle className="mr-2 h-4 w-4" />Add New Account</Button>
             )}
         </CardHeader>
         <CardContent>
            {settings.zakatBankDetails.length > 0 ? (
-                <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {settings.zakatBankDetails.map(detail => (
-                        <div key={detail.id} className="p-4 rounded-lg border bg-secondary/50">
-                            <p className="font-bold text-secondary-foreground">{detail.bank_name}</p>
-                            <p className="text-sm text-muted-foreground">A/C: {detail.account_number}</p>
-                            {detail.account_holder && <p className="text-sm text-muted-foreground">Holder: {detail.account_holder}</p>}
-                        </div>
-                    ))}
-                </div>
+                 <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Bank Name</TableHead>
+                            <TableHead>Account Number</TableHead>
+                            <TableHead>Account Holder</TableHead>
+                            {isAdmin && <TableHead className="w-24 text-right">Actions</TableHead>}
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {settings.zakatBankDetails.map(detail => (
+                            <TableRow key={detail.id}>
+                                <TableCell>{detail.bank_name}</TableCell>
+                                <TableCell>{detail.account_number}</TableCell>
+                                <TableCell>{detail.account_holder || '-'}</TableCell>
+                                {isAdmin && (
+                                    <TableCell className="text-right">
+                                        <div className="flex items-center justify-end gap-1">
+                                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEditBankDetail(detail)}>
+                                                <Edit className="h-4 w-4" />
+                                            </Button>
+                                            <AlertDialog>
+                                                <AlertDialogTrigger asChild>
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                </AlertDialogTrigger>
+                                                <AlertDialogContent>
+                                                    <AlertDialogHeader>
+                                                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                        <AlertDialogDescription>This will permanently delete this Zakat bank detail. This action cannot be undone.</AlertDialogDescription>
+                                                    </AlertDialogHeader>
+                                                    <AlertDialogFooter>
+                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                        <form onSubmit={(e) => { e.preventDefault(); const fd = new FormData(); fd.set('detailId', detail.id); handleDeleteBankDetail(fd); }}>
+                                                            <AlertDialogAction type="submit" disabled={isBankDetailPending}>Delete</AlertDialogAction>
+                                                        </form>
+                                                    </AlertDialogFooter>
+                                                </AlertDialogContent>
+                                            </AlertDialog>
+                                        </div>
+                                    </TableCell>
+                                )}
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
            ) : (
-                <p className="text-sm text-muted-foreground">No Zakat bank details have been set up yet. An admin can add them in the settings.</p>
+                <p className="text-sm text-muted-foreground py-4 text-center">No Zakat bank details have been set up yet. An admin can add them here.</p>
            )}
         </CardContent>
       </Card>
       
       {isAdmin && (
-        <Dialog open={isDialogOpen} onOpenChange={handleOpenChange}>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>{editingTransaction ? "Edit" : "Add"} Zakat Transaction</DialogTitle>
-                    <DialogDescription>
-                        Log a new Zakat {dialogTransactionType}.
-                    </DialogDescription>
-                </DialogHeader>
-                <form ref={formRef} onSubmit={handleSave}>
-                    <input type="hidden" name="type" value={dialogTransactionType} />
-                    {editingTransaction && <input type="hidden" name="transactionId" value={editingTransaction.id} />}
-                    {editingTransaction?.receipt_url && <input type="hidden" name="receipt_url" value={editingTransaction.receipt_url} />}
-                    {editingTransaction?.receipt_url && <input type="hidden" name="oldReceiptUrl" value={editingTransaction.receipt_url} />}
-                    <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto pr-2">
-                        <div className="space-y-2">
-                            <Label htmlFor="transaction_date">Date</Label>
-                            <Input id="transaction_date" name="transaction_date" type="date" defaultValue={editingTransaction?.transaction_date ? format(parseISO(editingTransaction.transaction_date), 'yyyy-MM-dd') : new Date().toISOString().split('T')[0]} required />
-                        </div>
-                         <div className="space-y-2">
-                            <Label htmlFor="amount">Amount</Label>
-                            <Input id="amount" name="amount" type="number" step="0.01" defaultValue={editingTransaction?.amount} placeholder="0.00" required />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="source_or_recipient">{dialogTransactionType === 'inflow' ? 'Source (From)' : 'Recipient (To)'}</Label>
-                            <Input id="source_or_recipient" name="source_or_recipient" defaultValue={editingTransaction?.source_or_recipient} placeholder="Name of person or organization" required />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="description">Description</Label>
-                            <Textarea id="description" name="description" defaultValue={editingTransaction?.description || ""} placeholder="Optional notes..."/>
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Receipt</Label>
-                            <div className="flex items-center gap-4">
-                                <div className="w-24 h-24 bg-muted rounded-md flex items-center justify-center">
-                                    {receiptPreview ? (
-                                        <img src={receiptPreview} alt="Receipt Preview" className="h-full w-full object-contain rounded-md" data-ai-hint="document receipt"/>
-                                    ) : (
-                                        <ImageIcon className="h-10 w-10 text-muted-foreground" />
-                                    )}
+        <>
+            <Dialog open={isTxDialogOpen} onOpenChange={handleTxOpenChange}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>{editingTransaction ? "Edit" : "Add"} Zakat Transaction</DialogTitle>
+                        <DialogDescription>
+                            Log a new Zakat {dialogTransactionType}.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <form ref={formRef} onSubmit={handleSaveTx}>
+                        <input type="hidden" name="type" value={dialogTransactionType} />
+                        {editingTransaction && <input type="hidden" name="transactionId" value={editingTransaction.id} />}
+                        {editingTransaction?.receipt_url && <input type="hidden" name="receipt_url" value={editingTransaction.receipt_url} />}
+                        {editingTransaction?.receipt_url && <input type="hidden" name="oldReceiptUrl" value={editingTransaction.receipt_url} />}
+                        <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto pr-2">
+                            <div className="space-y-2">
+                                <Label htmlFor="transaction_date">Date</Label>
+                                <Input id="transaction_date" name="transaction_date" type="date" defaultValue={editingTransaction?.transaction_date ? format(parseISO(editingTransaction.transaction_date), 'yyyy-MM-dd') : new Date().toISOString().split('T')[0]} required />
+                            </div>
+                             <div className="space-y-2">
+                                <Label htmlFor="amount">Amount</Label>
+                                <Input id="amount" name="amount" type="number" step="0.01" defaultValue={editingTransaction?.amount} placeholder="0.00" required />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="source_or_recipient">{dialogTransactionType === 'inflow' ? 'Source (From)' : 'Recipient (To)'}</Label>
+                                <Input id="source_or_recipient" name="source_or_recipient" defaultValue={editingTransaction?.source_or_recipient} placeholder="Name of person or organization" required />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="description">Description</Label>
+                                <Textarea id="description" name="description" defaultValue={editingTransaction?.description || ""} placeholder="Optional notes..."/>
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Receipt</Label>
+                                <div className="flex items-center gap-4">
+                                    <div className="w-24 h-24 bg-muted rounded-md flex items-center justify-center">
+                                        {receiptPreview ? (
+                                            <img src={receiptPreview} alt="Receipt Preview" className="h-full w-full object-contain rounded-md" data-ai-hint="document receipt"/>
+                                        ) : (
+                                            <ImageIcon className="h-10 w-10 text-muted-foreground" />
+                                        )}
+                                    </div>
+                                    <Button type="button" variant="outline" onClick={() => receiptInputRef.current?.click()}>
+                                        <Upload className="mr-2 h-4 w-4"/>
+                                        Upload Image
+                                    </Button>
+                                    <Input ref={receiptInputRef} type="file" className="hidden" accept="image/*" onChange={handleReceiptFileChange} />
                                 </div>
-                                <Button type="button" variant="outline" onClick={() => receiptInputRef.current?.click()}>
-                                    <Upload className="mr-2 h-4 w-4"/>
-                                    Upload Image
-                                </Button>
-                                <Input ref={receiptInputRef} type="file" className="hidden" accept="image/*" onChange={handleReceiptFileChange} />
                             </div>
                         </div>
-                    </div>
-                    <DialogFooter className="mt-4">
-                        <DialogClose asChild>
-                            <Button variant="outline" type="button" disabled={isPending}>Cancel</Button>
-                        </DialogClose>
-                        <Button type="submit" disabled={isPending}>
-                            {isPending && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
-                            Save Transaction
-                        </Button>
-                    </DialogFooter>
-                </form>
-            </DialogContent>
-        </Dialog>
+                        <DialogFooter className="mt-4">
+                            <DialogClose asChild>
+                                <Button variant="outline" type="button" disabled={isTxPending}>Cancel</Button>
+                            </DialogClose>
+                            <Button type="submit" disabled={isTxPending}>
+                                {isTxPending && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
+                                Save Transaction
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={isBankDetailDialogOpen} onOpenChange={setIsBankDetailDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>{editingBankDetail ? 'Edit' : 'Add'} Zakat Bank Account</DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={handleSaveBankDetail}>
+                        {editingBankDetail && <input type="hidden" name="detailId" value={editingBankDetail.id} />}
+                        <div className="grid gap-4 py-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="bank_name">Bank Name</Label>
+                                <Input id="bank_name" name="bank_name" defaultValue={editingBankDetail?.bank_name} required />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="account_number">Account Number</Label>
+                                <Input id="account_number" name="account_number" defaultValue={editingBankDetail?.account_number} required />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="account_holder">Account Holder Name (Optional)</Label>
+                                <Input id="account_holder" name="account_holder" defaultValue={editingBankDetail?.account_holder} />
+                            </div>
+                        </div>
+                         <DialogFooter>
+                            <DialogClose asChild><Button variant="outline" type="button" disabled={isBankDetailPending}>Cancel</Button></DialogClose>
+                            <Button type="submit" disabled={isBankDetailPending}>
+                                {isBankDetailPending && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
+                                Save
+                            </Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+        </>
       )}
     </div>
   )

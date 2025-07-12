@@ -16,16 +16,11 @@ import { User, LogOut, MapPin, Menu, Settings, LoaderCircle, LogIn, Building, Ke
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useToast } from "@/hooks/use-toast"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from "@/components/ui/sheet"
-import { updatePropertySettingsAction, updateUserCredentialsAction, saveZakatBankDetailAction, deleteZakatBankDetailAction } from "./actions"
+import { updatePropertySettingsAction, updateUserCredentialsAction } from "./actions"
 import { useProtection } from "@/context/protection-context"
 import { cn } from "@/lib/utils"
-import { ZakatBankDetail } from "@/types"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog"
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 
-
-type SettingsTab = 'property' | 'account' | 'application' | 'labels' | 'zakat';
+type SettingsTab = 'property' | 'account' | 'application' | 'labels';
 
 export default function SettingsPage() {
   const { settings, setSettings, refreshSettings } = useSettings();
@@ -35,14 +30,11 @@ export default function SettingsPage() {
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
   const [isCredentialsPending, startCredentialsTransition] = useTransition();
-  const [isZakatPending, startZakatTransition] = useTransition();
   const { withProtection } = useProtection();
   
   const [newEmail, setNewEmail] = useState(user?.email || '');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [isZakatDialogOpen, setIsZakatDialogOpen] = useState(false);
-  const [editingZakatDetail, setEditingZakatDetail] = useState<ZakatBankDetail | null>(null);
 
   const [activeTab, setActiveTab] = useState<SettingsTab>('property');
 
@@ -125,43 +117,6 @@ export default function SettingsPage() {
    });
   }
 
-  const handleSaveZakatDetail = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    startZakatTransition(async () => {
-        const result = await saveZakatBankDetailAction(formData);
-        if (result.error) {
-             toast({ title: 'Error Saving Zakat Detail', description: result.error, variant: 'destructive'});
-        } else {
-             toast({ title: 'Zakat Detail Saved', description: 'The Zakat bank detail has been saved successfully.' });
-             setIsZakatDialogOpen(false);
-             setEditingZakatDetail(null);
-        }
-    });
-  }
-  
-  const handleDeleteZakatDetail = (formData: FormData) => {
-    startZakatTransition(async () => {
-        const result = await deleteZakatBankDetailAction(formData);
-        if (result.error) {
-             toast({ title: 'Error Deleting Zakat Detail', description: result.error, variant: 'destructive'});
-        } else {
-             toast({ title: 'Zakat Detail Deleted', description: 'The Zakat bank detail has been deleted.', variant: 'destructive' });
-        }
-    });
-  }
-
-  const handleEditZakatDetail = (detail: ZakatBankDetail) => {
-    setEditingZakatDetail(detail);
-    setIsZakatDialogOpen(true);
-  }
-  
-  const handleAddZakatDetail = () => {
-    setEditingZakatDetail(null);
-    setIsZakatDialogOpen(true);
-  }
-
-
   if (!isAdmin) {
       return (
           <div className="flex h-screen w-full flex-col items-center justify-center bg-background">
@@ -179,10 +134,6 @@ export default function SettingsPage() {
       <button onClick={() => setActiveTab('property')} className={cn("flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary", {'bg-muted text-primary': activeTab === 'property'})}>
         <Building className="h-4 w-4" />
         Property
-      </button>
-      <button onClick={() => setActiveTab('zakat')} className={cn("flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary", {'bg-muted text-primary': activeTab === 'zakat'})}>
-        <Landmark className="h-4 w-4" />
-        Zakat Details
       </button>
       <button onClick={() => setActiveTab('account')} className={cn("flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary", {'bg-muted text-primary': activeTab === 'account'})}>
         <KeyRound className="h-4 w-4" />
@@ -351,65 +302,6 @@ export default function SettingsPage() {
                 </form>
               )}
 
-              {activeTab === 'zakat' && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Zakat Bank Details</CardTitle>
-                    <CardDescription>Manage the bank accounts used for Zakat funds.</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Bank Name</TableHead>
-                                <TableHead>Account Number</TableHead>
-                                <TableHead>Account Holder</TableHead>
-                                <TableHead className="w-24 text-right">Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {settings.zakatBankDetails.map(detail => (
-                                <TableRow key={detail.id}>
-                                    <TableCell>{detail.bank_name}</TableCell>
-                                    <TableCell>{detail.account_number}</TableCell>
-                                    <TableCell>{detail.account_holder || '-'}</TableCell>
-                                    <TableCell className="text-right">
-                                        <div className="flex items-center justify-end gap-1">
-                                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEditZakatDetail(detail)}>
-                                                <Edit className="h-4 w-4" />
-                                            </Button>
-                                            <AlertDialog>
-                                                <AlertDialogTrigger asChild>
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
-                                                </AlertDialogTrigger>
-                                                <AlertDialogContent>
-                                                    <AlertDialogHeader>
-                                                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                                        <AlertDialogDescription>This will permanently delete this Zakat bank detail. This action cannot be undone.</AlertDialogDescription>
-                                                    </AlertDialogHeader>
-                                                    <AlertDialogFooter>
-                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                        <form action={() => handleDeleteZakatDetail(new FormData(document.createElement('form')))} onSubmit={(e) => { e.preventDefault(); const fd = new FormData(); fd.set('detailId', detail.id); handleDeleteZakatDetail(fd); }}>
-                                                            <AlertDialogAction type="submit" disabled={isZakatPending}>Delete</AlertDialogAction>
-                                                        </form>
-                                                    </AlertDialogFooter>
-                                                </AlertDialogContent>
-                                            </AlertDialog>
-                                        </div>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                  </CardContent>
-                   <CardFooter>
-                        <Button onClick={handleAddZakatDetail}><PlusCircle className="mr-2 h-4 w-4" /> Add New Account</Button>
-                  </CardFooter>
-                </Card>
-              )}
-
               {activeTab === 'account' && (
                 <form action={handleSaveCredentials}>
                     <Card>
@@ -492,38 +384,6 @@ export default function SettingsPage() {
             {settings.footerName}
           </footer>
         </main>
-
-        <Dialog open={isZakatDialogOpen} onOpenChange={setIsZakatDialogOpen}>
-            <DialogContent>
-                <DialogHeader>
-                    <DialogTitle>{editingZakatDetail ? 'Edit' : 'Add'} Zakat Bank Account</DialogTitle>
-                </DialogHeader>
-                <form onSubmit={handleSaveZakatDetail}>
-                    {editingZakatDetail && <input type="hidden" name="detailId" value={editingZakatDetail.id} />}
-                    <div className="grid gap-4 py-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="bank_name">Bank Name</Label>
-                            <Input id="bank_name" name="bank_name" defaultValue={editingZakatDetail?.bank_name} required />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="account_number">Account Number</Label>
-                            <Input id="account_number" name="account_number" defaultValue={editingZakatDetail?.account_number} required />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="account_holder">Account Holder Name (Optional)</Label>
-                            <Input id="account_holder" name="account_holder" defaultValue={editingZakatDetail?.account_holder} />
-                        </div>
-                    </div>
-                     <DialogFooter>
-                        <DialogClose asChild><Button variant="outline" type="button" disabled={isZakatPending}>Cancel</Button></DialogClose>
-                        <Button type="submit" disabled={isZakatPending}>
-                            {isZakatPending && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
-                            Save
-                        </Button>
-                    </DialogFooter>
-                </form>
-            </DialogContent>
-        </Dialog>
       </div>
   )
 }

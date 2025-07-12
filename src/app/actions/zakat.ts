@@ -141,3 +141,61 @@ export async function deleteZakatTransactionAction(formData: FormData) {
     
     return { success: true };
 }
+
+export async function saveZakatBankDetailAction(formData: FormData) {
+    const supabaseAdmin = getSupabaseAdmin();
+    const detailId = formData.get('detailId') as string | undefined;
+
+    const data = {
+        bank_name: formData.get('bank_name') as string,
+        account_number: formData.get('account_number') as string,
+        account_holder: formData.get('account_holder') as string,
+    };
+
+    let error;
+
+    if (detailId) {
+        const { error: updateError } = await supabaseAdmin
+            .from('zakat_bank_details')
+            .update(data)
+            .eq('id', detailId);
+        error = updateError;
+    } else {
+        const { error: insertError } = await supabaseAdmin
+            .from('zakat_bank_details')
+            .insert(data);
+        error = insertError;
+    }
+
+    if (error) {
+        console.error('Supabase error saving Zakat bank detail:', error);
+        return { error: error.message };
+    }
+    
+    revalidatePath('/');
+    
+    return { success: true };
+}
+
+export async function deleteZakatBankDetailAction(formData: FormData) {
+    const supabaseAdmin = getSupabaseAdmin();
+    const detailId = formData.get('detailId') as string;
+
+    if (!detailId) {
+        return { error: 'Detail ID is missing.' };
+    }
+
+    const { error } = await supabaseAdmin
+        .from('zakat_bank_details')
+        .delete()
+        .eq('id', detailId);
+
+    if (error) {
+        console.error('Supabase error deleting Zakat bank detail:', error);
+        return { error: error.message };
+    }
+    
+    revalidatePath('/');
+    
+    return { success: true };
+}
