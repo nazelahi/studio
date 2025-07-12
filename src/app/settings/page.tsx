@@ -1,5 +1,4 @@
 
-
 "use client"
 
 import Link from "next/link"
@@ -9,13 +8,13 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Logo } from "@/components/icons"
 import { useSettings } from "@/context/settings-context"
-import { usePathname, useRouter } from "next/navigation"
+import { useRouter } from "next/navigation"
 import { useAuth } from "@/context/auth-context"
 import { Button } from "@/components/ui/button"
-import { User, LogOut, MapPin, Menu, Settings, LoaderCircle, LogIn, Building, KeyRound, Palette, Tag, Landmark, PlusCircle, Edit, Trash2 } from "lucide-react"
+import { User, LogOut, MapPin, Menu, Settings, LoaderCircle, LogIn, Building, KeyRound, Palette, Tag, Landmark } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useToast } from "@/hooks/use-toast"
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { updatePropertySettingsAction, updateUserCredentialsAction } from "./actions"
 import { useProtection } from "@/context/protection-context"
 import { cn } from "@/lib/utils"
@@ -38,7 +37,6 @@ function AccessDenied() {
 
 export default function SettingsPage() {
   const { settings, setSettings, refreshSettings } = useSettings();
-  const pathname = usePathname();
   const router = useRouter();
   const { isAdmin, user, signOut } = useAuth();
   const { toast } = useToast();
@@ -268,46 +266,47 @@ export default function SettingsPage() {
             <div className="grid gap-6">
               
               {activeTab === 'property' && (
-                <form action={handleSavePropertyDetails}>
+                <form action={handleSavePropertyDetails} className="space-y-6">
                     <Card>
                         <CardHeader>
-                            <CardTitle>{settings.page_settings.property_details.title}</CardTitle>
-                            <CardDescription>{settings.page_settings.property_details.description}</CardDescription>
+                            <CardTitle>Property Details</CardTitle>
+                            <CardDescription>Set the name and address of your property.</CardDescription>
                         </CardHeader>
-                        <CardContent className="space-y-6">
-                            <div className="grid md:grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="houseName">{settings.page_settings.property_details.house_name_label}</Label>
-                                    <Input id="houseName" name="houseName" value={settings.houseName} onChange={handleInputChange} />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="houseAddress">{settings.page_settings.property_details.house_address_label}</Label>
-                                    <Input id="houseAddress" name="houseAddress" value={settings.houseAddress} onChange={handleInputChange} />
-                                </div>
+                        <CardContent className="grid md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="houseName">{settings.page_settings.property_details.house_name_label}</Label>
+                                <Input id="houseName" name="houseName" value={settings.houseName} onChange={handleInputChange} />
                             </div>
-
-                            <div>
-                              <h3 className="text-lg font-medium leading-6 text-card-foreground mb-1">Rental Bank Details</h3>
-                              <p className="text-sm text-muted-foreground mb-4">Enter the bank details for monthly rent deposits.</p>
-                               <div className="grid md:grid-cols-2 gap-4">
-                                 <div className="space-y-2">
-                                      <Label htmlFor="bankName">Bank Name</Label>
-                                      <Input id="bankName" name="bankName" value={settings.bankName} onChange={handleInputChange} />
-                                  </div>
-                                  <div className="space-y-2">
-                                      <Label htmlFor="bankAccountNumber">Bank Account Number</Label>
-                                      <Input id="bankAccountNumber" name="bankAccountNumber" value={settings.bankAccountNumber} onChange={handleInputChange} />
-                                  </div>
-                              </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="houseAddress">{settings.page_settings.property_details.house_address_label}</Label>
+                                <Input id="houseAddress" name="houseAddress" value={settings.houseAddress} onChange={handleInputChange} />
                             </div>
                         </CardContent>
-                        <CardFooter>
-                          <Button type="submit" disabled={isPending}>
-                             {isPending && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
-                             Save Property Settings
-                          </Button>
-                        </CardFooter>
                     </Card>
+
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Rental Bank Details</CardTitle>
+                            <CardDescription>Enter the bank details for monthly rent deposits.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="grid md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="bankName">Bank Name</Label>
+                                <Input id="bankName" name="bankName" value={settings.bankName} onChange={handleInputChange} />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="bankAccountNumber">Bank Account Number</Label>
+                                <Input id="bankAccountNumber" name="bankAccountNumber" value={settings.bankAccountNumber} onChange={handleInputChange} />
+                            </div>
+                        </CardContent>
+                    </Card>
+                    
+                    <div className="flex justify-start">
+                      <Button type="submit" disabled={isPending}>
+                         {isPending && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
+                         Save Property Settings
+                      </Button>
+                    </div>
                 </form>
               )}
 
@@ -396,3 +395,5 @@ export default function SettingsPage() {
       </div>
   )
 }
+
+    
