@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import Link from "next/link"
@@ -11,19 +12,18 @@ import { useSettings } from "@/context/settings-context"
 import { usePathname, useRouter } from "next/navigation"
 import { useAuth } from "@/context/auth-context"
 import { Button } from "@/components/ui/button"
-import { User, LogOut, MapPin, Menu, Settings, LoaderCircle, LogIn } from "lucide-react"
+import { User, LogOut, MapPin, Menu, Settings, LoaderCircle, LogIn, Upload, Trash2, ImageIcon } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useToast } from "@/hooks/use-toast"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from "@/components/ui/sheet"
 import { updatePropertySettingsAction, updateUserCredentialsAction } from "./actions"
-import { Separator } from "@/components/ui/separator"
 import { useProtection } from "@/context/protection-context"
 
 export default function SettingsPage() {
-  const { settings, setSettings } = useSettings();
+  const { settings, setSettings, refreshSettings } = useSettings();
   const pathname = usePathname();
   const router = useRouter();
-  const { isAdmin, user, signOut } = useAuth();
+  const { isAdmin, user } = useAuth();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
   const [isCredentialsPending, startCredentialsTransition] = useTransition();
@@ -32,12 +32,20 @@ export default function SettingsPage() {
   const [newEmail, setNewEmail] = useState(user?.email || '');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  
+  const [houseImages, setHouseImages] = useState<string[]>(settings.houseImages || []);
+  const [newImageFiles, setNewImageFiles] = useState<File[]>([]);
+  const imageInputRef = React.useRef<HTMLInputElement>(null);
 
   React.useEffect(() => {
     if (user?.email) {
       setNewEmail(user.email);
     }
   }, [user]);
+
+  React.useEffect(() => {
+    setHouseImages(settings.houseImages || []);
+  }, [settings.houseImages]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -56,13 +64,35 @@ export default function SettingsPage() {
     });
   };
 
+  const handleImageFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+        setNewImageFiles(prev => [...prev, ...Array.from(e.target.files!)]);
+    }
+  };
+
+  const removeExistingImage = (index: number) => {
+    setHouseImages(prev => prev.filter((_, i) => i !== index));
+  }
+
+  const removeNewImage = (index: number) => {
+    setNewImageFiles(prev => prev.filter((_, i) => i !== index));
+  }
+
   const handleSavePropertyDetails = (formData: FormData) => {
      startTransition(async () => {
+        // Append existing images that weren't removed
+        houseImages.forEach(imgUrl => formData.append('existing_house_images', imgUrl));
+        
+        // Append new files
+        newImageFiles.forEach(file => formData.append('new_house_images', file));
+
         const result = await updatePropertySettingsAction(formData);
         if (result?.error) {
             toast({ title: 'Error Saving Settings', description: result.error, variant: 'destructive'});
         } else {
             toast({ title: 'Property Details Saved', description: 'Your property and bank details have been updated.' });
+            setNewImageFiles([]);
+            refreshSettings(); // This will pull the new image URLs from DB
         }
      });
   };
@@ -76,6 +106,7 @@ export default function SettingsPage() {
   };
 
   const handleSignOut = async () => {
+    const { signOut } = await import('@/context/auth-context').then(mod => mod.useAuth());
     await signOut();
     toast({
       title: "Signed Out",
@@ -262,6 +293,44 @@ export default function SettingsPage() {
                           <div className="space-y-2">
                               <Label htmlFor="bankAccountNumber">Bank Account Number</Label>
                               <Input id="bankAccountNumber" name="bankAccountNumber" value={settings.bankAccountNumber} onChange={handleInputChange} />
+                          </div>
+                      </CardContent>
+                       <CardHeader>
+                        <CardTitle>House Pictures</CardTitle>
+                        <CardDescription>Upload pictures for the slideshow on the homepage.</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                          <div className="space-y-4">
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                                {houseImages.map((url, index) => (
+                                    <div key={index} className="relative group aspect-video">
+                                        <img src={url} alt={`House image ${index + 1}`} className="w-full h-full object-cover rounded-md" data-ai-hint="house exterior" />
+                                        <Button type="button" variant="destructive" size="icon" className="absolute top-1 right-1 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => removeExistingImage(index)}>
+                                            <Trash2 className="h-3 w-3" />
+                                        </Button>
+                                    </div>
+                                ))}
+                                {newImageFiles.map((file, index) => (
+                                    <div key={index} className="relative group aspect-video">
+                                        <img src={URL.createObjectURL(file)} alt={`New image ${index + 1}`} className="w-full h-full object-cover rounded-md" data-ai-hint="house exterior" />
+                                        <Button type="button" variant="destructive" size="icon" className="absolute top-1 right-1 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100 transition-opacity" onClick={() => removeNewImage(index)}>
+                                            <Trash2 className="h-3 w-3" />
+                                        </Button>
+                                    </div>
+                                ))}
+                                <Button type="button" variant="outline" className="flex flex-col items-center justify-center aspect-video" onClick={() => imageInputRef.current?.click()}>
+                                    <Upload className="h-6 w-6 mb-2" />
+                                    <span>Upload More</span>
+                                </Button>
+                                <input
+                                    ref={imageInputRef}
+                                    type="file"
+                                    multiple
+                                    accept="image/*"
+                                    className="hidden"
+                                    onChange={handleImageFileChange}
+                                />
+                            </div>
                           </div>
                       </CardContent>
                       <CardFooter>

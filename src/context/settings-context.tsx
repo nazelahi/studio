@@ -1,8 +1,9 @@
 
 
+
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import { useData } from './data-context';
 
 interface PageDashboard {
@@ -54,6 +55,7 @@ interface AppSettings {
   bankAccountNumber: string;
   zakatBankName: string;
   zakatBankAccountNumber: string;
+  houseImages: string[];
   footerName: string;
   tabNames: TabNames;
   page_dashboard: PageDashboard;
@@ -64,6 +66,8 @@ interface AppSettings {
 interface SettingsContextType {
   settings: AppSettings;
   setSettings: React.Dispatch<React.SetStateAction<AppSettings>>;
+  loading: boolean;
+  refreshSettings: () => void;
 }
 
 const defaultSettings: AppSettings = {
@@ -74,6 +78,7 @@ const defaultSettings: AppSettings = {
     bankAccountNumber: "",
     zakatBankName: "",
     zakatBankAccountNumber: "",
+    houseImages: [],
     footerName: "© 2024 RentFlow. All Rights Reserved.",
     tabNames: {
         overview: "Overview",
@@ -120,11 +125,8 @@ const deepMerge = (target: any, source: any) => {
     const output = { ...target };
     if (isObject(target) && isObject(source)) {
         Object.keys(source).forEach(key => {
-            if (isObject(source[key])) {
-                if (!(key in target))
-                    Object.assign(output, { [key]: source[key] });
-                else
-                    output[key] = deepMerge(target[key], source[key]);
+            if (isObject(source[key]) && key in target) {
+                 output[key] = deepMerge(target[key], source[key]);
             } else {
                 Object.assign(output, { [key]: source[key] });
             }
@@ -141,11 +143,29 @@ const isObject = (item: any) => {
 export function SettingsProvider({ children }: { children: ReactNode }) {
     const [settings, setSettings] = useState<AppSettings>(defaultSettings);
     const [isMounted, setIsMounted] = useState(false);
-    const { propertySettings, loading: dataLoading } = useData();
+    const { propertySettings, loading: dataLoading, refreshData } = useData();
+    
+    const loadDBSettings = useCallback(() => {
+        if (!dataLoading && propertySettings) {
+             setSettings(prev => ({
+                ...prev,
+                houseName: propertySettings.house_name || prev.houseName,
+                houseAddress: propertySettings.house_address || prev.houseAddress,
+                bankName: propertySettings.bank_name || prev.bankName,
+                bankAccountNumber: propertySettings.bank_account_number || prev.bankAccountNumber,
+                zakatBankName: propertySettings.zakat_bank_name || prev.zakatBankName,
+                zakatBankAccountNumber: propertySettings.zakat_bank_account_number || prev.zakatBankAccountNumber,
+                houseImages: propertySettings.house_images || [],
+            }));
+        }
+    }, [propertySettings, dataLoading]);
+
+    const refreshSettings = useCallback(() => {
+        refreshData();
+    }, [refreshData]);
 
     useEffect(() => {
         setIsMounted(true);
-        // Load local settings first
         try {
             const item = window.localStorage.getItem('appSettings');
             if (item) {
@@ -158,24 +178,12 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     }, []);
 
     useEffect(() => {
-      // Once data is loaded from Supabase, update the database-driven settings
-      if (!dataLoading && propertySettings) {
-        setSettings(prev => ({
-          ...prev,
-          houseName: propertySettings.house_name || prev.houseName,
-          houseAddress: propertySettings.house_address || prev.houseAddress,
-          bankName: propertySettings.bank_name || prev.bankName,
-          bankAccountNumber: propertySettings.bank_account_number || prev.bankAccountNumber,
-          zakatBankName: propertySettings.zakat_bank_name || prev.zakatBankName,
-          zakatBankAccountNumber: propertySettings.zakat_bank_account_number || prev.zakatBankAccountNumber,
-        }))
-      }
-    }, [propertySettings, dataLoading]);
+      loadDBSettings();
+    }, [loadDBSettings]);
     
     useEffect(() => {
         if (isMounted) {
-            // Save all settings EXCEPT database-driven ones to local storage
-            const { houseName, houseAddress, bankName, bankAccountNumber, zakatBankName, zakatBankAccountNumber, ...localSettings } = settings;
+            const { houseName, houseAddress, bankName, bankAccountNumber, zakatBankName, zakatBankAccountNumber, houseImages, ...localSettings } = settings;
             try {
                 window.localStorage.setItem('appSettings', JSON.stringify(localSettings));
             } catch (error) {
@@ -184,16 +192,17 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         }
     }, [settings, isMounted]);
 
-    if (!isMounted) {
-        return (
-            <SettingsContext.Provider value={{ settings: defaultSettings, setSettings }}>
-                {children}
-            </SettingsContext.Provider>
-        );
-    }
+    const loading = !isMounted || dataLoading;
+
+    const value = {
+        settings,
+        setSettings,
+        loading,
+        refreshSettings,
+    };
 
     return (
-        <SettingsContext.Provider value={{ settings, setSettings }}>
+        <SettingsContext.Provider value={value}>
             {children}
         </SettingsContext.Provider>
     );

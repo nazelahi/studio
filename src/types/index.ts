@@ -1,5 +1,6 @@
 
 
+
 export type Tenant = {
   id: string;
   name: string;
@@ -50,6 +51,7 @@ export type PropertySettings = {
   bank_account_number: string;
   zakat_bank_name?: string;
   zakat_bank_account_number?: string;
+  house_images?: string[];
 };
 
 export type Deposit = {
