@@ -1315,9 +1315,8 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                         {isAdmin && (
                             <Dialog open={isDepositDialogOpen} onOpenChange={handleDepositOpenChange}>
                                 <DialogTrigger asChild>
-                                    <Button size="sm" variant="secondary">
-                                        {loggedDeposit ? <Edit className="mr-2 h-4 w-4" /> : <PlusCircle className="mr-2 h-4 w-4" />}
-                                        {loggedDeposit ? 'Edit Deposit' : 'Log Deposit'}
+                                    <Button size="icon" variant="secondary" className="h-8 w-8">
+                                        {loggedDeposit ? <Edit className="h-4 w-4" /> : <PlusCircle className="h-4 w-4" />}
                                     </Button>
                                 </DialogTrigger>
                                 <DialogContent>
