@@ -287,7 +287,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
                         rent: rentEntryData.rent,
                         joinDate: new Date(year, month, 1).toISOString().split('T')[0],
                         avatar: 'https://placehold.co/80x80.png',
-                        status: 'Pending',
+                        status: 'Active' as const,
                         email: `${rentEntryData.name.replace(/\s+/g, '.').toLowerCase()}@example.com`,
                     };
                     const { data: newTenant, error } = await supabase.from('tenants').insert(newTenantData).select().single();

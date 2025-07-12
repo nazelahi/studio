@@ -22,6 +22,7 @@ import { useAuth } from "@/context/auth-context"
 import { useSettings } from "@/context/settings-context"
 import { format, parseISO } from "date-fns"
 import { Badge } from "./ui/badge"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
 
 export function TenantsTab() {
   const { tenants, addTenant, updateTenant, deleteTenant, loading } = useData();
@@ -101,7 +102,7 @@ export function TenantsTab() {
       type: formData.get('type') as string,
       avatar: previewImage || editingTenant?.avatar || 'https://placehold.co/80x80.png',
       documents: existingDocuments, // Start with the ones we didn't remove
-      status: editingTenant?.status || 'Pending',
+      status: formData.get('status') as Tenant['status'] || editingTenant?.status || 'Active',
     };
 
     try {
@@ -194,7 +195,7 @@ export function TenantsTab() {
     switch (status) {
       case 'Paid':
         return 'bg-success text-success-foreground hover:bg-success/80';
-      case 'Pending':
+      case 'Active':
         return 'bg-warning text-warning-foreground hover:bg-warning/80';
       case 'Overdue':
         return 'bg-destructive text-destructive-foreground hover:bg-destructive/80';
@@ -353,9 +354,22 @@ export function TenantsTab() {
                           className="[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                         />
                       </div>
-                      <div className="space-y-2 md:col-span-2">
+                       <div className="space-y-2">
                         <Label htmlFor="joinDate">Join Date</Label>
                         <Input id="joinDate" name="joinDate" type="date" defaultValue={editingTenant?.joinDate} required />
+                      </div>
+                      <div className="space-y-2">
+                          <Label htmlFor="status">Status</Label>
+                          <Select name="status" defaultValue={editingTenant?.status || 'Active'}>
+                            <SelectTrigger id="status">
+                                <SelectValue placeholder="Select status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="Active">Active</SelectItem>
+                                <SelectItem value="Paid">Paid</SelectItem>
+                                <SelectItem value="Overdue">Overdue</SelectItem>
+                            </SelectContent>
+                           </Select>
                       </div>
                       <div className="space-y-2 md:col-span-2">
                         <Label htmlFor="notes">Notes</Label>

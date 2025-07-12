@@ -8,7 +8,7 @@ export type Tenant = {
   rent: number;
   joinDate: string;
   notes?: string;
-  status: "Paid" | "Pending" | "Overdue";
+  status: "Paid" | "Active" | "Overdue";
   avatar: string;
   type?: string;
   documents?: string[];
@@ -48,4 +48,3 @@ export type PropertySettings = {
 };
 
     
-
