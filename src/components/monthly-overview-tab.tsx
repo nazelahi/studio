@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { DollarSign, Banknote, ArrowUpCircle, ArrowDownCircle, PlusCircle, Trash2, Pencil, CheckCircle, XCircle, AlertCircle, RefreshCw, ChevronDown, Copy, X, FileText, Upload, Building, Landmark, CalendarCheck, Edit } from "lucide-react"
+import { DollarSign, Banknote, ArrowUpCircle, ArrowDownCircle, PlusCircle, Trash2, Pencil, CheckCircle, XCircle, AlertCircle, RefreshCw, ChevronDown, Copy, X, FileText, Upload, Building, Landmark, CalendarCheck, Edit, Eye, Image as ImageIcon } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog"
@@ -30,6 +30,7 @@ import { useAuth } from "@/context/auth-context"
 import { useSettings } from "@/context/settings-context"
 import Link from "next/link"
 import { logDepositAction, deleteDepositAction } from "@/app/actions/deposits"
+import { supabase } from "@/lib/supabase"
 
 
 type HistoricalTenant = {
@@ -105,9 +106,14 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
   const [selectedTenantForSheet, setSelectedTenantForSheet] = React.useState<Tenant | null>(null);
   
   const [isDepositDialogOpen, setIsDepositDialogOpen] = React.useState(false);
+  const [receiptPreview, setReceiptPreview] = React.useState<string | null>(null);
+  const [receiptFile, setReceiptFile] = React.useState<File | null>(null);
+  const [isUploading, setIsUploading] = React.useState(false);
+
 
   const formRef = React.useRef<HTMLFormElement>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const receiptInputRef = React.useRef<HTMLInputElement>(null);
 
 
   const filteredTenantsForMonth = React.useMemo(() => {
@@ -448,18 +454,65 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
     reader.readAsArrayBuffer(file);
   };
   
+    const handleReceiptFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            setReceiptFile(file);
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                setReceiptPreview(reader.result as string);
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+    
   const handleSaveDeposit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setIsUploading(true);
+
     const formData = new FormData(event.currentTarget);
+    let receiptUrl: string | undefined = loggedDeposit?.receipt_url;
+    let newReceiptUploaded = false;
+
+    if (receiptFile) {
+        // A new file was selected, upload it
+        const fileExt = receiptFile.name.split('.').pop();
+        const filePath = `${year}-${months.indexOf(selectedMonth)}/${Date.now()}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage
+            .from('deposit-receipts')
+            .upload(filePath, receiptFile);
+
+        if (uploadError) {
+            toast({ title: "Upload Error", description: uploadError.message, variant: "destructive" });
+            setIsUploading(false);
+            return;
+        }
+
+        const { data: publicUrlData } = supabase.storage
+            .from('deposit-receipts')
+            .getPublicUrl(filePath);
+        
+        receiptUrl = publicUrlData.publicUrl;
+        newReceiptUploaded = true;
+    }
+
+    formData.set('receipt_url', receiptUrl || '');
+
     const result = await logDepositAction(formData);
     
     if (result.error) {
         toast({ title: "Error", description: result.error, variant: "destructive" });
+        // If save fails and we uploaded a new receipt, try to remove it
+        if (newReceiptUploaded && receiptUrl) {
+            const path = new URL(receiptUrl).pathname.split('/deposit-receipts/')[1];
+            await supabase.storage.from('deposit-receipts').remove([path]);
+        }
     } else {
         toast({ title: "Success", description: "Bank deposit has been logged." });
         setIsDepositDialogOpen(false);
         refreshData();
     }
+    setIsUploading(false);
   };
 
   const handleDeleteDeposit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -487,6 +540,15 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
   const totalExpenses = filteredExpenses.reduce((acc, expense) => acc + expense.amount, 0);
   const netResult = totalRentCollected - totalExpenses;
   const amountForDeposit = netResult > 0 ? netResult : 0;
+  
+  const handleDepositOpenChange = (isOpen: boolean) => {
+    if (!isOpen) {
+        setReceiptFile(null);
+        setReceiptPreview(null);
+        setIsUploading(false);
+    }
+    setIsDepositDialogOpen(isOpen);
+  };
 
   if (loading) {
     return (
@@ -1106,7 +1168,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                             <h3 className="text-lg font-semibold">Bank Deposit Information</h3>
                         </div>
                         {isAdmin && (
-                            <Dialog open={isDepositDialogOpen} onOpenChange={setIsDepositDialogOpen}>
+                            <Dialog open={isDepositDialogOpen} onOpenChange={handleDepositOpenChange}>
                                 <DialogTrigger asChild>
                                     <Button size="sm" variant={loggedDeposit ? 'outline' : 'default'}>
                                         {loggedDeposit ? <Edit className="mr-2 h-4 w-4" /> : <PlusCircle className="mr-2 h-4 w-4" />}
@@ -1117,7 +1179,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                     <DialogHeader>
                                         <DialogTitle>{loggedDeposit ? 'Edit Deposit' : 'Log New Deposit'}</DialogTitle>
                                         <DialogDescription>
-                                            Confirm the amount and date for the deposit for {month}, {year}.
+                                            Confirm the amount, date, and receipt for the deposit for {month}, {year}.
                                         </DialogDescription>
                                     </DialogHeader>
                                     <form onSubmit={handleSaveDeposit}>
@@ -1133,24 +1195,42 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                                 <Label htmlFor="deposit-date">Deposit Date</Label>
                                                 <Input id="deposit-date" name="deposit_date" type="date" defaultValue={loggedDeposit?.deposit_date || new Date().toISOString().split('T')[0]} required />
                                             </div>
+                                            <div className="space-y-2">
+                                                <Label>Bank Receipt</Label>
+                                                <div className="flex items-center gap-4">
+                                                    <div className="w-24 h-24 bg-muted rounded-md flex items-center justify-center">
+                                                        {receiptPreview || loggedDeposit?.receipt_url ? (
+                                                            <img src={receiptPreview || loggedDeposit?.receipt_url} alt="Receipt Preview" className="h-full w-full object-contain rounded-md" data-ai-hint="document receipt"/>
+                                                        ) : (
+                                                            <ImageIcon className="h-10 w-10 text-muted-foreground" />
+                                                        )}
+                                                    </div>
+                                                    <Button type="button" variant="outline" onClick={() => receiptInputRef.current?.click()}>
+                                                        <Upload className="mr-2 h-4 w-4"/>
+                                                        Upload Image
+                                                    </Button>
+                                                    <Input ref={receiptInputRef} type="file" className="hidden" accept="image/*" onChange={handleReceiptFileChange} />
+                                                </div>
+                                            </div>
                                         </div>
                                         <DialogFooter className="justify-between">
                                             {loggedDeposit ? (
                                                 <AlertDialog>
                                                     <AlertDialogTrigger asChild>
-                                                        <Button type="button" variant="destructive">Delete</Button>
+                                                        <Button type="button" variant="destructive" disabled={isUploading}>Delete</Button>
                                                     </AlertDialogTrigger>
                                                     <AlertDialogContent>
                                                          <AlertDialogHeader>
                                                             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                                                             <AlertDialogDescription>
-                                                                This will remove the deposit log for {month}, {year}. This action cannot be undone.
+                                                                This will remove the deposit log and receipt for {month}, {year}. This action cannot be undone.
                                                             </AlertDialogDescription>
                                                         </AlertDialogHeader>
                                                          <AlertDialogFooter>
                                                             <AlertDialogCancel>Cancel</AlertDialogCancel>
                                                             <form onSubmit={handleDeleteDeposit}>
                                                                 <input type="hidden" name="depositId" value={loggedDeposit.id} />
+                                                                <input type="hidden" name="receiptPath" value={loggedDeposit.receipt_url ? new URL(loggedDeposit.receipt_url).pathname.split('/deposit-receipts/')[1] : ''} />
                                                                 <AlertDialogAction type="submit">Delete</AlertDialogAction>
                                                             </form>
                                                         </AlertDialogFooter>
@@ -1158,8 +1238,11 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                                 </AlertDialog>
                                             ) : (<div></div>)}
                                             <div className="flex gap-2">
-                                                <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
-                                                <Button type="submit">Save Deposit</Button>
+                                                <DialogClose asChild><Button type="button" variant="outline" disabled={isUploading}>Cancel</Button></DialogClose>
+                                                <Button type="submit" disabled={isUploading}>
+                                                   {isUploading && <RefreshCw className="mr-2 h-4 w-4 animate-spin"/>}
+                                                   {isUploading ? 'Saving...' : 'Save Deposit'}
+                                                </Button>
                                             </div>
                                         </DialogFooter>
                                     </form>
@@ -1167,7 +1250,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                             </Dialog>
                         )}
                     </CardHeader>
-                    <CardContent className="p-4 grid md:grid-cols-3 gap-6">
+                    <CardContent className="p-4 grid md:grid-cols-3 gap-6 items-start">
                         <div className="space-y-1">
                             <p className="text-sm font-medium text-muted-foreground">Bank Name</p>
                             <p className="font-semibold">{settings.bankName || "Not Set"}</p>
@@ -1183,6 +1266,13 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                   <CheckCircle className="h-5 w-5" />
                                   <span>Deposited on {format(parseISO(loggedDeposit.deposit_date), 'dd MMM, yyyy')}</span>
                               </div>
+                               {loggedDeposit.receipt_url && (
+                                    <Button asChild variant="secondary" size="sm" className="mt-2">
+                                        <a href={loggedDeposit.receipt_url} target="_blank" rel="noopener noreferrer">
+                                            <Eye className="mr-2 h-4 w-4" /> View Receipt
+                                        </a>
+                                    </Button>
+                                )}
                           </div>
                         ) : (
                           <div className="space-y-1">

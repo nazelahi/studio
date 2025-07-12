@@ -56,8 +56,8 @@ export type Deposit = {
   month: number;
   amount: number;
   deposit_date: string;
+  receipt_url?: string;
   created_at?: string;
 }
 
     
-

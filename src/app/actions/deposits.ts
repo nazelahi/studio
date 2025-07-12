@@ -24,6 +24,7 @@ export async function logDepositAction(formData: FormData) {
         month: Number(formData.get('month')),
         amount: Number(formData.get('amount')),
         deposit_date: formData.get('deposit_date') as string,
+        receipt_url: formData.get('receipt_url') as string || null,
     }
     
     const depositId = formData.get('depositId') as string | undefined;
@@ -63,6 +64,18 @@ export async function deleteDepositAction(formData: FormData) {
 
     if (!depositId) {
         return { error: 'Deposit ID is missing.' };
+    }
+
+    const receiptPath = formData.get('receiptPath') as string;
+    if (receiptPath) {
+        const { error: storageError } = await supabaseAdmin.storage
+            .from('deposit-receipts')
+            .remove([receiptPath]);
+        
+        if (storageError) {
+             console.error('Supabase storage delete error:', storageError);
+             // Non-fatal, so we don't return here. Just log it.
+        }
     }
 
     const { error } = await supabaseAdmin
