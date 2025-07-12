@@ -1166,18 +1166,51 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
             <div className="mt-6 space-y-6">
                  <Card>
                     <CardHeader className="flex flex-row items-center justify-between gap-4 p-4">
-                       <div className="flex items-center gap-3">
-                           <Megaphone className="h-6 w-6 text-primary" />
-                           <h3 className="text-lg font-semibold">Monthly Notice</h3>
-                       </div>
+                        <div className="flex items-center gap-3">
+                            <Megaphone className="h-6 w-6 text-primary" />
+                            <h3 className="text-lg font-semibold">Monthly Notice</h3>
+                        </div>
                         {isAdmin && (
                             <Dialog open={isNoticeDialogOpen} onOpenChange={setIsNoticeDialogOpen}>
-                                <DialogTrigger asChild>
-                                    <Button size="sm" variant="outline">
-                                        {monthlyNotice ? <Edit className="mr-2 h-4 w-4" /> : <PlusCircle className="mr-2 h-4 w-4" />}
-                                        {monthlyNotice ? 'Edit Notice' : 'Add Notice'}
-                                    </Button>
-                                </DialogTrigger>
+                                <div className="flex items-center gap-1">
+                                    {monthlyNotice ? (
+                                        <>
+                                            <DialogTrigger asChild>
+                                                <Button size="icon" variant="ghost" className="h-8 w-8">
+                                                    <Edit className="h-4 w-4" />
+                                                </Button>
+                                            </DialogTrigger>
+                                            <AlertDialog>
+                                                <AlertDialogTrigger asChild>
+                                                    <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive">
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                </AlertDialogTrigger>
+                                                <AlertDialogContent>
+                                                    <AlertDialogHeader>
+                                                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                        <AlertDialogDescription>
+                                                            This action cannot be undone. This will permanently delete the notice for this month.
+                                                        </AlertDialogDescription>
+                                                    </AlertDialogHeader>
+                                                    <AlertDialogFooter>
+                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                        <form onSubmit={handleDeleteNotice}>
+                                                            <input type="hidden" name="noticeId" value={monthlyNotice.id} />
+                                                            <AlertDialogAction type="submit" disabled={isNoticePending}>Delete</AlertDialogAction>
+                                                        </form>
+                                                    </AlertDialogFooter>
+                                                </AlertDialogContent>
+                                            </AlertDialog>
+                                        </>
+                                    ) : (
+                                        <DialogTrigger asChild>
+                                            <Button size="icon" variant="outline" className="h-8 w-8">
+                                                <PlusCircle className="h-4 w-4" />
+                                            </Button>
+                                        </DialogTrigger>
+                                    )}
+                                </div>
                                 <DialogContent>
                                     <DialogHeader>
                                         <DialogTitle>{monthlyNotice ? 'Edit' : 'Add'} Monthly Notice</DialogTitle>
@@ -1207,15 +1240,6 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                     {monthlyNotice?.content ? (
                         <CardContent className="p-4 pt-0">
                             <p className="text-sm text-muted-foreground whitespace-pre-wrap">{monthlyNotice.content}</p>
-                            {isAdmin && (
-                                <form onSubmit={handleDeleteNotice} className="mt-4">
-                                    <input type="hidden" name="noticeId" value={monthlyNotice.id} />
-                                    <Button type="submit" size="sm" variant="destructive" disabled={isNoticePending}>
-                                        <Trash2 className="mr-2 h-4 w-4" />
-                                        Delete Notice
-                                    </Button>
-                                </form>
-                            )}
                         </CardContent>
                     ) : (
                          <CardContent className="p-4 pt-0">
