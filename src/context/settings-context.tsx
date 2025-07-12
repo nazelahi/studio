@@ -128,95 +128,62 @@ const deepMerge = (target: any, source: any) => {
     return output;
 }
 
-// Separate state for local settings to prevent race conditions
-type LocalSettings = Omit<AppSettings, 'houseName' | 'houseAddress' | 'bankName' | 'bankAccountNumber' | 'bankLogoUrl' | 'zakatBankDetails'>;
-
 export function SettingsProvider({ children }: { children: ReactNode }) {
-    const [localSettings, setLocalSettings] = useState<LocalSettings>(() => {
-        const { houseName, houseAddress, bankName, bankAccountNumber, bankLogoUrl, zakatBankDetails, ...rest } = defaultSettings;
-        return rest;
-    });
-    const [dbSettings, setDbSettings] = useState({
-        houseName: defaultSettings.houseName,
-        houseAddress: defaultSettings.houseAddress,
-        bankName: defaultSettings.bankName,
-        bankAccountNumber: defaultSettings.bankAccountNumber,
-        bankLogoUrl: defaultSettings.bankLogoUrl,
-        zakatBankDetails: defaultSettings.zakatBankDetails,
-    });
-
+    const [settings, setSettings] = useState<AppSettings>(defaultSettings);
     const [isMounted, setIsMounted] = useState(false);
     const { propertySettings, zakatBankDetails, loading: dataLoading, refreshData } = useData();
-    const { isAdmin, loading: authLoading } = useAuth();
+    const { loading: authLoading } = useAuth();
     
-    // Load local settings from localStorage on mount
+    // Load local (UI) settings from localStorage on initial mount
     useEffect(() => {
         setIsMounted(true);
         try {
             const item = window.localStorage.getItem('appSettings');
             if (item) {
                 const storedSettings = JSON.parse(item);
-                setLocalSettings(prev => deepMerge(prev, storedSettings));
+                setSettings(prev => deepMerge(prev, storedSettings));
             }
         } catch (error) {
             console.error("Failed to parse settings from localStorage", error);
         }
     }, []);
 
-    // Save local settings to localStorage whenever they change
-    useEffect(() => {
-        if (isMounted) {
-            try {
-                window.localStorage.setItem('appSettings', JSON.stringify(localSettings));
-            } catch (error) {
-                console.error("Failed to save settings to localStorage", error);
-            }
-        }
-    }, [localSettings, isMounted]);
-
-    // Effect to update DB-backed settings
+    // Update settings state when DB data changes
     useEffect(() => {
         if (dataLoading || authLoading) return;
 
-        if (isAdmin && propertySettings) {
-            setDbSettings({
-                houseName: propertySettings.house_name || defaultSettings.houseName,
-                houseAddress: propertySettings.house_address || defaultSettings.houseAddress,
-                bankName: propertySettings.bank_name || defaultSettings.bankName,
-                bankAccountNumber: propertySettings.bank_account_number || defaultSettings.bankAccountNumber,
-                bankLogoUrl: propertySettings.bank_logo_url || defaultSettings.bankLogoUrl,
-                zakatBankDetails: zakatBankDetails || defaultSettings.zakatBankDetails,
-            });
-        } else {
-            // Revert to defaults when logged out or no data
-            setDbSettings({
-                houseName: defaultSettings.houseName,
-                houseAddress: defaultSettings.houseAddress,
-                bankName: defaultSettings.bankName,
-                bankAccountNumber: defaultSettings.bankAccountNumber,
-                bankLogoUrl: defaultSettings.bankLogoUrl,
-                zakatBankDetails: defaultSettings.zakatBankDetails,
-            });
-        }
-    }, [isAdmin, propertySettings, zakatBankDetails, dataLoading, authLoading]);
-    
-    // Combine local and DB settings into the final settings object
-    const combinedSettings = { ...localSettings, ...dbSettings };
+        // Combine DB settings with current state, prioritizing DB values
+        setSettings(prevSettings => ({
+            ...prevSettings,
+            houseName: propertySettings?.house_name || defaultSettings.houseName,
+            houseAddress: propertySettings?.house_address || defaultSettings.houseAddress,
+            bankName: propertySettings?.bank_name || defaultSettings.bankName,
+            bankAccountNumber: propertySettings?.bank_account_number || defaultSettings.bankAccountNumber,
+            bankLogoUrl: propertySettings?.bank_logo_url || defaultSettings.bankLogoUrl,
+            zakatBankDetails: zakatBankDetails || defaultSettings.zakatBankDetails,
+        }));
+
+    }, [propertySettings, zakatBankDetails, dataLoading, authLoading]);
 
     const handleSetSettings = (newSettingsFunc: React.SetStateAction<AppSettings>) => {
-        const newSettings = typeof newSettingsFunc === 'function' ? newSettingsFunc(combinedSettings) : newSettingsFunc;
+        const newSettings = typeof newSettingsFunc === 'function' ? newSettingsFunc(settings) : newSettingsFunc;
         
-        const { houseName, houseAddress, bankName, bankAccountNumber, bankLogoUrl, zakatBankDetails, ...newLocalSettings } = newSettings;
-        
-        setLocalSettings(newLocalSettings);
+        // Save non-DB settings to local storage
+        const { houseName, houseAddress, bankName, bankAccountNumber, bankLogoUrl, zakatBankDetails, ...localSettings } = newSettings;
+        try {
+            const currentLocal = JSON.parse(window.localStorage.getItem('appSettings') || '{}');
+            const newLocal = deepMerge(currentLocal, localSettings);
+            window.localStorage.setItem('appSettings', JSON.stringify(newLocal));
+        } catch (error) {
+            console.error("Failed to save settings to localStorage", error);
+        }
 
-        // This part is mainly for live updates in the UI before a DB save, 
-        // but the useEffect above is the source of truth from the DB.
-        setDbSettings({ houseName, houseAddress, bankName, bankAccountNumber, bankLogoUrl, zakatBankDetails });
+        // Update the full state
+        setSettings(newSettings);
     };
 
     const value = {
-        settings: combinedSettings,
+        settings,
         setSettings: handleSetSettings,
         loading: !isMounted || dataLoading || authLoading,
         refreshSettings: refreshData,
