@@ -11,7 +11,8 @@ import { useAuth } from "@/context/auth-context"
 import { Button } from "@/components/ui/button"
 import { User, LogOut, MapPin, Menu, Settings, LogIn, UserCircle } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from "@/components/ui/sheet"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { useToast } from "@/hooks/use-toast"
 import { useProtection } from "@/context/protection-context"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -21,7 +22,7 @@ export default function HomePage() {
   const { settings } = useSettings();
   const pathname = usePathname();
   const router = useRouter();
-  const { isAdmin, signOut } = useAuth();
+  const { isAdmin, user, signOut } = useAuth();
   const { toast } = useToast();
   const { withProtection } = useProtection();
   
@@ -29,6 +30,7 @@ export default function HomePage() {
   const [selectedYear, setSelectedYear] = React.useState(currentYear.toString());
   const [activeTab, setActiveTab] = React.useState("overview");
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
+  const [isOwnerDialogOpen, setIsOwnerDialogOpen] = React.useState(false);
 
   const years = Array.from({ length: 5 }, (_, i) => (currentYear - i).toString());
 
@@ -153,18 +155,39 @@ export default function HomePage() {
         </div>
         
         <div className="flex items-center gap-4">
-            <div className="flex flex-col items-end">
-                <h1 className="text-sm font-bold tracking-tight text-primary truncate">{settings.ownerName}</h1>
-                <p className="text-xs text-muted-foreground">Property Owner</p>
-            </div>
+            <Dialog open={isOwnerDialogOpen} onOpenChange={setIsOwnerDialogOpen}>
+              <DialogTrigger asChild>
+                <div className="flex items-center gap-3 cursor-pointer">
+                  <div className="flex flex-col items-end text-right">
+                      <h1 className="text-sm font-bold tracking-tight text-primary truncate">{settings.ownerName}</h1>
+                      <p className="text-xs text-muted-foreground">Property Owner</p>
+                  </div>
+                  <Avatar className="h-9 w-9">
+                      <AvatarImage src={settings.ownerPhotoUrl} data-ai-hint="person avatar" />
+                      <AvatarFallback><UserCircle className="h-5 w-5"/></AvatarFallback>
+                  </Avatar>
+                </div>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-sm">
+                  <DialogHeader className="items-center text-center">
+                    <Avatar className="h-32 w-32 border-4 border-primary/20 shadow-lg">
+                      <AvatarImage src={settings.ownerPhotoUrl} data-ai-hint="person avatar" />
+                      <AvatarFallback><UserCircle className="h-20 w-20 text-muted-foreground"/></AvatarFallback>
+                    </Avatar>
+                    <DialogTitle className="text-2xl pt-4">{settings.ownerName}</DialogTitle>
+                  </DialogHeader>
+                  <div className="text-center text-muted-foreground text-sm">Property Owner</div>
+
+                  <div className="mt-4 pt-4 border-t text-center">
+                      <h3 className="font-semibold text-primary">{settings.houseName}</h3>
+                      <p className="text-sm text-muted-foreground">{settings.houseAddress}</p>
+                  </div>
+              </DialogContent>
+            </Dialog>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="secondary" size="icon" className="rounded-full">
-                    <Avatar className="h-9 w-9">
-                        <AvatarImage src={settings.ownerPhotoUrl} data-ai-hint="person avatar" />
-                        <AvatarFallback><UserCircle className="h-5 w-5"/></AvatarFallback>
-                    </Avatar>
-                  <span className="sr-only">Toggle user menu</span>
+                <Button variant="ghost" size="icon" className="rounded-full shrink-0 h-8 w-8 -ml-2">
+                  <Menu className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
