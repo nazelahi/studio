@@ -44,6 +44,7 @@ interface AppSettings {
   houseAddress: string;
   bankName: string;
   bankAccountNumber: string;
+  bankLogoUrl?: string;
   zakatBankDetails: ZakatBankDetail[];
   footerName: string;
   tabNames: TabNames;
@@ -65,6 +66,7 @@ const defaultSettings: AppSettings = {
     houseAddress: "123 Ocean View Drive, Miami, FL 33139",
     bankName: "",
     bankAccountNumber: "",
+    bankLogoUrl: undefined,
     zakatBankDetails: [],
     footerName: "© 2024 RentFlow. All Rights Reserved.",
     tabNames: {
@@ -127,11 +129,11 @@ const deepMerge = (target: any, source: any) => {
 }
 
 // Separate state for local settings to prevent race conditions
-type LocalSettings = Omit<AppSettings, 'houseName' | 'houseAddress' | 'bankName' | 'bankAccountNumber' | 'zakatBankDetails'>;
+type LocalSettings = Omit<AppSettings, 'houseName' | 'houseAddress' | 'bankName' | 'bankAccountNumber' | 'bankLogoUrl' | 'zakatBankDetails'>;
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
     const [localSettings, setLocalSettings] = useState<LocalSettings>(() => {
-        const { houseName, houseAddress, bankName, bankAccountNumber, zakatBankDetails, ...rest } = defaultSettings;
+        const { houseName, houseAddress, bankName, bankAccountNumber, bankLogoUrl, zakatBankDetails, ...rest } = defaultSettings;
         return rest;
     });
     const [dbSettings, setDbSettings] = useState({
@@ -139,6 +141,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         houseAddress: defaultSettings.houseAddress,
         bankName: defaultSettings.bankName,
         bankAccountNumber: defaultSettings.bankAccountNumber,
+        bankLogoUrl: defaultSettings.bankLogoUrl,
         zakatBankDetails: defaultSettings.zakatBankDetails,
     });
 
@@ -181,6 +184,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
                 houseAddress: propertySettings.house_address || defaultSettings.houseAddress,
                 bankName: propertySettings.bank_name || defaultSettings.bankName,
                 bankAccountNumber: propertySettings.bank_account_number || defaultSettings.bankAccountNumber,
+                bankLogoUrl: propertySettings.bank_logo_url || defaultSettings.bankLogoUrl,
                 zakatBankDetails: zakatBankDetails || defaultSettings.zakatBankDetails,
             });
         } else {
@@ -190,6 +194,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
                 houseAddress: defaultSettings.houseAddress,
                 bankName: defaultSettings.bankName,
                 bankAccountNumber: defaultSettings.bankAccountNumber,
+                bankLogoUrl: defaultSettings.bankLogoUrl,
                 zakatBankDetails: defaultSettings.zakatBankDetails,
             });
         }
@@ -201,13 +206,13 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     const handleSetSettings = (newSettingsFunc: React.SetStateAction<AppSettings>) => {
         const newSettings = typeof newSettingsFunc === 'function' ? newSettingsFunc(combinedSettings) : newSettingsFunc;
         
-        const { houseName, houseAddress, bankName, bankAccountNumber, zakatBankDetails, ...newLocalSettings } = newSettings;
+        const { houseName, houseAddress, bankName, bankAccountNumber, bankLogoUrl, zakatBankDetails, ...newLocalSettings } = newSettings;
         
         setLocalSettings(newLocalSettings);
 
         // This part is mainly for live updates in the UI before a DB save, 
         // but the useEffect above is the source of truth from the DB.
-        setDbSettings({ houseName, houseAddress, bankName, bankAccountNumber, zakatBankDetails });
+        setDbSettings({ houseName, houseAddress, bankName, bankAccountNumber, bankLogoUrl, zakatBankDetails });
     };
 
     const value = {

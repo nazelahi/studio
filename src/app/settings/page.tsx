@@ -11,13 +11,14 @@ import { useSettings } from "@/context/settings-context"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/context/auth-context"
 import { Button } from "@/components/ui/button"
-import { User, LogOut, MapPin, Menu, Settings, LoaderCircle, LogIn, Building, KeyRound, Palette, Tag, Landmark } from "lucide-react"
+import { User, LogOut, MapPin, Menu, Settings, LoaderCircle, LogIn, Building, KeyRound, Palette, Tag, Landmark, Upload, Banknote } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useToast } from "@/hooks/use-toast"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { updatePropertySettingsAction, updateUserCredentialsAction } from "./actions"
 import { useProtection } from "@/context/protection-context"
 import { cn } from "@/lib/utils"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 type SettingsTab = 'property' | 'account' | 'application' | 'labels';
 
@@ -49,12 +50,20 @@ export default function SettingsPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
 
   const [activeTab, setActiveTab] = useState<SettingsTab>('property');
+  
+  const [logoPreview, setLogoPreview] = React.useState<string | null>(null);
+  const [logoFile, setLogoFile] = React.useState<File | null>(null);
+  const logoInputRef = React.useRef<HTMLInputElement>(null);
 
   React.useEffect(() => {
     if (user?.email) {
       setNewEmail(user.email);
     }
   }, [user]);
+
+  React.useEffect(() => {
+    setLogoPreview(settings.bankLogoUrl || null);
+  }, [settings.bankLogoUrl]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -72,8 +81,26 @@ export default function SettingsPage() {
         return newState;
     });
   };
+  
+  const handleLogoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+        setLogoFile(file);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+            setLogoPreview(reader.result as string);
+        };
+        reader.readAsDataURL(file);
+    }
+  };
 
-  const handleSavePropertyDetails = (formData: FormData) => {
+  const handleSavePropertyDetails = (event: React.FormEvent<HTMLFormElement>) => {
+     event.preventDefault();
+     const formData = new FormData(event.currentTarget);
+     if (logoFile) {
+        formData.append('logoFile', logoFile);
+     }
+
      startTransition(async () => {
         const result = await updatePropertySettingsAction(formData);
         if (result?.error) {
@@ -266,7 +293,7 @@ export default function SettingsPage() {
             <div className="grid gap-6">
               
               {activeTab === 'property' && (
-                <form action={handleSavePropertyDetails} className="space-y-6">
+                <form onSubmit={handleSavePropertyDetails} className="space-y-6">
                     <Card>
                         <CardHeader>
                             <CardTitle>Property Details</CardTitle>
@@ -289,14 +316,32 @@ export default function SettingsPage() {
                             <CardTitle>Rental Bank Details</CardTitle>
                             <CardDescription>Enter the bank details for monthly rent deposits.</CardDescription>
                         </CardHeader>
-                        <CardContent className="grid md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="bankName">Bank Name</Label>
-                                <Input id="bankName" name="bankName" value={settings.bankName} onChange={handleInputChange} />
+                        <CardContent className="grid md:grid-cols-2 gap-6">
+                            <div className="space-y-4">
+                               <div className="space-y-2">
+                                  <Label htmlFor="bankName">Bank Name</Label>
+                                  <Input id="bankName" name="bankName" value={settings.bankName} onChange={handleInputChange} />
+                               </div>
+                               <div className="space-y-2">
+                                  <Label htmlFor="bankAccountNumber">Bank Account Number</Label>
+                                  <Input id="bankAccountNumber" name="bankAccountNumber" value={settings.bankAccountNumber} onChange={handleInputChange} />
+                               </div>
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="bankAccountNumber">Bank Account Number</Label>
-                                <Input id="bankAccountNumber" name="bankAccountNumber" value={settings.bankAccountNumber} onChange={handleInputChange} />
+                                <Label>Bank Logo</Label>
+                                <input type="hidden" name="bank_logo_url" value={settings.bankLogoUrl || ''} />
+                                {settings.bankLogoUrl && <input type="hidden" name="oldLogoUrl" value={settings.bankLogoUrl} />}
+                                <div className="flex items-center gap-4">
+                                    <Avatar className="h-20 w-20 rounded-md">
+                                        <AvatarImage src={logoPreview} data-ai-hint="logo bank"/>
+                                        <AvatarFallback className="rounded-md"><Banknote className="h-8 w-8"/></AvatarFallback>
+                                    </Avatar>
+                                    <Button type="button" variant="outline" onClick={() => logoInputRef.current?.click()}>
+                                        <Upload className="mr-2 h-4 w-4"/>
+                                        Upload Logo
+                                    </Button>
+                                    <Input ref={logoInputRef} type="file" name="logoFile" className="hidden" accept="image/*" onChange={handleLogoFileChange} />
+                                </div>
                             </div>
                         </CardContent>
                     </Card>
@@ -395,5 +440,3 @@ export default function SettingsPage() {
       </div>
   )
 }
-
-    

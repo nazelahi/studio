@@ -5,6 +5,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { revalidatePath } from 'next/cache'
 import 'dotenv/config'
+import { supabase as supabaseClient } from '@/lib/supabase'
 
 // This function creates a Supabase client with admin privileges.
 // It uses the service_role key and is intended for server-side use only
@@ -30,19 +31,51 @@ const getSupabaseAdmin = () => {
 export async function updatePropertySettingsAction(formData: FormData) {
     const supabaseAdmin = getSupabaseAdmin();
 
-    const houseName = formData.get('houseName') as string;
-    const houseAddress = formData.get('houseAddress') as string;
-    const bankName = formData.get('bankName') as string;
-    const bankAccountNumber = formData.get('bankAccountNumber') as string;
+    const logoFile = formData.get('logoFile') as File | null;
+    let logoUrl: string | null = formData.get('bank_logo_url') as string || null;
+
+    if (logoFile && logoFile.size > 0) {
+        const fileExt = logoFile.name.split('.').pop();
+        const filePath = `property-logos/${Date.now()}.${fileExt}`;
+
+        const { error: uploadError } = await supabaseClient.storage
+            .from('deposit-receipts') // Using an existing bucket
+            .upload(filePath, logoFile);
+
+        if (uploadError) {
+            console.error('Supabase storage logo upload error:', uploadError);
+            return { error: `Failed to upload logo: ${uploadError.message}` };
+        }
+
+        const { data: publicUrlData } = supabaseClient.storage
+            .from('deposit-receipts')
+            .getPublicUrl(filePath);
+
+        logoUrl = publicUrlData.publicUrl;
+
+        const oldLogoUrl = formData.get('oldLogoUrl') as string | undefined;
+        if (oldLogoUrl) {
+            try {
+                const oldLogoPath = new URL(oldLogoUrl).pathname.split('/deposit-receipts/')[1];
+                await supabaseClient.storage.from('deposit-receipts').remove([oldLogoPath]);
+            } catch (e) {
+                console.error("Could not parse or delete old bank logo from storage:", e);
+            }
+        }
+    }
+
+
+    const settingsData = {
+        house_name: formData.get('houseName') as string,
+        house_address: formData.get('houseAddress') as string,
+        bank_name: formData.get('bankName') as string,
+        bank_account_number: formData.get('bankAccountNumber') as string,
+        bank_logo_url: logoUrl,
+    }
     
     const { error } = await supabaseAdmin
         .from('property_settings')
-        .update({ 
-            house_name: houseName, 
-            house_address: houseAddress,
-            bank_name: bankName,
-            bank_account_number: bankAccountNumber,
-        })
+        .update(settingsData)
         .eq('id', 1);
 
     if (error) {

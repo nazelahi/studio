@@ -1421,6 +1421,9 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                         <div className="space-y-1">
                             <p className="text-sm font-medium text-muted-foreground">Bank Name</p>
                             <p className="font-semibold">{settings.bankName || "Not Set"}</p>
+                            {settings.bankLogoUrl && (
+                                <img src={settings.bankLogoUrl} alt={`${settings.bankName} logo`} className="h-10 mt-2 object-contain" data-ai-hint="logo bank" />
+                            )}
                         </div>
                          <div className="space-y-1">
                             <p className="text-sm font-medium text-muted-foreground">Account Number</p>
