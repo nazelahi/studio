@@ -26,6 +26,9 @@ const formatCurrency = (amount?: number) => {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'BDT' }).format(amount).replace('BDT', '৳');
 };
 
+const workCategories = ["Plumbing", "Electrical", "Painting", "Cleaning", "Appliance Repair", "General Maintenance", "Other"];
+
+
 export function WorkDetailsTab() {
   const { workDetails, loading } = useData();
   const { isAdmin } = useAuth();
@@ -34,9 +37,31 @@ export function WorkDetailsTab() {
   const [editingWork, setEditingWork] = React.useState<WorkDetail | null>(null);
   const [isPending, startTransition] = React.useTransition();
 
+  const [workCategory, setWorkCategory] = React.useState('');
+  const [customWorkCategory, setCustomWorkCategory] = React.useState('');
+
+  React.useEffect(() => {
+    if (editingWork) {
+        const category = editingWork.category || '';
+        if (workCategories.includes(category)) {
+            setWorkCategory(category);
+            setCustomWorkCategory('');
+        } else if (category) {
+            setWorkCategory('Other');
+            setCustomWorkCategory(category);
+        } else {
+            setWorkCategory('');
+            setCustomWorkCategory('');
+        }
+    }
+  }, [editingWork]);
+
+
   const handleOpenChange = (isOpen: boolean) => {
     if (!isOpen) {
       setEditingWork(null);
+      setWorkCategory('');
+      setCustomWorkCategory('');
     }
     setIsDialogOpen(isOpen);
   };
@@ -49,6 +74,12 @@ export function WorkDetailsTab() {
   const handleSave = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
+
+    const finalCategory = workCategory === 'Other' 
+        ? formData.get('customCategory') as string
+        : workCategory;
+    formData.set('category', finalCategory);
+
 
     startTransition(async () => {
       const result = await saveWorkDetailAction(formData);
@@ -109,15 +140,39 @@ export function WorkDetailsTab() {
                                 <Textarea id="description" name="description" defaultValue={editingWork?.description || ''} />
                             </div>
                              <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
+                               <div className="space-y-2">
                                     <Label htmlFor="category">Category</Label>
-                                    <Input id="category" name="category" defaultValue={editingWork?.category || ''} placeholder="e.g., Plumbing" />
+                                    <Select value={workCategory} onValueChange={setWorkCategory}>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select a category" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {workCategories.map(cat => (
+                                                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
                                 </div>
                                  <div className="space-y-2">
                                     <Label htmlFor="due_date">Due Date</Label>
                                     <Input id="due_date" name="due_date" type="date" defaultValue={editingWork?.due_date ? format(parseISO(editingWork.due_date), 'yyyy-MM-dd') : ''} />
                                 </div>
                             </div>
+                            
+                            {workCategory === 'Other' && (
+                                <div className="space-y-2">
+                                  <Label htmlFor="customCategory">Custom Category</Label>
+                                  <Input 
+                                    id="customCategory" 
+                                    name="customCategory" 
+                                    value={customWorkCategory}
+                                    onChange={(e) => setCustomWorkCategory(e.target.value)}
+                                    placeholder="Enter custom category" 
+                                    required 
+                                  />
+                                </div>
+                            )}
+
                              <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="product_cost">Product Cost</Label>
