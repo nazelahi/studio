@@ -22,6 +22,7 @@ import { PlusCircle, Edit, Trash2, LoaderCircle, CheckCircle, Construction, Cale
 import type { WorkDetail, Tenant } from "@/types"
 import { saveWorkDetailAction, deleteWorkDetailAction } from "@/app/actions/work"
 import { format, parseISO } from "date-fns"
+import { cn } from "@/lib/utils"
 
 const getStatusBadgeVariant = (status: WorkDetail['status']) => {
     switch (status) {
