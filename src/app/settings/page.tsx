@@ -11,25 +11,21 @@ import { useSettings } from "@/context/settings-context"
 import { usePathname } from "next/navigation"
 import { useAuth } from "@/context/auth-context"
 import { Button } from "@/components/ui/button"
-import { User, LogOut, KeyRound, MapPin, Trash2, Menu, Settings } from "lucide-react"
+import { User, LogOut, KeyRound, MapPin, Trash2, Menu, Settings, LockKeyhole } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useToast } from "@/hooks/use-toast"
-import { LoginDialog } from "@/components/login-dialog"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from "@/components/ui/sheet"
 import { useData } from "@/context/data-context"
+import { useProtection } from "@/context/protection-context"
 
 
 export default function SettingsPage() {
   const { settings, setSettings } = useSettings();
   const { updatePropertySettings } = useData();
   const pathname = usePathname();
-  const { user, signOut, isAdmin, changePassword } = useAuth();
+  const { isAdmin } = useAuth();
   const { toast } = useToast();
-
-  const [oldPassword, setOldPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [isLoginOpen, setIsLoginOpen] = React.useState(false);
+  const { withProtection } = useProtection();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -48,37 +44,26 @@ export default function SettingsPage() {
     });
   };
 
-  const handlePasswordChange = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newPassword !== confirmPassword) {
-      toast({ title: "Error", description: "New passwords do not match.", variant: "destructive" });
-      return;
-    }
-    if (newPassword.length < 4) {
-      toast({ title: "Error", description: "Password must be at least 4 characters long.", variant: "destructive" });
-      return;
-    }
-
-    const { error } = await changePassword(newPassword);
-
-    if (error) {
-      toast({ title: "Password Change Failed", description: error, variant: "destructive" });
-    } else {
-      toast({ title: "Success", description: "Your password has been changed." });
-      setOldPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
-    }
+  const handleSavePropertyDetails = () => {
+     withProtection(async () => {
+        await updatePropertySettings({
+          house_name: settings.houseName,
+          house_address: settings.houseAddress
+        });
+        toast({
+          title: 'Property Details Saved',
+          description: 'Your house name and address have been updated.',
+        });
+     })
   };
 
-  const handleSavePropertyDetails = async () => {
-    await updatePropertySettings({
-      house_name: settings.houseName,
-      house_address: settings.houseAddress
-    });
-    toast({
-      title: 'Property Details Saved',
-      description: 'Your house name and address have been updated.',
+  const handleSaveAppSettings = () => {
+    withProtection(() => {
+        // The settings are saved automatically by the useEffect in SettingsProvider
+        toast({
+            title: 'Application Settings Saved',
+            description: 'Your changes have been saved to this browser.',
+        });
     });
   };
 
@@ -154,34 +139,10 @@ export default function SettingsPage() {
             </div>
         </div>
         <div>
-            {user ? (
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                <Button variant="secondary" size="icon" className="rounded-full">
-                    <User className="h-5 w-5" />
-                    <span className="sr-only">{settings.page_dashboard.user_menu_tooltip}</span>
-                </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                <DropdownMenuLabel>{user.email}</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                  {isAdmin && (
-                    <DropdownMenuItem asChild>
-                       <Link href="/settings">
-                        <Settings className="mr-2 h-4 w-4" />
-                        <span>{settings.page_dashboard.nav_settings}</span>
-                       </Link>
-                    </DropdownMenuItem>
-                  )}
-                <DropdownMenuItem onClick={signOut}>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <span>{settings.page_dashboard.user_menu_logout}</span>
-                </DropdownMenuItem>
-                </DropdownMenuContent>
-            </DropdownMenu>
-            ) : (
-            <Button onClick={() => setIsLoginOpen(true)}>{settings.page_dashboard.signin_button}</Button>
-            )}
+           <Button variant="outline" onClick={(e) => withProtection(() => {}, e)}>
+            <LockKeyhole className="mr-2 h-4 w-4" />
+            {isAdmin ? "Unlocked" : "Admin"}
+          </Button>
         </div>
       </header>
        <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
@@ -189,8 +150,8 @@ export default function SettingsPage() {
             <h1 className="text-3xl font-semibold">{settings.page_settings.title}</h1>
           </div>
           <div className="mx-auto grid w-full max-w-6xl items-start gap-6">
-            <fieldset disabled={!isAdmin} className="group grid gap-6">
-              <Card className="group-disabled:opacity-50">
+            <div className="group grid gap-6">
+              <Card>
                 <CardHeader>
                     <CardTitle>{settings.page_settings.property_details.title}</CardTitle>
                     <CardDescription>{settings.page_settings.property_details.description}</CardDescription>
@@ -210,10 +171,10 @@ export default function SettingsPage() {
                 </CardFooter>
               </Card>
 
-              <Card className="group-disabled:opacity-50">
+              <Card>
                   <CardHeader>
                       <CardTitle>{settings.page_settings.app_settings.title}</CardTitle>
-                      <CardDescription>{settings.page_settings.app_settings.description}{ !isAdmin && " Sign in as an admin to make changes."}</CardDescription>
+                      <CardDescription>{settings.page_settings.app_settings.description}</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
                       <div className="space-y-2">
@@ -225,9 +186,12 @@ export default function SettingsPage() {
                           <Input id="footerName" name="footerName" value={settings.footerName} onChange={handleInputChange} />
                       </div>
                   </CardContent>
+                   <CardFooter>
+                    <Button onClick={handleSaveAppSettings}>Save</Button>
+                </CardFooter>
               </Card>
 
-              <Card className="group-disabled:opacity-50">
+              <Card>
                   <CardHeader>
                     <CardTitle>{settings.page_settings.overview_settings.title}</CardTitle>
                     <CardDescription>{settings.page_settings.overview_settings.description}</CardDescription>
@@ -242,43 +206,18 @@ export default function SettingsPage() {
                           <Input id="overview-financial-desc" name="page_overview.financial_overview_description" value={settings.page_overview.financial_overview_description} onChange={handleInputChange} />
                       </div>
                   </CardContent>
+                   <CardFooter>
+                    <Button onClick={handleSaveAppSettings}>Save</Button>
+                </CardFooter>
               </Card>
 
-              {user && (
-              <Card>
-                <CardHeader>
-                  <CardTitle>{settings.page_settings.security_settings.title}</CardTitle>
-                  <CardDescription>{settings.page_settings.security_settings.description}</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <form onSubmit={handlePasswordChange} className="space-y-4 max-w-sm">
-                    <div className="space-y-2">
-                      <Label htmlFor="newPassword">{settings.page_settings.security_settings.new_password_label}</Label>
-                      <Input id="newPassword" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} required />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="confirmPassword">{settings.page_settings.security_settings.confirm_password_label}</Label>
-
-                      <Input id="confirmPassword" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
-                    </div>
-                    <Button type="submit">
-                      <KeyRound className="mr-2 h-4 w-4" />
-                      {settings.page_settings.security_settings.change_password_button}
-                    </Button>
-                  </form>
-                </CardContent>
-              </Card>
-              )}
-            </fieldset>
+            </div>
 
           </div>
            <footer className="text-center text-sm text-muted-foreground mt-auto pt-4">
             {settings.footerName}
           </footer>
         </main>
-        <LoginDialog isOpen={isLoginOpen} onOpenChange={setIsLoginOpen} />
       </div>
   )
 }
-
-    

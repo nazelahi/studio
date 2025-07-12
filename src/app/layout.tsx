@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { SettingsProvider } from '@/context/settings-context';
 import { DataProvider } from '@/context/data-context';
 import { AuthProvider } from '@/context/auth-context';
+import { ProtectionProvider } from '@/context/protection-context';
 
 export const metadata: Metadata = {
   title: 'RentFlow',
@@ -23,13 +24,15 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased">
-        <AuthProvider>
-          <DataProvider>
-            <SettingsProvider>
-              {children}
-            </SettingsProvider>
-          </DataProvider>
-        </AuthProvider>
+        <DataProvider>
+          <SettingsProvider>
+            <ProtectionProvider>
+              <AuthProvider>
+                {children}
+              </AuthProvider>
+            </ProtectionProvider>
+          </SettingsProvider>
+        </DataProvider>
         <Toaster />
       </body>
     </html>

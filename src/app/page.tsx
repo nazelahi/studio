@@ -9,16 +9,16 @@ import { Logo } from "@/components/icons"
 import DashboardTabs from "@/components/dashboard-tabs"
 import { useAuth } from "@/context/auth-context"
 import { Button } from "@/components/ui/button"
-import { User, LogOut, MapPin, Menu, Settings } from "lucide-react"
+import { User, LogOut, MapPin, Menu, Settings, LockKeyhole } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { LoginDialog } from "@/components/login-dialog"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from "@/components/ui/sheet"
+import { useProtection } from "@/context/protection-context"
 
 export default function HomePage() {
   const { settings } = useSettings();
   const pathname = usePathname();
-  const { user, signOut, isAdmin } = useAuth();
-  const [isLoginOpen, setIsLoginOpen] = React.useState(false);
+  const { isAdmin } = useAuth();
+  const { withProtection } = useProtection();
 
   return (
     <div className="flex min-h-screen w-full flex-col">
@@ -92,34 +92,10 @@ export default function HomePage() {
             </div>
         </div>
         <div>
-            {user ? (
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                <Button variant="secondary" size="icon" className="rounded-full">
-                    <User className="h-5 w-5" />
-                    <span className="sr-only">{settings.page_dashboard.user_menu_tooltip}</span>
-                </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                <DropdownMenuLabel>{user.email}</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                  {isAdmin && (
-                    <DropdownMenuItem asChild>
-                       <Link href="/settings">
-                        <Settings className="mr-2 h-4 w-4" />
-                        <span>{settings.page_dashboard.nav_settings}</span>
-                       </Link>
-                    </DropdownMenuItem>
-                  )}
-                <DropdownMenuItem onClick={signOut}>
-                    <LogOut className="mr-2 h-4 w-4" />
-                    <span>{settings.page_dashboard.user_menu_logout}</span>
-                </DropdownMenuItem>
-                </DropdownMenuContent>
-            </DropdownMenu>
-            ) : (
-            <Button onClick={() => setIsLoginOpen(true)}>{settings.page_dashboard.signin_button}</Button>
-            )}
+          <Button variant="outline" onClick={(e) => withProtection(() => {}, e)}>
+            <LockKeyhole className="mr-2 h-4 w-4" />
+            {isAdmin ? "Unlocked" : "Admin"}
+          </Button>
         </div>
       </header>
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
@@ -128,7 +104,6 @@ export default function HomePage() {
           {settings.footerName}
         </footer>
       </main>
-      <LoginDialog isOpen={isLoginOpen} onOpenChange={setIsLoginOpen} />
     </div>
   )
 }

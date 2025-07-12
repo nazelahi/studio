@@ -55,13 +55,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
     };
 
     const fetchData = useCallback(async () => {
-        if (!supabase) {
-            console.log("Supabase not initialized, skipping fetch.");
-            setLoading(false);
-            return;
-        }
         setLoading(true);
         try {
+            // Simulate Supabase being unavailable locally if keys are missing
+            if (!supabase) {
+                console.log("Supabase not initialized, loading local data.");
+                // Here you could load from localStorage as a fallback if you wish
+                setData({ tenants: [], expenses: [], rentData: [], propertySettings: null });
+                return;
+            }
+
             const [tenantsRes, expensesRes, rentDataRes, propertySettingsRes] = await Promise.all([
                 supabase.from('tenants').select('*'),
                 supabase.from('expenses').select('*'),
@@ -72,7 +75,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
             if (tenantsRes.error) throw tenantsRes.error;
             if (expensesRes.error) throw expensesRes.error;
             if (rentDataRes.error) throw rentDataRes.error;
-            // .maybeSingle() doesn't throw an error if not found, but can still have other errors
             if (propertySettingsRes.error && propertySettingsRes.error.code !== 'PGRST116') {
                  throw propertySettingsRes.error;
             }
@@ -390,5 +392,3 @@ export function useData() {
   }
   return context;
 }
-
-    

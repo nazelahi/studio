@@ -4,19 +4,9 @@
 import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
 import { useData } from './data-context';
 
-interface TabNames {
-    overview: string;
-    tenants: string;
-    integrations: string;
-    reports: string;
-}
-
 interface PageDashboard {
     nav_dashboard: string;
     nav_settings: string;
-    signin_button: string;
-    user_menu_tooltip: string;
-    user_menu_logout: string;
 }
 
 interface PageOverview {
@@ -44,22 +34,21 @@ interface PageSettings {
         financial_title_label: string;
         financial_description_label: string;
     };
-    security_settings: {
-        title: string;
-        description: string;
-        old_password_label: string;
-        new_password_label: string;
-        confirm_password_label: string;
-        change_password_button: string;
-    };
+}
+
+interface TabNames {
+    overview: string;
+    tenants: string;
+    integrations: string;
+    reports: string;
 }
 
 interface AppSettings {
   appName: string;
   houseName: string;
   houseAddress: string;
-  tabNames: TabNames;
   footerName: string;
+  tabNames: TabNames;
   page_dashboard: PageDashboard;
   page_overview: PageOverview;
   page_settings: PageSettings;
@@ -74,19 +63,16 @@ const defaultSettings: AppSettings = {
     appName: "RentFlow",
     houseName: "Sunset Apartments",
     houseAddress: "123 Ocean View Drive, Miami, FL 33139",
+    footerName: "© 2024 RentFlow. All Rights Reserved.",
     tabNames: {
         overview: "Overview",
         tenants: "Tenants",
         integrations: "Integrations",
         reports: "Reports",
     },
-    footerName: "© 2024 RentFlow. All Rights Reserved.",
     page_dashboard: {
         nav_dashboard: "Dashboard",
         nav_settings: "Settings",
-        signin_button: "Sign In",
-        user_menu_tooltip: "Toggle user menu",
-        user_menu_logout: "Log out",
     },
     page_overview: {
         financial_overview_title: "Financial Overview",
@@ -102,24 +88,16 @@ const defaultSettings: AppSettings = {
         },
         app_settings: {
             title: "Application Settings",
-            description: "Customize the names and labels used throughout the application.",
+            description: "Customize the names and labels used throughout the application. These are saved in your browser.",
             header_name_label: "Header Name",
             footer_name_label: "Footer Name",
         },
         overview_settings: {
             title: "Overview Page Settings",
-            description: "Customize the text on the monthly overview page.",
+            description: "Customize the text on the monthly overview page. These are saved in your browser.",
             financial_title_label: "Financial Overview Title",
             financial_description_label: "Financial Overview Description",
         },
-        security_settings: {
-            title: "Security",
-            description: "Change your super admin password.",
-            old_password_label: "Old Password",
-            new_password_label: "New Password",
-            confirm_password_label: "Confirm New Password",
-            change_password_button: "Change Password",
-        }
     },
 };
 
@@ -211,5 +189,3 @@ export function useSettings() {
   }
   return context;
 }
-
-    
