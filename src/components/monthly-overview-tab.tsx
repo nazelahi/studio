@@ -109,6 +109,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
   const [receiptPreview, setReceiptPreview] = React.useState<string | null>(null);
   const [receiptFile, setReceiptFile] = React.useState<File | null>(null);
   const [isUploading, setIsUploading] = React.useState(false);
+  const [depositAmount, setDepositAmount] = React.useState('');
 
 
   const formRef = React.useRef<HTMLFormElement>(null);
@@ -141,6 +142,26 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
     setSelectedRentEntryIds([]);
     setSelectedExpenseIds([]);
   }, [selectedMonth, year]);
+
+  const totalRentCollected = filteredTenantsForMonth
+    .filter(t => t.status === 'Paid')
+    .reduce((acc, t) => acc + t.rent, 0);
+  
+  const totalRentExpected = filteredTenantsForMonth.reduce((acc, t) => acc + t.rent, 0);
+  const collectionRate = totalRentExpected > 0 ? (totalRentCollected / totalRentExpected) * 100 : 0;
+
+  const totalExpenses = filteredExpenses.reduce((acc, expense) => acc + expense.amount, 0);
+  const netResult = totalRentCollected - totalExpenses;
+  const amountForDeposit = netResult > 0 ? netResult : 0;
+
+  React.useEffect(() => {
+    if (loggedDeposit) {
+        setDepositAmount(loggedDeposit.amount.toString());
+    } else {
+        setDepositAmount(amountForDeposit > 0 ? amountForDeposit.toFixed(2) : '');
+    }
+  }, [loggedDeposit, amountForDeposit]);
+
 
 
   const historicalTenants = React.useMemo(() => {
@@ -471,6 +492,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
     setIsUploading(true);
 
     const formData = new FormData(event.currentTarget);
+    formData.set('amount', depositAmount); // Ensure the state value is used
     let receiptUrl: string | null = loggedDeposit?.receipt_url || null;
 
     if (receiptFile) {
@@ -537,16 +559,6 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
   };
 
 
-  const totalRentCollected = filteredTenantsForMonth
-    .filter(t => t.status === 'Paid')
-    .reduce((acc, t) => acc + t.rent, 0);
-  
-  const totalRentExpected = filteredTenantsForMonth.reduce((acc, t) => acc + t.rent, 0);
-  const collectionRate = totalRentExpected > 0 ? (totalRentCollected / totalRentExpected) * 100 : 0;
-
-  const totalExpenses = filteredExpenses.reduce((acc, expense) => acc + expense.amount, 0);
-  const netResult = totalRentCollected - totalExpenses;
-  const amountForDeposit = netResult > 0 ? netResult : 0;
   
   const handleDepositOpenChange = (isOpen: boolean) => {
     if (!isOpen) {
@@ -1197,7 +1209,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                         <div className="grid gap-4 py-4">
                                             <div className="space-y-2">
                                                 <Label htmlFor="deposit-amount">Amount to Deposit</Label>
-                                                <Input id="deposit-amount" name="amount" type="number" step="0.01" defaultValue={loggedDeposit?.amount ?? amountForDeposit.toFixed(2)} required />
+                                                <Input id="deposit-amount" name="amount" type="number" step="0.01" value={depositAmount} onChange={(e) => setDepositAmount(e.target.value)} required />
                                             </div>
                                             <div className="space-y-2">
                                                 <Label htmlFor="deposit-date">Deposit Date</Label>
