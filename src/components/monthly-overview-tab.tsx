@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { DollarSign, Banknote, ArrowUpCircle, ArrowDownCircle, PlusCircle, Trash2, Pencil, CheckCircle, XCircle, AlertCircle, RefreshCw, ChevronDown, Copy, X, FileText, Upload, Building, Landmark, CalendarCheck, Edit, Eye, Image as ImageIcon, Megaphone } from "lucide-react"
+import { DollarSign, Banknote, ArrowUpCircle, ArrowDownCircle, PlusCircle, Trash2, Pencil, CheckCircle, XCircle, AlertCircle, RefreshCw, ChevronDown, Copy, X, FileText, Upload, Building, Landmark, CalendarCheck, Edit, Eye, Image as ImageIcon, Megaphone, Download } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog"
@@ -435,7 +435,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
           return;
         }
 
-        const header: string[] = json[0].map((h: any) => String(h).toLowerCase().trim());
+        const header: string[] = json[0].map((h: any) => String(h).toLowerCase().trim().replace(/ /g, '_'));
         const rows = json.slice(1);
 
         const rentEntriesToCreate = rows.map(rowArray => {
@@ -449,7 +449,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
           const status = validStatuses.includes(statusInput) ? (statusInput.charAt(0).toUpperCase() + statusInput.slice(1)) as RentEntry['status'] : "Pending";
 
           let paymentDate: string | undefined = undefined;
-          const dateInput = row.paymentdate || row['payment date'];
+          const dateInput = row.payment_date;
           if (dateInput) {
             if (typeof dateInput === 'number') {
               const date = XLSX.SSF.parse_date_code(dateInput);
@@ -468,12 +468,12 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
             rent: Number(row.rent || 0),
             status: status,
             payment_date: paymentDate,
-            collected_by: String(row.collectedby || row['collected by'] || ''),
+            collected_by: String(row.collected_by || ''),
           };
         }).filter(entry => entry.name && entry.property && entry.rent > 0);
         
         if (rentEntriesToCreate.length === 0) {
-          toast({ title: "No Valid Data Found", description: "Ensure your sheet has columns for at least: Name, Property, and Rent.", variant: "destructive" });
+          toast({ title: "No Valid Data Found", description: "Ensure your file has columns for at least: Name, Property, and Rent.", variant: "destructive" });
           return;
         }
         
@@ -494,6 +494,19 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
     };
     reader.readAsArrayBuffer(file);
   };
+  
+    const handleDownloadTemplate = () => {
+        const headers = ["name", "property", "rent", "status", "payment_date", "collected_by"];
+        const sampleData = [
+            ["John Doe", "Apt 101", 15000, "Paid", "2024-05-05", "Manager"],
+            ["Jane Smith", "Apt 202", 16000, "Pending", "", "Bank Transfer"]
+        ];
+        const worksheet = XLSX.utils.aoa_to_sheet([headers, ...sampleData]);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Rent Roll Template");
+        XLSX.writeFile(workbook, "RentRoll_Template.xlsx");
+        toast({ title: "Template Downloaded", description: "RentRoll_Template.xlsx has been downloaded." });
+    };
   
     const handleReceiptFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -725,7 +738,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                               </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
-                                <form onSubmit={(e) => { e.preventDefault(); handleMassDeleteRentEntries(e); }}>
+                                <form onSubmit={handleMassDeleteRentEntries}>
                                   <AlertDialogHeader>
                                     <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                                     <AlertDialogDescription>
@@ -740,6 +753,15 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                             </AlertDialogContent>
                           </AlertDialog>
                         )}
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button size="icon" variant="outline" onClick={handleDownloadTemplate}>
+                                    <Download className="h-4 w-4" />
+                                    <span className="sr-only">Download Template</span>
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Download Template</TooltipContent>
+                        </Tooltip>
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <Button size="icon" variant="outline" onClick={handleImportClick}>
@@ -1022,7 +1044,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                               </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
-                                <form onSubmit={(e) => { e.preventDefault(); handleMassDeleteExpenses(e); }}>
+                                <form onSubmit={handleMassDeleteExpenses}>
                                   <AlertDialogHeader>
                                     <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                                     <AlertDialogDescription>
@@ -1072,8 +1094,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {filteredExpenses.length > 0 ? (
-                          filteredExpenses.map((expense) => (
+                        {filteredExpenses.map((expense) => (
                             <TableRow key={expense.id} className={expense.status === 'Paid' ? 'bg-green-50/50' : ''} data-state={isAdmin && selectedExpenseIds.includes(expense.id) ? "selected" : undefined}>
                               {isAdmin && <TableCell>
                                 <Checkbox
@@ -1128,99 +1149,14 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                 </div>
                               </TableCell>
                             </TableRow>
-                          ))
-                        ) : (
-                          <TableRow>
-                            <TableCell colSpan={isAdmin ? 5 : 4} className="h-24 text-center">
-                              <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
-                                <span>No expense data for {month} {year}.</span>
-                                {isAdmin && (
-                                   <Dialog open={isExpenseDialogOpen} onOpenChange={handleExpenseOpenChange}>
-                                      <DialogTrigger asChild>
-                                          <Button variant="outline" size="sm" className="mt-2" onClick={() => setIsExpenseDialogOpen(true)}>
-                                              <PlusCircle className="mr-2 h-4 w-4" />
-                                              Add First Expense
-                                          </Button>
-                                      </DialogTrigger>
-                                      <DialogContent>
-                                          <DialogHeader>
-                                              <DialogTitle>{editingExpense ? 'Edit Expense' : 'Add New Expense'}</DialogTitle>
-                                              <DialogDescription>
-                                                  Fill in the form below to {editingExpense ? 'update the' : 'add a new'} expense.
-                                              </DialogDescription>
-                                          </DialogHeader>
-                                          <form onSubmit={handleSaveExpense} className="grid gap-4 py-4">
-                                              <div className="space-y-2">
-                                                  <Label htmlFor="date">Date</Label>
-                                                  <Input id="date" name="date" type="date" defaultValue={editingExpense?.date || new Date().toISOString().split('T')[0]} required />
-                                              </div>
-                                              <div className="space-y-2">
-                                                  <Label htmlFor="category">Category</Label>
-                                                  <Select value={expenseCategory} onValueChange={setExpenseCategory}>
-                                                      <SelectTrigger>
-                                                          <SelectValue placeholder="Select a category" />
-                                                      </SelectTrigger>
-                                                      <SelectContent>
-                                                          {expenseCategories.map(cat => (
-                                                              <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                                                          ))}
-                                                      </SelectContent>
-                                                  </Select>
-                                              </div>
-                                              {expenseCategory === 'Other' && (
-                                                  <div className="space-y-2">
-                                                      <Label htmlFor="customCategory">Custom Category</Label>
-                                                      <Input
-                                                          id="customCategory"
-                                                          name="customCategory"
-                                                          value={customCategory}
-                                                          onChange={(e) => setCustomCategory(e.target.value)}
-                                                          placeholder="Enter custom category"
-                                                          required
-                                                      />
-                                                  </div>
-                                              )}
-                                              <div className="space-y-2">
-                                                  <Label htmlFor="amount">Amount</Label>
-                                                  <Input id="amount" name="amount" type="number" step="0.01" defaultValue={editingExpense?.amount} placeholder="0.00" required />
-                                              </div>
-                                              <div className="space-y-2">
-                                                  <Label htmlFor="status">Status</Label>
-                                                  <Select name="status" defaultValue={editingExpense?.status || 'Due'}>
-                                                      <SelectTrigger>
-                                                          <SelectValue placeholder="Select status" />
-                                                      </SelectTrigger>
-                                                      <SelectContent>
-                                                          <SelectItem value="Due">Due</SelectItem>
-                                                          <SelectItem value="Paid">Paid</SelectItem>
-                                                      </SelectContent>
-                                                  </Select>
-                                              </div>
-                                              <div className="space-y-2">
-                                                  <Label htmlFor="description">Description</Label>
-                                                  <Textarea id="description" name="description" defaultValue={editingExpense?.description} placeholder="Describe the expense..." />
-                                              </div>
-                                              <DialogFooter>
-                                                  <DialogClose asChild>
-                                                      <Button variant="outline">Cancel</Button>
-                                                  </DialogClose>
-                                                  <Button type="submit">Save Expense</Button>
-                                              </DialogFooter>
-                                          </form>
-                                      </DialogContent>
-                                  </Dialog>
-                                )}
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        )}
+                          ))}
                       </TableBody>
                       <TableFooter>
                           <TableRow className="bg-muted hover:bg-muted/50">
                               <TableCell colSpan={isAdmin ? 5 : 4}>
-                                  <Dialog open={isExpenseDialogOpen && filteredExpenses.length > 0} onOpenChange={handleExpenseOpenChange}>
+                                  <Dialog open={isExpenseDialogOpen} onOpenChange={handleExpenseOpenChange}>
                                       <DialogTrigger asChild>
-                                          <Button variant="outline" className="w-full" onClick={() => setIsExpenseDialogOpen(true)}>
+                                          <Button variant="outline" className="w-full">
                                               <PlusCircle className="mr-2 h-4 w-4" />
                                               Add New Expense
                                           </Button>
@@ -1301,6 +1237,15 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                   {isAdmin && <TableCell />}
                               </TableRow>
                           )}
+                           {filteredExpenses.length === 0 && (
+                            <TableRow>
+                                <TableCell colSpan={isAdmin ? 5 : 4} className="h-24 text-center">
+                                <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
+                                    <span>No expense data for {month} {year}.</span>
+                                </div>
+                                </TableCell>
+                            </TableRow>
+                            )}
                       </TableFooter>
                     </Table>
                   </CardContent>
@@ -1595,6 +1540,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
 }
 
     
+
 
 
 
