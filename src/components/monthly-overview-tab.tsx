@@ -1392,12 +1392,12 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                     </CardContent>
                 </Card>
                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between gap-4 p-4" style={{ backgroundColor: 'hsl(var(--table-header-background))', color: 'hsl(var(--table-header-foreground))' }}>
-                        <div className="flex items-center gap-4">
-                           <div className="flex-shrink-0 bg-primary-foreground/10 p-3 rounded-full">
-                               <Landmark className="h-6 w-6 text-inherit" />
+                    <CardHeader className="flex flex-row items-center justify-between gap-3 p-3" style={{ backgroundColor: 'hsl(var(--table-header-background))', color: 'hsl(var(--table-header-foreground))' }}>
+                        <div className="flex items-center gap-3">
+                           <div className="flex-shrink-0 bg-primary-foreground/10 p-2 rounded-full">
+                               <Landmark className="h-5 w-5 text-inherit" />
                             </div>
-                            <h3 className="text-lg font-semibold text-inherit">Bank Deposit Information</h3>
+                            <h3 className="font-semibold text-inherit">Bank Deposit Information</h3>
                         </div>
                         <Dialog open={isDepositDialogOpen} onOpenChange={handleDepositOpenChange}>
                             <DialogTrigger asChild>
@@ -1547,5 +1547,6 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
 }
 
     
+
 
 
