@@ -757,6 +757,128 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                             </AlertDialogContent>
                           </AlertDialog>
                         )}
+                        <Dialog open={isRentDialogOpen} onOpenChange={handleRentOpenChange}>
+                            <DialogTrigger asChild>
+                                <Button size="sm" variant="outline" className="w-full sm:w-auto">
+                                    <PlusCircle className="mr-2 h-4 w-4" />
+                                    Add New Entry
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-xl">
+                                <DialogHeader>
+                                  <DialogTitle>{editingRentEntry ? 'Edit Rent Entry' : 'Add New Rent Entry'}</DialogTitle>
+                                  <DialogDescription>
+                                    Fill in the form to {editingRentEntry ? 'update the' : 'add a new'} rent entry for {month}, {year}.
+                                  </DialogDescription>
+                                </DialogHeader>
+                                <form ref={formRef} onSubmit={handleSaveRentEntry} className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-2">
+                                  <input type="hidden" name="month" value={months.indexOf(month)} />
+                                  <input type="hidden" name="year" value={year} />
+                                  {editingRentEntry && <input type="hidden" name="id" value={editingRentEntry.id} />}
+                                  
+                                  {!editingRentEntry && (
+                                    <div className="space-y-2">
+                                        <Label>Tenant</Label>
+                                        {selectedHistoricalTenant ? (
+                                            <div className="flex items-center justify-between p-2 border rounded-md">
+                                               <div className="flex items-center gap-2">
+                                                    <Avatar className="h-8 w-8">
+                                                        <AvatarImage src={selectedHistoricalTenant.avatar} />
+                                                        <AvatarFallback>{selectedHistoricalTenant.name.charAt(0)}</AvatarFallback>
+                                                    </Avatar>
+                                                    <div>
+                                                        <p className="font-medium">{selectedHistoricalTenant.name}</p>
+                                                        <p className="text-xs text-muted-foreground">{selectedHistoricalTenant.property}</p>
+                                                    </div>
+                                                </div>
+                                                <Button type="button" variant="ghost" size="icon" className="h-6 w-6" onClick={handleClearSelectedTenant}>
+                                                    <X className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        ) : (
+                                             <Popover open={isTenantFinderOpen} onOpenChange={setIsTenantFinderOpen}>
+                                              <PopoverTrigger asChild>
+                                                <Button variant="outline" role="combobox" aria-expanded={isTenantFinderOpen} className="w-full justify-between">
+                                                  Select past tenant...
+                                                  <ChevronDown className="h-4 w-4 shrink-0 opacity-50"/>
+                                                </Button>
+                                              </PopoverTrigger>
+                                              <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                                <Command>
+                                                  <CommandInput placeholder="Search tenant..." />
+                                                  <CommandEmpty>No tenant found.</CommandEmpty>
+                                                   <CommandList>
+                                                    <CommandGroup>
+                                                      {historicalTenants.map((tenant) => (
+                                                        <CommandItem
+                                                          key={tenant.uniqueId}
+                                                          value={`${tenant.name} ${tenant.property}`}
+                                                          onSelect={() => handleSelectHistoricalTenant(tenant)}
+                                                        >
+                                                          <div className="flex items-center gap-3">
+                                                              <Avatar className="h-8 w-8">
+                                                                  <AvatarImage src={tenant.avatar} />
+                                                                  <AvatarFallback>{tenant.name.charAt(0)}</AvatarFallback>
+                                                              </Avatar>
+                                                              <div>
+                                                                  <div className="font-medium">{tenant.name}</div>
+                                                                  <div className="text-xs text-muted-foreground">{tenant.property} &middot; ৳{tenant.rent}</div>
+                                                              </div>
+                                                          </div>
+                                                        </CommandItem>
+                                                      ))}
+                                                    </CommandGroup>
+                                                  </CommandList>
+                                                </Command>
+                                              </PopoverContent>
+                                            </Popover>
+                                        )}
+                                    </div>
+                                  )}
+
+                                  <div className="space-y-2">
+                                    <Label htmlFor="name">Tenant Name</Label>
+                                    <Input id="name" name="name" defaultValue={editingRentEntry?.name} required disabled={!!selectedHistoricalTenant} />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label htmlFor="property">Property/Unit</Label>
+                                    <Input id="property" name="property" defaultValue={editingRentEntry?.property} required disabled={!!selectedHistoricalTenant}/>
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label htmlFor="amount">Rent Amount</Label>
+                                    <Input id="amount" name="amount" type="number" step="0.01" defaultValue={editingRentEntry?.rent} required />
+                                  </div>
+                                   <div className="space-y-2">
+                                    <Label htmlFor="status">Status</Label>
+                                    <Select name="status" defaultValue={editingRentEntry?.status || 'Pending'}>
+                                      <SelectTrigger>
+                                        <SelectValue placeholder="Select status" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="Pending">Pending</SelectItem>
+                                        <SelectItem value="Paid">Paid</SelectItem>
+                                        <SelectItem value="Overdue">Overdue</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label htmlFor="payment_date">Payment Date</Label>
+                                    <Input id="payment_date" name="payment_date" type="date" defaultValue={editingRentEntry?.payment_date} />
+                                  </div>
+                                   <div className="space-y-2">
+                                    <Label htmlFor="collected_by">Collected By</Label>
+                                    <Input id="collected_by" name="collected_by" defaultValue={editingRentEntry?.collected_by} />
+                                  </div>
+
+                                  <DialogFooter>
+                                     <DialogClose asChild>
+                                        <Button variant="outline">Cancel</Button>
+                                     </DialogClose>
+                                    <Button type="submit">Save Entry</Button>
+                                  </DialogFooter>
+                                </form>
+                            </DialogContent>
+                        </Dialog>
                         <Tooltip>
                             <TooltipTrigger asChild className="hidden sm:inline-flex">
                                 <Button size="icon" variant="outline" onClick={handleDownloadTemplate}>
@@ -895,132 +1017,6 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                           )}
                         </TableBody>
                          <TableFooter>
-                            <TableRow className="bg-muted hover:bg-muted/50">
-                                <TableCell colSpan={isAdmin ? 7 : 6} className="p-2">
-                                    <Dialog open={isRentDialogOpen} onOpenChange={handleRentOpenChange}>
-                                      <DialogTrigger asChild>
-                                        <Button variant="outline" className="w-full">
-                                            <PlusCircle className="mr-2 h-4 w-4" />
-                                            Add New Entry
-                                        </Button>
-                                      </DialogTrigger>
-                                      <DialogContent className="sm:max-w-xl">
-                                        <DialogHeader>
-                                          <DialogTitle>{editingRentEntry ? 'Edit Rent Entry' : 'Add New Rent Entry'}</DialogTitle>
-                                          <DialogDescription>
-                                            Fill in the form to {editingRentEntry ? 'update the' : 'add a new'} rent entry for {month}, {year}.
-                                          </DialogDescription>
-                                        </DialogHeader>
-                                        <form ref={formRef} onSubmit={handleSaveRentEntry} className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-2">
-                                          <input type="hidden" name="month" value={months.indexOf(month)} />
-                                          <input type="hidden" name="year" value={year} />
-                                          {editingRentEntry && <input type="hidden" name="id" value={editingRentEntry.id} />}
-                                          
-                                          {!editingRentEntry && (
-                                            <div className="space-y-2">
-                                                <Label>Tenant</Label>
-                                                {selectedHistoricalTenant ? (
-                                                    <div className="flex items-center justify-between p-2 border rounded-md">
-                                                       <div className="flex items-center gap-2">
-                                                            <Avatar className="h-8 w-8">
-                                                                <AvatarImage src={selectedHistoricalTenant.avatar} />
-                                                                <AvatarFallback>{selectedHistoricalTenant.name.charAt(0)}</AvatarFallback>
-                                                            </Avatar>
-                                                            <div>
-                                                                <p className="font-medium">{selectedHistoricalTenant.name}</p>
-                                                                <p className="text-xs text-muted-foreground">{selectedHistoricalTenant.property}</p>
-                                                            </div>
-                                                        </div>
-                                                        <Button type="button" variant="ghost" size="icon" className="h-6 w-6" onClick={handleClearSelectedTenant}>
-                                                            <X className="h-4 w-4" />
-                                                        </Button>
-                                                    </div>
-                                                ) : (
-                                                     <Popover open={isTenantFinderOpen} onOpenChange={setIsTenantFinderOpen}>
-                                                      <PopoverTrigger asChild>
-                                                        <Button variant="outline" role="combobox" aria-expanded={isTenantFinderOpen} className="w-full justify-between">
-                                                          Select past tenant...
-                                                          <ChevronDown className="h-4 w-4 shrink-0 opacity-50"/>
-                                                        </Button>
-                                                      </PopoverTrigger>
-                                                      <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                                        <Command>
-                                                          <CommandInput placeholder="Search tenant..." />
-                                                          <CommandEmpty>No tenant found.</CommandEmpty>
-                                                           <CommandList>
-                                                            <CommandGroup>
-                                                              {historicalTenants.map((tenant) => (
-                                                                <CommandItem
-                                                                  key={tenant.uniqueId}
-                                                                  value={`${tenant.name} ${tenant.property}`}
-                                                                  onSelect={() => handleSelectHistoricalTenant(tenant)}
-                                                                >
-                                                                  <div className="flex items-center gap-3">
-                                                                      <Avatar className="h-8 w-8">
-                                                                          <AvatarImage src={tenant.avatar} />
-                                                                          <AvatarFallback>{tenant.name.charAt(0)}</AvatarFallback>
-                                                                      </Avatar>
-                                                                      <div>
-                                                                          <div className="font-medium">{tenant.name}</div>
-                                                                          <div className="text-xs text-muted-foreground">{tenant.property} &middot; ৳{tenant.rent}</div>
-                                                                      </div>
-                                                                  </div>
-                                                                </CommandItem>
-                                                              ))}
-                                                            </CommandGroup>
-                                                          </CommandList>
-                                                        </Command>
-                                                      </PopoverContent>
-                                                    </Popover>
-                                                )}
-                                            </div>
-                                          )}
-
-                                          <div className="space-y-2">
-                                            <Label htmlFor="name">Tenant Name</Label>
-                                            <Input id="name" name="name" defaultValue={editingRentEntry?.name} required disabled={!!selectedHistoricalTenant} />
-                                          </div>
-                                          <div className="space-y-2">
-                                            <Label htmlFor="property">Property/Unit</Label>
-                                            <Input id="property" name="property" defaultValue={editingRentEntry?.property} required disabled={!!selectedHistoricalTenant}/>
-                                          </div>
-                                          <div className="space-y-2">
-                                            <Label htmlFor="amount">Rent Amount</Label>
-                                            <Input id="amount" name="amount" type="number" step="0.01" defaultValue={editingRentEntry?.rent} required />
-                                          </div>
-                                           <div className="space-y-2">
-                                            <Label htmlFor="status">Status</Label>
-                                            <Select name="status" defaultValue={editingRentEntry?.status || 'Pending'}>
-                                              <SelectTrigger>
-                                                <SelectValue placeholder="Select status" />
-                                              </SelectTrigger>
-                                              <SelectContent>
-                                                <SelectItem value="Pending">Pending</SelectItem>
-                                                <SelectItem value="Paid">Paid</SelectItem>
-                                                <SelectItem value="Overdue">Overdue</SelectItem>
-                                              </SelectContent>
-                                            </Select>
-                                          </div>
-                                          <div className="space-y-2">
-                                            <Label htmlFor="payment_date">Payment Date</Label>
-                                            <Input id="payment_date" name="payment_date" type="date" defaultValue={editingRentEntry?.payment_date} />
-                                          </div>
-                                           <div className="space-y-2">
-                                            <Label htmlFor="collected_by">Collected By</Label>
-                                            <Input id="collected_by" name="collected_by" defaultValue={editingRentEntry?.collected_by} />
-                                          </div>
-
-                                          <DialogFooter>
-                                             <DialogClose asChild>
-                                                <Button variant="outline">Cancel</Button>
-                                             </DialogClose>
-                                            <Button type="submit">Save Entry</Button>
-                                          </DialogFooter>
-                                        </form>
-                                      </DialogContent>
-                                    </Dialog>
-                                </TableCell>
-                            </TableRow>
                             <TableRow className="bg-lime-500 hover:bg-lime-500/90 font-bold">
                                 <TableCell className="text-white text-center sm:text-left" colSpan={isAdmin ? 5 : 4}>Total Rent Collected</TableCell>
                                 <TableCell className="text-right text-white" colSpan={2}>৳{totalRentCollected.toFixed(2)}</TableCell>
@@ -1546,6 +1542,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
 }
 
     
+
 
 
 
