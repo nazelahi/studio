@@ -162,3 +162,25 @@ export async function updateUserCredentialsAction(formData: FormData) {
     return { success: true };
 }
 
+export async function updatePasscodeAction(formData: FormData) {
+    const supabaseAdmin = getSupabaseAdmin();
+    const passcode = formData.get('passcode') as string;
+
+    if (!passcode) {
+        return { error: 'Passcode cannot be empty.' };
+    }
+
+    const { error } = await supabaseAdmin
+        .from('property_settings')
+        .update({ passcode })
+        .eq('id', 1);
+
+    if (error) {
+        console.error('Supabase passcode update error:', error);
+        return { error: error.message };
+    }
+    
+    revalidatePath('/settings');
+
+    return { success: true };
+}

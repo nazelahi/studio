@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import Link from "next/link"
@@ -15,7 +16,7 @@ import { User, LogOut, MapPin, Menu, Settings, LoaderCircle, LogIn, Building, Ke
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useToast } from "@/hooks/use-toast"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { updatePropertySettingsAction, updateUserCredentialsAction } from "./actions"
+import { updatePropertySettingsAction, updateUserCredentialsAction, updatePasscodeAction } from "./actions"
 import { useProtection } from "@/context/protection-context"
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -43,6 +44,7 @@ export default function SettingsPage() {
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
   const [isCredentialsPending, startCredentialsTransition] = useTransition();
+  const [isPasscodePending, startPasscodeTransition] = useTransition();
   const { withProtection } = useProtection();
   
   const [newEmail, setNewEmail] = useState(user?.email || '');
@@ -174,6 +176,21 @@ export default function SettingsPage() {
           setConfirmPassword('');
       }
    });
+  }
+
+  const handleSavePasscode = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+
+    startPasscodeTransition(async () => {
+      const result = await updatePasscodeAction(formData);
+      if (result?.error) {
+        toast({ title: 'Error Saving Passcode', description: result.error, variant: 'destructive'});
+      } else {
+        toast({ title: 'Passcode Saved', description: 'Your secret passcode has been updated.' });
+        refreshSettings();
+      }
+    });
   }
 
   if (!isAdmin) {
@@ -440,21 +457,26 @@ export default function SettingsPage() {
                           </CardFooter>
                       </Card>
                   </form>
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Passcode</CardTitle>
-                      <CardDescription>Set a secret passcode required for edit and delete actions.</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                       <div className="space-y-2">
-                          <Label htmlFor="passcode">Secret Passcode</Label>
-                          <Input id="passcode" name="passcode" type="password" placeholder="e.g. 1234" />
-                        </div>
-                    </CardContent>
-                     <CardFooter>
-                      <Button disabled>Save Passcode</Button>
-                    </CardFooter>
-                  </Card>
+                  <form onSubmit={handleSavePasscode}>
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Passcode</CardTitle>
+                        <CardDescription>Set a secret passcode required for edit and delete actions.</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                         <div className="space-y-2">
+                            <Label htmlFor="passcode">Secret Passcode</Label>
+                            <Input id="passcode" name="passcode" type="password" placeholder="e.g. 1234" defaultValue={settings.passcode} required/>
+                          </div>
+                      </CardContent>
+                       <CardFooter>
+                        <Button type="submit" disabled={isPasscodePending}>
+                            {isPasscodePending && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
+                            Save Passcode
+                        </Button>
+                      </CardFooter>
+                    </Card>
+                  </form>
                 </div>
               )}
 

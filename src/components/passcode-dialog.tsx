@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import * as React from "react";
@@ -15,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { LockKeyhole } from "lucide-react";
+import { useSettings } from "@/context/settings-context";
 
 interface PasscodeDialogProps {
   isOpen: boolean;
@@ -22,15 +24,25 @@ interface PasscodeDialogProps {
   onSuccess: () => void;
 }
 
-const CORRECT_PASSCODE = "1234";
-
 export function PasscodeDialog({ isOpen, onOpenChange, onSuccess }: PasscodeDialogProps) {
   const [passcode, setPasscode] = React.useState("");
   const [error, setError] = React.useState("");
   const { toast } = useToast();
+  const { settings } = useSettings();
+  const correctPasscode = settings.passcode || "";
 
   const handleVerify = () => {
-    if (passcode === CORRECT_PASSCODE) {
+    if (!correctPasscode) {
+      toast({
+        title: "Passcode Not Set",
+        description: "Please set a passcode in the settings page first.",
+        variant: "destructive",
+      });
+      onOpenChange(false);
+      return;
+    }
+
+    if (passcode === correctPasscode) {
       setError("");
       toast({
         title: "Unlocked",

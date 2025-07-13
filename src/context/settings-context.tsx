@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useMemo } from 'react';
@@ -46,6 +47,7 @@ interface AppSettings {
   bankLogoUrl?: string;
   ownerName?: string;
   ownerPhotoUrl?: string;
+  passcode?: string;
   zakatBankDetails: ZakatBankDetail[];
   footerName: string;
   tabNames: TabNames;
@@ -70,6 +72,7 @@ const defaultSettings: AppSettings = {
     bankLogoUrl: undefined,
     ownerName: "Owner Name",
     ownerPhotoUrl: undefined,
+    passcode: "",
     zakatBankDetails: [],
     footerName: "© 2024 RentFlow. All Rights Reserved.",
     tabNames: {
@@ -162,6 +165,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
                 combinedSettings.bankLogoUrl = propertySettings.bank_logo_url || defaultSettings.bankLogoUrl;
                 combinedSettings.ownerName = propertySettings.owner_name || defaultSettings.ownerName;
                 combinedSettings.ownerPhotoUrl = propertySettings.owner_photo_url || defaultSettings.ownerPhotoUrl;
+                combinedSettings.passcode = propertySettings.passcode || defaultSettings.passcode;
             }
             
             combinedSettings.zakatBankDetails = zakatBankDetails || [];
@@ -173,7 +177,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 
     const handleSetSettings = (newSettings: AppSettings) => {
         const { 
-            houseName, houseAddress, bankName, bankAccountNumber, bankLogoUrl, ownerName, ownerPhotoUrl, zakatBankDetails, 
+            houseName, houseAddress, bankName, bankAccountNumber, bankLogoUrl, ownerName, ownerPhotoUrl, zakatBankDetails, passcode,
             ...localSettingsToSave 
         } = newSettings;
         try {

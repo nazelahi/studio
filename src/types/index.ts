@@ -18,7 +18,7 @@ export type Tenant = {
   type?: string;
   documents?: string[];
   created_at?: string;
-  deleted_at?: string;
+  deleted_at?: string | null;
 };
 
 export type Expense = {
@@ -29,7 +29,7 @@ export type Expense = {
   description: string;
   status: "Paid" | "Due";
   created_at?: string;
-  deleted_at?: string;
+  deleted_at?: string | null;
 };
 
 export type RentEntry = {
@@ -46,7 +46,7 @@ export type RentEntry = {
     payment_date?: string; // "Date" of collection
     collected_by?: string;
     created_at?: string;
-    deleted_at?: string;
+    deleted_at?: string | null;
 }
 
 export type PropertySettings = {
@@ -58,6 +58,7 @@ export type PropertySettings = {
   bank_logo_url?: string;
   owner_name?: string;
   owner_photo_url?: string;
+  passcode?: string;
 };
 
 export type ZakatBankDetail = {
