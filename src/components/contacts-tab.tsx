@@ -178,7 +178,6 @@ export function ContactsTab() {
     const reader = new FileReader();
     reader.onloadend = async () => {
         const photoDataUri = reader.result as string;
-        setPreviewImage(photoDataUri); // Use the scanned image as the avatar preview
         setIsScanning(true);
         toast({ title: 'Scanning Document...', description: 'The AI is extracting information. Please wait.'});
         try {

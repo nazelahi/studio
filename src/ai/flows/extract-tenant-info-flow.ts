@@ -3,8 +3,8 @@
  * @fileOverview An AI flow to extract tenant information from an image.
  * 
  * - extractTenantInfo - A function that handles the tenant info extraction process.
- * - ExtractTenantInfoInput - The input type for the extractTenantInfo function.
- * - ExtractTenantInfoOutput - The return type for the extractTenantInfo function.
+ * - ExtractTenantInfoInput - The Zod schema for the input.
+ * - ExtractTenantInfoOutput - The Zod schema for the output.
  */
 
 import { ai } from '@/ai/genkit';
@@ -25,6 +25,7 @@ const ExtractTenantInfoOutputSchema = z.object({
   phone: z.string().optional().describe('The phone number of the person.'),
 });
 export type ExtractTenantInfoOutput = z.infer<typeof ExtractTenantInfoOutputSchema>;
+
 
 export async function extractTenantInfo(input: ExtractTenantInfoInput): Promise<ExtractTenantInfoOutput> {
   return extractTenantInfoFlow(input);
