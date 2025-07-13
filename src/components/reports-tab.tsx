@@ -1,8 +1,9 @@
+
 "use client"
 
 import * as React from "react"
 import { useData } from "@/context/data-context"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -12,6 +13,7 @@ import { format, parseISO } from "date-fns"
 import type { Tenant, RentEntry, Expense } from "@/types"
 import { Button } from "./ui/button"
 import { Download, Printer, FileText, DollarSign, TrendingDown, Calculator, Landmark } from "lucide-react"
+import { Label } from "@/components/ui/label"
 import jsPDF from "jspdf"
 import html2canvas from "html2canvas"
 import { useToast } from "@/hooks/use-toast"
@@ -344,3 +346,5 @@ export function ReportsTab({ year }: { year: number }) {
     </div>
   )
 }
+
+    
