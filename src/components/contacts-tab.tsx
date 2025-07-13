@@ -3,7 +3,7 @@
 "use client"
 
 import * as React from "react"
-import { MoreHorizontal, PlusCircle, Image as ImageIcon, Mail, Phone, Home, ChevronDown, Copy, X, Search, FileText, Check, UserPlus, Calendar, Briefcase, Upload, File, Trash2, LoaderCircle } from "lucide-react"
+import { MoreHorizontal, PlusCircle, Image as ImageIcon, Mail, Phone, Home, ChevronDown, Copy, X, Search, FileText, Check, UserPlus, Calendar, Briefcase, Upload, File, Trash2, LoaderCircle, ScanLine } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog"
@@ -25,6 +25,7 @@ import { format, parseISO } from "date-fns"
 import { Badge } from "./ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
 import { useProtection } from "@/context/protection-context"
+import { extractTenantInfo } from "@/ai/flows/extract-tenant-info-flow"
 
 export function ContactsTab() {
   const { tenants, addTenant, updateTenant, deleteTenant, loading } = useData();
@@ -38,9 +39,11 @@ export function ContactsTab() {
   const [existingDocuments, setExistingDocuments] = React.useState<string[]>([]);
   const [isUploading, setIsUploading] = React.useState(false);
   const { withProtection } = useProtection();
+  const [isScanning, setIsScanning] = React.useState(false);
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const docFileInputRef = React.useRef<HTMLInputElement>(null);
+  const scanFileInputRef = React.useRef<HTMLInputElement>(null);
   const formRef = React.useRef<HTMLFormElement>(null);
   const [isFinderOpen, setIsFinderOpen] = React.useState(false);
   
@@ -141,6 +144,9 @@ export function ContactsTab() {
     setPreviewImage(null);
     setDocumentFiles([]);
     setExistingDocuments([]);
+    if (formRef.current) {
+        formRef.current.reset();
+    }
   };
   
   const handleSelectTenantToCopy = (tenant: Tenant) => {
@@ -163,6 +169,37 @@ export function ContactsTab() {
     }
     toast({ title: 'Tenant Info Copied', description: `Data from ${tenant.name} has been pre-filled.`});
     setIsFinderOpen(false);
+  };
+
+  const handleScanDocument = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onloadend = async () => {
+        const photoDataUri = reader.result as string;
+        setIsScanning(true);
+        toast({ title: 'Scanning Document...', description: 'The AI is extracting information. Please wait.'});
+        try {
+            const result = await extractTenantInfo({ photoDataUri });
+            if (formRef.current) {
+                const getEl = (name: string) => formRef.current!.elements.namedItem(name) as HTMLInputElement;
+                if (result.name) getEl('name').value = result.name;
+                if (result.email) getEl('email').value = result.email;
+                if (result.phone) getEl('phone').value = result.phone;
+
+                toast({ title: 'Scan Complete!', description: 'Tenant information has been filled into the form.'});
+            }
+        } catch (error) {
+             toast({ title: 'Scan Failed', description: 'Could not extract information from the document.', variant: 'destructive'});
+             console.error("AI scan failed:", error);
+        } finally {
+            setIsScanning(false);
+            // Reset file input value to allow re-uploading the same file
+            if(event.target) event.target.value = '';
+        }
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleViewDetails = (tenant: Tenant) => {
@@ -257,52 +294,59 @@ export function ContactsTab() {
                     <form ref={formRef} onSubmit={handleSaveTenant} className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-6 py-4 max-h-[70vh] overflow-y-auto pr-2">
                       
                       {!editingTenant && (
-                        <div className="md:col-span-2">
-                          <Label>Start with existing data (optional)</Label>
-                           <Popover open={isFinderOpen} onOpenChange={setIsFinderOpen}>
-                              <PopoverTrigger asChild>
-                                <Button variant="outline" role="combobox" aria-expanded={isFinderOpen} className="w-full justify-between mt-1">
-                                  <span className="flex items-center gap-2 text-muted-foreground">
-                                    <UserPlus className="h-4 w-4" />
-                                    Copy info from an existing tenant...
-                                  </span>
-                                  <ChevronDown className="h-4 w-4 shrink-0 opacity-50"/>
+                        <div className="md:col-span-2 space-y-2">
+                           <Label>Start from scratch or use an helper</Label>
+                           <div className="grid grid-cols-2 gap-2">
+                                <Button type="button" variant="outline" onClick={() => scanFileInputRef.current?.click()} disabled={isScanning}>
+                                    {isScanning ? <LoaderCircle className="animate-spin mr-2"/> : <ScanLine className="mr-2 h-4 w-4"/>}
+                                    Scan Document
                                 </Button>
-                              </PopoverTrigger>
-                              <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                                <Command>
-                                  <CommandInput placeholder="Search tenant..." />
-                                  <CommandEmpty>No tenant found.</CommandEmpty>
-                                  <CommandList>
-                                    <CommandGroup>
-                                      {allTenantsForFinder.map((tenant) => (
-                                        <CommandItem
-                                          key={tenant.id}
-                                          value={`${tenant.name} ${tenant.property} ${tenant.email}`}
-                                          onSelect={() => handleSelectTenantToCopy(tenant)}
-                                          className="flex justify-between items-center"
-                                        >
-                                            <div className="flex items-center gap-3">
-                                                <Avatar className="h-8 w-8">
-                                                    <AvatarImage src={tenant.avatar} />
-                                                    <AvatarFallback>{tenant.name.charAt(0)}</AvatarFallback>
-                                                </Avatar>
-                                                <div>
-                                                    <div className="font-medium">{tenant.name}</div>
-                                                    <div className="text-xs text-muted-foreground">{tenant.property} &middot; ৳{tenant.rent}</div>
+                                <input ref={scanFileInputRef} type="file" className="hidden" accept="image/*" onChange={handleScanDocument}/>
+                               <Popover open={isFinderOpen} onOpenChange={setIsFinderOpen}>
+                                  <PopoverTrigger asChild>
+                                    <Button variant="outline" role="combobox" aria-expanded={isFinderOpen} className="w-full justify-between">
+                                      <span className="flex items-center gap-2 text-muted-foreground">
+                                        <UserPlus className="h-4 w-4" />
+                                        Copy info...
+                                      </span>
+                                      <ChevronDown className="h-4 w-4 shrink-0 opacity-50"/>
+                                    </Button>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                    <Command>
+                                      <CommandInput placeholder="Search tenant..." />
+                                      <CommandEmpty>No tenant found.</CommandEmpty>
+                                      <CommandList>
+                                        <CommandGroup>
+                                          {allTenantsForFinder.map((tenant) => (
+                                            <CommandItem
+                                              key={tenant.id}
+                                              value={`${tenant.name} ${tenant.property} ${tenant.email}`}
+                                              onSelect={() => handleSelectTenantToCopy(tenant)}
+                                              className="flex justify-between items-center"
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <Avatar className="h-8 w-8">
+                                                        <AvatarImage src={tenant.avatar} />
+                                                        <AvatarFallback>{tenant.name.charAt(0)}</AvatarFallback>
+                                                    </Avatar>
+                                                    <div>
+                                                        <div className="font-medium">{tenant.name}</div>
+                                                        <div className="text-xs text-muted-foreground">{tenant.property} &middot; ৳{tenant.rent}</div>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            <Button variant="ghost" size="sm" className="h-auto px-2 py-1 text-xs">
-                                                <Copy className="h-3 w-3 mr-1"/>
-                                                Copy
-                                            </Button>
-                                        </CommandItem>
-                                      ))}
-                                    </CommandGroup>
-                                  </CommandList>
-                                </Command>
-                              </PopoverContent>
-                            </Popover>
+                                                <Button variant="ghost" size="sm" className="h-auto px-2 py-1 text-xs">
+                                                    <Copy className="h-3 w-3 mr-1"/>
+                                                    Copy
+                                                </Button>
+                                            </CommandItem>
+                                          ))}
+                                        </CommandGroup>
+                                      </CommandList>
+                                    </Command>
+                                  </PopoverContent>
+                                </Popover>
+                           </div>
                         </div>
                       )}
 
@@ -420,9 +464,9 @@ export function ContactsTab() {
                         <DialogClose asChild>
                           <Button variant="outline" disabled={isUploading}>Cancel</Button>
                         </DialogClose>
-                        <Button type="submit" disabled={isUploading}>
+                        <Button type="submit" disabled={isUploading || isScanning}>
                            {isUploading && <LoaderCircle className="animate-spin mr-2"/>}
-                           Save Tenant
+                           {isUploading ? 'Saving...' : 'Save Tenant'}
                         </Button>
                       </DialogFooter>
                     </form>
