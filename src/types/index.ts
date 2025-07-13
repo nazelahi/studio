@@ -14,6 +14,7 @@ export type Tenant = {
   type?: string;
   documents?: string[];
   created_at?: string;
+  deleted_at?: string;
 };
 
 export type Expense = {
@@ -24,6 +25,7 @@ export type Expense = {
   description: string;
   status: "Paid" | "Due";
   created_at?: string;
+  deleted_at?: string;
 };
 
 export type RentEntry = {
@@ -40,6 +42,7 @@ export type RentEntry = {
     payment_date?: string; // "Date" of collection
     collected_by?: string;
     created_at?: string;
+    deleted_at?: string;
 }
 
 export type PropertySettings = {
@@ -104,5 +107,3 @@ export type WorkDetail = {
   due_date?: string;
   created_at?: string;
 };
-
-
