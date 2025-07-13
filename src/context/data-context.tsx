@@ -22,14 +22,14 @@ interface AppData {
   workDetails: WorkDetail[];
 }
 
-type NewRentEntry = Omit<RentEntry, 'id' | 'avatar' | 'year' | 'month' | 'due_date' | 'created_at'> & { avatar?: string, tenant_id?: string };
+type NewRentEntry = Omit<RentEntry, 'id' | 'avatar' | 'year' | 'month' | 'due_date' | 'created_at' | 'deleted_at'> & { avatar?: string, tenant_id?: string };
 
 
 interface DataContextType extends AppData {
-  addTenant: (tenant: Omit<Tenant, 'id'>, files?: File[]) => Promise<void>;
+  addTenant: (tenant: Omit<Tenant, 'id' | 'deleted_at'>, files?: File[]) => Promise<void>;
   updateTenant: (tenant: Tenant, files?: File[]) => Promise<void>;
   deleteTenant: (tenantId: string) => Promise<void>;
-  addExpense: (expense: Omit<Expense, 'id'>) => Promise<void>;
+  addExpense: (expense: Omit<Expense, 'id' | 'deleted_at'>) => Promise<void>;
   updateExpense: (expense: Expense) => Promise<void>;
   deleteExpense: (expenseId: string) => Promise<void>;
   deleteMultipleExpenses: (expenseIds: string[]) => Promise<void>;
@@ -76,9 +76,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
             }
 
             const [tenantsRes, expensesRes, rentDataRes, propertySettingsRes, depositsRes, zakatRes, noticesRes, workDetailsRes, zakatBankDetailsRes] = await Promise.all([
-                supabase.from('tenants').select('*'),
-                supabase.from('expenses').select('*'),
-                supabase.from('rent_entries').select('*'),
+                supabase.from('tenants').select('*').is('deleted_at', null),
+                supabase.from('expenses').select('*').is('deleted_at', null),
+                supabase.from('rent_entries').select('*').is('deleted_at', null),
                 supabase.from('property_settings').select('*').eq('id', 1).maybeSingle(),
                 supabase.from('deposits').select('*'),
                 supabase.from('zakat_transactions').select('*'),
@@ -177,7 +177,17 @@ export function DataProvider({ children }: { children: ReactNode }) {
         return results.filter((url): url is string => url !== null);
     };
 
-    const addTenant = async (tenantData: Omit<Tenant, 'id'>, files: File[] = []) => {
+    const undoDelete = async (table: string, ids: string[]) => {
+        if (!supabase) return;
+        const { error } = await supabase.from(table).update({ deleted_at: null }).in('id', ids);
+        if (error) {
+            handleError(error, `undoing delete on ${table}`);
+        } else {
+            toast({ title: 'Restored', description: `The item(s) have been restored.` });
+        }
+    }
+
+    const addTenant = async (tenantData: Omit<Tenant, 'id' | 'created_at' | 'deleted_at'>, files: File[] = []) => {
         if (!supabase) return;
         
         const { data: newTenant, error } = await supabase.from('tenants').insert([tenantData]).select().single();
@@ -249,13 +259,19 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const deleteTenant = async (tenantId: string) => {
         if (!supabase) return;
         
-        const { error } = await supabase.from('tenants').delete().eq('id', tenantId);
+        const { error } = await supabase.from('tenants').update({ deleted_at: new Date().toISOString() }).eq('id', tenantId);
         if (error) {
             handleError(error, 'deleting tenant');
+        } else {
+             toast({
+                title: 'Tenant Deleted',
+                description: 'The tenant has been deleted.',
+                action: <Button variant="secondary" onClick={() => undoDelete('tenants', [tenantId])}>Undo</Button>
+             });
         }
     };
 
-    const addExpense = async (expense: Omit<Expense, 'id' | 'created_at'>) => {
+    const addExpense = async (expense: Omit<Expense, 'id' | 'created_at' | 'deleted_at'>) => {
         if (!supabase) return;
         const { error } = await supabase.from('expenses').insert([expense]);
         if (error) handleError(error, 'adding expense');
@@ -270,17 +286,29 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     const deleteExpense = async (expenseId: string) => {
         if (!supabase) return;
-        const { error } = await supabase.from('expenses').delete().eq('id', expenseId);
+        const { error } = await supabase.from('expenses').update({ deleted_at: new Date().toISOString() }).eq('id', expenseId);
         if (error) {
             handleError(error, 'deleting expense');
+        } else {
+            toast({
+                title: 'Expense Deleted',
+                description: 'The expense has been deleted.',
+                action: <Button variant="secondary" onClick={() => undoDelete('expenses', [expenseId])}>Undo</Button>
+             });
         }
     };
 
     const deleteMultipleExpenses = async (expenseIds: string[]) => {
         if (!supabase || expenseIds.length === 0) return;
-        const { error } = await supabase.from('expenses').delete().in('id', expenseIds);
+        const { error } = await supabase.from('expenses').update({ deleted_at: new Date().toISOString() }).in('id', expenseIds);
         if (error) {
             handleError(error, 'deleting multiple expenses');
+        } else {
+            toast({
+                title: `${expenseIds.length} Expense(s) Deleted`,
+                description: 'The selected expenses have been deleted.',
+                action: <Button variant="secondary" onClick={() => undoDelete('expenses', expenseIds)}>Undo</Button>
+             });
         }
     }
 
@@ -296,10 +324,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
                 .select('id, avatar')
                 .eq('name', rentEntryData.name)
                 .eq('property', rentEntryData.property)
+                .is('deleted_at', null)
                 .maybeSingle();
             
             if (!existingTenant) {
-                const newTenantData: Omit<Tenant, 'id' | 'created_at'> = {
+                const newTenantData: Omit<Tenant, 'id' | 'created_at' | 'deleted_at'> = {
                     name: rentEntryData.name,
                     property: rentEntryData.property,
                     rent: rentEntryData.rent,
@@ -349,6 +378,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
                     .select('id, avatar')
                     .eq('name', rentEntryData.name)
                     .eq('property', rentEntryData.property)
+                    .is('deleted_at', null)
                     .maybeSingle();
 
                 if (!existingTenant) {
@@ -402,17 +432,29 @@ export function DataProvider({ children }: { children: ReactNode }) {
     
     const deleteRentEntry = async (rentEntryId: string) => {
         if (!supabase) return;
-        const { error } = await supabase.from('rent_entries').delete().eq('id', rentEntryId);
+        const { error } = await supabase.from('rent_entries').update({ deleted_at: new Date().toISOString() }).eq('id', rentEntryId);
         if (error) {
             handleError(error, 'deleting rent entry');
+        } else {
+            toast({
+                title: 'Rent Entry Deleted',
+                description: 'The rent entry has been deleted.',
+                action: <Button variant="secondary" onClick={() => undoDelete('rent_entries', [rentEntryId])}>Undo</Button>
+            });
         }
     };
 
     const deleteMultipleRentEntries = async (rentEntryIds: string[]) => {
         if (!supabase || rentEntryIds.length === 0) return;
-        const { error } = await supabase.from('rent_entries').delete().in('id', rentEntryIds);
+        const { error } = await supabase.from('rent_entries').update({ deleted_at: new Date().toISOString() }).in('id', rentEntryIds);
         if (error) {
             handleError(error, 'deleting multiple rent entries');
+        } else {
+             toast({
+                title: `${rentEntryIds.length} Rent Entries Deleted`,
+                description: 'The selected entries have been deleted.',
+                action: <Button variant="secondary" onClick={() => undoDelete('rent_entries', rentEntryIds)}>Undo</Button>
+             });
         }
     };
     
@@ -424,7 +466,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
             .from('rent_entries')
             .select('tenant_id')
             .eq('year', year)
-            .eq('month', month);
+            .eq('month', month)
+            .is('deleted_at', null);
 
         if (rentDataError) {
             handleError(rentDataError, 'fetching rent data for sync');
@@ -434,7 +477,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
         const { data: allTenants, error: tenantsError } = await supabase
             .from('tenants')
-            .select('*');
+            .select('*')
+            .is('deleted_at', null);
 
         if (tenantsError) {
             handleError(tenantsError, 'fetching tenants for sync');
@@ -492,7 +536,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
             .from('expenses')
             .select('*')
             .gte('date', format(new Date(previousYear, previousMonth, 1), 'yyyy-MM-dd'))
-            .lt('date', format(new Date(previousYear, previousMonth + 1, 1), 'yyyy-MM-dd'));
+            .lt('date', format(new Date(previousYear, previousMonth + 1, 1), 'yyyy-MM-dd'))
+            .is('deleted_at', null);
 
         if (fetchError) {
             handleError(fetchError, 'fetching previous month expenses for sync');
@@ -504,7 +549,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         }
         
         const newExpenses = previousExpenses.map(expense => {
-            const { id, created_at, date, ...rest } = expense;
+            const { id, created_at, date, deleted_at, ...rest } = expense;
             const previousDate = parseISO(date);
             const newDate = new Date(year, month, previousDate.getDate());
             
