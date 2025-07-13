@@ -1,4 +1,3 @@
-
 "use client"
 
 import Link from "next/link"
@@ -143,11 +142,11 @@ export default function HomePage() {
               <span className="sr-only">Toggle navigation menu</span>
             </Button>
           </SheetTrigger>
-          <SheetContent side="left">
+          <SheetContent side="left" className="p-0">
             <SheetHeader className="sr-only">
               <SheetTitle>Mobile Navigation</SheetTitle>
             </SheetHeader>
-            <nav className="grid gap-6 text-lg font-medium">
+            <nav className="grid gap-6 text-lg font-medium p-6">
               <Link
                 href="#"
                 className="flex items-center gap-2 text-lg font-semibold"
@@ -156,23 +155,7 @@ export default function HomePage() {
                 <span>{settings.appName}</span>
               </Link>
               {mainNavLinks}
-               <div className="border-t pt-6 space-y-2">
-                <p className="text-sm font-semibold text-muted-foreground">Dashboard</p>
-                <div className="flex items-center gap-2">
-                    <span className="text-sm font-medium">Year:</span>
-                    <Select value={selectedYear} onValueChange={setSelectedYear}>
-                        <SelectTrigger className="w-[120px]">
-                            <SelectValue placeholder="Select Year" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {years.map(year => (
-                            <SelectItem key={year} value={year}>{year}</SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </div>
-              </div>
-              <div className="grid gap-4 text-base font-medium">
+               <div className="border-t pt-6 grid gap-4 text-base font-medium">
                   {dashboardNavLinks}
               </div>
             </nav>

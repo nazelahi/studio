@@ -91,9 +91,27 @@ const getExpenseStatusBadge = (status: Expense["status"]) => {
       : "bg-warning text-warning-foreground hover:bg-warning/80";
 };
 
-export function MonthlyOverviewTab({ year }: { year: number }) {
+interface MonthlyOverviewTabProps {
+  year: number;
+  mobileSelectedMonth: number;
+}
+
+
+export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOverviewTabProps) {
   const currentMonthIndex = year === new Date().getFullYear() ? new Date().getMonth() : 0;
-  const [selectedMonth, setSelectedMonth] = React.useState(months[currentMonthIndex]);
+  const [desktopSelectedMonth, setDesktopSelectedMonth] = React.useState(months[currentMonthIndex]);
+  const [isMobile, setIsMobile] = React.useState(false);
+
+  React.useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  const selectedMonth = isMobile ? months[mobileSelectedMonth] : desktopSelectedMonth;
+  const monthIndex = months.indexOf(selectedMonth);
+
   const { isAdmin } = useAuth();
   const { settings } = useSettings();
   const { toast } = useToast();
@@ -135,35 +153,35 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
 
 
   const filteredTenantsForMonth = React.useMemo(() => {
-    return rentData.filter(entry => entry.year === year && entry.month === months.indexOf(selectedMonth));
-  }, [rentData, selectedMonth, year]);
+    return rentData.filter(entry => entry.year === year && entry.month === monthIndex);
+  }, [rentData, monthIndex, year]);
 
   const filteredExpenses = React.useMemo(() => {
     return expenses.filter(expense => {
         if (!expense.date) return false;
         try {
             const expenseDate = parseISO(expense.date);
-            return expenseDate.getMonth() === months.indexOf(selectedMonth) && expenseDate.getFullYear() === year;
+            return expenseDate.getMonth() === monthIndex && expenseDate.getFullYear() === year;
         } catch {
             return false;
         }
       });
-  }, [expenses, selectedMonth, year]);
+  }, [expenses, monthIndex, year]);
   
   const loggedDeposit = React.useMemo(() => {
-    return deposits.find(d => d.year === year && d.month === months.indexOf(selectedMonth));
-  }, [deposits, year, selectedMonth]);
+    return deposits.find(d => d.year === year && d.month === monthIndex);
+  }, [deposits, year, monthIndex]);
 
   const monthlyNotice = React.useMemo(() => {
-    return notices.find(n => n.year === year && n.month === months.indexOf(selectedMonth));
-  }, [notices, year, selectedMonth]);
+    return notices.find(n => n.year === year && n.month === monthIndex);
+  }, [notices, year, monthIndex]);
 
 
   // Clear selections when month or year changes
   React.useEffect(() => {
     setSelectedRentEntryIds([]);
     setSelectedExpenseIds([]);
-  }, [selectedMonth, year]);
+  }, [monthIndex, year]);
 
   const totalRentCollected = filteredTenantsForMonth
     .filter(t => t.status === 'Paid')
@@ -300,8 +318,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
         await updateRentEntry({ ...editingRentEntry, ...rentEntryData }, toast);
         toast({ title: "Rent Entry Updated", description: "The entry has been successfully updated." });
     } else {
-        const selectedMonthIndex = months.indexOf(selectedMonth);
-        await addRentEntry(rentEntryData, year, selectedMonthIndex, toast);
+        await addRentEntry(rentEntryData, year, monthIndex, toast);
         toast({ title: "Rent Entry Added", description: "The new entry has been successfully added." });
     }
 
@@ -311,13 +328,12 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
   };
 
     const handleSyncTenants = async () => {
-        const selectedMonthIndex = months.indexOf(selectedMonth);
-        const syncedCount = await syncTenantsForMonth(year, selectedMonthIndex, toast);
+        const syncedCount = await syncTenantsForMonth(year, monthIndex, toast);
 
         if (syncedCount > 0) {
             toast({
                 title: "Sync Complete",
-                description: `${syncedCount} tenant(s) have been added to the rent roll for ${months[selectedMonthIndex]}.`,
+                description: `${syncedCount} tenant(s) have been added to the rent roll for ${months[monthIndex]}.`,
             });
         } else {
              toast({
@@ -481,8 +497,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
           return;
         }
         
-        const selectedMonthIndex = months.indexOf(selectedMonth);
-        await addRentEntriesBatch(rentEntriesToCreate, year, selectedMonthIndex, toast);
+        await addRentEntriesBatch(rentEntriesToCreate, year, monthIndex, toast);
 
         toast({ title: "Import Successful", description: `${rentEntriesToCreate.length} entries have been added to ${selectedMonth}, ${year}.` });
 
@@ -534,7 +549,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
 
     if (receiptFile) {
         const fileExt = receiptFile.name.split('.').pop();
-        const filePath = `${year}-${months.indexOf(selectedMonth)}/${Date.now()}.${fileExt}`;
+        const filePath = `${year}-${monthIndex}/${Date.now()}.${fileExt}`;
         const { error: uploadError } = await supabase.storage
             .from('deposit-receipts')
             .upload(filePath, receiptFile);
@@ -609,6 +624,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
   const handleSaveNotice = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
+    formData.set('month', monthIndex.toString());
 
     startNoticeTransition(async () => {
         const result = await saveNoticeAction(formData);
@@ -636,13 +652,12 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
   }
 
   const handleSyncExpenses = async () => {
-    const selectedMonthIndex = months.indexOf(selectedMonth);
-    const syncedCount = await syncExpensesFromPreviousMonth(year, selectedMonthIndex, toast);
+    const syncedCount = await syncExpensesFromPreviousMonth(year, monthIndex, toast);
 
     if (syncedCount > 0) {
         toast({
             title: "Sync Complete",
-            description: `${syncedCount} expense(s) from the previous month have been copied to ${months[selectedMonthIndex]}.`,
+            description: `${syncedCount} expense(s) from the previous month have been copied to ${months[monthIndex]}.`,
         });
     } else {
          toast({
@@ -693,21 +708,8 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
 
   return (
     <TooltipProvider>
-    <Tabs value={selectedMonth} onValueChange={setSelectedMonth} className="w-full pt-4">
-      {/* Mobile View: Dropdown */}
-      <div className="md:hidden mb-4">
-        <Select value={selectedMonth} onValueChange={setSelectedMonth}>
-          <SelectTrigger>
-            <SelectValue placeholder="Select Month" />
-          </SelectTrigger>
-          <SelectContent>
-            {months.map(month => (
-              <SelectItem key={month} value={month}>{month}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-
+    <Tabs value={desktopSelectedMonth} onValueChange={setDesktopSelectedMonth} className="w-full pt-4 md:pt-0">
+      
       {/* Desktop View: Tabs */}
       <div className="hidden md:block">
         <TabsList className="grid w-full grid-cols-12">
@@ -772,7 +774,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                   </DialogDescription>
                                 </DialogHeader>
                                 <form ref={formRef} onSubmit={handleSaveRentEntry} className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-2">
-                                  <input type="hidden" name="month" value={months.indexOf(month)} />
+                                  <input type="hidden" name="month" value={monthIndex} />
                                   <input type="hidden" name="year" value={year} />
                                   {editingRentEntry && <input type="hidden" name="id" value={editingRentEntry.id} />}
                                   
@@ -1016,16 +1018,16 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                             </TableRow>
                           )}
                         </TableBody>
-                        <TableFooter>
-                          <TableRow className="bg-lime-500 hover:bg-lime-500/90 font-bold">
-                            <TableCell colSpan={isAdmin ? 7 : 6} className="text-white p-2">
-                              <div className="flex justify-between items-center px-2">
-                                <span className="text-base">Total Rent Collected</span>
-                                <span className="text-base">৳{totalRentCollected.toFixed(2)}</span>
-                              </div>
-                            </TableCell>
-                          </TableRow>
-                        </TableFooter>
+                        <TableFooter className="bg-lime-500 hover:bg-lime-500/90 font-bold">
+                           <TableRow>
+                             <TableCell colSpan={isAdmin ? 7 : 6} className="text-white p-2">
+                               <div className="flex flex-col items-center justify-between sm:flex-row px-2">
+                                 <span className="text-base">Total Rent Collected</span>
+                                 <span className="text-base">৳{totalRentCollected.toFixed(2)}</span>
+                               </div>
+                             </TableCell>
+                           </TableRow>
+                         </TableFooter>
                       </Table>
                   </CardContent>
                 </Card>
@@ -1235,13 +1237,14 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                               </TableCell>
                           </TableRow>
                           {filteredExpenses.length > 0 && (
-                              <TableRow className="bg-lime-500 hover:bg-lime-500/90 font-bold">
-                                  <TableCell colSpan={isAdmin ? 2 : 1} className="text-white">
-                                    <div className="sm:hidden text-center">Total Expenses</div>
-                                    <div className="hidden sm:block text-left">Total Expenses</div>
-                                  </TableCell>
-                                  <TableCell colSpan={3} className="text-right text-white">৳{totalExpenses.toFixed(2)}</TableCell>
-                              </TableRow>
+                            <TableRow className="bg-lime-500 hover:bg-lime-500/90 font-bold">
+                                <TableCell colSpan={isAdmin ? 5 : 4} className="p-2 text-white">
+                                    <div className="flex flex-col sm:flex-row items-center justify-between px-2">
+                                        <div className="text-base">Total Expenses</div>
+                                        <div className="text-base">৳{totalExpenses.toFixed(2)}</div>
+                                    </div>
+                                </TableCell>
+                            </TableRow>
                           )}
                            {filteredExpenses.length === 0 && (
                             <TableRow>
@@ -1283,7 +1286,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                         </DialogHeader>
                                         <form onSubmit={handleSaveNotice}>
                                             <input type="hidden" name="year" value={year} />
-                                            <input type="hidden" name="month" value={months.indexOf(month)} />
+                                            <input type="hidden" name="month" value={monthIndex} />
                                             {monthlyNotice && <input type="hidden" name="noticeId" value={monthlyNotice.id} />}
                                             <div className="grid gap-4 py-4">
                                                 <div className="space-y-2">
@@ -1414,7 +1417,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                 </DialogHeader>
                                 <form onSubmit={handleSaveDeposit}>
                                     <input type="hidden" name="year" value={year} />
-                                    <input type="hidden" name="month" value={months.indexOf(month)} />
+                                    <input type="hidden" name="month" value={monthIndex} />
                                     {loggedDeposit && <input type="hidden" name="depositId" value={loggedDeposit.id} />}
                                     {loggedDeposit?.receipt_url && <input type="hidden" name="receipt_url" value={loggedDeposit.receipt_url} />}
                                     <div className="grid gap-4 py-4">
@@ -1544,24 +1547,5 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
     </TooltipProvider>
   )
 }
-
-    
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     
