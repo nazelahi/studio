@@ -12,7 +12,7 @@ import { useSettings } from "@/context/settings-context"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/context/auth-context"
 import { Button } from "@/components/ui/button"
-import { User, LogOut, MapPin, Menu, Settings, LoaderCircle, LogIn, Building, KeyRound, Palette, Tag, Landmark, Upload, Banknote, UserCircle } from "lucide-react"
+import { User, LogOut, MapPin, Menu, Settings, LoaderCircle, LogIn, Building, KeyRound, Palette, Tag, Landmark, Upload, Banknote, UserCircle, MessageSquare, Info, Phone, Mail } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useToast } from "@/hooks/use-toast"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
@@ -20,6 +20,7 @@ import { updatePropertySettingsAction, updateUserCredentialsAction, updatePassco
 import { useProtection } from "@/context/protection-context"
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Textarea } from "@/components/ui/textarea"
 
 type SettingsTab = 'property' | 'account' | 'application' | 'labels';
 
@@ -348,7 +349,6 @@ export default function SettingsPage() {
                             <div className="space-y-2">
                                 <Label htmlFor="ownerName">Owner Name</Label>
                                 <Input id="ownerName" name="ownerName" defaultValue={settings.ownerName} />
-                                <input type="hidden" name="oldOwnerName" value={settings.ownerName} />
                             </div>
                              <div className="space-y-2">
                                 <Label>Owner Photo</Label>
@@ -377,11 +377,11 @@ export default function SettingsPage() {
                         <CardContent className="grid md:grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="houseName">{settings.page_settings.property_details.house_name_label}</Label>
-                                <Input id="houseName" name="houseName" defaultValue={settings.houseName} onChange={handleInputChange} />
+                                <Input id="houseName" name="houseName" defaultValue={settings.houseName} />
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="houseAddress">{settings.page_settings.property_details.house_address_label}</Label>
-                                <Input id="houseAddress" name="houseAddress" defaultValue={settings.houseAddress} onChange={handleInputChange} />
+                                <Input id="houseAddress" name="houseAddress" defaultValue={settings.houseAddress} />
                             </div>
                         </CardContent>
                     </Card>
@@ -395,11 +395,11 @@ export default function SettingsPage() {
                             <div className="space-y-4">
                                <div className="space-y-2">
                                   <Label htmlFor="bankName">Bank Name</Label>
-                                  <Input id="bankName" name="bankName" defaultValue={settings.bankName} onChange={handleInputChange} />
+                                  <Input id="bankName" name="bankName" defaultValue={settings.bankName} />
                                </div>
                                <div className="space-y-2">
                                   <Label htmlFor="bankAccountNumber">Bank Account Number</Label>
-                                  <Input id="bankAccountNumber" name="bankAccountNumber" defaultValue={settings.bankAccountNumber} onChange={handleInputChange} />
+                                  <Input id="bankAccountNumber" name="bankAccountNumber" defaultValue={settings.bankAccountNumber} />
                                </div>
                             </div>
                             <div className="space-y-2">
@@ -421,6 +421,33 @@ export default function SettingsPage() {
                         </CardContent>
                     </Card>
                     
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Footer Details</CardTitle>
+                            <CardDescription>Set the "About Us" and contact information for the footer.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="about_us">About Us</Label>
+                                <Textarea id="about_us" name="about_us" defaultValue={settings.aboutUs} placeholder="Write a short description about your property or business..."/>
+                            </div>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="contact_email">Contact Email</Label>
+                                    <Input id="contact_email" name="contact_email" type="email" defaultValue={settings.contactEmail}/>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="contact_phone">Contact Phone</Label>
+                                    <Input id="contact_phone" name="contact_phone" defaultValue={settings.contactPhone}/>
+                                </div>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="contact_address">Contact Address</Label>
+                                <Input id="contact_address" name="contact_address" defaultValue={settings.contactAddress}/>
+                            </div>
+                        </CardContent>
+                    </Card>
+
                     <div className="flex justify-start">
                       <Button type="submit" disabled={isPending}>
                          {isPending && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
@@ -566,9 +593,6 @@ export default function SettingsPage() {
             </div>
 
           </div>
-           <footer className="text-center text-sm text-muted-foreground mt-auto pt-4">
-            {settings.footerName}
-          </footer>
         </main>
       </div>
   )

@@ -18,6 +18,7 @@ import { useProtection } from "@/context/protection-context"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
+import { AppFooter } from "@/components/app-footer"
 
 function FullPageLoader() {
   return (
@@ -121,7 +122,7 @@ export default function HomePage() {
   }
 
   return (
-    <div className="flex min-h-screen w-full flex-col">
+    <div className="flex min-h-screen w-full flex-col bg-muted/40">
       <header className="sticky top-0 flex h-16 items-center gap-4 border-b bg-background px-4 md:px-6 z-50">
         <nav className="hidden flex-col gap-6 text-lg font-medium md:flex md:flex-row md:items-center md:gap-5 md:text-sm lg:gap-6">
           <Link
@@ -276,9 +277,7 @@ export default function HomePage() {
           onYearChange={setSelectedYear}
           years={years}
         />
-        <footer className="text-center text-sm text-muted-foreground mt-auto pt-4 hidden md:block">
-          {settings.footerName}
-        </footer>
+        <AppFooter />
       </main>
       <MobileBottomNav activeTab={activeTab} onTabChange={handleTabChange} />
     </div>

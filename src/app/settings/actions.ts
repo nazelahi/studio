@@ -106,6 +106,10 @@ export async function updatePropertySettingsAction(formData: FormData) {
         bank_logo_url: logoUrl,
         owner_name: formData.get('ownerName') as string,
         owner_photo_url: ownerPhotoUrl,
+        about_us: formData.get('about_us') as string,
+        contact_phone: formData.get('contact_phone') as string,
+        contact_email: formData.get('contact_email') as string,
+        contact_address: formData.get('contact_address') as string,
     }
     
     const { error } = await supabaseAdmin

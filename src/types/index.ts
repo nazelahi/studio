@@ -59,6 +59,10 @@ export type PropertySettings = {
   owner_name?: string;
   owner_photo_url?: string;
   passcode?: string;
+  about_us?: string;
+  contact_phone?: string;
+  contact_email?: string;
+  contact_address?: string;
 };
 
 export type ZakatBankDetail = {

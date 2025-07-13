@@ -66,6 +66,10 @@ interface AppSettings {
   page_dashboard: PageDashboard;
   page_overview: PageOverview;
   page_settings: PageSettings;
+  aboutUs?: string;
+  contactPhone?: string;
+  contactEmail?: string;
+  contactAddress?: string;
 }
 
 interface SettingsContextType {
@@ -87,6 +91,10 @@ const defaultSettings: AppSettings = {
     passcode: "",
     zakatBankDetails: [],
     footerName: "© 2024 RentFlow. All Rights Reserved.",
+    aboutUs: "Your trusted partner in property management. Providing seamless rental experiences.",
+    contactPhone: "+1 (555) 123-4567",
+    contactEmail: "contact@rentflow.com",
+    contactAddress: "123 Property Lane, Real Estate City, 12345",
     tabNames: {
         overview: "Overview",
         tenants: "Tenants",
@@ -212,6 +220,10 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
                 combinedSettings.ownerName = propertySettings.owner_name || defaultSettings.ownerName;
                 combinedSettings.ownerPhotoUrl = propertySettings.owner_photo_url || defaultSettings.ownerPhotoUrl;
                 combinedSettings.passcode = propertySettings.passcode || defaultSettings.passcode;
+                combinedSettings.aboutUs = propertySettings.about_us || defaultSettings.aboutUs;
+                combinedSettings.contactPhone = propertySettings.contact_phone || defaultSettings.contactPhone;
+                combinedSettings.contactEmail = propertySettings.contact_email || defaultSettings.contactEmail;
+                combinedSettings.contactAddress = propertySettings.contact_address || defaultSettings.contactAddress;
             }
             
             combinedSettings.zakatBankDetails = zakatBankDetails || [];
@@ -225,7 +237,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         const newSettings = typeof newSettingsOrFn === 'function' ? newSettingsOrFn(settings) : newSettingsOrFn;
         
         const { 
-            houseName, houseAddress, bankName, bankAccountNumber, bankLogoUrl, ownerName, ownerPhotoUrl, zakatBankDetails, passcode,
+            houseName, houseAddress, bankName, bankAccountNumber, bankLogoUrl, ownerName, ownerPhotoUrl, 
+            zakatBankDetails, passcode, aboutUs, contactPhone, contactEmail, contactAddress,
             ...localSettingsToSave 
         } = newSettings;
         try {
