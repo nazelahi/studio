@@ -189,7 +189,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const addTenant = async (tenantData: Omit<Tenant, 'id' | 'created_at' | 'deleted_at'>, toast: ToastFn, files: File[] = []) => {
         if (!supabase) return;
         
-        const { data: newTenant, error } = await supabase.from('tenants').insert([tenantData]).select().single();
+        // Ensure optional fields are not undefined
+        const cleanTenantData = { ...tenantData };
+        if (cleanTenantData.date_of_birth === '') delete (cleanTenantData as any).date_of_birth;
+        if (cleanTenantData.father_name === '') delete (cleanTenantData as any).father_name;
+        if (cleanTenantData.address === '') delete (cleanTenantData as any).address;
+        if (cleanTenantData.nid_number === '') delete (cleanTenantData as any).nid_number;
+
+        const { data: newTenant, error } = await supabase.from('tenants').insert([cleanTenantData]).select().single();
         if (error || !newTenant) {
             handleError(error, 'adding tenant', toast);
             return;
@@ -232,7 +239,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
         const uploadedUrls = await uploadFiles(id, files, toast);
         const finalDocuments = [...(tenantData.documents || []), ...uploadedUrls];
 
-        const { error } = await supabase.from('tenants').update({ ...tenantData, documents: finalDocuments }).eq('id', id);
+        const cleanTenantData = { ...tenantData, documents: finalDocuments };
+        if (cleanTenantData.date_of_birth === '') delete (cleanTenantData as any).date_of_birth;
+        if (cleanTenantData.father_name === '') delete (cleanTenantData as any).father_name;
+        if (cleanTenantData.address === '') delete (cleanTenantData as any).address;
+        if (cleanTenantData.nid_number === '') delete (cleanTenantData as any).nid_number;
+
+        const { error } = await supabase.from('tenants').update(cleanTenantData).eq('id', id);
         if (error) {
             handleError(error, 'updating tenant', toast);
             return;

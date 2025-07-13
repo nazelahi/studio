@@ -17,7 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import type { Tenant } from "@/types";
-import { Mail, Phone, Home, Calendar, DollarSign, FileText, Download, Printer, ImageIcon, File as FileIcon } from "lucide-react";
+import { Mail, Phone, Home, Calendar, DollarSign, FileText, Download, Printer, ImageIcon, File as FileIcon, User, MapPin, Cake, CreditCard } from "lucide-react";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { format, parseISO } from 'date-fns';
@@ -140,6 +140,41 @@ export function TenantDetailSheet({
             </div>
 
           <div className="space-y-6 p-6">
+            <Card>
+                <CardHeader>
+                    <CardTitle className="text-base">Personal Information</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3 text-sm">
+                    {tenant.father_name && (
+                        <div className="flex items-center gap-3">
+                            <User className="h-4 w-4 text-muted-foreground" />
+                            <span>Father's Name: <strong>{tenant.father_name}</strong></span>
+                        </div>
+                    )}
+                     {tenant.date_of_birth && (
+                        <div className="flex items-center gap-3">
+                            <Cake className="h-4 w-4 text-muted-foreground" />
+                            <span>Date of Birth: <strong>{format(parseISO(tenant.date_of_birth), "MMMM dd, yyyy")}</strong></span>
+                        </div>
+                    )}
+                    {tenant.nid_number && (
+                        <div className="flex items-center gap-3">
+                            <CreditCard className="h-4 w-4 text-muted-foreground" />
+                            <span>NID: <strong>{tenant.nid_number}</strong></span>
+                        </div>
+                    )}
+                    {tenant.address && (
+                         <div className="flex items-start gap-3">
+                            <MapPin className="h-4 w-4 text-muted-foreground mt-1" />
+                            <div className="flex flex-col">
+                                <span>Address:</span>
+                                <strong>{tenant.address}</strong>
+                            </div>
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+
             <Card>
                 <CardHeader>
                     <CardTitle className="text-base">Contact Information</CardTitle>

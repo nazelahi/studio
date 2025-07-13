@@ -109,6 +109,10 @@ export function ContactsTab() {
       avatar: previewImage || editingTenant?.avatar || 'https://placehold.co/80x80.png',
       documents: existingDocuments, // Start with the ones we didn't remove
       status: formData.get('status') as Tenant['status'] || editingTenant?.status || 'Active',
+      father_name: formData.get('father_name') as string,
+      address: formData.get('address') as string,
+      date_of_birth: formData.get('date_of_birth') as string,
+      nid_number: formData.get('nid_number') as string,
     };
 
     try {
@@ -187,6 +191,10 @@ export function ContactsTab() {
                 if (result.name) getEl('name').value = result.name;
                 if (result.email) getEl('email').value = result.email;
                 if (result.phone) getEl('phone').value = result.phone;
+                if (result.father_name) getEl('father_name').value = result.father_name;
+                if (result.address) getEl('address').value = result.address;
+                if (result.date_of_birth) getEl('date_of_birth').value = result.date_of_birth;
+                if (result.nid_number) getEl('nid_number').value = result.nid_number;
 
                 toast({ title: 'Scan Complete!', description: 'Tenant information has been filled into the form.'});
             }
@@ -373,19 +381,32 @@ export function ContactsTab() {
                         <Label htmlFor="name">Full Name</Label>
                         <Input id="name" name="name" defaultValue={editingTenant?.name} required />
                       </div>
+                       <div className="space-y-2">
+                        <Label htmlFor="father_name">Father's Name</Label>
+                        <Input id="father_name" name="father_name" defaultValue={editingTenant?.father_name} />
+                      </div>
                       <div className="space-y-2">
                         <Label htmlFor="email">Email Address</Label>
                         <Input id="email" name="email" type="email" defaultValue={editingTenant?.email} required />
-                      </div>
-                       <div className="space-y-2">
-                        <Label htmlFor="type">Type</Label>
-                        <Input id="type" name="type" placeholder="e.g. Tenant, Electrician" defaultValue={editingTenant?.type} />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="phone">Phone Number</Label>
                         <Input id="phone" name="phone" type="tel" defaultValue={editingTenant?.phone} />
                       </div>
                       <div className="space-y-2">
+                        <Label htmlFor="date_of_birth">Date of Birth</Label>
+                        <Input id="date_of_birth" name="date_of_birth" type="date" defaultValue={editingTenant?.date_of_birth} />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="nid_number">NID Number</Label>
+                        <Input id="nid_number" name="nid_number" defaultValue={editingTenant?.nid_number} />
+                      </div>
+                      <div className="space-y-2 md:col-span-2">
+                        <Label htmlFor="address">Address</Label>
+                        <Textarea id="address" name="address" defaultValue={editingTenant?.address} placeholder="Full address..."/>
+                      </div>
+
+                       <div className="space-y-2">
                         <Label htmlFor="property">Apartment / Unit</Label>
                         <Input id="property" name="property" defaultValue={editingTenant?.property} required />
                       </div>
@@ -404,7 +425,11 @@ export function ContactsTab() {
                         <Label htmlFor="join_date">Join Date</Label>
                         <Input id="join_date" name="join_date" type="date" defaultValue={editingTenant?.join_date} required />
                       </div>
-                      <div className="space-y-2">
+                       <div className="space-y-2">
+                        <Label htmlFor="type">Type</Label>
+                        <Input id="type" name="type" placeholder="e.g. Tenant, Electrician" defaultValue={editingTenant?.type} />
+                      </div>
+                      <div className="space-y-2 md:col-span-2">
                           <Label htmlFor="status">Status</Label>
                           <Select name="status" defaultValue={editingTenant?.status || 'Active'}>
                             <SelectTrigger id="status">
