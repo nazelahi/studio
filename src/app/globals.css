@@ -38,6 +38,11 @@ body {
     --success-foreground: 140 70% 95%;
     --warning: 45 90% 50%;
     --warning-foreground: 45 90% 5%;
+
+    --table-header-background: 180 100% 25%;
+    --table-header-foreground: 180 100% 98%;
+    --table-footer-background: 84 70% 50%;
+    --table-footer-foreground: 84 70% 98%;
   }
   .dark {
     --background: 222.2 84% 4.9%;
@@ -69,6 +74,11 @@ body {
     --success-foreground: 140 60% 95%;
     --warning: 45 90% 50%;
     --warning-foreground: 45 90% 5%;
+
+    --table-header-background: 180 80% 60%;
+    --table-header-foreground: 180 100% 10%;
+    --table-footer-background: 84 60% 50%;
+    --table-footer-foreground: 84 100% 10%;
   }
 }
 

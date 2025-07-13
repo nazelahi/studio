@@ -241,13 +241,13 @@ export function WorkDetailsTab({ year }: { year: number }) {
       <CardContent>
         <Table>
           <TableHeader>
-            <TableRow className="bg-primary hover:bg-primary/90">
-              <TableHead className="text-primary-foreground">Work Category</TableHead>
-              <TableHead className="text-primary-foreground hidden sm:table-cell">Product Price</TableHead>
-              <TableHead className="text-primary-foreground hidden sm:table-cell">Worker Cost</TableHead>
-              <TableHead className="text-primary-foreground">Status</TableHead>
-              <TableHead className="text-right text-primary-foreground">Total Cost</TableHead>
-              {isAdmin && <TableHead className="text-primary-foreground w-24">Actions</TableHead>}
+            <TableRow style={{ backgroundColor: 'hsl(var(--table-header-background))', color: 'hsl(var(--table-header-foreground))' }} className="hover:bg-[hsl(var(--table-header-background)/0.9)]">
+              <TableHead className="text-inherit">Work Category</TableHead>
+              <TableHead className="text-inherit hidden sm:table-cell">Product Price</TableHead>
+              <TableHead className="text-inherit hidden sm:table-cell">Worker Cost</TableHead>
+              <TableHead className="text-inherit">Status</TableHead>
+              <TableHead className="text-right text-inherit">Total Cost</TableHead>
+              {isAdmin && <TableHead className="text-inherit w-24">Actions</TableHead>}
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -314,12 +314,14 @@ export function WorkDetailsTab({ year }: { year: number }) {
           </TableBody>
             {filteredWorkDetails.length > 0 && (
                 <TableFooter>
-                    <TableRow className="bg-lime-500 hover:bg-lime-500/90 font-bold">
-                        <TableCell colSpan={isAdmin ? 4 : 3} className="text-white">
-                            <div className="sm:hidden text-center">Total for {year}</div>
-                            <div className="hidden sm:block text-left">Total for {year}</div>
+                    <TableRow style={{ backgroundColor: 'hsl(var(--table-footer-background))', color: 'hsl(var(--table-footer-foreground))' }} className="font-bold hover:bg-[hsl(var(--table-footer-background)/0.9)]">
+                        <TableCell colSpan={isAdmin ? 6 : 5} className="text-inherit p-2">
+                           <div className="flex flex-col sm:flex-row items-center justify-between px-2">
+                                <div className="sm:hidden text-center text-inherit font-bold">Total for {year}</div>
+                                <div className="hidden sm:block text-left text-inherit font-bold">Total for {year}</div>
+                                <div className="text-inherit font-bold">{formatCurrency(yearlyTotal)}</div>
+                            </div>
                         </TableCell>
-                        <TableCell colSpan={2} className="text-right text-white">{formatCurrency(yearlyTotal)}</TableCell>
                     </TableRow>
                 </TableFooter>
             )}

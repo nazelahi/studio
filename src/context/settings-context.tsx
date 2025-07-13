@@ -38,6 +38,15 @@ interface PageSettings {
     };
 }
 
+interface AppTheme {
+    colors: {
+        primary: string;
+        table_header_background: string;
+        table_header_foreground: string;
+        table_footer_background: string;
+    };
+}
+
 interface AppSettings {
   appName: string;
   houseName: string;
@@ -51,6 +60,7 @@ interface AppSettings {
   zakatBankDetails: ZakatBankDetail[];
   footerName: string;
   tabNames: TabNames;
+  theme: AppTheme;
   page_dashboard: PageDashboard;
   page_overview: PageOverview;
   page_settings: PageSettings;
@@ -58,7 +68,7 @@ interface AppSettings {
 
 interface SettingsContextType {
   settings: AppSettings;
-  setSettings: (newSettings: AppSettings) => void;
+  setSettings: (newSettings: AppSettings | ((prev: AppSettings) => AppSettings)) => void;
   loading: boolean;
   refreshSettings: () => void;
 }
@@ -83,6 +93,14 @@ const defaultSettings: AppSettings = {
         reports: "Reports",
         zakat: "Zakat",
     },
+    theme: {
+        colors: {
+            primary: '#14b8a6', // teal-500
+            table_header_background: '#14b8a6',
+            table_header_foreground: '#ffffff',
+            table_footer_background: '#84cc16', // lime-500
+        }
+    },
     page_dashboard: {
         nav_dashboard: "Dashboard",
         nav_settings: "Settings",
@@ -101,7 +119,7 @@ const defaultSettings: AppSettings = {
         },
         app_settings: {
             title: "Application Settings",
-            description: "Customize the names and labels used throughout the application. These are saved in your browser.",
+            description: "Customize the names, labels, and colors used throughout the application. These are saved in your browser.",
             header_name_label: "Header Name",
             footer_name_label: "Footer Name",
         },
@@ -124,7 +142,7 @@ const deepMerge = (target: any, source: any) => {
     const output = { ...target };
     if (isObject(target) && isObject(source)) {
         Object.keys(source).forEach(key => {
-            if (isObject(source[key]) && key in target) {
+            if (isObject(source[key]) && key in target && isObject(target[key])) {
                  output[key] = deepMerge(target[key], source[key]);
             } else {
                 Object.assign(output, { [key]: source[key] });
@@ -133,6 +151,30 @@ const deepMerge = (target: any, source: any) => {
     }
     return output;
 }
+
+const hexToHsl = (hex: string): string => {
+    hex = hex.replace(/^#/, '');
+    const r = parseInt(hex.substring(0, 2), 16) / 255;
+    const g = parseInt(hex.substring(2, 4), 16) / 255;
+    const b = parseInt(hex.substring(4, 6), 16) / 255;
+
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    let h = 0, s = 0, l = (max + min) / 2;
+
+    if (max !== min) {
+        const d = max - min;
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        switch (max) {
+            case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+            case g: h = (b - r) / d + 2; break;
+            case b: h = (r - g) / d + 4; break;
+        }
+        h /= 6;
+    }
+    
+    return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
+};
 
 export function SettingsProvider({ children }: { children: ReactNode }) {
     const [settings, setSettings] = useState<AppSettings>(defaultSettings);
@@ -175,7 +217,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     }, [isMounted, propertySettings, zakatBankDetails]);
 
 
-    const handleSetSettings = (newSettings: AppSettings) => {
+    const handleSetSettings = (newSettingsOrFn: AppSettings | ((prev: AppSettings) => AppSettings)) => {
+        const newSettings = typeof newSettingsOrFn === 'function' ? newSettingsOrFn(settings) : newSettingsOrFn;
+        
         const { 
             houseName, houseAddress, bankName, bankAccountNumber, bankLogoUrl, ownerName, ownerPhotoUrl, zakatBankDetails, passcode,
             ...localSettingsToSave 
@@ -190,6 +234,21 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 
         setSettings(newSettings);
     };
+
+    useEffect(() => {
+        if (isMounted) {
+            const root = document.documentElement;
+            root.style.setProperty('--primary', hexToHsl(settings.theme.colors.primary));
+            
+            const headerBgHsl = hexToHsl(settings.theme.colors.table_header_background);
+            const headerFgHex = settings.theme.colors.table_header_foreground;
+
+            root.style.setProperty('--table-header-background', headerBgHsl);
+            root.style.setProperty('--table-header-foreground', hexToHsl(headerFgHex));
+            root.style.setProperty('--table-footer-background', hexToHsl(settings.theme.colors.table_footer_background));
+            root.style.setProperty('--table-footer-foreground', hexToHsl('#ffffff')); // Assuming white text on footer
+        }
+    }, [settings.theme, isMounted]);
 
     const value = {
         settings,

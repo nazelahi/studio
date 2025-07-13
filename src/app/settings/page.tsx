@@ -76,7 +76,7 @@ export default function SettingsPage() {
     const { name, value } = e.target;
     const keys = name.split('.');
     
-    setSettings(prev => {
+    setSettings((prev: any) => {
         let newState = { ...prev };
         let currentLevel: any = newState;
         
@@ -136,6 +136,7 @@ export default function SettingsPage() {
   };
 
   const handleSaveAppSettings = () => {
+    setSettings(settings); // This triggers the save-to-localStorage logic in the context
     toast({
         title: 'Application Settings Saved',
         description: 'Your changes have been saved to this browser.',
@@ -255,11 +256,11 @@ export default function SettingsPage() {
               <span className="sr-only">Toggle navigation menu</span>
             </Button>
           </SheetTrigger>
-          <SheetContent side="left">
+          <SheetContent side="left" className="p-0">
             <SheetHeader className="sr-only">
               <SheetTitle>Mobile Navigation</SheetTitle>
             </SheetHeader>
-            <nav className="grid gap-6 text-lg font-medium">
+            <nav className="grid gap-6 text-lg font-medium p-6">
               <Link
                 href="/"
                 className="flex items-center gap-2 text-lg font-semibold"
@@ -485,23 +486,46 @@ export default function SettingsPage() {
 
               {activeTab === 'application' && (
                 <Card>
-                    <CardHeader>
-                        <CardTitle>{settings.page_settings.app_settings.title}</CardTitle>
-                        <CardDescription>{settings.page_settings.app_settings.description}</CardDescription>
-                    </CardHeader>
-                    <CardContent className="grid sm:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="appName">{settings.page_settings.app_settings.header_name_label}</Label>
-                            <Input id="appName" name="appName" defaultValue={settings.appName} onChange={handleInputChange} />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="footerName">{settings.page_settings.app_settings.footer_name_label}</Label>
-                            <Input id="footerName" name="footerName" defaultValue={settings.footerName} onChange={handleInputChange} />
-                        </div>
-                    </CardContent>
-                    <CardFooter>
-                        <Button onClick={handleSaveAppSettings}>Save</Button>
-                    </CardFooter>
+                  <CardHeader>
+                      <CardTitle>{settings.page_settings.app_settings.title}</CardTitle>
+                      <CardDescription>{settings.page_settings.app_settings.description}</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                      <div className="grid sm:grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                              <Label htmlFor="appName">{settings.page_settings.app_settings.header_name_label}</Label>
+                              <Input id="appName" name="appName" defaultValue={settings.appName} onChange={handleInputChange} />
+                          </div>
+                          <div className="space-y-2">
+                              <Label htmlFor="footerName">{settings.page_settings.app_settings.footer_name_label}</Label>
+                              <Input id="footerName" name="footerName" defaultValue={settings.footerName} onChange={handleInputChange} />
+                          </div>
+                      </div>
+                      <div className="space-y-4">
+                          <Label className="font-medium">Theme Colors</Label>
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                              <div className="space-y-2">
+                                  <Label htmlFor="theme.colors.primary">Primary</Label>
+                                  <Input id="theme.colors.primary" name="theme.colors.primary" type="color" defaultValue={settings.theme.colors.primary} onChange={handleInputChange} className="p-1 h-10"/>
+                              </div>
+                              <div className="space-y-2">
+                                  <Label htmlFor="theme.colors.table_header_background">Table Header</Label>
+                                  <Input id="theme.colors.table_header_background" name="theme.colors.table_header_background" type="color" defaultValue={settings.theme.colors.table_header_background} onChange={handleInputChange} className="p-1 h-10"/>
+                              </div>
+                              <div className="space-y-2">
+                                  <Label htmlFor="theme.colors.table_header_foreground">Table Header Text</Label>
+                                  <Input id="theme.colors.table_header_foreground" name="theme.colors.table_header_foreground" type="color" defaultValue={settings.theme.colors.table_header_foreground} onChange={handleInputChange} className="p-1 h-10"/>
+                              </div>
+                              <div className="space-y-2">
+                                  <Label htmlFor="theme.colors.table_footer_background">Table Footer</Label>
+                                  <Input id="theme.colors.table_footer_background" name="theme.colors.table_footer_background" type="color" defaultValue={settings.theme.colors.table_footer_background} onChange={handleInputChange} className="p-1 h-10"/>
+                              </div>
+                          </div>
+                      </div>
+                  </CardContent>
+                  <CardFooter>
+                      <Button onClick={handleSaveAppSettings}>Save</Button>
+                  </CardFooter>
                 </Card>
               )}
               

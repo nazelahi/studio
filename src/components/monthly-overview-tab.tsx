@@ -920,8 +920,8 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                   <CardContent className="p-0">
                       <Table>
                         <TableHeader>
-                          <TableRow className="bg-primary hover:bg-primary/90">
-                            {isAdmin && <TableHead className="w-10 text-primary-foreground">
+                          <TableRow style={{ backgroundColor: 'hsl(var(--table-header-background))', color: 'hsl(var(--table-header-foreground))' }} className="hover:bg-[hsl(var(--table-header-background)/0.9)]">
+                            {isAdmin && <TableHead className="w-10 text-inherit">
                                 <Checkbox
                                     checked={selectedRentEntryIds.length > 0 && selectedRentEntryIds.length === filteredTenantsForMonth.length}
                                     onCheckedChange={(checked) => {
@@ -933,12 +933,12 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                                     }}
                                 />
                             </TableHead>}
-                            <TableHead className="text-primary-foreground">Tenant</TableHead>
-                            <TableHead className="hidden md:table-cell text-primary-foreground">Collected By</TableHead>
-                            <TableHead className="hidden sm:table-cell text-primary-foreground">Payment Date</TableHead>
-                            <TableHead className="text-primary-foreground">Status</TableHead>
-                            <TableHead className="hidden sm:table-cell text-primary-foreground">Amount</TableHead>
-                            <TableHead className="text-primary-foreground">Actions</TableHead>
+                            <TableHead className="text-inherit">Tenant</TableHead>
+                            <TableHead className="hidden md:table-cell text-inherit">Collected By</TableHead>
+                            <TableHead className="hidden sm:table-cell text-inherit">Payment Date</TableHead>
+                            <TableHead className="text-inherit">Status</TableHead>
+                            <TableHead className="hidden sm:table-cell text-inherit">Amount</TableHead>
+                            <TableHead className="text-inherit">Actions</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -1018,12 +1018,12 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                             </TableRow>
                           )}
                         </TableBody>
-                        <TableFooter className="bg-lime-500 hover:bg-lime-500/90 font-bold">
-                           <TableRow>
-                             <TableCell colSpan={isAdmin ? 7 : 6} className="text-white p-2">
+                        <TableFooter>
+                           <TableRow style={{ backgroundColor: 'hsl(var(--table-footer-background))', color: 'hsl(var(--table-footer-foreground))' }} className="font-bold hover:bg-[hsl(var(--table-footer-background)/0.9)]">
+                             <TableCell colSpan={isAdmin ? 7 : 6} className="text-inherit p-2">
                                <div className="flex flex-col items-center justify-between sm:flex-row px-2">
-                                 <span className="text-base">Total Rent Collected</span>
-                                 <span className="text-base">৳{totalRentCollected.toFixed(2)}</span>
+                                 <span className="text-base text-inherit font-bold">Total Rent Collected</span>
+                                 <span className="text-base text-inherit font-bold">৳{totalRentCollected.toFixed(2)}</span>
                                </div>
                              </TableCell>
                            </TableRow>
@@ -1080,8 +1080,8 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                   <CardContent className="p-0">
                     <Table>
                       <TableHeader>
-                        <TableRow className="bg-primary hover:bg-primary/90">
-                          {isAdmin && <TableHead className="w-10 text-primary-foreground">
+                        <TableRow style={{ backgroundColor: 'hsl(var(--table-header-background))', color: 'hsl(var(--table-header-foreground))' }} className="hover:bg-[hsl(var(--table-header-background)/0.9)]">
+                          {isAdmin && <TableHead className="w-10 text-inherit">
                             <Checkbox
                               checked={selectedExpenseIds.length > 0 && selectedExpenseIds.length === filteredExpenses.length}
                               onCheckedChange={(checked) => {
@@ -1093,10 +1093,10 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                               }}
                             />
                           </TableHead>}
-                          <TableHead className="text-primary-foreground">Details</TableHead>
-                          <TableHead className="text-primary-foreground">Amount</TableHead>
-                          <TableHead className="text-primary-foreground">Status</TableHead>
-                          <TableHead className="text-primary-foreground">Actions</TableHead>
+                          <TableHead className="text-inherit">Details</TableHead>
+                          <TableHead className="text-inherit">Amount</TableHead>
+                          <TableHead className="text-inherit">Status</TableHead>
+                          <TableHead className="text-inherit">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -1237,11 +1237,11 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                               </TableCell>
                           </TableRow>
                           {filteredExpenses.length > 0 && (
-                            <TableRow className="bg-lime-500 hover:bg-lime-500/90 font-bold">
-                                <TableCell colSpan={isAdmin ? 5 : 4} className="p-2 text-white">
+                            <TableRow style={{ backgroundColor: 'hsl(var(--table-footer-background))', color: 'hsl(var(--table-footer-foreground))' }} className="font-bold hover:bg-[hsl(var(--table-footer-background)/0.9)]">
+                                <TableCell colSpan={isAdmin ? 5 : 4} className="p-2 text-inherit">
                                     <div className="flex flex-col sm:flex-row items-center justify-between px-2">
-                                        <div className="text-base">Total Expenses</div>
-                                        <div className="text-base">৳{totalExpenses.toFixed(2)}</div>
+                                        <div className="text-base font-bold text-inherit">Total Expenses</div>
+                                        <div className="text-base font-bold text-inherit">৳{totalExpenses.toFixed(2)}</div>
                                     </div>
                                 </TableCell>
                             </TableRow>
@@ -1394,12 +1394,12 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                     </CardContent>
                 </Card>
                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between gap-4 p-4 bg-primary text-primary-foreground">
+                    <CardHeader className="flex flex-row items-center justify-between gap-4 p-4" style={{ backgroundColor: 'hsl(var(--table-header-background))', color: 'hsl(var(--table-header-foreground))' }}>
                         <div className="flex items-center gap-4">
                            <div className="flex-shrink-0 bg-primary-foreground/10 p-3 rounded-full">
-                               <Landmark className="h-6 w-6 text-primary-foreground" />
+                               <Landmark className="h-6 w-6 text-inherit" />
                             </div>
-                            <h3 className="text-lg font-semibold">Bank Deposit Information</h3>
+                            <h3 className="text-lg font-semibold text-inherit">Bank Deposit Information</h3>
                         </div>
                         <Dialog open={isDepositDialogOpen} onOpenChange={handleDepositOpenChange}>
                             <DialogTrigger asChild>
@@ -1521,11 +1521,11 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                         )}
                     </CardContent>
                      {loggedDeposit ? (
-                        <CardFooter className="bg-success/10 p-4 text-center">
+                        <CardFooter style={{ backgroundColor: 'hsl(var(--success)/0.1)', borderTop: '1px solid hsl(var(--border))'}} className="p-4 text-center">
                             <p className="font-bold text-xl text-success w-full">৳{loggedDeposit.amount.toFixed(2)} Deposited</p>
                         </CardFooter>
                      ) : (
-                        <CardFooter className="bg-secondary p-4 text-center">
+                        <CardFooter style={{ backgroundColor: 'hsl(var(--secondary))', borderTop: '1px solid hsl(var(--border))'}} className="p-4 text-center">
                             <p className="font-bold text-xl text-primary w-full">৳{amountForDeposit.toFixed(2)} to Deposit</p>
                         </CardFooter>
                      )}

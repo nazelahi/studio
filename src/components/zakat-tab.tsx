@@ -200,12 +200,12 @@ export function ZakatTab() {
     return (
      <Table>
         <TableHeader>
-          <TableRow className="bg-primary hover:bg-primary/90">
-            <TableHead className="text-primary-foreground">Date</TableHead>
-            <TableHead className="text-primary-foreground">{type === 'inflow' ? 'Source' : 'Recipient'}</TableHead>
-            <TableHead className="hidden sm:table-cell text-primary-foreground">Description</TableHead>
-            <TableHead className="text-right text-primary-foreground">Amount</TableHead>
-            <TableHead className="text-primary-foreground w-28">Actions</TableHead>
+          <TableRow style={{ backgroundColor: 'hsl(var(--table-header-background))', color: 'hsl(var(--table-header-foreground))' }} className="hover:bg-[hsl(var(--table-header-background)/0.9)]">
+            <TableHead className="text-inherit">Date</TableHead>
+            <TableHead className="text-inherit">{type === 'inflow' ? 'Source' : 'Recipient'}</TableHead>
+            <TableHead className="hidden sm:table-cell text-inherit">Description</TableHead>
+            <TableHead className="text-right text-inherit">Amount</TableHead>
+            <TableHead className="text-inherit w-28">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -269,13 +269,13 @@ export function ZakatTab() {
         </TableBody>
         {transactions.length > 0 && (
             <UiTableFooter>
-                <TableRow className="bg-lime-500 hover:bg-lime-500/90 font-bold">
-                    <TableCell colSpan={3} className="text-white">
-                        <div className="sm:hidden text-center">Total</div>
-                        <div className="hidden sm:block text-left">Total</div>
-                    </TableCell>
-                    <TableCell colSpan={2} className="text-right text-white">
-                        {formatCurrency(totalAmount)}
+                <TableRow style={{ backgroundColor: 'hsl(var(--table-footer-background))', color: 'hsl(var(--table-footer-foreground))' }} className="font-bold hover:bg-[hsl(var(--table-footer-background)/0.9)]">
+                    <TableCell colSpan={5} className="text-inherit p-2">
+                        <div className="flex flex-col sm:flex-row items-center justify-between px-2">
+                          <div className="sm:hidden text-center text-inherit font-bold">Total</div>
+                          <div className="hidden sm:block text-left text-inherit font-bold">Total</div>
+                          <div className="text-inherit font-bold">{formatCurrency(totalAmount)}</div>
+                        </div>
                     </TableCell>
                 </TableRow>
             </UiTableFooter>
