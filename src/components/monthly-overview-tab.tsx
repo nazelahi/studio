@@ -477,7 +477,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
         }).filter(entry => entry.name && entry.property && entry.rent > 0);
         
         if (rentEntriesToCreate.length === 0) {
-          toast({ title: "No Valid Data Found", description: "Ensure your file has columns for at least: Name, Property, and Rent.", variant: "destructive" });
+          toast({ title: "No Valid Data Found", description: "Ensure your file has columns for at least: Name, Property, and Rent (case-insensitive).", variant: "destructive" });
           return;
         }
         
@@ -746,7 +746,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                   <AlertDialogHeader>
                                     <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                                     <AlertDialogDescription>
-                                      This will mark {selectedRentEntryIds.length} selected rent entries as deleted. You can undo this action from the notification.
+                                      This will mark {selectedRentEntryIds.length} selected rent entries as deleted. You can undo this action.
                                     </AlertDialogDescription>
                                   </AlertDialogHeader>
                                   <AlertDialogFooter>
@@ -758,7 +758,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                           </AlertDialog>
                         )}
                         <Tooltip>
-                            <TooltipTrigger asChild>
+                            <TooltipTrigger asChild className="hidden sm:inline-flex">
                                 <Button size="icon" variant="outline" onClick={handleDownloadTemplate}>
                                     <Download className="h-4 w-4" />
                                     <span className="sr-only">Download Template</span>
@@ -767,7 +767,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                             <TooltipContent>Download Template</TooltipContent>
                         </Tooltip>
                         <Tooltip>
-                            <TooltipTrigger asChild>
+                            <TooltipTrigger asChild className="hidden sm:inline-flex">
                                 <Button size="icon" variant="outline" onClick={handleImportClick}>
                                     <Upload className="h-4 w-4" />
                                     <span className="sr-only">Import from file</span>
@@ -1022,8 +1022,8 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                 </TableCell>
                             </TableRow>
                             <TableRow className="bg-lime-500 hover:bg-lime-500/90 font-bold">
-                                <TableCell className="text-white sm:text-left text-center" colSpan={isAdmin ? 4 : 3}>Total Rent Collected</TableCell>
-                                <TableCell className="text-right text-white" colSpan={3}>৳{totalRentCollected.toFixed(2)}</TableCell>
+                                <TableCell className="text-white sm:text-left text-center" colSpan={isAdmin ? 5 : 4}>Total Rent Collected</TableCell>
+                                <TableCell className="text-right text-white" colSpan={2}>৳{totalRentCollected.toFixed(2)}</TableCell>
                             </TableRow>
                         </TableFooter>
                       </Table>
@@ -1546,6 +1546,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
 }
 
     
+
 
 
 
