@@ -82,6 +82,7 @@ export default function SettingsPage() {
         let currentLevel: any = newState;
         
         for (let i = 0; i < keys.length - 1; i++) {
+            currentLevel[keys[i]] = { ...currentLevel[keys[i]] }; // Ensure nested objects are created
             currentLevel = currentLevel[keys[i]];
         }
         
@@ -124,6 +125,13 @@ export default function SettingsPage() {
      if (ownerPhotoFile) {
         formData.append('ownerPhotoFile', ownerPhotoFile);
      }
+     formData.append('theme_primary', settings.theme.colors.primary);
+     formData.append('theme_table_header_background', settings.theme.colors.table_header_background);
+     formData.append('theme_table_header_foreground', settings.theme.colors.table_header_foreground);
+     formData.append('theme_table_footer_background', settings.theme.colors.table_footer_background);
+     formData.append('theme_mobile_nav_background', settings.theme.colors.mobile_nav_background);
+     formData.append('theme_mobile_nav_foreground', settings.theme.colors.mobile_nav_foreground);
+
 
      startTransition(async () => {
         const result = await updatePropertySettingsAction(formData);
@@ -463,19 +471,19 @@ export default function SettingsPage() {
                               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                                   <div className="space-y-2">
                                       <Label htmlFor="theme_primary">Primary</Label>
-                                      <Input id="theme_primary" name="theme_primary" type="color" defaultValue={settings.theme.colors.primary} className="p-1 h-10"/>
+                                      <Input id="theme_primary" name="theme_primary" type="color" defaultValue={settings.theme.colors.primary} onChange={(e) => handleInputChange({ target: { name: 'theme.colors.primary', value: e.target.value } } as any)} className="p-1 h-10"/>
                                   </div>
                                   <div className="space-y-2">
                                       <Label htmlFor="theme_table_header_background">Table Header</Label>
-                                      <Input id="theme_table_header_background" name="theme_table_header_background" type="color" defaultValue={settings.theme.colors.table_header_background} className="p-1 h-10"/>
+                                      <Input id="theme_table_header_background" name="theme_table_header_background" type="color" defaultValue={settings.theme.colors.table_header_background} onChange={(e) => handleInputChange({ target: { name: 'theme.colors.table_header_background', value: e.target.value } } as any)} className="p-1 h-10"/>
                                   </div>
                                   <div className="space-y-2">
                                       <Label htmlFor="theme_table_header_foreground">Table Header Text</Label>
-                                      <Input id="theme_table_header_foreground" name="theme_table_header_foreground" type="color" defaultValue={settings.theme.colors.table_header_foreground} className="p-1 h-10"/>
+                                      <Input id="theme_table_header_foreground" name="theme_table_header_foreground" type="color" defaultValue={settings.theme.colors.table_header_foreground} onChange={(e) => handleInputChange({ target: { name: 'theme.colors.table_header_foreground', value: e.target.value } } as any)} className="p-1 h-10"/>
                                   </div>
                                   <div className="space-y-2">
                                       <Label htmlFor="theme_table_footer_background">Table Footer</Label>
-                                      <Input id="theme_table_footer_background" name="theme_table_footer_background" type="color" defaultValue={settings.theme.colors.table_footer_background} className="p-1 h-10"/>
+                                      <Input id="theme_table_footer_background" name="theme_table_footer_background" type="color" defaultValue={settings.theme.colors.table_footer_background} onChange={(e) => handleInputChange({ target: { name: 'theme.colors.table_footer_background', value: e.target.value } } as any)} className="p-1 h-10"/>
                                   </div>
                               </div>
                           </div>
@@ -484,11 +492,11 @@ export default function SettingsPage() {
                               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                                    <div className="space-y-2">
                                       <Label htmlFor="theme_mobile_nav_background">Background</Label>
-                                      <Input id="theme_mobile_nav_background" name="theme_mobile_nav_background" type="color" defaultValue={settings.theme.colors.mobile_nav_background} className="p-1 h-10"/>
+                                      <Input id="theme_mobile_nav_background" name="theme_mobile_nav_background" type="color" defaultValue={settings.theme.colors.mobile_nav_background} onChange={(e) => handleInputChange({ target: { name: 'theme.colors.mobile_nav_background', value: e.target.value } } as any)} className="p-1 h-10"/>
                                   </div>
                                    <div className="space-y-2">
                                       <Label htmlFor="theme_mobile_nav_foreground">Text/Icon</Label>
-                                      <Input id="theme_mobile_nav_foreground" name="theme_mobile_nav_foreground" type="color" defaultValue={settings.theme.colors.mobile_nav_foreground} className="p-1 h-10"/>
+                                      <Input id="theme_mobile_nav_foreground" name="theme_mobile_nav_foreground" type="color" defaultValue={settings.theme.colors.mobile_nav_foreground} onChange={(e) => handleInputChange({ target: { name: 'theme.colors.mobile_nav_foreground', value: e.target.value } } as any)} className="p-1 h-10"/>
                                   </div>
                               </div>
                           </div>
@@ -579,19 +587,68 @@ export default function SettingsPage() {
               )}
               
               {activeTab === 'labels' && (
-                 <Card>
+                <Card>
                     <CardHeader>
-                        <CardTitle>{settings.page_settings.overview_settings.title}</CardTitle>
-                        <CardDescription>{settings.page_settings.overview_settings.description}</CardDescription>
+                        <CardTitle>Page Labels</CardTitle>
+                        <CardDescription>Customize the text for various sections and tabs. Changes are saved to your browser.</CardDescription>
                     </CardHeader>
-                    <CardContent className="grid md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="overview-financial-title">{settings.page_settings.overview_settings.financial_title_label}</Label>
-                            <Input id="overview-financial-title" name="page_overview.financial_overview_title" defaultValue={settings.page_overview.financial_overview_title} onChange={handleInputChange} />
+                    <CardContent className="space-y-6">
+                        <div className="space-y-4">
+                           <h3 className="font-medium">Dashboard Navigation</h3>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="nav_dashboard">Dashboard Nav Link</Label>
+                                    <Input id="nav_dashboard" name="page_dashboard.nav_dashboard" defaultValue={settings.page_dashboard.nav_dashboard} onChange={handleInputChange} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="nav_settings">Settings Nav Link</Label>
+                                    <Input id="nav_settings" name="page_dashboard.nav_settings" defaultValue={settings.page_dashboard.nav_settings} onChange={handleInputChange} />
+                                </div>
+                            </div>
                         </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="overview-financial-desc">{settings.page_settings.overview_settings.financial_description_label}</Label>
-                            <Input id="overview-financial-desc" name="page_overview.financial_overview_description" defaultValue={settings.page_overview.financial_overview_description} onChange={handleInputChange} />
+
+                        <div className="space-y-4">
+                            <h3 className="font-medium">Dashboard Tab Names</h3>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="tab_overview">Overview Tab</Label>
+                                    <Input id="tab_overview" name="tabNames.overview" defaultValue={settings.tabNames.overview} onChange={handleInputChange} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="tab_tenants">Tenants Tab</Label>
+                                    <Input id="tab_tenants" name="tabNames.tenants" defaultValue={settings.tabNames.tenants} onChange={handleInputChange} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="tab_work">Work Tab</Label>
+                                    <Input id="tab_work" name="tabNames.work" defaultValue={settings.tabNames.work} onChange={handleInputChange} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="tab_integrations">Integrations Tab</Label>
+                                    <Input id="tab_integrations" name="tabNames.integrations" defaultValue={settings.tabNames.integrations} onChange={handleInputChange} />
+                                </div>
+                                 <div className="space-y-2">
+                                    <Label htmlFor="tab_reports">Reports Tab</Label>
+                                    <Input id="tab_reports" name="tabNames.reports" defaultValue={settings.tabNames.reports} onChange={handleInputChange} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="tab_zakat">Zakat Tab</Label>
+                                    <Input id="tab_zakat" name="tabNames.zakat" defaultValue={settings.tabNames.zakat} onChange={handleInputChange} />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="space-y-4">
+                            <h3 className="font-medium">Overview Page Sections</h3>
+                            <div className="grid md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="overview-financial-title">{settings.page_settings.overview_settings.financial_title_label}</Label>
+                                    <Input id="overview-financial-title" name="page_overview.financial_overview_title" defaultValue={settings.page_overview.financial_overview_title} onChange={handleInputChange} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="overview-financial-desc">{settings.page_settings.overview_settings.financial_description_label}</Label>
+                                    <Input id="overview-financial-desc" name="page_overview.financial_overview_description" defaultValue={settings.page_overview.financial_overview_description} onChange={handleInputChange} />
+                                </div>
+                            </div>
                         </div>
                     </CardContent>
                     <CardFooter>

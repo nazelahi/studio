@@ -4,7 +4,7 @@
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useMemo } from 'react';
 import { useData } from './data-context';
-import type { ZakatBankDetail, PropertySettings as DbPropertySettings } from '@/types';
+import type { ZakatBankDetail, PropertySettings as DbPropertySettings, TabNames } from '@/types';
 
 interface PageDashboard {
     nav_dashboard: string;
@@ -247,7 +247,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         const { 
             houseName, houseAddress, bankName, bankAccountNumber, bankLogoUrl, ownerName, ownerPhotoUrl, 
             zakatBankDetails, passcode, aboutUs, contactPhone, contactEmail, contactAddress, footerName,
-            theme, // Exclude theme from local storage save
+            theme,
             ...localSettingsToSave 
         } = newSettings;
         try {

@@ -4,6 +4,15 @@ import type { toast } from "@/hooks/use-toast";
 
 export type ToastFn = typeof toast;
 
+export type TabNames = {
+  overview: string;
+  tenants: string;
+  work: string;
+  integrations: string;
+  reports: string;
+  zakat: string;
+};
+
 export type Tenant = {
   id: string;
   name: string;
