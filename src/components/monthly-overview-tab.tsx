@@ -3,7 +3,7 @@
 "use client"
 
 import * as React from "react"
-import type { Tenant, Expense, RentEntry, Deposit, Notice } from "@/types"
+import type { Tenant, Expense, RentEntry, Deposit, Notice, ToastFn } from "@/types"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table"
@@ -95,6 +95,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
   const [selectedMonth, setSelectedMonth] = React.useState(months[currentMonthIndex]);
   const { isAdmin } = useAuth();
   const { settings } = useSettings();
+  const { toast } = useToast();
 
   const { tenants, expenses, rentData, deposits, notices, addRentEntry, addRentEntriesBatch, updateRentEntry, deleteRentEntry, addExpense, updateExpense, deleteExpense, syncTenantsForMonth, syncExpensesFromPreviousMonth, loading, deleteMultipleRentEntries, deleteMultipleExpenses, refreshData } = useData();
 
@@ -273,13 +274,12 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
   }
 
   const handleDeleteRentEntry = async (entryId: string) => {
-    await deleteRentEntry(entryId);
+    await deleteRentEntry(entryId, toast);
   };
   
   const handleSaveRentEntry = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    const { toast } = useToast();
     
     const rentEntryData = {
         name: selectedHistoricalTenant?.name || formData.get('name') as string,
@@ -293,11 +293,11 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
     };
 
     if(editingRentEntry) {
-        await updateRentEntry({ ...editingRentEntry, ...rentEntryData });
+        await updateRentEntry({ ...editingRentEntry, ...rentEntryData }, toast);
         toast({ title: "Rent Entry Updated", description: "The entry has been successfully updated." });
     } else {
         const selectedMonthIndex = months.indexOf(selectedMonth);
-        await addRentEntry(rentEntryData, year, selectedMonthIndex);
+        await addRentEntry(rentEntryData, year, selectedMonthIndex, toast);
         toast({ title: "Rent Entry Added", description: "The new entry has been successfully added." });
     }
 
@@ -307,9 +307,8 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
   };
 
     const handleSyncTenants = async () => {
-        const { toast } = useToast();
         const selectedMonthIndex = months.indexOf(selectedMonth);
-        const syncedCount = await syncTenantsForMonth(year, selectedMonthIndex);
+        const syncedCount = await syncTenantsForMonth(year, selectedMonthIndex, toast);
 
         if (syncedCount > 0) {
             toast({
@@ -326,12 +325,11 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
     
   const handleMassDeleteRentEntries = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    await deleteMultipleRentEntries(selectedRentEntryIds);
+    await deleteMultipleRentEntries(selectedRentEntryIds, toast);
     setSelectedRentEntryIds([]);
   }
 
   const handleViewDetails = (entry: RentEntry) => {
-    const { toast } = useToast();
     const tenant = tenants.find(t => t.id === entry.tenant_id);
     if (tenant) {
       setSelectedTenantForSheet(tenant);
@@ -349,7 +347,6 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
   const handleSaveExpense = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    const { toast } = useToast();
     
     const finalCategory = expenseCategory === 'Other' 
         ? formData.get('customCategory') as string
@@ -364,10 +361,10 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
     };
 
     if (editingExpense) {
-      await updateExpense({ ...editingExpense, ...expenseData });
+      await updateExpense({ ...editingExpense, ...expenseData }, toast);
       toast({ title: "Expense Updated", description: "The expense has been successfully updated." });
     } else {
-      await addExpense(expenseData);
+      await addExpense(expenseData, toast);
       toast({ title: "Expense Added", description: "The new expense has been successfully added." });
     }
 
@@ -391,7 +388,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
   };
   
   const handleDeleteExpense = async (expenseId: string) => {
-    await deleteExpense(expenseId);
+    await deleteExpense(expenseId, toast);
   };
   
   const handleExpenseOpenChange = (isOpen: boolean) => {
@@ -405,7 +402,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
   
   const handleMassDeleteExpenses = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    await deleteMultipleExpenses(selectedExpenseIds);
+    await deleteMultipleExpenses(selectedExpenseIds, toast);
     setSelectedExpenseIds([]);
   }
 
@@ -417,7 +414,6 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
-    const { toast } = useToast();
 
     toast({ title: "Processing file...", description: "Please wait while we read your spreadsheet." });
     
@@ -471,7 +467,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
         }
         
         const selectedMonthIndex = months.indexOf(selectedMonth);
-        await addRentEntriesBatch(rentEntriesToCreate, year, selectedMonthIndex);
+        await addRentEntriesBatch(rentEntriesToCreate, year, selectedMonthIndex, toast);
 
         toast({ title: "Import Successful", description: `${rentEntriesToCreate.length} entries have been added to ${selectedMonth}, ${year}.` });
 
@@ -504,7 +500,6 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
   const handleSaveDeposit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsUploading(true);
-    const { toast } = useToast();
 
     const formData = new FormData(event.currentTarget);
     formData.set('amount', depositAmount); // Ensure the state value is used
@@ -561,7 +556,6 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
 
   const handleDeleteDeposit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const { toast } = useToast();
     const formData = new FormData(event.currentTarget);
     const result = await deleteDepositAction(formData);
     
@@ -588,7 +582,6 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
   const handleSaveNotice = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    const { toast } = useToast();
 
     startNoticeTransition(async () => {
         const result = await saveNoticeAction(formData);
@@ -603,7 +596,6 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
   
   const handleDeleteNotice = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const { toast } = useToast();
     const formData = new FormData(event.currentTarget);
 
     startNoticeTransition(async () => {
@@ -617,9 +609,8 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
   }
 
   const handleSyncExpenses = async () => {
-    const { toast } = useToast();
     const selectedMonthIndex = months.indexOf(selectedMonth);
-    const syncedCount = await syncExpensesFromPreviousMonth(year, selectedMonthIndex);
+    const syncedCount = await syncExpensesFromPreviousMonth(year, selectedMonthIndex, toast);
 
     if (syncedCount > 0) {
         toast({
@@ -1518,6 +1509,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
 }
 
     
+
 
 
 

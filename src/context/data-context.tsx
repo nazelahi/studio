@@ -3,12 +3,12 @@
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
-import type { Tenant, Expense, RentEntry, PropertySettings, Deposit, ZakatTransaction, Notice, WorkDetail, ZakatBankDetail } from '@/types';
+import type { Tenant, Expense, RentEntry, PropertySettings, Deposit, ZakatTransaction, Notice, WorkDetail, ZakatBankDetail, ToastFn } from '@/types';
 import { parseISO, getMonth, getYear, subMonths, format } from 'date-fns';
 import { supabase } from '@/lib/supabase';
-import { useToast } from '@/hooks/use-toast';
 import { useAuth } from './auth-context';
 import { Button } from '@/components/ui/button';
+
 
 interface AppData {
   tenants: Tenant[];
@@ -26,28 +26,39 @@ type NewRentEntry = Omit<RentEntry, 'id' | 'avatar' | 'year' | 'month' | 'due_da
 
 
 interface DataContextType extends AppData {
-  addTenant: (tenant: Omit<Tenant, 'id' | 'deleted_at' | 'created_at'>, files?: File[]) => Promise<void>;
-  updateTenant: (tenant: Tenant, files?: File[]) => Promise<void>;
-  deleteTenant: (tenantId: string) => Promise<void>;
-  addExpense: (expense: Omit<Expense, 'id' | 'deleted_at' | 'created_at'>) => Promise<void>;
-  updateExpense: (expense: Expense) => Promise<void>;
-  deleteExpense: (expenseId: string) => Promise<void>;
-  deleteMultipleExpenses: (expenseIds: string[]) => Promise<void>;
-  addRentEntry: (rentEntry: NewRentEntry, year: number, month: number) => Promise<void>;
-  addRentEntriesBatch: (rentEntries: Omit<NewRentEntry, 'tenant_id' | 'avatar'>[], year: number, month: number) => Promise<void>;
-  updateRentEntry: (rentEntry: RentEntry) => Promise<void>;
-  deleteRentEntry: (rentEntryId: string) => Promise<void>;
-  deleteMultipleRentEntries: (rentEntryIds: string[]) => Promise<void>;
-  syncTenantsForMonth: (year: number, month: number) => Promise<number>;
-  syncExpensesFromPreviousMonth: (year: number, month: number) => Promise<number>;
-  updatePropertySettings: (settings: Omit<PropertySettings, 'id'>) => Promise<void>;
+  addTenant: (tenant: Omit<Tenant, 'id' | 'deleted_at' | 'created_at'>, toast: ToastFn, files?: File[]) => Promise<void>;
+  updateTenant: (tenant: Tenant, toast: ToastFn, files?: File[]) => Promise<void>;
+  deleteTenant: (tenantId: string, toast: ToastFn) => Promise<void>;
+  addExpense: (expense: Omit<Expense, 'id' | 'deleted_at' | 'created_at'>, toast: ToastFn) => Promise<void>;
+  updateExpense: (expense: Expense, toast: ToastFn) => Promise<void>;
+  deleteExpense: (expenseId: string, toast: ToastFn) => Promise<void>;
+  deleteMultipleExpenses: (expenseIds: string[], toast: ToastFn) => Promise<void>;
+  addRentEntry: (rentEntry: NewRentEntry, year: number, month: number, toast: ToastFn) => Promise<void>;
+  addRentEntriesBatch: (rentEntries: Omit<NewRentEntry, 'tenant_id' | 'avatar'>[], year: number, month: number, toast: ToastFn) => Promise<void>;
+  updateRentEntry: (rentEntry: RentEntry, toast: ToastFn) => Promise<void>;
+  deleteRentEntry: (rentEntryId: string, toast: ToastFn) => Promise<void>;
+  deleteMultipleRentEntries: (rentEntryIds: string[], toast: ToastFn) => Promise<void>;
+  syncTenantsForMonth: (year: number, month: number, toast: ToastFn) => Promise<number>;
+  syncExpensesFromPreviousMonth: (year: number, month: number, toast: ToastFn) => Promise<number>;
+  updatePropertySettings: (settings: Omit<PropertySettings, 'id'>, toast: ToastFn) => Promise<void>;
   loading: boolean;
   getAllData: () => AppData;
-  restoreAllData: (backupData: AppData) => void;
+  restoreAllData: (backupData: AppData, toast: ToastFn) => void;
   refreshData: () => Promise<void>;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
+
+const handleError = (error: any, context: string, toast: ToastFn) => {
+    const errorMessage = error.message || 'An unexpected error occurred.';
+    console.error(`Error in ${context}:`, errorMessage, error);
+    toast({
+        title: `Error: ${context}`,
+        description: errorMessage,
+        variant: 'destructive',
+    });
+};
+
 
 export function DataProvider({ children }: { children: ReactNode }) {
     const [data, setData] = useState<AppData>({ tenants: [], expenses: [], rentData: [], propertySettings: null, deposits: [], zakatTransactions: [], notices: [], workDetails: [], zakatBankDetails: [] });
@@ -55,24 +66,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
     
     const { user, loading: authLoading } = useAuth();
     
-    const handleError = (error: any, context: string) => {
-        const { toast } = useToast();
-        const errorMessage = error.message || 'An unexpected error occurred.';
-        console.error(`Error in ${context}:`, errorMessage, error);
-        toast({
-            title: `Error: ${context}`,
-            description: errorMessage,
-            variant: 'destructive',
-        });
-        throw new Error(errorMessage);
-    };
-
     const fetchData = useCallback(async () => {
         setLoading(true);
         try {
             if (!supabase) {
-                console.log("Supabase not initialized, loading local data.");
-                setData({ tenants: [], expenses: [], rentData: [], propertySettings: null, deposits: [], zakatTransactions: [], notices: [], workDetails: [], zakatBankDetails: [] });
+                console.log("Supabase not initialized, skipping data fetch.");
                 return;
             }
 
@@ -111,8 +109,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
                 workDetails: workDetailsRes.data as WorkDetail[],
                 zakatBankDetails: zakatBankDetailsRes.data as ZakatBankDetail[],
             });
-        } catch (error) {
-            handleError(error, 'fetching data');
+        } catch (error: any) {
+            console.error(`Error in fetching data:`, error.message, error);
         } finally {
             setLoading(false);
         }
@@ -143,7 +141,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
                 if (err) {
                     const dbError = err as any;
                     console.error("Realtime subscription error:", dbError);
-                    handleError(new Error(dbError.message || "Realtime was unable to connect to the project database"), 'subscribing to real-time updates');
                 }
             });
 
@@ -152,7 +149,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         };
     }, [fetchData]);
 
-    const uploadFiles = async (tenantId: string, files: File[]): Promise<string[]> => {
+    const uploadFiles = async (tenantId: string, files: File[], toast: ToastFn): Promise<string[]> => {
         if (!supabase || files.length === 0) return [];
 
         const uploadPromises = files.map(async (file) => {
@@ -163,7 +160,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
                 .upload(fileName, file);
 
             if (uploadError) {
-                handleError(uploadError, `uploading file ${file.name}`);
+                handleError(uploadError, `uploading file ${file.name}`, toast);
                 return null;
             }
 
@@ -178,28 +175,27 @@ export function DataProvider({ children }: { children: ReactNode }) {
         return results.filter((url): url is string => url !== null);
     };
 
-    const undoDelete = async (table: string, ids: string[]) => {
+    const undoDelete = async (table: string, ids: string[], toast: ToastFn) => {
         if (!supabase) return;
-        const { toast } = useToast();
         const { error } = await supabase.from(table).update({ deleted_at: null }).in('id', ids);
         if (error) {
-            handleError(error, `undoing delete on ${table}`);
+            handleError(error, `undoing delete on ${table}`, toast);
         } else {
             toast({ title: 'Restored', description: `The item(s) have been restored.` });
             await fetchData();
         }
     }
 
-    const addTenant = async (tenantData: Omit<Tenant, 'id' | 'created_at' | 'deleted_at'>, files: File[] = []) => {
+    const addTenant = async (tenantData: Omit<Tenant, 'id' | 'created_at' | 'deleted_at'>, toast: ToastFn, files: File[] = []) => {
         if (!supabase) return;
         
         const { data: newTenant, error } = await supabase.from('tenants').insert([tenantData]).select().single();
         if (error || !newTenant) {
-            handleError(error, 'adding tenant');
+            handleError(error, 'adding tenant', toast);
             return;
         }
 
-        const uploadedUrls = await uploadFiles(newTenant.id, files);
+        const uploadedUrls = await uploadFiles(newTenant.id, files, toast);
         
         if (uploadedUrls.length > 0) {
             const { error: updateError } = await supabase
@@ -207,7 +203,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
                 .update({ documents: uploadedUrls })
                 .eq('id', newTenant.id);
 
-            if (updateError) handleError(updateError, 'updating tenant with documents');
+            if (updateError) handleError(updateError, 'updating tenant with documents', toast);
         }
 
         const joinDate = parseISO(newTenant.join_date);
@@ -226,19 +222,19 @@ export function DataProvider({ children }: { children: ReactNode }) {
             month,
         };
         const { error: rentError } = await supabase.from('rent_entries').insert([newRentEntryData]);
-        if (rentError) handleError(rentError, 'auto-creating rent entry');
+        if (rentError) handleError(rentError, 'auto-creating rent entry', toast);
     };
 
-    const updateTenant = async (updatedTenant: Tenant, files: File[] = []) => {
+    const updateTenant = async (updatedTenant: Tenant, toast: ToastFn, files: File[] = []) => {
         if (!supabase) return;
         const { id, ...tenantData } = updatedTenant;
         
-        const uploadedUrls = await uploadFiles(id, files);
+        const uploadedUrls = await uploadFiles(id, files, toast);
         const finalDocuments = [...(tenantData.documents || []), ...uploadedUrls];
 
         const { error } = await supabase.from('tenants').update({ ...tenantData, documents: finalDocuments }).eq('id', id);
         if (error) {
-            handleError(error, 'updating tenant');
+            handleError(error, 'updating tenant', toast);
             return;
         }
 
@@ -255,69 +251,66 @@ export function DataProvider({ children }: { children: ReactNode }) {
             .gt('due_date', new Date().toISOString());
 
         if (rentUpdateError) {
-            handleError(rentUpdateError, 'syncing future rent entries');
+            handleError(rentUpdateError, 'syncing future rent entries', toast);
         }
     };
 
-    const deleteTenant = async (tenantId: string) => {
+    const deleteTenant = async (tenantId: string, toast: ToastFn) => {
         if (!supabase) return;
-        const { toast } = useToast();
         const { error } = await supabase.from('tenants').update({ deleted_at: new Date().toISOString() }).eq('id', tenantId);
         if (error) {
-            handleError(error, 'deleting tenant');
+            handleError(error, 'deleting tenant', toast);
         } else {
              toast({
                 title: 'Tenant Deleted',
                 description: 'The tenant has been deleted.',
-                action: <Button variant="secondary" onClick={() => undoDelete('tenants', [tenantId])}>Undo</Button>
+                action: <Button variant="secondary" onClick={() => undoDelete('tenants', [tenantId], toast)}>Undo</Button>
              });
         }
     };
 
-    const addExpense = async (expense: Omit<Expense, 'id' | 'created_at' | 'deleted_at'>) => {
+    const addExpense = async (expense: Omit<Expense, 'id' | 'created_at' | 'deleted_at'>, toast: ToastFn) => {
         if (!supabase) return;
         const { error } = await supabase.from('expenses').insert([expense]);
-        if (error) handleError(error, 'adding expense');
+        if (error) handleError(error, 'adding expense', toast);
     };
 
-    const updateExpense = async (updatedExpense: Expense) => {
+    const updateExpense = async (updatedExpense: Expense, toast: ToastFn) => {
         if (!supabase) return;
         const { id, ...expenseData } = updatedExpense;
         const { error } = await supabase.from('expenses').update(expenseData).eq('id', id);
-        if (error) handleError(error, 'updating expense');
+        if (error) handleError(error, 'updating expense', toast);
     };
 
-    const deleteExpense = async (expenseId: string) => {
+    const deleteExpense = async (expenseId: string, toast: ToastFn) => {
         if (!supabase) return;
-        const { toast } = useToast();
         const { error } = await supabase.from('expenses').update({ deleted_at: new Date().toISOString() }).eq('id', expenseId);
         if (error) {
-            handleError(error, 'deleting expense');
+            handleError(error, 'deleting expense', toast);
         } else {
             toast({
                 title: 'Expense Deleted',
                 description: 'The expense has been deleted.',
-                action: <Button variant="secondary" onClick={() => undoDelete('expenses', [expenseId])}>Undo</Button>
+                action: <Button variant="secondary" onClick={() => undoDelete('expenses', [expenseId], toast)}>Undo</Button>
              });
         }
     };
 
-    const deleteMultipleExpenses = async (expenseIds: string[]) => {
+    const deleteMultipleExpenses = async (expenseIds: string[], toast: ToastFn) => {
         if (!supabase || expenseIds.length === 0) return;
-        const { toast } = useToast();
         const { error } = await supabase.from('expenses').update({ deleted_at: new Date().toISOString() }).in('id', expenseIds);
         if (error) {
-            handleError(error, 'deleting multiple expenses');
+            handleError(error, 'deleting multiple expenses', toast);
         } else {
             toast({
                 title: `${expenseIds.length} Expense(s) Deleted`,
                 description: 'The selected expenses have been deleted.',
-                action: <Button variant="secondary" onClick={() => undoDelete('expenses', expenseIds)}>Undo</Button>
+                action: <Button variant="secondary" onClick={() => undoDelete('expenses', expenseIds, toast)}>Undo</Button>
              });
         }
     }
 
-    const addRentEntry = async (rentEntryData: NewRentEntry, year: number, month: number) => {
+    const addRentEntry = async (rentEntryData: NewRentEntry, year: number, month: number, toast: ToastFn) => {
         if (!supabase) return;
 
         let tenantId = rentEntryData.tenant_id;
@@ -344,7 +337,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
                 };
                 const { data: newTenant, error } = await supabase.from('tenants').insert(newTenantData).select().single();
                 if (error || !newTenant) {
-                    handleError(error || new Error('Failed to create tenant'), `auto-creating tenant for ${rentEntryData.name}`);
+                    handleError(error || new Error('Failed to create tenant'), `auto-creating tenant for ${rentEntryData.name}`, toast);
                     return;
                 }
                 existingTenant = newTenant;
@@ -368,10 +361,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
         };
         
         const { error } = await supabase.from('rent_entries').insert(newEntry);
-        if (error) handleError(error, 'adding rent entry');
+        if (error) handleError(error, 'adding rent entry', toast);
     };
 
-    const addRentEntriesBatch = async (rentEntriesData: Omit<NewRentEntry, 'tenant_id' | 'avatar'>[], year: number, month: number) => {
+    const addRentEntriesBatch = async (rentEntriesData: Omit<NewRentEntry, 'tenant_id' | 'avatar'>[], year: number, month: number, toast: ToastFn) => {
         if (!supabase) return;
 
         const newEntriesWithDetails = await Promise.all(rentEntriesData.map(async (rentEntryData) => {
@@ -398,7 +391,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
                     };
                     const { data: newTenant, error } = await supabase.from('tenants').insert(newTenantData).select().single();
                     if (error) {
-                        handleError(error, `auto-creating tenant for ${rentEntryData.name}`);
+                        handleError(error, `auto-creating tenant for ${rentEntryData.name}`, toast);
                         return null;
                     }
                     existingTenant = newTenant;
@@ -424,48 +417,46 @@ export function DataProvider({ children }: { children: ReactNode }) {
         const validNewEntries = newEntriesWithDetails.filter((entry): entry is Omit<RentEntry, 'id'> => entry !== null);
         if(validNewEntries.length > 0) {
             const { error } = await supabase.from('rent_entries').insert(validNewEntries);
-            if (error) handleError(error, 'batch adding rent entries');
+            if (error) handleError(error, 'batch adding rent entries', toast);
         }
     };
     
-    const updateRentEntry = async (updatedRentEntry: RentEntry) => {
+    const updateRentEntry = async (updatedRentEntry: RentEntry, toast: ToastFn) => {
         if (!supabase) return;
         const { id, ...rentEntryData } = updatedRentEntry;
         const { error } = await supabase.from('rent_entries').update(rentEntryData).eq('id', id);
-        if (error) handleError(error, 'updating rent entry');
+        if (error) handleError(error, 'updating rent entry', toast);
     };
     
-    const deleteRentEntry = async (rentEntryId: string) => {
+    const deleteRentEntry = async (rentEntryId: string, toast: ToastFn) => {
         if (!supabase) return;
-        const { toast } = useToast();
         const { error } = await supabase.from('rent_entries').update({ deleted_at: new Date().toISOString() }).eq('id', rentEntryId);
         if (error) {
-            handleError(error, 'deleting rent entry');
+            handleError(error, 'deleting rent entry', toast);
         } else {
             toast({
                 title: 'Rent Entry Deleted',
                 description: 'The rent entry has been deleted.',
-                action: <Button variant="secondary" onClick={() => undoDelete('rent_entries', [rentEntryId])}>Undo</Button>
+                action: <Button variant="secondary" onClick={() => undoDelete('rent_entries', [rentEntryId], toast)}>Undo</Button>
             });
         }
     };
 
-    const deleteMultipleRentEntries = async (rentEntryIds: string[]) => {
+    const deleteMultipleRentEntries = async (rentEntryIds: string[], toast: ToastFn) => {
         if (!supabase || rentEntryIds.length === 0) return;
-        const { toast } = useToast();
         const { error } = await supabase.from('rent_entries').update({ deleted_at: new Date().toISOString() }).in('id', rentEntryIds);
         if (error) {
-            handleError(error, 'deleting multiple rent entries');
+            handleError(error, 'deleting multiple rent entries', toast);
         } else {
              toast({
                 title: `${rentEntryIds.length} Rent Entries Deleted`,
                 description: 'The selected entries have been deleted.',
-                action: <Button variant="secondary" onClick={() => undoDelete('rent_entries', rentEntryIds)}>Undo</Button>
+                action: <Button variant="secondary" onClick={() => undoDelete('rent_entries', rentEntryIds, toast)}>Undo</Button>
              });
         }
     };
     
-    const syncTenantsForMonth = async (year: number, month: number): Promise<number> => {
+    const syncTenantsForMonth = async (year: number, month: number, toast: ToastFn): Promise<number> => {
         if (!supabase) return 0;
         const selectedMonthStartDate = new Date(year, month, 1);
         
@@ -477,7 +468,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
             .is('deleted_at', null);
 
         if (rentDataError) {
-            handleError(rentDataError, 'fetching rent data for sync');
+            handleError(rentDataError, 'fetching rent data for sync', toast);
             return 0;
         }
         const existingTenantIds = new Set(rentDataForMonth.map(e => e.tenant_id));
@@ -488,7 +479,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
             .is('deleted_at', null);
 
         if (tenantsError) {
-            handleError(tenantsError, 'fetching tenants for sync');
+            handleError(tenantsError, 'fetching tenants for sync', toast);
             return 0;
         }
 
@@ -524,14 +515,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
         const { error } = await supabase.from('rent_entries').insert(newRentEntries);
 
         if (error) {
-            handleError(error, 'syncing tenants to rent roll');
+            handleError(error, 'syncing tenants to rent roll', toast);
             return 0;
         }
 
         return tenantsToSync.length;
     };
     
-    const syncExpensesFromPreviousMonth = async (year: number, month: number): Promise<number> => {
+    const syncExpensesFromPreviousMonth = async (year: number, month: number, toast: ToastFn): Promise<number> => {
         if (!supabase) return 0;
         
         const currentMonthDate = new Date(year, month, 1);
@@ -547,7 +538,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
             .is('deleted_at', null);
 
         if (fetchError) {
-            handleError(fetchError, 'fetching previous month expenses for sync');
+            handleError(fetchError, 'fetching previous month expenses for sync', toast);
             return 0;
         }
 
@@ -570,30 +561,30 @@ export function DataProvider({ children }: { children: ReactNode }) {
         const { error: insertError } = await supabase.from('expenses').insert(newExpenses);
 
         if (insertError) {
-            handleError(insertError, 'syncing expenses to current month');
+            handleError(insertError, 'syncing expenses to current month', toast);
             return 0;
         }
 
         return newExpenses.length;
     };
 
-    const updatePropertySettings = async (settings: Omit<PropertySettings, 'id'>) => {
+    const updatePropertySettings = async (settings: Omit<PropertySettings, 'id'>, toast: ToastFn) => {
         if (!supabase) return;
         const { error } = await supabase.from('property_settings').update(settings).eq('id', 1);
-        if (error) handleError(error, 'updating property settings');
+        if (error) handleError(error, 'updating property settings', toast);
     }
 
     const getAllData = () => {
         return data;
     };
 
-    const restoreAllData = (backupData: AppData) => {
+    const restoreAllData = (backupData: AppData, toast: ToastFn) => {
         if (backupData && backupData.tenants && backupData.expenses && backupData.rentData) {
             // This needs to be extended if property_settings are part of backup/restore
             setData(backupData);
             window.location.reload();
         } else {
-            handleError(new Error("Invalid backup data format."), "restoring data");
+            handleError(new Error("Invalid backup data format."), "restoring data", toast);
         }
     };
 

@@ -1,5 +1,9 @@
 
 
+import type { toast } from "@/hooks/use-toast";
+
+export type ToastFn = typeof toast;
+
 export type Tenant = {
   id: string;
   name: string;
