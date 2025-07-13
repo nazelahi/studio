@@ -96,12 +96,12 @@ export default function HomePage() {
         {settings.page_dashboard.nav_dashboard}
       </Link>
       {isAdmin && (
-        <Link
-          href="/settings"
+        <button
+          onClick={handleNavigateToSettings}
           className={`hover:text-foreground ${pathname === '/settings' ? 'text-foreground' : 'text-muted-foreground'}`}
         >
           {settings.page_dashboard.nav_settings}
-        </Link>
+        </button>
       )}
     </>
   );
