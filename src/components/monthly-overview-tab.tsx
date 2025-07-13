@@ -3,7 +3,7 @@
 "use client"
 
 import * as React from "react"
-import type { Tenant, Expense, RentEntry, Deposit, Notice, ToastFn } from "@/types"
+import type { Tenant, Expense, RentEntry, Deposit, Notice, WorkDetail, ToastFn } from "@/types"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table"
@@ -277,9 +277,8 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
     }
   }
 
-  const handleDeleteRentEntry = () => {
-    if (!editingRentEntry) return;
-    deleteRentEntry(editingRentEntry.id, toast);
+  const handleDeleteRentEntry = (entry: RentEntry) => {
+    deleteRentEntry(entry.id, toast);
   };
   
   const handleSaveRentEntry = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -393,8 +392,8 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
     }, e);
   };
   
-  const handleDeleteExpense = (expenseId: string) => {
-    deleteExpense(expenseId, toast);
+  const handleDeleteExpense = (expense: Expense) => {
+    deleteExpense(expense.id, toast);
   };
   
   const handleExpenseOpenChange = (isOpen: boolean) => {
@@ -869,7 +868,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                               </Button>
                                             </AlertDialogTrigger>
                                             <AlertDialogContent>
-                                                <form onSubmit={(e) => { e.preventDefault(); deleteRentEntry(entry.id, toast); }}>
+                                                <form onSubmit={(e) => { e.preventDefault(); handleDeleteRentEntry(entry); }}>
                                                   <AlertDialogHeader>
                                                     <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                                                     <AlertDialogDescription>
@@ -897,7 +896,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                         </TableBody>
                          <TableFooter>
                             <TableRow className="bg-muted hover:bg-muted/50">
-                                <TableCell colSpan={isAdmin ? 7 : 6}>
+                                <TableCell colSpan={isAdmin ? 7 : 6} className="p-2">
                                     <Dialog open={isRentDialogOpen} onOpenChange={handleRentOpenChange}>
                                       <DialogTrigger asChild>
                                         <Button variant="outline" className="w-full">
@@ -1023,11 +1022,8 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                 </TableCell>
                             </TableRow>
                             <TableRow className="bg-lime-500 hover:bg-lime-500/90 font-bold">
-                                <TableCell colSpan={isAdmin ? 4 : 3} className="text-white">
-                                    <div className="sm:hidden text-center">Total Rent Collected</div>
-                                    <div className="hidden sm:block text-left">Total Rent Collected</div>
-                                </TableCell>
-                                <TableCell colSpan={3} className="text-right text-white">৳{totalRentCollected.toFixed(2)}</TableCell>
+                                <TableCell className="text-white sm:text-left text-center" colSpan={isAdmin ? 4 : 3}>Total Rent Collected</TableCell>
+                                <TableCell className="text-right text-white" colSpan={3}>৳{totalRentCollected.toFixed(2)}</TableCell>
                             </TableRow>
                         </TableFooter>
                       </Table>
@@ -1139,7 +1135,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                         </Button>
                                       </AlertDialogTrigger>
                                       <AlertDialogContent>
-                                        <form onSubmit={(e) => { e.preventDefault(); handleDeleteExpense(expense.id); }}>
+                                        <form onSubmit={(e) => { e.preventDefault(); handleDeleteExpense(expense); }}>
                                           <AlertDialogHeader>
                                             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                                             <AlertDialogDescription>
@@ -1161,7 +1157,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                       </TableBody>
                       <TableFooter>
                           <TableRow className="bg-muted hover:bg-muted/50">
-                              <TableCell colSpan={isAdmin ? 5 : 4}>
+                              <TableCell colSpan={isAdmin ? 5 : 4} className="p-2">
                                   <Dialog open={isExpenseDialogOpen} onOpenChange={handleExpenseOpenChange}>
                                       <DialogTrigger asChild>
                                           <Button variant="outline" className="w-full">
@@ -1244,8 +1240,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                     <div className="sm:hidden text-center">Total Expenses</div>
                                     <div className="hidden sm:block text-left">Total Expenses</div>
                                   </TableCell>
-                                  <TableCell colSpan={2} className="text-right text-white">৳{totalExpenses.toFixed(2)}</TableCell>
-                                  {isAdmin && <TableCell />}
+                                  <TableCell colSpan={3} className="text-right text-white">৳{totalExpenses.toFixed(2)}</TableCell>
                               </TableRow>
                           )}
                            {filteredExpenses.length === 0 && (
@@ -1551,6 +1546,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
 }
 
     
+
 
 
 
