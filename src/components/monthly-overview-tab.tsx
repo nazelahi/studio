@@ -736,13 +736,13 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                         {selectedRentEntryIds.length > 0 && (
                            <AlertDialog>
                             <AlertDialogTrigger asChild>
-                              <Button size="sm" variant="destructive" className="gap-2 w-full sm:w-auto" onClick={(e) => { withProtection(() => {}, e)}}>
+                              <Button size="sm" variant="destructive" className="gap-2 w-full sm:w-auto">
                                 <Trash2 className="h-4 w-4" />
                                 Delete ({selectedRentEntryIds.length})
                               </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
-                                <form onSubmit={(e) => { e.preventDefault(); handleMassDeleteRentEntries(); }}>
+                                <form onSubmit={(e) => { e.preventDefault(); withProtection(handleMassDeleteRentEntries, e as any); }}>
                                   <AlertDialogHeader>
                                     <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                                     <AlertDialogDescription>
@@ -984,13 +984,13 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                         </Button>
                                          <AlertDialog>
                                             <AlertDialogTrigger asChild>
-                                              <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive" onClick={(e) => { withProtection(() => {}, e); e.stopPropagation(); }}>
+                                              <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive">
                                                 <Trash2 className="h-4 w-4" />
                                                 <span className="sr-only">Delete</span>
                                               </Button>
                                             </AlertDialogTrigger>
                                             <AlertDialogContent>
-                                                <form onSubmit={(e) => { e.preventDefault(); handleDeleteRentEntry(entry); }}>
+                                                <form onSubmit={(e) => { e.preventDefault(); withProtection(() => handleDeleteRentEntry(entry), e as any); }}>
                                                   <AlertDialogHeader>
                                                     <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                                                     <AlertDialogDescription>
@@ -1016,14 +1016,15 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                             </TableRow>
                           )}
                         </TableBody>
-                         <TableFooter>
-                            <TableRow className="bg-lime-500 hover:bg-lime-500/90 font-bold">
-                                <TableCell colSpan={isAdmin ? 5 : 4} className="text-white">
-                                    <div className="sm:hidden text-center">Total Rent Collected</div>
-                                    <div className="hidden sm:block text-left">Total Rent Collected</div>
-                                </TableCell>
-                                <TableCell colSpan={2} className="text-right text-white">৳{totalRentCollected.toFixed(2)}</TableCell>
-                            </TableRow>
+                        <TableFooter>
+                          <TableRow className="bg-lime-500 hover:bg-lime-500/90 font-bold">
+                            <TableCell colSpan={isAdmin ? 7 : 6} className="text-white p-2">
+                              <div className="flex justify-between items-center px-2">
+                                <span className="text-base">Total Rent Collected</span>
+                                <span className="text-base">৳{totalRentCollected.toFixed(2)}</span>
+                              </div>
+                            </TableCell>
+                          </TableRow>
                         </TableFooter>
                       </Table>
                   </CardContent>
@@ -1041,13 +1042,13 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                         {selectedExpenseIds.length > 0 && (
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
-                              <Button size="sm" variant="destructive" className="gap-2 w-full sm:w-auto" onClick={(e) => { withProtection(() => {}, e)}}>
+                              <Button size="sm" variant="destructive" className="gap-2 w-full sm:w-auto">
                                 <Trash2 className="h-4 w-4" />
                                 Delete ({selectedExpenseIds.length})
                               </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
-                                <form onSubmit={(e) => { e.preventDefault(); handleMassDeleteExpenses(); }}>
+                                <form onSubmit={(e) => { e.preventDefault(); withProtection(handleMassDeleteExpenses, e as any); }}>
                                   <AlertDialogHeader>
                                     <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                                     <AlertDialogDescription>
@@ -1128,13 +1129,13 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                     </Button>
                                     <AlertDialog>
                                       <AlertDialogTrigger asChild>
-                                        <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive" onClick={(e) => { withProtection(() => {}, e); e.stopPropagation(); }}>
+                                        <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive">
                                           <Trash2 className="h-4 w-4" />
                                           <span className="sr-only">Delete</span>
                                         </Button>
                                       </AlertDialogTrigger>
                                       <AlertDialogContent>
-                                        <form onSubmit={(e) => { e.preventDefault(); handleDeleteExpense(expense); }}>
+                                        <form onSubmit={(e) => { e.preventDefault(); withProtection(() => handleDeleteExpense(expense), e as any); }}>
                                           <AlertDialogHeader>
                                             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                                             <AlertDialogDescription>
