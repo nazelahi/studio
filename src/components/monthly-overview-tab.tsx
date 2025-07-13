@@ -424,46 +424,57 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
         const workbook = XLSX.read(data, { type: 'array' });
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
-        const json: any[] = XLSX.utils.sheet_to_json(worksheet);
 
-        if(json.length === 0) {
-            toast({ title: "Empty Sheet", description: "The selected file is empty or in an unsupported format.", variant: "destructive" });
-            return;
+        const json: any[] = XLSX.utils.sheet_to_json(worksheet, {
+          header: 1, // Get an array of arrays
+          blankrows: false,
+        });
+
+        if (json.length < 2) {
+          toast({ title: "Empty or invalid sheet", description: "The sheet must have a header row and at least one data row.", variant: "destructive" });
+          return;
         }
 
-        const rentEntriesToCreate = json.map(row => {
-            const validStatuses = ["Paid", "Pending", "Overdue"];
-            const status = validStatuses.includes(row.Status) ? row.Status : "Pending";
-            
-            let paymentDate: string | undefined = undefined;
-            if (row.PaymentDate) {
-              // Handle Excel date serial numbers
-              if (typeof row.PaymentDate === 'number') {
-                  const utc_days  = Math.floor(row.PaymentDate - 25569);
-                  const utc_value = utc_days * 86400;                                        
-                  const date_info = new Date(utc_value * 1000);
-                  paymentDate = new Date(date_info.getFullYear(), date_info.getMonth(), date_info.getDate()).toISOString().split('T')[0];
-              } else if (row.PaymentDate) {
-                  const parsed = new Date(row.PaymentDate);
-                  if (!isNaN(parsed.getTime())) {
-                      paymentDate = parsed.toISOString().split('T')[0];
-                  }
+        const header: string[] = json[0].map((h: any) => String(h).toLowerCase().trim());
+        const rows = json.slice(1);
+
+        const rentEntriesToCreate = rows.map(rowArray => {
+          const row: { [key: string]: any } = {};
+          header.forEach((h, i) => {
+            row[h] = rowArray[i];
+          });
+
+          const validStatuses = ["paid", "pending", "overdue"];
+          const statusInput = String(row.status || 'pending').toLowerCase();
+          const status = validStatuses.includes(statusInput) ? (statusInput.charAt(0).toUpperCase() + statusInput.slice(1)) as RentEntry['status'] : "Pending";
+
+          let paymentDate: string | undefined = undefined;
+          const dateInput = row.paymentdate || row['payment date'];
+          if (dateInput) {
+            if (typeof dateInput === 'number') {
+              const date = XLSX.SSF.parse_date_code(dateInput);
+              paymentDate = new Date(date.y, date.m - 1, date.d).toISOString().split('T')[0];
+            } else {
+              const parsed = new Date(dateInput);
+              if (!isNaN(parsed.getTime())) {
+                paymentDate = parsed.toISOString().split('T')[0];
               }
             }
-            
-            return {
-                name: String(row.Name || ''),
-                property: String(row.Property || ''),
-                rent: Number(row.Rent || 0),
-                status: status as RentEntry['status'],
-                payment_date: paymentDate,
-                collected_by: String(row.CollectedBy || ''),
-            };
+          }
+          
+          return {
+            name: String(row.name || ''),
+            property: String(row.property || ''),
+            rent: Number(row.rent || 0),
+            status: status,
+            payment_date: paymentDate,
+            collected_by: String(row.collectedby || row['collected by'] || ''),
+          };
         }).filter(entry => entry.name && entry.property && entry.rent > 0);
-
-        if(rentEntriesToCreate.length === 0) {
-            toast({ title: "No Valid Data Found", description: "Ensure your sheet has columns: Name, Property, Rent.", variant: "destructive" });
-            return;
+        
+        if (rentEntriesToCreate.length === 0) {
+          toast({ title: "No Valid Data Found", description: "Ensure your sheet has columns for at least: Name, Property, and Rent.", variant: "destructive" });
+          return;
         }
         
         const selectedMonthIndex = months.indexOf(selectedMonth);
@@ -475,7 +486,6 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
         console.error("Error importing file:", error);
         toast({ title: "Import Failed", description: "There was an error processing your file. Please check the console for details.", variant: "destructive" });
       } finally {
-        // Reset file input
         if(event.target) event.target.value = '';
       }
     };
@@ -715,7 +725,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                               </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
-                                <form onSubmit={handleMassDeleteRentEntries}>
+                                <form onSubmit={(e) => { e.preventDefault(); handleMassDeleteRentEntries(e); }}>
                                   <AlertDialogHeader>
                                     <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                                     <AlertDialogDescription>
@@ -1012,7 +1022,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                               </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
-                                <form onSubmit={handleMassDeleteExpenses}>
+                                <form onSubmit={(e) => { e.preventDefault(); handleMassDeleteExpenses(e); }}>
                                   <AlertDialogHeader>
                                     <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                                     <AlertDialogDescription>
@@ -1124,6 +1134,82 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                             <TableCell colSpan={isAdmin ? 5 : 4} className="h-24 text-center">
                               <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
                                 <span>No expense data for {month} {year}.</span>
+                                {isAdmin && (
+                                   <Dialog open={isExpenseDialogOpen} onOpenChange={handleExpenseOpenChange}>
+                                      <DialogTrigger asChild>
+                                          <Button variant="outline" size="sm" className="mt-2" onClick={() => setIsExpenseDialogOpen(true)}>
+                                              <PlusCircle className="mr-2 h-4 w-4" />
+                                              Add First Expense
+                                          </Button>
+                                      </DialogTrigger>
+                                      <DialogContent>
+                                          <DialogHeader>
+                                              <DialogTitle>{editingExpense ? 'Edit Expense' : 'Add New Expense'}</DialogTitle>
+                                              <DialogDescription>
+                                                  Fill in the form below to {editingExpense ? 'update the' : 'add a new'} expense.
+                                              </DialogDescription>
+                                          </DialogHeader>
+                                          <form onSubmit={handleSaveExpense} className="grid gap-4 py-4">
+                                              <div className="space-y-2">
+                                                  <Label htmlFor="date">Date</Label>
+                                                  <Input id="date" name="date" type="date" defaultValue={editingExpense?.date || new Date().toISOString().split('T')[0]} required />
+                                              </div>
+                                              <div className="space-y-2">
+                                                  <Label htmlFor="category">Category</Label>
+                                                  <Select value={expenseCategory} onValueChange={setExpenseCategory}>
+                                                      <SelectTrigger>
+                                                          <SelectValue placeholder="Select a category" />
+                                                      </SelectTrigger>
+                                                      <SelectContent>
+                                                          {expenseCategories.map(cat => (
+                                                              <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                                                          ))}
+                                                      </SelectContent>
+                                                  </Select>
+                                              </div>
+                                              {expenseCategory === 'Other' && (
+                                                  <div className="space-y-2">
+                                                      <Label htmlFor="customCategory">Custom Category</Label>
+                                                      <Input
+                                                          id="customCategory"
+                                                          name="customCategory"
+                                                          value={customCategory}
+                                                          onChange={(e) => setCustomCategory(e.target.value)}
+                                                          placeholder="Enter custom category"
+                                                          required
+                                                      />
+                                                  </div>
+                                              )}
+                                              <div className="space-y-2">
+                                                  <Label htmlFor="amount">Amount</Label>
+                                                  <Input id="amount" name="amount" type="number" step="0.01" defaultValue={editingExpense?.amount} placeholder="0.00" required />
+                                              </div>
+                                              <div className="space-y-2">
+                                                  <Label htmlFor="status">Status</Label>
+                                                  <Select name="status" defaultValue={editingExpense?.status || 'Due'}>
+                                                      <SelectTrigger>
+                                                          <SelectValue placeholder="Select status" />
+                                                      </SelectTrigger>
+                                                      <SelectContent>
+                                                          <SelectItem value="Due">Due</SelectItem>
+                                                          <SelectItem value="Paid">Paid</SelectItem>
+                                                      </SelectContent>
+                                                  </Select>
+                                              </div>
+                                              <div className="space-y-2">
+                                                  <Label htmlFor="description">Description</Label>
+                                                  <Textarea id="description" name="description" defaultValue={editingExpense?.description} placeholder="Describe the expense..." />
+                                              </div>
+                                              <DialogFooter>
+                                                  <DialogClose asChild>
+                                                      <Button variant="outline">Cancel</Button>
+                                                  </DialogClose>
+                                                  <Button type="submit">Save Expense</Button>
+                                              </DialogFooter>
+                                          </form>
+                                      </DialogContent>
+                                  </Dialog>
+                                )}
                               </div>
                             </TableCell>
                           </TableRow>
@@ -1132,7 +1218,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                       <TableFooter>
                           <TableRow className="bg-muted hover:bg-muted/50">
                               <TableCell colSpan={isAdmin ? 5 : 4}>
-                                  <Dialog open={isExpenseDialogOpen} onOpenChange={handleExpenseOpenChange}>
+                                  <Dialog open={isExpenseDialogOpen && filteredExpenses.length > 0} onOpenChange={handleExpenseOpenChange}>
                                       <DialogTrigger asChild>
                                           <Button variant="outline" className="w-full" onClick={() => setIsExpenseDialogOpen(true)}>
                                               <PlusCircle className="mr-2 h-4 w-4" />
@@ -1509,6 +1595,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
 }
 
     
+
 
 
 
