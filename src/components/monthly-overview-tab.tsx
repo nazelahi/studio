@@ -1022,7 +1022,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                 </TableCell>
                             </TableRow>
                             <TableRow className="bg-lime-500 hover:bg-lime-500/90 font-bold">
-                                <TableCell className="text-white sm:text-left text-center" colSpan={isAdmin ? 5 : 4}>Total Rent Collected</TableCell>
+                                <TableCell className="text-white text-center sm:text-left" colSpan={isAdmin ? 5 : 4}>Total Rent Collected</TableCell>
                                 <TableCell className="text-right text-white" colSpan={2}>৳{totalRentCollected.toFixed(2)}</TableCell>
                             </TableRow>
                         </TableFooter>
@@ -1546,6 +1546,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
 }
 
     
+
 
 
 
