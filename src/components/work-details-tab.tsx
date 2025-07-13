@@ -22,6 +22,7 @@ import { saveWorkDetailAction, deleteWorkDetailAction } from "@/app/actions/work
 import { format, parseISO, getYear } from "date-fns"
 import { cn } from "@/lib/utils"
 import { useRouter } from "next/navigation"
+import { useProtection } from "@/context/protection-context"
 
 const formatCurrency = (amount?: number) => {
     if (amount === undefined || amount === null) return '-';
@@ -39,6 +40,7 @@ export function WorkDetailsTab({ year }: { year: number }) {
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [editingWork, setEditingWork] = React.useState<WorkDetail | null>(null);
   const [isPending, startTransition] = React.useTransition();
+  const { withProtection } = useProtection();
 
   const [workCategory, setWorkCategory] = React.useState('');
   const [customWorkCategory, setCustomWorkCategory] = React.useState('');
@@ -81,9 +83,11 @@ export function WorkDetailsTab({ year }: { year: number }) {
     setIsDialogOpen(isOpen);
   };
   
-  const handleEdit = (work: WorkDetail) => {
-    setEditingWork(work);
-    setIsDialogOpen(true);
+  const handleEdit = (work: WorkDetail, e: React.MouseEvent) => {
+    withProtection(() => {
+      setEditingWork(work);
+      setIsDialogOpen(true);
+    }, e);
   };
 
   const handleSave = (event: React.FormEvent<HTMLFormElement>) => {
@@ -107,14 +111,18 @@ export function WorkDetailsTab({ year }: { year: number }) {
     });
   };
 
-  const handleDelete = (formData: FormData) => {
-    startTransition(async () => {
-        const result = await deleteWorkDetailAction(formData);
-        if (result.error) {
-            toast({ title: 'Error deleting work detail', description: result.error, variant: 'destructive' });
-        } else {
-            toast({ title: 'Work Detail Deleted', description: 'The work item has been removed.' });
-        }
+  const handleDelete = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const formData = new FormData(e.currentTarget);
+    withProtection(() => {
+      startTransition(async () => {
+          const result = await deleteWorkDetailAction(formData);
+          if (result.error) {
+              toast({ title: 'Error deleting work detail', description: result.error, variant: 'destructive' });
+          } else {
+              toast({ title: 'Work Detail Deleted', description: 'The work item has been removed.' });
+          }
+      });
     });
   };
   
@@ -267,7 +275,7 @@ export function WorkDetailsTab({ year }: { year: number }) {
                     {isAdmin && (
                       <TableCell>
                          <div className="flex items-center justify-end gap-1">
-                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEdit(work)}>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => handleEdit(work, e)}>
                             <Edit className="h-4 w-4" />
                           </Button>
                           <AlertDialog>
@@ -283,7 +291,7 @@ export function WorkDetailsTab({ year }: { year: number }) {
                               </AlertDialogHeader>
                               <AlertDialogFooter>
                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <form action={handleDelete}>
+                                <form onSubmit={handleDelete}>
                                   <input type="hidden" name="workId" value={work.id} />
                                   <AlertDialogAction type="submit" disabled={isPending}>Delete</AlertDialogAction>
                                 </form>

@@ -5,6 +5,7 @@ import React, { createContext, useContext, useState, ReactNode, useCallback } fr
 import { useAuth } from './auth-context';
 import { LoginDialog } from '@/components/login-dialog';
 import { useToast } from '@/hooks/use-toast';
+import { PasscodeDialog } from '@/components/passcode-dialog';
 
 interface ProtectionContextType {
   withProtection: (action: () => void, event?: React.MouseEvent) => void;
@@ -15,6 +16,8 @@ const ProtectionContext = createContext<ProtectionContextType | undefined>(undef
 export function ProtectionProvider({ children }: { children: ReactNode }) {
     const { isAdmin } = useAuth();
     const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false);
+    const [isPasscodeDialogOpen, setIsPasscodeDialogOpen] = useState(false);
+    const [protectedAction, setProtectedAction] = useState<(() => void) | null>(null);
     const { toast } = useToast();
     
     const withProtection = useCallback((action: () => void, event?: React.MouseEvent) => {
@@ -24,7 +27,8 @@ export function ProtectionProvider({ children }: { children: ReactNode }) {
         }
 
         if (isAdmin) {
-            action();
+            setProtectedAction(() => action);
+            setIsPasscodeDialogOpen(true);
         } else {
             setIsLoginDialogOpen(true);
             toast({
@@ -34,6 +38,13 @@ export function ProtectionProvider({ children }: { children: ReactNode }) {
             })
         }
     }, [isAdmin, toast]);
+    
+    const handlePasscodeSuccess = () => {
+        if (protectedAction) {
+            protectedAction();
+        }
+        setProtectedAction(null);
+    }
 
     const value = { withProtection };
 
@@ -43,6 +54,11 @@ export function ProtectionProvider({ children }: { children: ReactNode }) {
             <LoginDialog 
                 isOpen={isLoginDialogOpen}
                 onOpenChange={setIsLoginDialogOpen}
+            />
+            <PasscodeDialog
+                isOpen={isPasscodeDialogOpen}
+                onOpenChange={setIsPasscodeDialogOpen}
+                onSuccess={handlePasscodeSuccess}
             />
         </ProtectionContext.Provider>
     );

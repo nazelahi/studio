@@ -410,35 +410,52 @@ export default function SettingsPage() {
               )}
 
               {activeTab === 'account' && (
-                <form action={handleSaveCredentials}>
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Admin Credentials</CardTitle>
-                            <CardDescription>Update the email and password for the admin account.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="grid md:grid-cols-2 gap-4">
-                            <input type="hidden" name="userId" value={user?.id || ''} />
-                            <div className="space-y-2">
-                                <Label htmlFor="email">Email</Label>
-                                <Input id="email" name="email" type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} required />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="password">New Password</Label>
-                                <Input id="password" name="password" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Leave blank to keep current" />
-                            </div>
-                             <div className="space-y-2 md:col-span-2">
-                                <Label htmlFor="confirmPassword">Confirm New Password</Label>
-                                <Input id="confirmPassword" name="confirmPassword" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm new password" />
-                            </div>
-                        </CardContent>
-                        <CardFooter>
-                            <Button type="submit" disabled={isCredentialsPending}>
-                               {isCredentialsPending && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
-                               Save Credentials
-                            </Button>
-                        </CardFooter>
-                    </Card>
-                </form>
+                <div className="space-y-6">
+                  <form action={handleSaveCredentials}>
+                      <Card>
+                          <CardHeader>
+                              <CardTitle>Admin Credentials</CardTitle>
+                              <CardDescription>Update the email and password for the admin account.</CardDescription>
+                          </CardHeader>
+                          <CardContent className="grid md:grid-cols-2 gap-4">
+                              <input type="hidden" name="userId" value={user?.id || ''} />
+                              <div className="space-y-2">
+                                  <Label htmlFor="email">Email</Label>
+                                  <Input id="email" name="email" type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)} required />
+                              </div>
+                              <div className="space-y-2">
+                                  <Label htmlFor="password">New Password</Label>
+                                  <Input id="password" name="password" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Leave blank to keep current" />
+                              </div>
+                              <div className="space-y-2 md:col-span-2">
+                                  <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                                  <Input id="confirmPassword" name="confirmPassword" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Confirm new password" />
+                              </div>
+                          </CardContent>
+                          <CardFooter>
+                              <Button type="submit" disabled={isCredentialsPending}>
+                                {isCredentialsPending && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
+                                Save Credentials
+                              </Button>
+                          </CardFooter>
+                      </Card>
+                  </form>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Passcode</CardTitle>
+                      <CardDescription>Set a secret passcode required for edit and delete actions.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                       <div className="space-y-2">
+                          <Label htmlFor="passcode">Secret Passcode</Label>
+                          <Input id="passcode" name="passcode" type="password" placeholder="e.g. 1234" />
+                        </div>
+                    </CardContent>
+                     <CardFooter>
+                      <Button disabled>Save Passcode</Button>
+                    </CardFooter>
+                  </Card>
+                </div>
               )}
 
               {activeTab === 'application' && (

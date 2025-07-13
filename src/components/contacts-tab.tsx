@@ -24,6 +24,7 @@ import { useSettings } from "@/context/settings-context"
 import { format, parseISO } from "date-fns"
 import { Badge } from "./ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
+import { useProtection } from "@/context/protection-context"
 
 export function ContactsTab() {
   const { tenants, addTenant, updateTenant, deleteTenant, loading } = useData();
@@ -36,6 +37,7 @@ export function ContactsTab() {
   const [documentFiles, setDocumentFiles] = React.useState<File[]>([]);
   const [existingDocuments, setExistingDocuments] = React.useState<string[]>([]);
   const [isUploading, setIsUploading] = React.useState(false);
+  const { withProtection } = useProtection();
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const docFileInputRef = React.useRef<HTMLInputElement>(null);
@@ -108,13 +110,13 @@ export function ContactsTab() {
 
     try {
       if (editingTenant) {
-        await updateTenant({ ...editingTenant, ...tenantData }, documentFiles);
+        await updateTenant({ ...editingTenant, ...tenantData }, toast, documentFiles);
         toast({
           title: 'Tenant Updated',
           description: `${tenantData.name}'s information has been successfully updated.`,
         });
       } else {
-        await addTenant(tenantData, documentFiles);
+        await addTenant(tenantData, toast, documentFiles);
         toast({
           title: 'Tenant Added',
           description: `${tenantData.name} has been successfully added.`,
@@ -168,21 +170,20 @@ export function ContactsTab() {
     setIsSheetOpen(true);
   }
 
-  const handleEdit = (tenant: Tenant) => {
-    setEditingTenant(tenant);
-    setPreviewImage(tenant.avatar);
-    setExistingDocuments(tenant.documents || []);
-    setDocumentFiles([]);
-    setOpen(true);
+  const handleEdit = (tenant: Tenant, e: React.MouseEvent) => {
+    withProtection(() => {
+      setEditingTenant(tenant);
+      setPreviewImage(tenant.avatar);
+      setExistingDocuments(tenant.documents || []);
+      setDocumentFiles([]);
+      setOpen(true);
+    }, e);
   };
 
-  const handleDelete = async (tenantId: string) => {
-    await deleteTenant(tenantId);
-    toast({
-        title: 'Tenant Deleted',
-        description: "The tenant's information has been deleted.",
-        variant: 'destructive'
-    });
+  const handleDelete = (tenantId: string, e: React.MouseEvent) => {
+    withProtection(async () => {
+      await deleteTenant(tenantId, toast);
+    }, e);
   }
 
   const handleOpenChange = (isOpen: boolean) => {
@@ -463,8 +464,8 @@ export function ContactsTab() {
                                     </DropdownMenuItem>
                                     {isAdmin && <>
                                       <DropdownMenuSeparator />
-                                      <DropdownMenuItem onClick={() => handleEdit(tenant)}>Edit</DropdownMenuItem>
-                                      <DropdownMenuItem onClick={() => handleDelete(tenant.id)} className="text-destructive">
+                                      <DropdownMenuItem onClick={(e) => handleEdit(tenant, e)}>Edit</DropdownMenuItem>
+                                      <DropdownMenuItem onClick={(e) => handleDelete(tenant.id, e)} className="text-destructive">
                                           Delete
                                       </DropdownMenuItem>
                                     </>}
