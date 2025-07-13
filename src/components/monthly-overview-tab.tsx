@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { DollarSign, Banknote, ArrowUpCircle, ArrowDownCircle, PlusCircle, Trash2, Pencil, CheckCircle, XCircle, AlertCircle, RefreshCw, ChevronDown, Copy, X, FileText, Upload, Building, Landmark, CalendarCheck, Edit, Eye, Image as ImageIcon, Megaphone, Download, Percent } from "lucide-react"
+import { DollarSign, Banknote, ArrowUpCircle, ArrowDownCircle, PlusCircle, Trash2, Pencil, CheckCircle, XCircle, AlertCircle, RefreshCw, ChevronDown, Copy, X, FileText, Upload, Building, Landmark, CalendarCheck, Edit, Eye, Image as ImageIcon, Megaphone, Download, Percent, Receipt } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog"
@@ -28,7 +28,7 @@ import { TenantDetailSheet } from "./tenant-detail-sheet"
 import * as XLSX from 'xlsx';
 import { useAuth } from "@/context/auth-context"
 import { useSettings } from "@/context/settings-context"
-import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { logDepositAction, deleteDepositAction } from "@/app/actions/deposits"
 import { saveNoticeAction, deleteNoticeAction } from "@/app/actions/notices"
 import { supabase } from "@/lib/supabase"
@@ -102,6 +102,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
   const currentMonthIndex = year === new Date().getFullYear() ? new Date().getMonth() : 0;
   const [desktopSelectedMonth, setDesktopSelectedMonth] = React.useState(months[currentMonthIndex]);
   const [isMobile, setIsMobile] = React.useState(false);
+  const router = useRouter();
 
   React.useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
@@ -759,10 +760,10 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                                     </AlertDialogContent>
                                 </AlertDialog>
                             )}
-                            <div className="flex gap-2 w-full">
+                             <div className="flex gap-2 w-full">
                                 <Dialog open={isRentDialogOpen} onOpenChange={handleRentOpenChange}>
                                     <DialogTrigger asChild>
-                                        <Button size="sm" variant="outline" className="w-full">
+                                        <Button size="sm" variant="outline" className="flex-1">
                                             <PlusCircle className="mr-2 h-4 w-4" />
                                             Add New Entry
                                         </Button>
@@ -836,7 +837,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                                         </form>
                                     </DialogContent>
                                 </Dialog>
-                                <Tooltip><TooltipTrigger asChild><Button size="icon" variant="outline" onClick={handleSyncTenants}><RefreshCw className="h-4 w-4" /><span className="sr-only">Sync tenants</span></Button></TooltipTrigger><TooltipContent>Sync</TooltipContent></Tooltip>
+                                <Tooltip><TooltipTrigger asChild><Button size="icon" variant="outline" onClick={handleSyncTenants} className="flex-1 sm:flex-initial"><RefreshCw className="h-4 w-4" /><span className="sr-only">Sync tenants</span></Button></TooltipTrigger><TooltipContent>Sync</TooltipContent></Tooltip>
                             </div>
                             <div className="hidden sm:flex items-center gap-2">
                                 <Tooltip><TooltipTrigger asChild><Button size="icon" variant="outline" onClick={handleDownloadTemplate}><Download className="h-4 w-4" /><span className="sr-only">Download Template</span></Button></TooltipTrigger><TooltipContent>Download Template</TooltipContent></Tooltip>
@@ -904,6 +905,12 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                                 <TableCell className="hidden sm:table-cell">৳{entry.rent.toFixed(2)}</TableCell>
                                 <TableCell>
                                   <div className="flex items-center gap-1">
+                                    {entry.status === 'Paid' && (
+                                       <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => router.push(`/receipt/${entry.id}`)}>
+                                          <Receipt className="h-4 w-4" />
+                                          <span className="sr-only">View Receipt</span>
+                                      </Button>
+                                    )}
                                     <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => handleViewDetails(entry)}>
                                       <FileText className="h-4 w-4" />
                                       <span className="sr-only">View Details</span>
@@ -1000,7 +1007,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                         <div className="flex gap-2 w-full">
                             <Dialog open={isExpenseDialogOpen} onOpenChange={handleExpenseOpenChange}>
                                 <DialogTrigger asChild>
-                                    <Button variant="outline" className="w-full">
+                                    <Button variant="outline" className="w-full flex-1">
                                         <PlusCircle className="mr-2 h-4 w-4" />
                                         Add New Expense
                                     </Button>
@@ -1025,7 +1032,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                                 </DialogContent>
                             </Dialog>
                              <Tooltip>
-                                <TooltipTrigger asChild><Button size="icon" variant="outline" onClick={handleSyncExpenses}><RefreshCw className="h-4 w-4" /><span className="sr-only">Sync expenses</span></Button></TooltipTrigger>
+                                <TooltipTrigger asChild><Button size="icon" variant="outline" onClick={handleSyncExpenses} className="flex-1 sm:flex-initial"><RefreshCw className="h-4 w-4" /><span className="sr-only">Sync expenses</span></Button></TooltipTrigger>
                                 <TooltipContent>Sync from Previous Month</TooltipContent>
                             </Tooltip>
                         </div>
@@ -1424,6 +1431,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
 }
 
     
+
 
 
 

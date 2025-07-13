@@ -45,6 +45,7 @@ interface DataContextType extends AppData {
   getAllData: () => AppData;
   restoreAllData: (backupData: AppData, toast: ToastFn) => void;
   refreshData: () => Promise<void>;
+  getRentEntryById: (id: string) => RentEntry | null;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -600,10 +601,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
             handleError(new Error("Invalid backup data format."), "restoring data", toast);
         }
     };
+    
+    const getRentEntryById = (id: string): RentEntry | null => {
+        return data.rentData.find(entry => entry.id === id) || null;
+    }
 
 
     return (
-        <DataContext.Provider value={{ ...data, addTenant, updateTenant, deleteTenant, addExpense, updateExpense, deleteExpense, deleteMultipleExpenses, addRentEntry, addRentEntriesBatch, updateRentEntry, deleteRentEntry, deleteMultipleRentEntries, syncTenantsForMonth, syncExpensesFromPreviousMonth, updatePropertySettings, loading, getAllData, restoreAllData, refreshData: fetchData }}>
+        <DataContext.Provider value={{ ...data, addTenant, updateTenant, deleteTenant, addExpense, updateExpense, deleteExpense, deleteMultipleExpenses, addRentEntry, addRentEntriesBatch, updateRentEntry, deleteRentEntry, deleteMultipleRentEntries, syncTenantsForMonth, syncExpensesFromPreviousMonth, updatePropertySettings, loading, getAllData, restoreAllData, refreshData: fetchData, getRentEntryById }}>
             {children}
         </DataContext.Provider>
     );
