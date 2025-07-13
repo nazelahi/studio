@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { DollarSign, Banknote, ArrowUpCircle, ArrowDownCircle, PlusCircle, Trash2, Pencil, CheckCircle, XCircle, AlertCircle, RefreshCw, ChevronDown, Copy, X, FileText, Upload, Building, Landmark, CalendarCheck, Edit, Eye, Image as ImageIcon, Megaphone, Download } from "lucide-react"
+import { DollarSign, Banknote, ArrowUpCircle, ArrowDownCircle, PlusCircle, Trash2, Pencil, CheckCircle, XCircle, AlertCircle, RefreshCw, ChevronDown, Copy, X, FileText, Upload, Building, Landmark, CalendarCheck, Edit, Eye, Image as ImageIcon, Megaphone, Download, Percent } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog"
@@ -35,6 +35,7 @@ import { supabase } from "@/lib/supabase"
 import { cn } from "@/lib/utils"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip"
 import { useProtection } from "@/context/protection-context"
+import { Separator } from "./ui/separator"
 
 
 type HistoricalTenant = {
@@ -1018,16 +1019,19 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                             </TableRow>
                           )}
                         </TableBody>
-                        <TableFooter>
-                           <TableRow style={{ backgroundColor: 'hsl(var(--table-footer-background))', color: 'hsl(var(--table-footer-foreground))' }} className="font-bold hover:bg-[hsl(var(--table-footer-background)/0.9)]">
-                             <TableCell colSpan={isAdmin ? 7 : 6} className="text-inherit p-2">
-                               <div className="flex flex-col items-center justify-between sm:flex-row px-2">
-                                 <span className="text-base text-inherit font-bold">Total Rent Collected</span>
-                                 <span className="text-base text-inherit font-bold">৳{totalRentCollected.toFixed(2)}</span>
-                               </div>
-                             </TableCell>
-                           </TableRow>
-                         </TableFooter>
+                        {filteredTenantsForMonth.length > 0 && (
+                          <TableFooter>
+                            <TableRow style={{ backgroundColor: 'hsl(var(--table-footer-background))', color: 'hsl(var(--table-footer-foreground))' }} className="font-bold hover:bg-[hsl(var(--table-footer-background)/0.9)]">
+                                <TableCell colSpan={isAdmin ? 7 : 6} className="text-inherit p-2">
+                                  <div className="flex flex-col sm:flex-row items-center justify-between px-2">
+                                    <div className="sm:hidden text-center text-inherit font-bold">Total Rent Collected</div>
+                                    <div className="hidden sm:block text-left text-inherit font-bold">Total Rent Collected</div>
+                                    <div className="text-inherit font-bold">৳{totalRentCollected.toFixed(2)}</div>
+                                  </div>
+                                </TableCell>
+                            </TableRow>
+                          </TableFooter>
+                        )}
                       </Table>
                   </CardContent>
                 </Card>
@@ -1065,6 +1069,80 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                             </AlertDialogContent>
                           </AlertDialog>
                         )}
+                        <Dialog open={isExpenseDialogOpen} onOpenChange={handleExpenseOpenChange}>
+                          <DialogTrigger asChild>
+                              <Button variant="outline" className="w-full">
+                                  <PlusCircle className="mr-2 h-4 w-4" />
+                                  Add New Expense
+                              </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                              <DialogHeader>
+                                  <DialogTitle>{editingExpense ? 'Edit Expense' : 'Add New Expense'}</DialogTitle>
+                                  <DialogDescription>
+                                      Fill in the form below to {editingExpense ? 'update the' : 'add a new'} expense.
+                                  </DialogDescription>
+                              </DialogHeader>
+                              <form onSubmit={handleSaveExpense} className="grid gap-4 py-4">
+                                  <div className="space-y-2">
+                                      <Label htmlFor="date">Date</Label>
+                                      <Input id="date" name="date" type="date" defaultValue={editingExpense?.date || new Date().toISOString().split('T')[0]} required />
+                                  </div>
+                                  <div className="space-y-2">
+                                      <Label htmlFor="category">Category</Label>
+                                      <Select value={expenseCategory} onValueChange={setExpenseCategory}>
+                                          <SelectTrigger>
+                                              <SelectValue placeholder="Select a category" />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                              {expenseCategories.map(cat => (
+                                                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                                              ))}
+                                          </SelectContent>
+                                      </Select>
+                                  </div>
+                                  {expenseCategory === 'Other' && (
+                                      <div className="space-y-2">
+                                          <Label htmlFor="customCategory">Custom Category</Label>
+                                          <Input
+                                              id="customCategory"
+                                              name="customCategory"
+                                              value={customCategory}
+                                              onChange={(e) => setCustomCategory(e.target.value)}
+                                              placeholder="Enter custom category"
+                                              required
+                                          />
+                                      </div>
+                                  )}
+                                  <div className="space-y-2">
+                                      <Label htmlFor="amount">Amount</Label>
+                                      <Input id="amount" name="amount" type="number" step="0.01" defaultValue={editingExpense?.amount} placeholder="0.00" required />
+                                  </div>
+                                  <div className="space-y-2">
+                                      <Label htmlFor="status">Status</Label>
+                                      <Select name="status" defaultValue={editingExpense?.status || 'Due'}>
+                                          <SelectTrigger>
+                                              <SelectValue placeholder="Select status" />
+                                          </SelectTrigger>
+                                          <SelectContent>
+                                              <SelectItem value="Due">Due</SelectItem>
+                                              <SelectItem value="Paid">Paid</SelectItem>
+                                          </SelectContent>
+                                      </Select>
+                                  </div>
+                                  <div className="space-y-2">
+                                      <Label htmlFor="description">Description</Label>
+                                      <Textarea id="description" name="description" defaultValue={editingExpense?.description} placeholder="Describe the expense..." />
+                                  </div>
+                                  <DialogFooter>
+                                      <DialogClose asChild>
+                                          <Button variant="outline">Cancel</Button>
+                                      </DialogClose>
+                                      <Button type="submit">Save Expense</Button>
+                                  </DialogFooter>
+                              </form>
+                          </DialogContent>
+                        </Dialog>
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <Button size="icon" variant="outline" onClick={handleSyncExpenses}>
@@ -1156,96 +1234,6 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                               </TableCell>
                             </TableRow>
                           ))}
-                      </TableBody>
-                      <TableFooter>
-                          <TableRow className="bg-muted hover:bg-muted/50">
-                              <TableCell colSpan={isAdmin ? 5 : 4} className="p-2">
-                                  <Dialog open={isExpenseDialogOpen} onOpenChange={handleExpenseOpenChange}>
-                                      <DialogTrigger asChild>
-                                          <Button variant="outline" className="w-full">
-                                              <PlusCircle className="mr-2 h-4 w-4" />
-                                              Add New Expense
-                                          </Button>
-                                      </DialogTrigger>
-                                      <DialogContent>
-                                          <DialogHeader>
-                                              <DialogTitle>{editingExpense ? 'Edit Expense' : 'Add New Expense'}</DialogTitle>
-                                              <DialogDescription>
-                                                  Fill in the form below to {editingExpense ? 'update the' : 'add a new'} expense.
-                                              </DialogDescription>
-                                          </DialogHeader>
-                                          <form onSubmit={handleSaveExpense} className="grid gap-4 py-4">
-                                              <div className="space-y-2">
-                                                  <Label htmlFor="date">Date</Label>
-                                                  <Input id="date" name="date" type="date" defaultValue={editingExpense?.date || new Date().toISOString().split('T')[0]} required />
-                                              </div>
-                                              <div className="space-y-2">
-                                                  <Label htmlFor="category">Category</Label>
-                                                  <Select value={expenseCategory} onValueChange={setExpenseCategory}>
-                                                      <SelectTrigger>
-                                                          <SelectValue placeholder="Select a category" />
-                                                      </SelectTrigger>
-                                                      <SelectContent>
-                                                          {expenseCategories.map(cat => (
-                                                              <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                                                          ))}
-                                                      </SelectContent>
-                                                  </Select>
-                                              </div>
-                                              {expenseCategory === 'Other' && (
-                                                  <div className="space-y-2">
-                                                      <Label htmlFor="customCategory">Custom Category</Label>
-                                                      <Input
-                                                          id="customCategory"
-                                                          name="customCategory"
-                                                          value={customCategory}
-                                                          onChange={(e) => setCustomCategory(e.target.value)}
-                                                          placeholder="Enter custom category"
-                                                          required
-                                                      />
-                                                  </div>
-                                              )}
-                                              <div className="space-y-2">
-                                                  <Label htmlFor="amount">Amount</Label>
-                                                  <Input id="amount" name="amount" type="number" step="0.01" defaultValue={editingExpense?.amount} placeholder="0.00" required />
-                                              </div>
-                                              <div className="space-y-2">
-                                                  <Label htmlFor="status">Status</Label>
-                                                  <Select name="status" defaultValue={editingExpense?.status || 'Due'}>
-                                                      <SelectTrigger>
-                                                          <SelectValue placeholder="Select status" />
-                                                      </SelectTrigger>
-                                                      <SelectContent>
-                                                          <SelectItem value="Due">Due</SelectItem>
-                                                          <SelectItem value="Paid">Paid</SelectItem>
-                                                      </SelectContent>
-                                                  </Select>
-                                              </div>
-                                              <div className="space-y-2">
-                                                  <Label htmlFor="description">Description</Label>
-                                                  <Textarea id="description" name="description" defaultValue={editingExpense?.description} placeholder="Describe the expense..." />
-                                              </div>
-                                              <DialogFooter>
-                                                  <DialogClose asChild>
-                                                      <Button variant="outline">Cancel</Button>
-                                                  </DialogClose>
-                                                  <Button type="submit">Save Expense</Button>
-                                              </DialogFooter>
-                                          </form>
-                                      </DialogContent>
-                                  </Dialog>
-                              </TableCell>
-                          </TableRow>
-                          {filteredExpenses.length > 0 && (
-                            <TableRow style={{ backgroundColor: 'hsl(var(--table-footer-background))', color: 'hsl(var(--table-footer-foreground))' }} className="font-bold hover:bg-[hsl(var(--table-footer-background)/0.9)]">
-                                <TableCell colSpan={isAdmin ? 5 : 4} className="p-2 text-inherit">
-                                    <div className="flex flex-col sm:flex-row items-center justify-between px-2">
-                                        <div className="text-base font-bold text-inherit">Total Expenses</div>
-                                        <div className="text-base font-bold text-inherit">৳{totalExpenses.toFixed(2)}</div>
-                                    </div>
-                                </TableCell>
-                            </TableRow>
-                          )}
                            {filteredExpenses.length === 0 && (
                             <TableRow>
                                 <TableCell colSpan={isAdmin ? 5 : 4} className="h-24 text-center">
@@ -1255,7 +1243,19 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                                 </TableCell>
                             </TableRow>
                             )}
-                      </TableFooter>
+                      </TableBody>
+                      {filteredExpenses.length > 0 && (
+                        <TableFooter>
+                          <TableRow style={{ backgroundColor: 'hsl(var(--table-footer-background))', color: 'hsl(var(--table-footer-foreground))' }} className="font-bold hover:bg-[hsl(var(--table-footer-background)/0.9)]">
+                              <TableCell colSpan={isAdmin ? 5 : 4} className="p-2 text-inherit">
+                                  <div className="flex flex-col sm:flex-row items-center justify-between px-2">
+                                      <div className="text-base font-bold text-inherit">Total Expenses</div>
+                                      <div className="text-base font-bold text-inherit">৳{totalExpenses.toFixed(2)}</div>
+                                  </div>
+                              </TableCell>
+                          </TableRow>
+                        </TableFooter>
+                      )}
                     </Table>
                   </CardContent>
                 </Card>
@@ -1341,55 +1341,53 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                  </Card>
 
 
-                <div className="text-center">
-                    <h3 className="text-2xl font-bold tracking-tight">{settings.page_overview.financial_overview_title} - {month} {year}</h3>
-                    <p className="text-muted-foreground">{settings.page_overview.financial_overview_description}</p>
-                </div>
-                <div className="grid gap-6 md:grid-cols-3">
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Total Rent Expected</CardTitle>
-                            <Banknote className="h-5 w-5 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-3xl font-bold" style={{ color: 'hsl(var(--chart-1))' }}>
-                                ৳{totalRentExpected.toFixed(2)}
+                <Card>
+                    <CardHeader>
+                        <CardTitle>{settings.page_overview.financial_overview_title} - {month} {year}</CardTitle>
+                        <CardDescription>{settings.page_overview.financial_overview_description}</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+                            <div className="flex items-center gap-4 rounded-lg border p-4">
+                                <Banknote className="h-8 w-8 text-muted-foreground" />
+                                <div>
+                                    <p className="text-sm text-muted-foreground">Total Rent Expected</p>
+                                    <p className="text-2xl font-bold" style={{ color: 'hsl(var(--chart-1))' }}>৳{totalRentExpected.toFixed(2)}</p>
+                                </div>
                             </div>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
-                            <ArrowDownCircle className="h-5 w-5 text-destructive" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-3xl font-bold text-destructive">
-                                ৳{totalExpenses.toFixed(2)}
+                            <div className="flex items-center gap-4 rounded-lg border p-4">
+                                <ArrowDownCircle className="h-8 w-8 text-destructive" />
+                                <div>
+                                    <p className="text-sm text-muted-foreground">Total Expenses</p>
+                                    <p className="text-2xl font-bold text-destructive">৳{totalExpenses.toFixed(2)}</p>
+                                </div>
                             </div>
-                        </CardContent>
-                    </Card>
-                    <Card>
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium">Net Result</CardTitle>
-                            <DollarSign className="h-5 w-5 text-muted-foreground" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className={`text-3xl font-bold ${netResult >= 0 ? 'text-success' : 'text-destructive'}`}>
-                                {netResult >= 0 ? '+' : ''}৳{netResult.toFixed(2)}
+                            <div className="flex items-center gap-4 rounded-lg border p-4">
+                                <DollarSign className="h-8 w-8 text-muted-foreground" />
+                                <div>
+                                    <p className="text-sm text-muted-foreground">Net Result</p>
+                                    <p className={`text-2xl font-bold ${netResult >= 0 ? 'text-success' : 'text-destructive'}`}>
+                                        {netResult >= 0 ? '+' : ''}৳{netResult.toFixed(2)}
+                                    </p>
+                                </div>
                             </div>
-                        </CardContent>
-                    </Card>
-                </div>
-                <Card className="bg-secondary">
-                    <CardContent className="p-4 flex flex-col sm:flex-row justify-around items-center text-center sm:text-left">
-                        <div className="p-2">
-                            <p className="text-sm text-secondary-foreground font-semibold">Collection Rate</p>
-                            <p className="text-2xl font-bold text-primary">{collectionRate.toFixed(1)}%</p>
                         </div>
-                        <div className="border-t sm:border-t-0 sm:border-l border-border w-full sm:w-auto h-auto sm:h-12 my-2 sm:my-0"></div>
-                        <div className="p-2">
-                            <p className="text-sm text-secondary-foreground font-semibold">Available for Deposit</p>
-                            <p className="text-2xl font-bold text-success">৳{amountForDeposit.toFixed(2)}</p>
+                        <Separator />
+                        <div className="grid gap-4 sm:grid-cols-2">
+                            <div className="flex items-center gap-4">
+                                <Percent className="h-6 w-6 text-muted-foreground" />
+                                <div>
+                                    <p className="text-sm text-muted-foreground">Collection Rate</p>
+                                    <p className="text-xl font-bold text-primary">{collectionRate.toFixed(1)}%</p>
+                                </div>
+                            </div>
+                             <div className="flex items-center gap-4">
+                                <ArrowUpCircle className="h-6 w-6 text-success" />
+                                <div>
+                                    <p className="text-sm text-muted-foreground">Available for Deposit</p>
+                                    <p className="text-xl font-bold text-success">৳{amountForDeposit.toFixed(2)}</p>
+                                </div>
+                            </div>
                         </div>
                     </CardContent>
                 </Card>
@@ -1549,3 +1547,4 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
 }
 
     
+
