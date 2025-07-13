@@ -270,7 +270,10 @@ export function ZakatTab() {
         {transactions.length > 0 && (
             <UiTableFooter>
                 <TableRow className="bg-lime-500 hover:bg-lime-500/90 font-bold">
-                    <TableCell colSpan={3} className="text-white text-right sm:text-left">Total</TableCell>
+                    <TableCell colSpan={3} className="text-white">
+                        <div className="sm:hidden text-center">Total</div>
+                        <div className="hidden sm:block text-left">Total</div>
+                    </TableCell>
                     <TableCell colSpan={2} className="text-right text-white">
                         {formatCurrency(totalAmount)}
                     </TableCell>

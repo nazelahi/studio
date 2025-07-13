@@ -277,10 +277,9 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
     }
   }
 
-  const handleDeleteRentEntry = (entryId: string) => {
-    withProtection(async () => {
-      await deleteRentEntry(entryId, toast);
-    });
+  const handleDeleteRentEntry = () => {
+    if (!editingRentEntry) return;
+    deleteRentEntry(editingRentEntry.id, toast);
   };
   
   const handleSaveRentEntry = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -330,10 +329,8 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
     };
     
   const handleMassDeleteRentEntries = () => {
-    withProtection(async () => {
-      await deleteMultipleRentEntries(selectedRentEntryIds, toast);
-      setSelectedRentEntryIds([]);
-    });
+    deleteMultipleRentEntries(selectedRentEntryIds, toast);
+    setSelectedRentEntryIds([]);
   }
 
   const handleViewDetails = (entry: RentEntry) => {
@@ -397,9 +394,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
   };
   
   const handleDeleteExpense = (expenseId: string) => {
-    withProtection(async () => {
-      await deleteExpense(expenseId, toast);
-    });
+    deleteExpense(expenseId, toast);
   };
   
   const handleExpenseOpenChange = (isOpen: boolean) => {
@@ -412,10 +407,8 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
   };
   
   const handleMassDeleteExpenses = () => {
-    withProtection(async () => {
-        await deleteMultipleExpenses(selectedExpenseIds, toast);
-        setSelectedExpenseIds([]);
-    });
+    deleteMultipleExpenses(selectedExpenseIds, toast);
+    setSelectedExpenseIds([]);
   }
 
   // Import Handler
@@ -876,7 +869,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                               </Button>
                                             </AlertDialogTrigger>
                                             <AlertDialogContent>
-                                                <form onSubmit={(e) => { e.preventDefault(); handleDeleteRentEntry(entry.id); }}>
+                                                <form onSubmit={(e) => { e.preventDefault(); deleteRentEntry(entry.id, toast); }}>
                                                   <AlertDialogHeader>
                                                     <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                                                     <AlertDialogDescription>
@@ -1030,8 +1023,11 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                 </TableCell>
                             </TableRow>
                             <TableRow className="bg-lime-500 hover:bg-lime-500/90 font-bold">
-                                <TableCell colSpan={isAdmin ? 4 : 3} className="text-white text-right sm:text-left">Total Rent Collected</TableCell>
-                                <TableCell colSpan={isAdmin ? 3 : 3} className="text-right text-white">৳{totalRentCollected.toFixed(2)}</TableCell>
+                                <TableCell colSpan={isAdmin ? 4 : 3} className="text-white">
+                                    <div className="sm:hidden text-center">Total Rent Collected</div>
+                                    <div className="hidden sm:block text-left">Total Rent Collected</div>
+                                </TableCell>
+                                <TableCell colSpan={3} className="text-right text-white">৳{totalRentCollected.toFixed(2)}</TableCell>
                             </TableRow>
                         </TableFooter>
                       </Table>
@@ -1244,7 +1240,10 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                           </TableRow>
                           {filteredExpenses.length > 0 && (
                               <TableRow className="bg-lime-500 hover:bg-lime-500/90 font-bold">
-                                  <TableCell colSpan={isAdmin ? 2 : 1} className="text-white text-right sm:text-left">Total Expenses</TableCell>
+                                  <TableCell colSpan={isAdmin ? 2 : 1} className="text-white">
+                                    <div className="sm:hidden text-center">Total Expenses</div>
+                                    <div className="hidden sm:block text-left">Total Expenses</div>
+                                  </TableCell>
                                   <TableCell colSpan={2} className="text-right text-white">৳{totalExpenses.toFixed(2)}</TableCell>
                                   {isAdmin && <TableCell />}
                               </TableRow>
@@ -1552,6 +1551,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
 }
 
     
+
 
 
 

@@ -315,8 +315,11 @@ export function WorkDetailsTab({ year }: { year: number }) {
             {filteredWorkDetails.length > 0 && (
                 <TableFooter>
                     <TableRow className="bg-lime-500 hover:bg-lime-500/90 font-bold">
-                        <TableCell colSpan={isAdmin ? 4 : 3} className="text-white text-right sm:text-left">Total for {year}</TableCell>
-                        <TableCell colSpan={isAdmin ? 2 : 2} className="text-right text-white">{formatCurrency(yearlyTotal)}</TableCell>
+                        <TableCell colSpan={isAdmin ? 4 : 3} className="text-white">
+                            <div className="sm:hidden text-center">Total for {year}</div>
+                            <div className="hidden sm:block text-left">Total for {year}</div>
+                        </TableCell>
+                        <TableCell colSpan={2} className="text-right text-white">{formatCurrency(yearlyTotal)}</TableCell>
                     </TableRow>
                 </TableFooter>
             )}

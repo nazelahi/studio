@@ -124,7 +124,10 @@ export default function WorkReportPage() {
                                 {workDetails.length > 0 && (
                                     <TableFooter>
                                         <TableRow className="bg-lime-500 hover:bg-lime-500/90 font-bold">
-                                            <TableCell colSpan={3} className="text-white text-right sm:text-left">Grand Total</TableCell>
+                                            <TableCell colSpan={3} className="text-white">
+                                                <div className="sm:hidden text-center">Grand Total</div>
+                                                <div className="hidden sm:block text-left">Grand Total</div>
+                                            </TableCell>
                                             <TableCell colSpan={2} className="text-right text-white">{formatCurrency(grandTotal)}</TableCell>
                                         </TableRow>
                                     </TableFooter>
