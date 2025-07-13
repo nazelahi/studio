@@ -110,6 +110,12 @@ export async function updatePropertySettingsAction(formData: FormData) {
         contact_phone: formData.get('contact_phone') as string,
         contact_email: formData.get('contact_email') as string,
         contact_address: formData.get('contact_address') as string,
+        theme_primary: formData.get('theme_primary') as string,
+        theme_table_header_background: formData.get('theme_table_header_background') as string,
+        theme_table_header_foreground: formData.get('theme_table_header_foreground') as string,
+        theme_table_footer_background: formData.get('theme_table_footer_background') as string,
+        theme_mobile_nav_background: formData.get('theme_mobile_nav_background') as string,
+        theme_mobile_nav_foreground: formData.get('theme_mobile_nav_foreground') as string,
     }
     
     const { error } = await supabaseAdmin

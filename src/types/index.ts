@@ -63,6 +63,12 @@ export type PropertySettings = {
   contact_phone?: string;
   contact_email?: string;
   contact_address?: string;
+  theme_primary?: string;
+  theme_table_header_background?: string;
+  theme_table_header_foreground?: string;
+  theme_table_footer_background?: string;
+  theme_mobile_nav_background?: string;
+  theme_mobile_nav_foreground?: string;
 };
 
 export type ZakatBankDetail = {

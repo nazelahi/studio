@@ -165,6 +165,7 @@ const deepMerge = (target: any, source: any) => {
 }
 
 const hexToHsl = (hex: string): string => {
+    if (!hex || typeof hex !== 'string') return '0 0% 0%';
     hex = hex.replace(/^#/, '');
     const r = parseInt(hex.substring(0, 2), 16) / 255;
     const g = parseInt(hex.substring(2, 4), 16) / 255;
@@ -224,6 +225,14 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
                 combinedSettings.contactPhone = propertySettings.contact_phone || defaultSettings.contactPhone;
                 combinedSettings.contactEmail = propertySettings.contact_email || defaultSettings.contactEmail;
                 combinedSettings.contactAddress = propertySettings.contact_address || defaultSettings.contactAddress;
+
+                // Load theme from DB
+                combinedSettings.theme.colors.primary = propertySettings.theme_primary || defaultSettings.theme.colors.primary;
+                combinedSettings.theme.colors.table_header_background = propertySettings.theme_table_header_background || defaultSettings.theme.colors.table_header_background;
+                combinedSettings.theme.colors.table_header_foreground = propertySettings.theme_table_header_foreground || defaultSettings.theme.colors.table_header_foreground;
+                combinedSettings.theme.colors.table_footer_background = propertySettings.theme_table_footer_background || defaultSettings.theme.colors.table_footer_background;
+                combinedSettings.theme.colors.mobile_nav_background = propertySettings.theme_mobile_nav_background || defaultSettings.theme.colors.mobile_nav_background;
+                combinedSettings.theme.colors.mobile_nav_foreground = propertySettings.theme_mobile_nav_foreground || defaultSettings.theme.colors.mobile_nav_foreground;
             }
             
             combinedSettings.zakatBankDetails = zakatBankDetails || [];
@@ -239,6 +248,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         const { 
             houseName, houseAddress, bankName, bankAccountNumber, bankLogoUrl, ownerName, ownerPhotoUrl, 
             zakatBankDetails, passcode, aboutUs, contactPhone, contactEmail, contactAddress,
+            theme, // Exclude theme from local storage save
             ...localSettingsToSave 
         } = newSettings;
         try {

@@ -447,6 +447,49 @@ export default function SettingsPage() {
                             </div>
                         </CardContent>
                     </Card>
+                    
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Theme Colors</CardTitle>
+                        <CardDescription>Customize the look and feel of the application.</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                          <div className="space-y-4">
+                              <Label className="font-medium">Theme Colors</Label>
+                              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                                  <div className="space-y-2">
+                                      <Label htmlFor="theme_primary">Primary</Label>
+                                      <Input id="theme_primary" name="theme_primary" type="color" defaultValue={settings.theme.colors.primary} className="p-1 h-10"/>
+                                  </div>
+                                  <div className="space-y-2">
+                                      <Label htmlFor="theme_table_header_background">Table Header</Label>
+                                      <Input id="theme_table_header_background" name="theme_table_header_background" type="color" defaultValue={settings.theme.colors.table_header_background} className="p-1 h-10"/>
+                                  </div>
+                                  <div className="space-y-2">
+                                      <Label htmlFor="theme_table_header_foreground">Table Header Text</Label>
+                                      <Input id="theme_table_header_foreground" name="theme_table_header_foreground" type="color" defaultValue={settings.theme.colors.table_header_foreground} className="p-1 h-10"/>
+                                  </div>
+                                  <div className="space-y-2">
+                                      <Label htmlFor="theme_table_footer_background">Table Footer</Label>
+                                      <Input id="theme_table_footer_background" name="theme_table_footer_background" type="color" defaultValue={settings.theme.colors.table_footer_background} className="p-1 h-10"/>
+                                  </div>
+                              </div>
+                          </div>
+                          <div className="space-y-4 mt-6">
+                              <Label className="font-medium">Mobile Navigation Colors</Label>
+                              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                                   <div className="space-y-2">
+                                      <Label htmlFor="theme_mobile_nav_background">Background</Label>
+                                      <Input id="theme_mobile_nav_background" name="theme_mobile_nav_background" type="color" defaultValue={settings.theme.colors.mobile_nav_background} className="p-1 h-10"/>
+                                  </div>
+                                   <div className="space-y-2">
+                                      <Label htmlFor="theme_mobile_nav_foreground">Text/Icon</Label>
+                                      <Input id="theme_mobile_nav_foreground" name="theme_mobile_nav_foreground" type="color" defaultValue={settings.theme.colors.mobile_nav_foreground} className="p-1 h-10"/>
+                                  </div>
+                              </div>
+                          </div>
+                      </CardContent>
+                    </Card>
 
                     <div className="flex justify-start">
                       <Button type="submit" disabled={isPending}>
@@ -528,43 +571,9 @@ export default function SettingsPage() {
                               <Input id="footerName" name="footerName" defaultValue={settings.footerName} onChange={handleInputChange} />
                           </div>
                       </div>
-                      <div className="space-y-4">
-                          <Label className="font-medium">Theme Colors</Label>
-                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                              <div className="space-y-2">
-                                  <Label htmlFor="theme.colors.primary">Primary</Label>
-                                  <Input id="theme.colors.primary" name="theme.colors.primary" type="color" defaultValue={settings.theme.colors.primary} onChange={handleInputChange} className="p-1 h-10"/>
-                              </div>
-                              <div className="space-y-2">
-                                  <Label htmlFor="theme.colors.table_header_background">Table Header</Label>
-                                  <Input id="theme.colors.table_header_background" name="theme.colors.table_header_background" type="color" defaultValue={settings.theme.colors.table_header_background} onChange={handleInputChange} className="p-1 h-10"/>
-                              </div>
-                              <div className="space-y-2">
-                                  <Label htmlFor="theme.colors.table_header_foreground">Table Header Text</Label>
-                                  <Input id="theme.colors.table_header_foreground" name="theme.colors.table_header_foreground" type="color" defaultValue={settings.theme.colors.table_header_foreground} onChange={handleInputChange} className="p-1 h-10"/>
-                              </div>
-                              <div className="space-y-2">
-                                  <Label htmlFor="theme.colors.table_footer_background">Table Footer</Label>
-                                  <Input id="theme.colors.table_footer_background" name="theme.colors.table_footer_background" type="color" defaultValue={settings.theme.colors.table_footer_background} onChange={handleInputChange} className="p-1 h-10"/>
-                              </div>
-                          </div>
-                      </div>
-                      <div className="space-y-4">
-                          <Label className="font-medium">Mobile Navigation Colors</Label>
-                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                               <div className="space-y-2">
-                                  <Label htmlFor="theme.colors.mobile_nav_background">Background</Label>
-                                  <Input id="theme.colors.mobile_nav_background" name="theme.colors.mobile_nav_background" type="color" defaultValue={settings.theme.colors.mobile_nav_background} onChange={handleInputChange} className="p-1 h-10"/>
-                              </div>
-                               <div className="space-y-2">
-                                  <Label htmlFor="theme.colors.mobile_nav_foreground">Text/Icon</Label>
-                                  <Input id="theme.colors.mobile_nav_foreground" name="theme.colors.mobile_nav_foreground" type="color" defaultValue={settings.theme.colors.mobile_nav_foreground} onChange={handleInputChange} className="p-1 h-10"/>
-                              </div>
-                          </div>
-                      </div>
                   </CardContent>
                   <CardFooter>
-                      <Button onClick={handleSaveAppSettings}>Save</Button>
+                      <Button onClick={handleSaveAppSettings}>Save Local Settings</Button>
                   </CardFooter>
                 </Card>
               )}
@@ -586,7 +595,7 @@ export default function SettingsPage() {
                         </div>
                     </CardContent>
                     <CardFooter>
-                        <Button onClick={handleSaveAppSettings}>Save</Button>
+                        <Button onClick={handleSaveAppSettings}>Save Local Settings</Button>
                     </CardFooter>
                 </Card>
               )}
