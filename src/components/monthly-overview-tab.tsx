@@ -34,6 +34,7 @@ import { saveNoticeAction, deleteNoticeAction } from "@/app/actions/notices"
 import { supabase } from "@/lib/supabase"
 import { cn } from "@/lib/utils"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip"
+import { useProtection } from "@/context/protection-context"
 
 
 type HistoricalTenant = {
@@ -96,6 +97,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
   const { isAdmin } = useAuth();
   const { settings } = useSettings();
   const { toast } = useToast();
+  const { withProtection } = useProtection();
 
   const { tenants, expenses, rentData, deposits, notices, addRentEntry, addRentEntriesBatch, updateRentEntry, deleteRentEntry, addExpense, updateExpense, deleteExpense, syncTenantsForMonth, syncExpensesFromPreviousMonth, loading, deleteMultipleRentEntries, deleteMultipleExpenses, refreshData } = useData();
 
@@ -245,10 +247,12 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
     setIsRentDialogOpen(isOpen);
   };
   
-  const handleEditRentEntry = (entry: RentEntry) => {
-    setEditingRentEntry(entry);
-    setSelectedHistoricalTenant(null);
-    setIsRentDialogOpen(true);
+  const handleEditRentEntry = (entry: RentEntry, e: React.MouseEvent) => {
+    withProtection(() => {
+        setEditingRentEntry(entry);
+        setSelectedHistoricalTenant(null);
+        setIsRentDialogOpen(true);
+    }, e);
   };
   
   const handleSelectHistoricalTenant = (tenant: HistoricalTenant) => {
@@ -273,8 +277,10 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
     }
   }
 
-  const handleDeleteRentEntry = async (entryId: string) => {
-    await deleteRentEntry(entryId, toast);
+  const handleDeleteRentEntry = (entryId: string) => {
+    withProtection(async () => {
+      await deleteRentEntry(entryId, toast);
+    });
   };
   
   const handleSaveRentEntry = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -323,10 +329,11 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
         }
     };
     
-  const handleMassDeleteRentEntries = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    await deleteMultipleRentEntries(selectedRentEntryIds, toast);
-    setSelectedRentEntryIds([]);
+  const handleMassDeleteRentEntries = () => {
+    withProtection(async () => {
+      await deleteMultipleRentEntries(selectedRentEntryIds, toast);
+      setSelectedRentEntryIds([]);
+    });
   }
 
   const handleViewDetails = (entry: RentEntry) => {
@@ -374,21 +381,25 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
     setCustomCategory('');
   };
   
-  const handleEditExpense = (expense: Expense) => {
-    setEditingExpense(expense);
-    const categoryIsPredefined = expenseCategories.includes(expense.category);
-    if (categoryIsPredefined) {
-        setExpenseCategory(expense.category);
-        setCustomCategory('');
-    } else {
-        setExpenseCategory('Other');
-        setCustomCategory(expense.category);
-    }
-    setIsExpenseDialogOpen(true);
+  const handleEditExpense = (expense: Expense, e: React.MouseEvent) => {
+    withProtection(() => {
+        setEditingExpense(expense);
+        const categoryIsPredefined = expenseCategories.includes(expense.category);
+        if (categoryIsPredefined) {
+            setExpenseCategory(expense.category);
+            setCustomCategory('');
+        } else {
+            setExpenseCategory('Other');
+            setCustomCategory(expense.category);
+        }
+        setIsExpenseDialogOpen(true);
+    }, e);
   };
   
-  const handleDeleteExpense = async (expenseId: string) => {
-    await deleteExpense(expenseId, toast);
+  const handleDeleteExpense = (expenseId: string) => {
+    withProtection(async () => {
+      await deleteExpense(expenseId, toast);
+    });
   };
   
   const handleExpenseOpenChange = (isOpen: boolean) => {
@@ -400,10 +411,11 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
     setIsExpenseDialogOpen(isOpen);
   };
   
-  const handleMassDeleteExpenses = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    await deleteMultipleExpenses(selectedExpenseIds, toast);
-    setSelectedExpenseIds([]);
+  const handleMassDeleteExpenses = () => {
+    withProtection(async () => {
+        await deleteMultipleExpenses(selectedExpenseIds, toast);
+        setSelectedExpenseIds([]);
+    });
   }
 
   // Import Handler
@@ -732,13 +744,13 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                         {selectedRentEntryIds.length > 0 && (
                            <AlertDialog>
                             <AlertDialogTrigger asChild>
-                              <Button size="sm" variant="destructive" className="gap-2 w-full sm:w-auto">
+                              <Button size="sm" variant="destructive" className="gap-2 w-full sm:w-auto" onClick={(e) => { withProtection(() => {}, e)}}>
                                 <Trash2 className="h-4 w-4" />
                                 Delete ({selectedRentEntryIds.length})
                               </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
-                                <form onSubmit={handleMassDeleteRentEntries}>
+                                <form onSubmit={(e) => { e.preventDefault(); handleMassDeleteRentEntries(); }}>
                                   <AlertDialogHeader>
                                     <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                                     <AlertDialogDescription>
@@ -852,13 +864,13 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                       <span className="sr-only">View Details</span>
                                     </Button>
                                     {isAdmin && <>
-                                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => handleEditRentEntry(entry)}>
+                                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={(e) => handleEditRentEntry(entry, e)}>
                                           <Pencil className="h-4 w-4" />
                                           <span className="sr-only">Edit</span>
                                         </Button>
                                          <AlertDialog>
                                             <AlertDialogTrigger asChild>
-                                              <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive">
+                                              <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive" onClick={(e) => { withProtection(() => {}, e); e.stopPropagation(); }}>
                                                 <Trash2 className="h-4 w-4" />
                                                 <span className="sr-only">Delete</span>
                                               </Button>
@@ -1038,13 +1050,13 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                         {selectedExpenseIds.length > 0 && (
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
-                              <Button size="sm" variant="destructive" className="gap-2 w-full sm:w-auto">
+                              <Button size="sm" variant="destructive" className="gap-2 w-full sm:w-auto" onClick={(e) => { withProtection(() => {}, e)}}>
                                 <Trash2 className="h-4 w-4" />
                                 Delete ({selectedExpenseIds.length})
                               </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
-                                <form onSubmit={handleMassDeleteExpenses}>
+                                <form onSubmit={(e) => { e.preventDefault(); handleMassDeleteExpenses(); }}>
                                   <AlertDialogHeader>
                                     <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                                     <AlertDialogDescription>
@@ -1119,13 +1131,13 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                               <TableCell>
                                 <div className="flex items-center gap-2">
                                   {isAdmin && <>
-                                    <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => handleEditExpense(expense)}>
+                                    <Button size="icon" variant="ghost" className="h-8 w-8" onClick={(e) => handleEditExpense(expense, e)}>
                                       <Pencil className="h-4 w-4" />
                                       <span className="sr-only">Edit</span>
                                     </Button>
                                     <AlertDialog>
                                       <AlertDialogTrigger asChild>
-                                        <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive">
+                                        <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive" onClick={(e) => { withProtection(() => {}, e); e.stopPropagation(); }}>
                                           <Trash2 className="h-4 w-4" />
                                           <span className="sr-only">Delete</span>
                                         </Button>
@@ -1540,6 +1552,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
 }
 
     
+
 
 
 
