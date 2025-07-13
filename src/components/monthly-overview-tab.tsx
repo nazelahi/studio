@@ -990,70 +990,70 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                       <CardTitle>Expenses - {month} {year}</CardTitle>
                       <CardDescription>Property-related expenses for {month} {year}.</CardDescription>
                     </div>
-                    {isAdmin && <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                       {selectedExpenseIds.length > 0 && (
-                           <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button size="sm" variant="destructive" className="gap-2 w-full sm:w-auto">
-                                <Trash2 className="h-4 w-4" />
-                                Delete ({selectedExpenseIds.length})
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  This action cannot be undone. This will permanently delete {selectedExpenseIds.length} selected expenses.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={handleMassDeleteExpenses}>Delete</AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        )}
-                    </div>}
+                    {isAdmin && selectedExpenseIds.length > 0 && (
+                      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button size="sm" variant="destructive" className="gap-2 w-full sm:w-auto">
+                              <Trash2 className="h-4 w-4" />
+                              Delete ({selectedExpenseIds.length})
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This action cannot be undone. This will permanently delete {selectedExpenseIds.length} selected expenses.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={handleMassDeleteExpenses}>Delete</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    )}
                   </CardHeader>
                   <CardContent className="p-0">
-                    {filteredExpenses.length > 0 ? (
-                      <Table>
-                        <TableHeader>
-                          <TableRow className="bg-primary hover:bg-primary/90">
-                              {isAdmin && <TableHead className="w-10 text-primary-foreground">
-                                  <Checkbox
-                                      checked={selectedExpenseIds.length > 0 && selectedExpenseIds.length === filteredExpenses.length}
-                                      onCheckedChange={(checked) => {
-                                          if (checked) {
-                                              setSelectedExpenseIds(filteredExpenses.map(e => e.id));
-                                          } else {
-                                              setSelectedExpenseIds([]);
-                                          }
-                                      }}
-                                  />
-                              </TableHead>}
-                            <TableHead className="text-primary-foreground">Details</TableHead>
-                            <TableHead className="text-primary-foreground">Amount</TableHead>
-                            <TableHead className="text-primary-foreground">Status</TableHead>
-                            <TableHead className="text-primary-foreground">Actions</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {filteredExpenses.map((expense) => (
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-primary hover:bg-primary/90">
+                          {isAdmin && <TableHead className="w-10 text-primary-foreground">
+                            <Checkbox
+                              checked={selectedExpenseIds.length > 0 && selectedExpenseIds.length === filteredExpenses.length}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  setSelectedExpenseIds(filteredExpenses.map(e => e.id));
+                                } else {
+                                  setSelectedExpenseIds([]);
+                                }
+                              }}
+                            />
+                          </TableHead>}
+                          <TableHead className="text-primary-foreground">Details</TableHead>
+                          <TableHead className="text-primary-foreground">Amount</TableHead>
+                          <TableHead className="text-primary-foreground">Status</TableHead>
+                          <TableHead className="text-primary-foreground">Actions</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredExpenses.length > 0 ? (
+                          filteredExpenses.map((expense) => (
                             <TableRow key={expense.id} className={expense.status === 'Paid' ? 'bg-green-50/50' : ''} data-state={isAdmin && selectedExpenseIds.includes(expense.id) ? "selected" : undefined}>
                               {isAdmin && <TableCell>
-                                  <Checkbox
-                                      checked={selectedExpenseIds.includes(expense.id)}
-                                      onCheckedChange={(checked) => {
-                                          setSelectedExpenseIds(prev => 
-                                              checked ? [...prev, expense.id] : prev.filter(id => id !== expense.id)
-                                          );
-                                      }}
-                                  />
+                                <Checkbox
+                                  checked={selectedExpenseIds.includes(expense.id)}
+                                  onCheckedChange={(checked) => {
+                                    setSelectedExpenseIds(prev =>
+                                      checked ? [...prev, expense.id] : prev.filter(id => id !== expense.id)
+                                    );
+                                  }}
+                                />
                               </TableCell>}
                               <TableCell>
-                                  <div className="font-medium">{expense.category}</div>
-                                  <div className="text-sm text-muted-foreground hidden sm:block">{expense.description}</div>
+                                <div className="font-medium">{expense.category}</div>
+                                <div className="text-sm text-muted-foreground hidden sm:block">{expense.description}</div>
                               </TableCell>
                               <TableCell>৳{expense.amount.toFixed(2)}</TableCell>
                               <TableCell>
@@ -1063,127 +1063,148 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                               </TableCell>
                               <TableCell>
                                 <div className="flex items-center gap-2">
-                                    {isAdmin && <>
-                                      <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => handleEditExpense(expense)}>
-                                        <Pencil className="h-4 w-4" />
-                                        <span className="sr-only">Edit</span>
-                                      </Button>
-                                      <AlertDialog>
-                                        <AlertDialogTrigger asChild>
-                                            <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive">
-                                            <Trash2 className="h-4 w-4" />
-                                            <span className="sr-only">Delete</span>
-                                          </Button>
-                                        </AlertDialogTrigger>
-                                        <AlertDialogContent>
-                                          <AlertDialogHeader>
-                                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                            <AlertDialogDescription>
-                                              This action cannot be undone. This will permanently delete the expense.
-                                            </AlertDialogDescription>
-                                          </AlertDialogHeader>
-                                          <AlertDialogFooter>
-                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                            <AlertDialogAction onClick={() => handleDeleteExpense(expense.id)}>Delete</AlertDialogAction>
-                                          </AlertDialogFooter>
-                                        </AlertDialogContent>
-                                      </AlertDialog>
-                                    </>}
+                                  {isAdmin && <>
+                                    <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => handleEditExpense(expense)}>
+                                      <Pencil className="h-4 w-4" />
+                                      <span className="sr-only">Edit</span>
+                                    </Button>
+                                    <AlertDialog>
+                                      <AlertDialogTrigger asChild>
+                                        <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive">
+                                          <Trash2 className="h-4 w-4" />
+                                          <span className="sr-only">Delete</span>
+                                        </Button>
+                                      </AlertDialogTrigger>
+                                      <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                          <AlertDialogDescription>
+                                            This action cannot be undone. This will permanently delete the expense.
+                                          </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                          <AlertDialogAction onClick={() => handleDeleteExpense(expense.id)}>Delete</AlertDialogAction>
+                                        </AlertDialogFooter>
+                                      </AlertDialogContent>
+                                    </AlertDialog>
+                                  </>}
                                 </div>
                               </TableCell>
                             </TableRow>
-                          ))}
-                        </TableBody>
-                        <TableFooter>
-                            <TableRow className="bg-muted hover:bg-muted/50">
-                                <TableCell colSpan={isAdmin ? 5 : 4}>
-                                    <Dialog open={isExpenseDialogOpen} onOpenChange={handleExpenseOpenChange}>
-                                        <DialogTrigger asChild>
-                                            <Button variant="outline" className="w-full">
-                                                <PlusCircle className="mr-2 h-4 w-4" />
-                                                Add New Expense
-                                            </Button>
-                                        </DialogTrigger>
-                                        <DialogContent>
-                                            <DialogHeader>
-                                                <DialogTitle>{editingExpense ? 'Edit Expense' : 'Add New Expense'}</DialogTitle>
-                                                <DialogDescription>
-                                                    Fill in the form below to {editingExpense ? 'update the' : 'add a new'} expense.
-                                                </DialogDescription>
-                                            </DialogHeader>
-                                            <form onSubmit={handleSaveExpense} className="grid gap-4 py-4">
-                                            <div className="space-y-2">
-                                                <Label htmlFor="date">Date</Label>
-                                                <Input id="date" name="date" type="date" defaultValue={editingExpense?.date || new Date().toISOString().split('T')[0]} required />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label htmlFor="category">Category</Label>
-                                                <Select value={expenseCategory} onValueChange={setExpenseCategory}>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Select a category" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    {expenseCategories.map(cat => (
-                                                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                                </Select>
-                                            </div>
+                          ))
+                        ) : (
+                          <TableRow>
+                            <TableCell colSpan={isAdmin ? 5 : 4} className="text-center h-24">
+                              <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
+                                <span>No expense data for {month} {year}.</span>
+                                {isAdmin && (
+                                  <Dialog open={isExpenseDialogOpen} onOpenChange={handleExpenseOpenChange}>
+                                    <DialogTrigger asChild>
+                                      <Button variant="secondary" size="sm">
+                                        <PlusCircle className="mr-2 h-4 w-4" />
+                                        Add First Expense
+                                      </Button>
+                                    </DialogTrigger>
+                                    {/* DialogContent is below */}
+                                  </Dialog>
+                                )}
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                      <TableFooter>
+                        <TableRow className="bg-muted hover:bg-muted/50">
+                          <TableCell colSpan={isAdmin ? 5 : 4}>
+                            <Dialog open={isExpenseDialogOpen} onOpenChange={handleExpenseOpenChange}>
+                              {filteredExpenses.length > 0 && isAdmin && (
+                                <DialogTrigger asChild>
+                                  <Button variant="outline" className="w-full">
+                                    <PlusCircle className="mr-2 h-4 w-4" />
+                                    Add New Expense
+                                  </Button>
+                                </DialogTrigger>
+                              )}
+                              <DialogContent>
+                                <DialogHeader>
+                                  <DialogTitle>{editingExpense ? 'Edit Expense' : 'Add New Expense'}</DialogTitle>
+                                  <DialogDescription>
+                                    Fill in the form below to {editingExpense ? 'update the' : 'add a new'} expense.
+                                  </DialogDescription>
+                                </DialogHeader>
+                                <form onSubmit={handleSaveExpense} className="grid gap-4 py-4">
+                                  <div className="space-y-2">
+                                    <Label htmlFor="date">Date</Label>
+                                    <Input id="date" name="date" type="date" defaultValue={editingExpense?.date || new Date().toISOString().split('T')[0]} required />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label htmlFor="category">Category</Label>
+                                    <Select value={expenseCategory} onValueChange={setExpenseCategory}>
+                                      <SelectTrigger>
+                                        <SelectValue placeholder="Select a category" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {expenseCategories.map(cat => (
+                                          <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
 
-                                            {expenseCategory === 'Other' && (
-                                                <div className="space-y-2">
-                                                <Label htmlFor="customCategory">Custom Category</Label>
-                                                <Input 
-                                                    id="customCategory" 
-                                                    name="customCategory" 
-                                                    value={customCategory}
-                                                    onChange={(e) => setCustomCategory(e.target.value)}
-                                                    placeholder="Enter custom category" 
-                                                    required 
-                                                />
-                                                </div>
-                                            )}
-                                            <div className="space-y-2">
-                                                <Label htmlFor="amount">Amount</Label>
-                                                <Input id="amount" name="amount" type="number" step="0.01" defaultValue={editingExpense?.amount} placeholder="0.00" required />
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label htmlFor="status">Status</Label>
-                                                <Select name="status" defaultValue={editingExpense?.status || 'Due'}>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder="Select status" />
-                                                </SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="Due">Due</SelectItem>
-                                                    <SelectItem value="Paid">Paid</SelectItem>
-                                                </SelectContent>
-                                                </Select>
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label htmlFor="description">Description</Label>
-                                                <Textarea id="description" name="description" defaultValue={editingExpense?.description} placeholder="Describe the expense..." />
-                                            </div>
-                                            <DialogFooter>
-                                                <DialogClose asChild>
-                                                <Button variant="outline">Cancel</Button>
-                                                </DialogClose>
-                                                <Button type="submit">Save Expense</Button>
-                                            </DialogFooter>
-                                            </form>
-                                        </DialogContent>
-                                    </Dialog>
-                                </TableCell>
-                            </TableRow>
-                            <TableRow className="bg-lime-500 hover:bg-lime-500/90 font-bold">
-                                <TableCell colSpan={isAdmin ? 2 : 1} className="text-white text-right sm:text-left">Total Expenses</TableCell>
-                                <TableCell colSpan={2} className="text-right text-white">৳{totalExpenses.toFixed(2)}</TableCell>
-                                {isAdmin && <TableCell />}
-                            </TableRow>
-                        </TableFooter>
-                      </Table>
-                    ) : (
-                      <div className="text-center text-muted-foreground py-10">No expense data for {month} {year}.</div>
-                    )}
+                                  {expenseCategory === 'Other' && (
+                                    <div className="space-y-2">
+                                      <Label htmlFor="customCategory">Custom Category</Label>
+                                      <Input
+                                        id="customCategory"
+                                        name="customCategory"
+                                        value={customCategory}
+                                        onChange={(e) => setCustomCategory(e.target.value)}
+                                        placeholder="Enter custom category"
+                                        required
+                                      />
+                                    </div>
+                                  )}
+                                  <div className="space-y-2">
+                                    <Label htmlFor="amount">Amount</Label>
+                                    <Input id="amount" name="amount" type="number" step="0.01" defaultValue={editingExpense?.amount} placeholder="0.00" required />
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label htmlFor="status">Status</Label>
+                                    <Select name="status" defaultValue={editingExpense?.status || 'Due'}>
+                                      <SelectTrigger>
+                                        <SelectValue placeholder="Select status" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        <SelectItem value="Due">Due</SelectItem>
+                                        <SelectItem value="Paid">Paid</SelectItem>
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                  <div className="space-y-2">
+                                    <Label htmlFor="description">Description</Label>
+                                    <Textarea id="description" name="description" defaultValue={editingExpense?.description} placeholder="Describe the expense..." />
+                                  </div>
+                                  <DialogFooter>
+                                    <DialogClose asChild>
+                                      <Button variant="outline">Cancel</Button>
+                                    </DialogClose>
+                                    <Button type="submit">Save Expense</Button>
+                                  </DialogFooter>
+                                </form>
+                              </DialogContent>
+                            </Dialog>
+                          </TableCell>
+                        </TableRow>
+                        {filteredExpenses.length > 0 && (
+                          <TableRow className="bg-lime-500 hover:bg-lime-500/90 font-bold">
+                            <TableCell colSpan={isAdmin ? 2 : 1} className="text-white text-right sm:text-left">Total Expenses</TableCell>
+                            <TableCell colSpan={2} className="text-right text-white">৳{totalExpenses.toFixed(2)}</TableCell>
+                            {isAdmin && <TableCell />}
+                          </TableRow>
+                        )}
+                      </TableFooter>
+                    </Table>
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -1476,6 +1497,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
 }
 
     
+
 
 
 
