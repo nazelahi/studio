@@ -1013,81 +1013,6 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                             </AlertDialogContent>
                           </AlertDialog>
                         )}
-                         <Dialog open={isExpenseDialogOpen} onOpenChange={handleExpenseOpenChange}>
-                          <DialogTrigger asChild>
-                            <Button size="icon" onClick={() => setEditingExpense(null)}>
-                                <PlusCircle className="h-4 w-4" />
-                                <span className="sr-only">Add new expense</span>
-                            </Button>
-                          </DialogTrigger>
-                          <DialogContent>
-                            <DialogHeader>
-                              <DialogTitle>{editingExpense ? 'Edit Expense' : 'Add New Expense'}</DialogTitle>
-                              <DialogDescription>
-                                Fill in the form below to {editingExpense ? 'update the' : 'add a new'} expense.
-                              </DialogDescription>
-                            </DialogHeader>
-                            <form onSubmit={handleSaveExpense} className="grid gap-4 py-4">
-                              <div className="space-y-2">
-                                <Label htmlFor="date">Date</Label>
-                                <Input id="date" name="date" type="date" defaultValue={editingExpense?.date || new Date().toISOString().split('T')[0]} required />
-                              </div>
-                               <div className="space-y-2">
-                                <Label htmlFor="category">Category</Label>
-                                <Select value={expenseCategory} onValueChange={setExpenseCategory}>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select a category" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {expenseCategories.map(cat => (
-                                      <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-
-                              {expenseCategory === 'Other' && (
-                                <div className="space-y-2">
-                                  <Label htmlFor="customCategory">Custom Category</Label>
-                                  <Input 
-                                    id="customCategory" 
-                                    name="customCategory" 
-                                    value={customCategory}
-                                    onChange={(e) => setCustomCategory(e.target.value)}
-                                    placeholder="Enter custom category" 
-                                    required 
-                                  />
-                                </div>
-                              )}
-                               <div className="space-y-2">
-                                <Label htmlFor="amount">Amount</Label>
-                                <Input id="amount" name="amount" type="number" step="0.01" defaultValue={editingExpense?.amount} placeholder="0.00" required />
-                              </div>
-                               <div className="space-y-2">
-                                <Label htmlFor="status">Status</Label>
-                                <Select name="status" defaultValue={editingExpense?.status || 'Due'}>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select status" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="Due">Due</SelectItem>
-                                    <SelectItem value="Paid">Paid</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                              <div className="space-y-2">
-                                <Label htmlFor="description">Description</Label>
-                                <Textarea id="description" name="description" defaultValue={editingExpense?.description} placeholder="Describe the expense..." />
-                              </div>
-                              <DialogFooter>
-                                <DialogClose asChild>
-                                   <Button variant="outline">Cancel</Button>
-                                </DialogClose>
-                                <Button type="submit">Save Expense</Button>
-                              </DialogFooter>
-                            </form>
-                          </DialogContent>
-                        </Dialog>
                     </div>}
                   </CardHeader>
                   <CardContent className="p-0">
@@ -1170,6 +1095,85 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                           ))}
                         </TableBody>
                         <TableFooter>
+                            <TableRow className="bg-muted hover:bg-muted/50">
+                                <TableCell colSpan={isAdmin ? 5 : 4}>
+                                    <Dialog open={isExpenseDialogOpen} onOpenChange={handleExpenseOpenChange}>
+                                        <DialogTrigger asChild>
+                                            <Button variant="outline" className="w-full">
+                                                <PlusCircle className="mr-2 h-4 w-4" />
+                                                Add New Expense
+                                            </Button>
+                                        </DialogTrigger>
+                                        <DialogContent>
+                                            <DialogHeader>
+                                                <DialogTitle>{editingExpense ? 'Edit Expense' : 'Add New Expense'}</DialogTitle>
+                                                <DialogDescription>
+                                                    Fill in the form below to {editingExpense ? 'update the' : 'add a new'} expense.
+                                                </DialogDescription>
+                                            </DialogHeader>
+                                            <form onSubmit={handleSaveExpense} className="grid gap-4 py-4">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="date">Date</Label>
+                                                <Input id="date" name="date" type="date" defaultValue={editingExpense?.date || new Date().toISOString().split('T')[0]} required />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="category">Category</Label>
+                                                <Select value={expenseCategory} onValueChange={setExpenseCategory}>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Select a category" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {expenseCategories.map(cat => (
+                                                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                                </Select>
+                                            </div>
+
+                                            {expenseCategory === 'Other' && (
+                                                <div className="space-y-2">
+                                                <Label htmlFor="customCategory">Custom Category</Label>
+                                                <Input 
+                                                    id="customCategory" 
+                                                    name="customCategory" 
+                                                    value={customCategory}
+                                                    onChange={(e) => setCustomCategory(e.target.value)}
+                                                    placeholder="Enter custom category" 
+                                                    required 
+                                                />
+                                                </div>
+                                            )}
+                                            <div className="space-y-2">
+                                                <Label htmlFor="amount">Amount</Label>
+                                                <Input id="amount" name="amount" type="number" step="0.01" defaultValue={editingExpense?.amount} placeholder="0.00" required />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="status">Status</Label>
+                                                <Select name="status" defaultValue={editingExpense?.status || 'Due'}>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder="Select status" />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    <SelectItem value="Due">Due</SelectItem>
+                                                    <SelectItem value="Paid">Paid</SelectItem>
+                                                </SelectContent>
+                                                </Select>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="description">Description</Label>
+                                                <Textarea id="description" name="description" defaultValue={editingExpense?.description} placeholder="Describe the expense..." />
+                                            </div>
+                                            <DialogFooter>
+                                                <DialogClose asChild>
+                                                <Button variant="outline">Cancel</Button>
+                                                </DialogClose>
+                                                <Button type="submit">Save Expense</Button>
+                                            </DialogFooter>
+                                            </form>
+                                        </DialogContent>
+                                    </Dialog>
+                                </TableCell>
+                            </TableRow>
                             <TableRow className="bg-lime-500 hover:bg-lime-500/90 font-bold">
                                 <TableCell colSpan={isAdmin ? 2 : 1} className="text-white text-right sm:text-left">Total Expenses</TableCell>
                                 <TableCell colSpan={2} className="text-right text-white">৳{totalExpenses.toFixed(2)}</TableCell>
@@ -1472,6 +1476,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
 }
 
     
+
 
 
 
