@@ -17,7 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import type { Tenant } from "@/types";
-import { Mail, Phone, Home, Calendar, DollarSign, FileText, Download, Printer, ImageIcon, File as FileIcon, User, MapPin, Cake, CreditCard } from "lucide-react";
+import { Mail, Phone, Home, Calendar, DollarSign, FileText, Download, Printer, ImageIcon, File as FileIcon, User, MapPin, Cake, CreditCard, ShieldCheck } from "lucide-react";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { format, parseISO } from 'date-fns';
@@ -206,6 +206,12 @@ export function TenantDetailSheet({
                         <DollarSign className="h-4 w-4 text-muted-foreground" />
                         <span>Monthly Rent: <strong>৳{tenant.rent.toFixed(2)}</strong></span>
                     </div>
+                    {tenant.advance_deposit && (
+                        <div className="flex items-center gap-3">
+                            <ShieldCheck className="h-4 w-4 text-muted-foreground" />
+                            <span>Advance Deposit: <strong>৳{tenant.advance_deposit.toFixed(2)}</strong></span>
+                        </div>
+                    )}
                     <div className="flex items-center gap-3">
                         <Calendar className="h-4 w-4 text-muted-foreground" />
                         <span>Joined on: <strong>{format(parseISO(tenant.join_date), "MMMM dd, yyyy")}</strong></span>

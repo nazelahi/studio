@@ -27,6 +27,7 @@ const ExtractTenantInfoOutputSchema = z.object({
   address: z.string().optional().describe("The person's full address."),
   date_of_birth: z.string().optional().describe("The person's date of birth in YYYY-MM-DD format."),
   nid_number: z.string().optional().describe("The person's National ID (NID) number."),
+  advance_deposit: z.number().optional().describe("The advance deposit or security deposit amount paid by the tenant."),
 });
 export type ExtractTenantInfoOutput = z.infer<typeof ExtractTenantInfoOutputSchema>;
 
@@ -49,6 +50,7 @@ Look for the following pieces of information:
 - Full Address
 - Date of Birth (ensure it is in YYYY-MM-DD format)
 - National ID (NID) Number
+- Advance Deposit / Security Deposit Amount
 
 If any piece of information is not clearly visible or present, omit it from the output. Do not guess or make up information. Only return the data you can clearly identify from the document.
 

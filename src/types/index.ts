@@ -1,4 +1,5 @@
 
+
 import type { toast } from "@/hooks/use-toast";
 
 export type ToastFn = typeof toast;
@@ -29,6 +30,7 @@ export type Tenant = {
   address?: string;
   date_of_birth?: string;
   nid_number?: string;
+  advance_deposit?: number;
   created_at?: string;
   deleted_at?: string | null;
 };

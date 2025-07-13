@@ -113,6 +113,7 @@ export function ContactsTab() {
       address: formData.get('address') as string,
       date_of_birth: formData.get('date_of_birth') as string,
       nid_number: formData.get('nid_number') as string,
+      advance_deposit: Number(formData.get('advance_deposit')),
     };
 
     try {
@@ -195,6 +196,7 @@ export function ContactsTab() {
                 if (result.address) getEl('address').value = result.address;
                 if (result.date_of_birth) getEl('date_of_birth').value = result.date_of_birth;
                 if (result.nid_number) getEl('nid_number').value = result.nid_number;
+                if (result.advance_deposit) getEl('advance_deposit').value = result.advance_deposit.toString();
 
                 toast({ title: 'Scan Complete!', description: 'Tenant information has been filled into the form.'});
             }
@@ -418,6 +420,16 @@ export function ContactsTab() {
                           type="number"
                           defaultValue={editingTenant?.rent}
                           required
+                          className="[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="advance_deposit">Advance Deposit</Label>
+                        <Input
+                          id="advance_deposit"
+                          name="advance_deposit"
+                          type="number"
+                          defaultValue={editingTenant?.advance_deposit}
                           className="[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
                         />
                       </div>
