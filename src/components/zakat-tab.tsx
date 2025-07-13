@@ -330,7 +330,7 @@ export function ZakatTab() {
                     </div>
                     {isAdmin && <Button onClick={() => handleAddTx('inflow')}><PlusCircle className="mr-2 h-4 w-4"/>Add Inflow</Button>}
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-0">
                     <TransactionTable transactions={inflowTransactions} type="inflow" />
                 </CardContent>
             </Card>
@@ -344,7 +344,7 @@ export function ZakatTab() {
                     </div>
                     {isAdmin && <Button onClick={() => handleAddTx('outflow')}><PlusCircle className="mr-2 h-4 w-4"/>Add Outflow</Button>}
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-0">
                     <TransactionTable transactions={outflowTransactions} type="outflow" />
                 </CardContent>
             </Card>
