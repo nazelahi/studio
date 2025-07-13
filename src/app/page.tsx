@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button"
 import { User, LogOut, MapPin, Menu, Settings, LogIn, UserCircle, LoaderCircle } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { useToast } from "@/hooks/use-toast"
 import { useProtection } from "@/context/protection-context"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -144,6 +144,9 @@ export default function HomePage() {
             </Button>
           </SheetTrigger>
           <SheetContent side="left">
+            <SheetHeader className="sr-only">
+              <SheetTitle>Mobile Navigation</SheetTitle>
+            </SheetHeader>
             <nav className="grid gap-6 text-lg font-medium">
               <Link
                 href="#"
