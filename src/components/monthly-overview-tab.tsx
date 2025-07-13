@@ -93,7 +93,6 @@ const getExpenseStatusBadge = (status: Expense["status"]) => {
 export function MonthlyOverviewTab({ year }: { year: number }) {
   const currentMonthIndex = year === new Date().getFullYear() ? new Date().getMonth() : 0;
   const [selectedMonth, setSelectedMonth] = React.useState(months[currentMonthIndex]);
-  const { toast } = useToast();
   const { isAdmin } = useAuth();
   const { settings } = useSettings();
 
@@ -275,12 +274,12 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
 
   const handleDeleteRentEntry = async (entryId: string) => {
     await deleteRentEntry(entryId);
-    toast({ title: "Rent Entry Deleted", description: "The rent entry for this month has been deleted.", variant: "destructive" });
   };
   
   const handleSaveRentEntry = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
+    const { toast } = useToast();
     
     const rentEntryData = {
         name: selectedHistoricalTenant?.name || formData.get('name') as string,
@@ -308,6 +307,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
   };
 
     const handleSyncTenants = async () => {
+        const { toast } = useToast();
         const selectedMonthIndex = months.indexOf(selectedMonth);
         const syncedCount = await syncTenantsForMonth(year, selectedMonthIndex);
 
@@ -324,17 +324,14 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
         }
     };
     
-  const handleMassDeleteRentEntries = async () => {
+  const handleMassDeleteRentEntries = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     await deleteMultipleRentEntries(selectedRentEntryIds);
-    toast({
-      title: `${selectedRentEntryIds.length} Rent Entries Deleted`,
-      description: "The selected entries have been permanently removed.",
-      variant: "destructive"
-    });
     setSelectedRentEntryIds([]);
   }
 
   const handleViewDetails = (entry: RentEntry) => {
+    const { toast } = useToast();
     const tenant = tenants.find(t => t.id === entry.tenant_id);
     if (tenant) {
       setSelectedTenantForSheet(tenant);
@@ -352,6 +349,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
   const handleSaveExpense = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
+    const { toast } = useToast();
     
     const finalCategory = expenseCategory === 'Other' 
         ? formData.get('customCategory') as string
@@ -394,7 +392,6 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
   
   const handleDeleteExpense = async (expenseId: string) => {
     await deleteExpense(expenseId);
-    toast({ title: "Expense Deleted", description: "The expense has been deleted.", variant: "destructive" });
   };
   
   const handleExpenseOpenChange = (isOpen: boolean) => {
@@ -406,13 +403,9 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
     setIsExpenseDialogOpen(isOpen);
   };
   
-  const handleMassDeleteExpenses = async () => {
+  const handleMassDeleteExpenses = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     await deleteMultipleExpenses(selectedExpenseIds);
-    toast({
-      title: `${selectedExpenseIds.length} Expenses Deleted`,
-      description: "The selected expenses have been permanently removed.",
-      variant: "destructive"
-    });
     setSelectedExpenseIds([]);
   }
 
@@ -424,6 +417,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+    const { toast } = useToast();
 
     toast({ title: "Processing file...", description: "Please wait while we read your spreadsheet." });
     
@@ -510,6 +504,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
   const handleSaveDeposit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsUploading(true);
+    const { toast } = useToast();
 
     const formData = new FormData(event.currentTarget);
     formData.set('amount', depositAmount); // Ensure the state value is used
@@ -566,6 +561,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
 
   const handleDeleteDeposit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const { toast } = useToast();
     const formData = new FormData(event.currentTarget);
     const result = await deleteDepositAction(formData);
     
@@ -592,6 +588,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
   const handleSaveNotice = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
+    const { toast } = useToast();
 
     startNoticeTransition(async () => {
         const result = await saveNoticeAction(formData);
@@ -606,6 +603,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
   
   const handleDeleteNotice = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const { toast } = useToast();
     const formData = new FormData(event.currentTarget);
 
     startNoticeTransition(async () => {
@@ -619,6 +617,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
   }
 
   const handleSyncExpenses = async () => {
+    const { toast } = useToast();
     const selectedMonthIndex = months.indexOf(selectedMonth);
     const syncedCount = await syncExpensesFromPreviousMonth(year, selectedMonthIndex);
 
@@ -725,16 +724,18 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                               </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  This action cannot be undone. This will permanently delete {selectedRentEntryIds.length} selected rent entries.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={handleMassDeleteRentEntries}>Delete</AlertDialogAction>
-                              </AlertDialogFooter>
+                                <form onSubmit={handleMassDeleteRentEntries}>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      This will mark {selectedRentEntryIds.length} selected rent entries as deleted. You can undo this action from the notification.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction type="submit">Delete</AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </form>
                             </AlertDialogContent>
                           </AlertDialog>
                         )}
@@ -840,16 +841,18 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                               </Button>
                                             </AlertDialogTrigger>
                                             <AlertDialogContent>
-                                              <AlertDialogHeader>
-                                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                                <AlertDialogDescription>
-                                                  This action cannot be undone. This will permanently delete the rent entry for this tenant for {months[entry.month]} {entry.year}.
-                                                </AlertDialogDescription>
-                                              </AlertDialogHeader>
-                                              <AlertDialogFooter>
-                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                <AlertDialogAction onClick={() => handleDeleteRentEntry(entry.id)}>Delete</AlertDialogAction>
-                                              </AlertDialogFooter>
+                                                <form onSubmit={(e) => { e.preventDefault(); handleDeleteRentEntry(entry.id); }}>
+                                                  <AlertDialogHeader>
+                                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                    <AlertDialogDescription>
+                                                      This will mark the rent entry for {entry.name} as deleted. You can undo this action.
+                                                    </AlertDialogDescription>
+                                                  </AlertDialogHeader>
+                                                  <AlertDialogFooter>
+                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                    <AlertDialogAction type="submit">Delete</AlertDialogAction>
+                                                  </AlertDialogFooter>
+                                                </form>
                                             </AlertDialogContent>
                                           </AlertDialog>
                                       </>
@@ -1018,16 +1021,18 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                               </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  This action cannot be undone. This will permanently delete {selectedExpenseIds.length} selected expenses.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={handleMassDeleteExpenses}>Delete</AlertDialogAction>
-                              </AlertDialogFooter>
+                                <form onSubmit={handleMassDeleteExpenses}>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      This will mark {selectedExpenseIds.length} selected expenses as deleted. You can undo this action.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction type="submit">Delete</AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </form>
                             </AlertDialogContent>
                           </AlertDialog>
                         )}
@@ -1104,16 +1109,18 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                                         </Button>
                                       </AlertDialogTrigger>
                                       <AlertDialogContent>
-                                        <AlertDialogHeader>
-                                          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                          <AlertDialogDescription>
-                                            This action cannot be undone. This will permanently delete the expense.
-                                          </AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                          <AlertDialogAction onClick={() => handleDeleteExpense(expense.id)}>Delete</AlertDialogAction>
-                                        </AlertDialogFooter>
+                                        <form onSubmit={(e) => { e.preventDefault(); handleDeleteExpense(expense.id); }}>
+                                          <AlertDialogHeader>
+                                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                              This will mark the expense as deleted. You can undo this action.
+                                            </AlertDialogDescription>
+                                          </AlertDialogHeader>
+                                          <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                            <AlertDialogAction type="submit">Delete</AlertDialogAction>
+                                          </AlertDialogFooter>
+                                        </form>
                                       </AlertDialogContent>
                                     </AlertDialog>
                                   </>}
@@ -1126,16 +1133,6 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                             <TableCell colSpan={isAdmin ? 5 : 4} className="h-24 text-center">
                               <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
                                 <span>No expense data for {month} {year}.</span>
-                                {isAdmin && (
-                                  <Dialog open={isExpenseDialogOpen} onOpenChange={handleExpenseOpenChange}>
-                                    <DialogTrigger asChild>
-                                      <Button variant="secondary" size="sm" onClick={() => setIsExpenseDialogOpen(true)}>
-                                        <PlusCircle className="mr-2 h-4 w-4" />
-                                        Add First Expense
-                                      </Button>
-                                    </DialogTrigger>
-                                  </Dialog>
-                                )}
                               </div>
                             </TableCell>
                           </TableRow>
@@ -1521,6 +1518,7 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
 }
 
     
+
 
 
 
