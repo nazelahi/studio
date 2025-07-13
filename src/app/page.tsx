@@ -1,3 +1,4 @@
+
 "use client"
 
 import Link from "next/link"
@@ -147,15 +148,15 @@ export default function HomePage() {
               <SheetTitle>Mobile Navigation</SheetTitle>
             </SheetHeader>
             <nav className="grid gap-6 text-lg font-medium p-6">
-              <Link
-                href="#"
-                className="flex items-center gap-2 text-lg font-semibold"
-              >
-                <Logo className="h-6 w-6 text-primary" />
-                <span>{settings.appName}</span>
-              </Link>
-              {mainNavLinks}
-               <div className="border-t pt-6 grid gap-4 text-base font-medium">
+              <div className="flex flex-col items-start gap-2">
+                  <h1 className="text-lg font-bold tracking-tight text-primary truncate">{settings.houseName}</h1>
+                  <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                      <MapPin className="h-4 w-4 flex-shrink-0" />
+                      <p className="truncate">{settings.houseAddress}</p>
+                  </div>
+              </div>
+
+              <div className="border-t pt-6 grid gap-4 text-base font-medium">
                   {dashboardNavLinks}
               </div>
             </nav>
