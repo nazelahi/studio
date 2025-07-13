@@ -242,11 +242,11 @@ export function WorkDetailsTab({ year }: { year: number }) {
         <Table>
           <TableHeader>
             <TableRow style={{ backgroundColor: 'hsl(var(--table-header-background))', color: 'hsl(var(--table-header-foreground))' }} className="hover:bg-[hsl(var(--table-header-background)/0.9)]">
-              <TableHead className="text-inherit">Work Category</TableHead>
-              <TableHead className="text-inherit hidden sm:table-cell">Product Price</TableHead>
+              <TableHead className="text-inherit">Work Item</TableHead>
+              <TableHead className="text-inherit hidden sm:table-cell">Product Cost</TableHead>
               <TableHead className="text-inherit hidden sm:table-cell">Worker Cost</TableHead>
               <TableHead className="text-inherit">Status</TableHead>
-              <TableHead className="text-right text-inherit">Total Cost</TableHead>
+              <TableHead className="text-right text-inherit hidden sm:table-cell">Total Cost</TableHead>
               {isAdmin && <TableHead className="text-inherit w-24">Actions</TableHead>}
             </TableRow>
           </TableHeader>
@@ -263,15 +263,18 @@ export function WorkDetailsTab({ year }: { year: number }) {
                 const isCompleted = work.status === 'Completed';
                 return (
                   <TableRow key={work.id}>
-                    <TableCell className="font-medium">{work.title}</TableCell>
+                    <TableCell>
+                      <div className="font-medium">{work.title}</div>
+                      <div className="text-sm text-primary font-bold sm:hidden">{formatCurrency(totalCost)}</div>
+                    </TableCell>
                     <TableCell className="hidden sm:table-cell">{formatCurrency(work.product_cost)}</TableCell>
                     <TableCell className="hidden sm:table-cell">{formatCurrency(work.worker_cost)}</TableCell>
                     <TableCell>
-                        <div className={cn("p-2 rounded-md text-center", isCompleted ? 'bg-green-200' : 'bg-transparent')}>
-                          {isCompleted ? 'Paid' : work.status}
-                        </div>
+                        <Badge variant={isCompleted ? 'default': 'secondary'} className={cn(isCompleted && 'bg-success hover:bg-success/80')}>
+                            {work.status}
+                        </Badge>
                     </TableCell>
-                    <TableCell className="text-right font-bold">{formatCurrency(totalCost)}</TableCell>
+                    <TableCell className="text-right font-bold hidden sm:table-cell">{formatCurrency(totalCost)}</TableCell>
                     {isAdmin && (
                       <TableCell>
                          <div className="flex items-center justify-end gap-1">
@@ -306,7 +309,7 @@ export function WorkDetailsTab({ year }: { year: number }) {
             })
             ) : (
               <TableRow>
-                <TableCell colSpan={6} className="text-center h-24 text-muted-foreground">
+                <TableCell colSpan={isAdmin ? 6 : 5} className="text-center h-24 text-muted-foreground">
                   No work items found for {year}.
                 </TableCell>
               </TableRow>
