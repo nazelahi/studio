@@ -26,10 +26,10 @@ type NewRentEntry = Omit<RentEntry, 'id' | 'avatar' | 'year' | 'month' | 'due_da
 
 
 interface DataContextType extends AppData {
-  addTenant: (tenant: Omit<Tenant, 'id' | 'deleted_at'>, files?: File[]) => Promise<void>;
+  addTenant: (tenant: Omit<Tenant, 'id' | 'deleted_at' | 'created_at'>, files?: File[]) => Promise<void>;
   updateTenant: (tenant: Tenant, files?: File[]) => Promise<void>;
   deleteTenant: (tenantId: string) => Promise<void>;
-  addExpense: (expense: Omit<Expense, 'id' | 'deleted_at'>) => Promise<void>;
+  addExpense: (expense: Omit<Expense, 'id' | 'deleted_at' | 'created_at'>) => Promise<void>;
   updateExpense: (expense: Expense) => Promise<void>;
   deleteExpense: (expenseId: string) => Promise<void>;
   deleteMultipleExpenses: (expenseIds: string[]) => Promise<void>;
@@ -52,10 +52,11 @@ const DataContext = createContext<DataContextType | undefined>(undefined);
 export function DataProvider({ children }: { children: ReactNode }) {
     const [data, setData] = useState<AppData>({ tenants: [], expenses: [], rentData: [], propertySettings: null, deposits: [], zakatTransactions: [], notices: [], workDetails: [], zakatBankDetails: [] });
     const [loading, setLoading] = useState(true);
-    const { toast } = useToast();
+    
     const { user, loading: authLoading } = useAuth();
     
     const handleError = (error: any, context: string) => {
+        const { toast } = useToast();
         const errorMessage = error.message || 'An unexpected error occurred.';
         console.error(`Error in ${context}:`, errorMessage, error);
         toast({
@@ -115,7 +116,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         } finally {
             setLoading(false);
         }
-    }, [toast]);
+    }, []);
 
     useEffect(() => {
         if (!authLoading) {
@@ -149,7 +150,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         return () => {
             supabase.removeChannel(channel);
         };
-    }, [fetchData, toast]);
+    }, [fetchData]);
 
     const uploadFiles = async (tenantId: string, files: File[]): Promise<string[]> => {
         if (!supabase || files.length === 0) return [];
@@ -179,11 +180,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     const undoDelete = async (table: string, ids: string[]) => {
         if (!supabase) return;
+        const { toast } = useToast();
         const { error } = await supabase.from(table).update({ deleted_at: null }).in('id', ids);
         if (error) {
             handleError(error, `undoing delete on ${table}`);
         } else {
             toast({ title: 'Restored', description: `The item(s) have been restored.` });
+            await fetchData();
         }
     }
 
@@ -258,7 +261,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     const deleteTenant = async (tenantId: string) => {
         if (!supabase) return;
-        
+        const { toast } = useToast();
         const { error } = await supabase.from('tenants').update({ deleted_at: new Date().toISOString() }).eq('id', tenantId);
         if (error) {
             handleError(error, 'deleting tenant');
@@ -286,6 +289,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     const deleteExpense = async (expenseId: string) => {
         if (!supabase) return;
+        const { toast } = useToast();
         const { error } = await supabase.from('expenses').update({ deleted_at: new Date().toISOString() }).eq('id', expenseId);
         if (error) {
             handleError(error, 'deleting expense');
@@ -300,6 +304,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     const deleteMultipleExpenses = async (expenseIds: string[]) => {
         if (!supabase || expenseIds.length === 0) return;
+        const { toast } = useToast();
         const { error } = await supabase.from('expenses').update({ deleted_at: new Date().toISOString() }).in('id', expenseIds);
         if (error) {
             handleError(error, 'deleting multiple expenses');
@@ -432,6 +437,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     
     const deleteRentEntry = async (rentEntryId: string) => {
         if (!supabase) return;
+        const { toast } = useToast();
         const { error } = await supabase.from('rent_entries').update({ deleted_at: new Date().toISOString() }).eq('id', rentEntryId);
         if (error) {
             handleError(error, 'deleting rent entry');
@@ -446,6 +452,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     const deleteMultipleRentEntries = async (rentEntryIds: string[]) => {
         if (!supabase || rentEntryIds.length === 0) return;
+        const { toast } = useToast();
         const { error } = await supabase.from('rent_entries').update({ deleted_at: new Date().toISOString() }).in('id', rentEntryIds);
         if (error) {
             handleError(error, 'deleting multiple rent entries');
