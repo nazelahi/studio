@@ -1018,8 +1018,11 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
                         </TableBody>
                          <TableFooter>
                             <TableRow className="bg-lime-500 hover:bg-lime-500/90 font-bold">
-                                <TableCell className="text-white text-center sm:text-left" colSpan={isAdmin ? 5 : 4}>Total Rent Collected</TableCell>
-                                <TableCell className="text-right text-white" colSpan={2}>৳{totalRentCollected.toFixed(2)}</TableCell>
+                                <TableCell colSpan={isAdmin ? 5 : 4} className="text-white">
+                                    <div className="sm:hidden text-center">Total Rent Collected</div>
+                                    <div className="hidden sm:block text-left">Total Rent Collected</div>
+                                </TableCell>
+                                <TableCell colSpan={2} className="text-right text-white">৳{totalRentCollected.toFixed(2)}</TableCell>
                             </TableRow>
                         </TableFooter>
                       </Table>
@@ -1558,3 +1561,6 @@ export function MonthlyOverviewTab({ year }: { year: number }) {
 
 
 
+
+
+    
