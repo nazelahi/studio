@@ -33,7 +33,10 @@ const getStatusBadge = (status: RentEntry["status"]) => {
     }
 };
 
-const formatCurrency = (amount: number) => amount.toLocaleString('en-US', { style: 'currency', currency: 'BDT', minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace('BDT', '৳');
+const formatCurrency = (amount: number) => {
+  if (typeof amount !== 'number') return '৳0.00';
+  return amount.toLocaleString('en-US', { style: 'currency', currency: 'BDT', minimumFractionDigits: 2, maximumFractionDigits: 2 }).replace('BDT', '৳');
+}
 
 export function ReportsTab({ year }: { year: number }) {
   const { rentData, expenses, tenants, loading } = useData();
@@ -349,5 +352,3 @@ export function ReportsTab({ year }: { year: number }) {
     </div>
   )
 }
-
-    

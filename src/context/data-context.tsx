@@ -592,14 +592,56 @@ export function DataProvider({ children }: { children: ReactNode }) {
         return data;
     };
 
-    const restoreAllData = (backupData: AppData, toast: ToastFn) => {
-        if (backupData && backupData.tenants && backupData.expenses && backupData.rentData) {
-            // This needs to be extended if property_settings are part of backup/restore
-            setData(backupData);
-            window.location.reload();
-        } else {
-            handleError(new Error("Invalid backup data format."), "restoring data", toast);
+    const restoreAllData = async (backupData: AppData, toast: ToastFn) => {
+      // This is a simplified restore. A real-world scenario would be much more complex,
+      // handling conflicts, new vs. old data, etc.
+      // For this app, we'll do a "delete all and insert" strategy.
+      // This is destructive and should be used with caution.
+      if (!supabase) return;
+
+      try {
+        setLoading(true);
+        
+        // Order of operations matters due to foreign key constraints if they existed.
+        // For this app, it's simpler.
+        const tables = ['rent_entries', 'expenses', 'tenants', 'deposits', 'notices', 'work_details', 'zakat_transactions', 'zakat_bank_details'];
+        
+        // Delete all existing data
+        for (const table of tables) {
+            const { error: deleteError } = await supabase.from(table).delete().neq('id', '00000000-0000-0000-0000-000000000000'); // A bit of a hack to delete all
+            if (deleteError) throw new Error(`Failed to clear ${table}: ${deleteError.message}`);
         }
+        
+        // Insert new data
+        // We have to remove the `propertySettings` as it's not a list to be inserted.
+        const { propertySettings, ...dataToInsert } = backupData;
+
+        for (const [table, records] of Object.entries(dataToInsert)) {
+            const tableName = table === 'rentData' ? 'rent_entries' : table; // map state name to table name
+             if (records.length > 0) {
+                // Supabase insert doesn't like `id` field on some tables if it's auto-generated,
+                // and it doesn't like extra fields. Let's be careful.
+                const recordsToInsert = records.map((r: any) => {
+                    const { created_at, id, ...rest } = r; // Strip fields that should be auto-generated
+                    return rest;
+                });
+
+                if (recordsToInsert.length > 0) {
+                    const { error: insertError } = await supabase.from(tableName).insert(recordsToInsert);
+                    if (insertError) throw new Error(`Failed to insert into ${tableName}: ${insertError.message}`);
+                }
+            }
+        }
+        
+        toast({ title: "Restore Complete", description: "Your data has been restored from the backup file. The application will now reload." });
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
+
+      } catch (error: any) {
+        handleError(error, "restoring data", toast);
+        setLoading(false);
+      }
     };
     
     const getRentEntryById = (id: string): RentEntry | null => {

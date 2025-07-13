@@ -66,11 +66,8 @@ export function IntegrationsTab() {
         const backupPayload = JSON.parse(text);
 
         if (backupPayload && backupPayload.data && backupPayload.data.tenants && backupPayload.data.expenses && backupPayload.data.rentData) {
-          restoreAllData(backupPayload.data);
-          toast({ title: "Restore Complete", description: "Your data has been restored from the backup file. The application will now reload." });
-          setTimeout(() => {
-            window.location.reload();
-          }, 2000);
+          restoreAllData(backupPayload.data, toast);
+          // The restoreAllData function will handle toast and reload
         } else {
           throw new Error("Invalid backup file format.");
         }
