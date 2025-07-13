@@ -17,6 +17,7 @@ import { useToast } from "@/hooks/use-toast"
 import { useProtection } from "@/context/protection-context"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 
 function FullPageLoader() {
   return (
@@ -144,10 +145,8 @@ export default function HomePage() {
             </Button>
           </SheetTrigger>
           <SheetContent side="left" className="p-0 flex flex-col">
-            <SheetHeader className="sr-only">
-              <SheetTitle>Mobile Navigation</SheetTitle>
-            </SheetHeader>
-            <nav className="grid gap-6 text-lg font-medium p-6">
+            <SheetHeader className="p-6">
+              <SheetTitle className="sr-only">Mobile Navigation</SheetTitle>
               <div className="flex flex-col items-start gap-2">
                   <h1 className="text-lg font-bold tracking-tight text-primary truncate">{settings.houseName}</h1>
                   <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
@@ -155,10 +154,12 @@ export default function HomePage() {
                       <p className="truncate">{settings.houseAddress}</p>
                   </div>
               </div>
-
-              <div className="border-t pt-6 grid gap-4 text-base font-medium">
-                  {dashboardNavLinks}
-              </div>
+            </SheetHeader>
+            <nav className="grid gap-6 text-lg font-medium p-6 pt-0">
+               <div className="border-t pt-6 grid gap-4 text-base font-medium">
+                  <h3 className="font-semibold text-primary">Main Menu</h3>
+                  {mainNavLinks}
+               </div>
             </nav>
             <div className="mt-auto border-t p-4">
                  <Dialog open={isOwnerDialogOpen} onOpenChange={setIsOwnerDialogOpen}>
@@ -266,7 +267,7 @@ export default function HomePage() {
             </DropdownMenu>
         </div>
       </header>
-      <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+      <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8 pb-20 md:pb-8">
         <DashboardTabs
           year={parseInt(selectedYear)}
           activeTab={activeTab}
@@ -275,10 +276,11 @@ export default function HomePage() {
           onYearChange={setSelectedYear}
           years={years}
         />
-        <footer className="text-center text-sm text-muted-foreground mt-auto pt-4">
+        <footer className="text-center text-sm text-muted-foreground mt-auto pt-4 hidden md:block">
           {settings.footerName}
         </footer>
       </main>
+      <MobileBottomNav activeTab={activeTab} onTabChange={handleTabChange} />
     </div>
   )
 }

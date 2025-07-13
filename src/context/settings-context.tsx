@@ -44,6 +44,8 @@ interface AppTheme {
         table_header_background: string;
         table_header_foreground: string;
         table_footer_background: string;
+        mobile_nav_background: string;
+        mobile_nav_foreground: string;
     };
 }
 
@@ -99,6 +101,8 @@ const defaultSettings: AppSettings = {
             table_header_background: '#14b8a6',
             table_header_foreground: '#ffffff',
             table_footer_background: '#84cc16', // lime-500
+            mobile_nav_background: '#008080',
+            mobile_nav_foreground: '#ffffff',
         }
     },
     page_dashboard: {
@@ -247,6 +251,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
             root.style.setProperty('--table-header-foreground', hexToHsl(headerFgHex));
             root.style.setProperty('--table-footer-background', hexToHsl(settings.theme.colors.table_footer_background));
             root.style.setProperty('--table-footer-foreground', hexToHsl('#ffffff')); // Assuming white text on footer
+
+            root.style.setProperty('--mobile-nav-background', hexToHsl(settings.theme.colors.mobile_nav_background));
+            root.style.setProperty('--mobile-nav-foreground', hexToHsl(settings.theme.colors.mobile_nav_foreground));
         }
     }, [settings.theme, isMounted]);
 

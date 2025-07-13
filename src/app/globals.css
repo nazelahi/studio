@@ -43,6 +43,9 @@ body {
     --table-header-foreground: 180 100% 98%;
     --table-footer-background: 84 70% 50%;
     --table-footer-foreground: 84 70% 98%;
+    
+    --mobile-nav-background: 180 100% 25%;
+    --mobile-nav-foreground: 180 100% 98%;
   }
   .dark {
     --background: 222.2 84% 4.9%;
@@ -79,6 +82,9 @@ body {
     --table-header-foreground: 180 100% 10%;
     --table-footer-background: 84 60% 50%;
     --table-footer-foreground: 84 100% 10%;
+
+    --mobile-nav-background: 222.2 84% 4.9%;
+    --mobile-nav-foreground: 210 40% 98%;
   }
 }
 

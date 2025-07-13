@@ -522,6 +522,19 @@ export default function SettingsPage() {
                               </div>
                           </div>
                       </div>
+                      <div className="space-y-4">
+                          <Label className="font-medium">Mobile Navigation Colors</Label>
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                               <div className="space-y-2">
+                                  <Label htmlFor="theme.colors.mobile_nav_background">Background</Label>
+                                  <Input id="theme.colors.mobile_nav_background" name="theme.colors.mobile_nav_background" type="color" defaultValue={settings.theme.colors.mobile_nav_background} onChange={handleInputChange} className="p-1 h-10"/>
+                              </div>
+                               <div className="space-y-2">
+                                  <Label htmlFor="theme.colors.mobile_nav_foreground">Text/Icon</Label>
+                                  <Input id="theme.colors.mobile_nav_foreground" name="theme.colors.mobile_nav_foreground" type="color" defaultValue={settings.theme.colors.mobile_nav_foreground} onChange={handleInputChange} className="p-1 h-10"/>
+                              </div>
+                          </div>
+                      </div>
                   </CardContent>
                   <CardFooter>
                       <Button onClick={handleSaveAppSettings}>Save</Button>
