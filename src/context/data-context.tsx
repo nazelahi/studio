@@ -4,7 +4,7 @@
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import type { Tenant, Expense, RentEntry, PropertySettings, Deposit, ZakatTransaction, Notice, WorkDetail, ZakatBankDetail } from '@/types';
-import { parseISO, getMonth, getYear } from 'date-fns';
+import { parseISO, getMonth, getYear, subMonths, format } from 'date-fns';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from './auth-context';
@@ -38,6 +38,7 @@ interface DataContextType extends AppData {
   deleteRentEntry: (rentEntryId: string) => Promise<void>;
   deleteMultipleRentEntries: (rentEntryIds: string[]) => Promise<void>;
   syncTenantsForMonth: (year: number, month: number) => Promise<number>;
+  syncExpensesFromPreviousMonth: (year: number, month: number) => Promise<number>;
   updatePropertySettings: (settings: Omit<PropertySettings, 'id'>) => Promise<void>;
   loading: boolean;
   getAllData: () => AppData;
@@ -292,7 +293,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
         let tenantAvatar = rentEntryData.avatar;
 
         if (!tenantId) {
-            // Find or create tenant
             let { data: existingTenant } = await supabase
                 .from('tenants')
                 .select('id, avatar')
@@ -478,6 +478,51 @@ export function DataProvider({ children }: { children: ReactNode }) {
         return tenantsToSync.length;
     };
     
+    const syncExpensesFromPreviousMonth = async (year: number, month: number): Promise<number> => {
+        if (!supabase) return 0;
+        
+        const currentMonthDate = new Date(year, month, 1);
+        const previousMonthDate = subMonths(currentMonthDate, 1);
+        const previousMonth = getMonth(previousMonthDate);
+        const previousYear = getYear(previousMonthDate);
+
+        const { data: previousExpenses, error: fetchError } = await supabase
+            .from('expenses')
+            .select('*')
+            .gte('date', format(new Date(previousYear, previousMonth, 1), 'yyyy-MM-dd'))
+            .lt('date', format(new Date(previousYear, previousMonth + 1, 1), 'yyyy-MM-dd'));
+
+        if (fetchError) {
+            handleError(fetchError, 'fetching previous month expenses for sync');
+            return 0;
+        }
+
+        if (!previousExpenses || previousExpenses.length === 0) {
+            return 0;
+        }
+        
+        const newExpenses = previousExpenses.map(expense => {
+            const { id, created_at, date, ...rest } = expense;
+            const previousDate = parseISO(date);
+            const newDate = new Date(year, month, previousDate.getDate());
+            
+            return {
+                ...rest,
+                date: format(newDate, 'yyyy-MM-dd'),
+                status: 'Due' as const, // Always sync as 'Due'
+            };
+        });
+
+        const { error: insertError } = await supabase.from('expenses').insert(newExpenses);
+
+        if (insertError) {
+            handleError(insertError, 'syncing expenses to current month');
+            return 0;
+        }
+
+        return newExpenses.length;
+    };
+
     const updatePropertySettings = async (settings: Omit<PropertySettings, 'id'>) => {
         if (!supabase) return;
         const { error } = await supabase.from('property_settings').update(settings).eq('id', 1);
@@ -500,7 +545,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
 
     return (
-        <DataContext.Provider value={{ ...data, addTenant, updateTenant, deleteTenant, addExpense, updateExpense, deleteExpense, deleteMultipleExpenses, addRentEntry, addRentEntriesBatch, updateRentEntry, deleteRentEntry, deleteMultipleRentEntries, syncTenantsForMonth, updatePropertySettings, loading, getAllData, restoreAllData, refreshData: fetchData }}>
+        <DataContext.Provider value={{ ...data, addTenant, updateTenant, deleteTenant, addExpense, updateExpense, deleteExpense, deleteMultipleExpenses, addRentEntry, addRentEntriesBatch, updateRentEntry, deleteRentEntry, deleteMultipleRentEntries, syncTenantsForMonth, syncExpensesFromPreviousMonth, updatePropertySettings, loading, getAllData, restoreAllData, refreshData: fetchData }}>
             {children}
         </DataContext.Provider>
     );
