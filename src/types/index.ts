@@ -63,6 +63,7 @@ export type PropertySettings = {
   contact_phone?: string;
   contact_email?: string;
   contact_address?: string;
+  footer_name?: string;
   theme_primary?: string;
   theme_table_header_background?: string;
   theme_table_header_foreground?: string;

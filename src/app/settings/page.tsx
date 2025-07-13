@@ -431,6 +431,10 @@ export default function SettingsPage() {
                                 <Label htmlFor="about_us">About Us</Label>
                                 <Textarea id="about_us" name="about_us" defaultValue={settings.aboutUs} placeholder="Write a short description about your property or business..."/>
                             </div>
+                             <div className="space-y-2">
+                                <Label htmlFor="footerName">Footer Copyright Text</Label>
+                                <Input id="footerName" name="footerName" defaultValue={settings.footerName} />
+                            </div>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="contact_email">Contact Email</Label>
@@ -565,10 +569,6 @@ export default function SettingsPage() {
                           <div className="space-y-2">
                               <Label htmlFor="appName">{settings.page_settings.app_settings.header_name_label}</Label>
                               <Input id="appName" name="appName" defaultValue={settings.appName} onChange={handleInputChange} />
-                          </div>
-                          <div className="space-y-2">
-                              <Label htmlFor="footerName">{settings.page_settings.app_settings.footer_name_label}</Label>
-                              <Input id="footerName" name="footerName" defaultValue={settings.footerName} onChange={handleInputChange} />
                           </div>
                       </div>
                   </CardContent>

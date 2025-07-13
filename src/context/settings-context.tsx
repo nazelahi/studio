@@ -28,7 +28,6 @@ interface PageSettings {
         title: string;
         description: string;
         header_name_label: string;
-        footer_name_label: string;
     };
     overview_settings: {
         title: string;
@@ -131,9 +130,8 @@ const defaultSettings: AppSettings = {
         },
         app_settings: {
             title: "Application Settings",
-            description: "Customize the names, labels, and colors used throughout the application. These are saved in your browser.",
+            description: "Customize the names and labels used throughout the application. These are saved in your browser.",
             header_name_label: "Header Name",
-            footer_name_label: "Footer Name",
         },
         overview_settings: {
             title: "Overview Settings",
@@ -225,6 +223,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
                 combinedSettings.contactPhone = propertySettings.contact_phone || defaultSettings.contactPhone;
                 combinedSettings.contactEmail = propertySettings.contact_email || defaultSettings.contactEmail;
                 combinedSettings.contactAddress = propertySettings.contact_address || defaultSettings.contactAddress;
+                combinedSettings.footerName = propertySettings.footer_name || defaultSettings.footerName;
 
                 // Load theme from DB
                 combinedSettings.theme.colors.primary = propertySettings.theme_primary || defaultSettings.theme.colors.primary;
@@ -247,7 +246,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         
         const { 
             houseName, houseAddress, bankName, bankAccountNumber, bankLogoUrl, ownerName, ownerPhotoUrl, 
-            zakatBankDetails, passcode, aboutUs, contactPhone, contactEmail, contactAddress,
+            zakatBankDetails, passcode, aboutUs, contactPhone, contactEmail, contactAddress, footerName,
             theme, // Exclude theme from local storage save
             ...localSettingsToSave 
         } = newSettings;

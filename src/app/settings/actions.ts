@@ -110,6 +110,7 @@ export async function updatePropertySettingsAction(formData: FormData) {
         contact_phone: formData.get('contact_phone') as string,
         contact_email: formData.get('contact_email') as string,
         contact_address: formData.get('contact_address') as string,
+        footer_name: formData.get('footerName') as string,
         theme_primary: formData.get('theme_primary') as string,
         theme_table_header_background: formData.get('theme_table_header_background') as string,
         theme_table_header_foreground: formData.get('theme_table_header_foreground') as string,
