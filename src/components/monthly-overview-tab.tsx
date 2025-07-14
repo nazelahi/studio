@@ -1,5 +1,4 @@
 
-
 "use client"
 
 import * as React from "react"
@@ -108,8 +107,8 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
     checkMobile();
     window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+    return () => window.removeEventListener('resize', isMobile);
+  }, [isMobile]);
 
   const selectedMonth = isMobile ? months[mobileSelectedMonth] : desktopSelectedMonth;
   const monthIndex = months.indexOf(selectedMonth);
@@ -329,6 +328,15 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
     setEditingRentEntry(null);
     setSelectedHistoricalTenant(null);
   };
+  
+    const handleStatusChange = async (entry: RentEntry, newStatus: RentEntry['status']) => {
+        const updatedEntry = { ...entry, status: newStatus };
+        if (newStatus === 'Paid' && !entry.payment_date) {
+            updatedEntry.payment_date = new Date().toISOString().split('T')[0];
+        }
+        await updateRentEntry(updatedEntry, toast);
+        toast({ title: "Status Updated", description: `${entry.name}'s status changed to ${newStatus}.` });
+    };
 
     const handleSyncTenants = async () => {
         const syncedCount = await syncTenantsForMonth(year, monthIndex, toast);
@@ -903,10 +911,26 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                                 <TableCell className="hidden md:table-cell">{entry.collected_by || '-'}</TableCell>
                                 <TableCell className="hidden sm:table-cell">{entry.payment_date ? format(parseISO(entry.payment_date), "dd MMM yyyy") : '-'}</TableCell>
                                 <TableCell>
-                                  <Badge className={getStatusBadge(entry.status)} variant="outline">
-                                    {getStatusIcon(entry.status)}
-                                    {entry.status}
-                                  </Badge>
+                                   <Select
+                                        value={entry.status}
+                                        onValueChange={(newStatus) => handleStatusChange(entry, newStatus as RentEntry['status'])}
+                                        disabled={!isAdmin}
+                                    >
+                                        <SelectTrigger className={cn("w-32 border-0 shadow-none focus:ring-0", getStatusRowClass(entry.status))}>
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="Pending">
+                                                <div className="flex items-center"><AlertCircle className="h-4 w-4 mr-2 text-yellow-500"/>Pending</div>
+                                            </SelectItem>
+                                            <SelectItem value="Paid">
+                                                <div className="flex items-center"><CheckCircle className="h-4 w-4 mr-2 text-green-500"/>Paid</div>
+                                            </SelectItem>
+                                            <SelectItem value="Overdue">
+                                                <div className="flex items-center"><XCircle className="h-4 w-4 mr-2 text-red-500"/>Overdue</div>
+                                            </SelectItem>
+                                        </SelectContent>
+                                    </Select>
                                 </TableCell>
                                 <TableCell className="hidden sm:table-cell">৳{entry.rent.toFixed(2)}</TableCell>
                                 <TableCell>
@@ -1451,20 +1475,3 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
 }
 
     
-
-
-
-
-
-
-
-    
-
-    
-
-
-
-
-    
-
-
