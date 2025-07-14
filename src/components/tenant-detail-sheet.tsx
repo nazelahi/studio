@@ -17,13 +17,15 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import type { Tenant } from "@/types";
-import { Mail, Phone, Home, Edit, MapPin, User, Download, Printer } from "lucide-react";
+import { Mail, Phone, Home, Edit, MapPin, User, Download, Printer, FileArchive, Eye } from "lucide-react";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { useSettings } from "@/context/settings-context";
 import { useAuth } from "@/context/auth-context";
 import { useProtection } from "@/context/protection-context";
 import { useData } from "@/context/data-context";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "./ui/carousel";
+import { Dialog, DialogContent, DialogTrigger } from "./ui/dialog";
 
 interface TenantDetailSheetProps {
   tenant: Tenant | null;
@@ -211,6 +213,40 @@ export function TenantDetailSheet({
                         </Button>
                      </div>
                 </div>
+
+                {tenant.documents && tenant.documents.length > 0 && (
+                     <div className="p-4 bg-background rounded-lg shadow-sm">
+                        <h3 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                            <FileArchive className="h-4 w-4 text-muted-foreground"/>
+                            Uploaded Documents
+                        </h3>
+                         <Carousel className="w-full max-w-xs mx-auto">
+                            <CarouselContent>
+                                {tenant.documents.map((doc, index) => (
+                                <CarouselItem key={index}>
+                                    <div className="p-1">
+                                    <Dialog>
+                                        <DialogTrigger asChild>
+                                            <img
+                                                src={doc}
+                                                alt={`Document ${index + 1}`}
+                                                className="w-full h-40 object-cover rounded-md cursor-pointer"
+                                                data-ai-hint="document id"
+                                            />
+                                        </DialogTrigger>
+                                        <DialogContent className="max-w-3xl p-2">
+                                            <img src={doc} alt={`Document ${index + 1}`} className="w-full h-auto rounded-md" data-ai-hint="document id"/>
+                                        </DialogContent>
+                                    </Dialog>
+                                    </div>
+                                </CarouselItem>
+                                ))}
+                            </CarouselContent>
+                            <CarouselPrevious />
+                            <CarouselNext />
+                        </Carousel>
+                    </div>
+                )}
             </div>
         </div>
         <Separator />
