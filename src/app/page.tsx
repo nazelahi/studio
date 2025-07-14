@@ -20,6 +20,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import { AppFooter } from "@/components/app-footer"
 import { useTheme } from "next-themes"
+import { BackToTopButton } from "@/components/back-to-top-button"
 
 
 function FullPageLoader() {
@@ -291,6 +292,7 @@ export default function HomePage() {
         <AppFooter />
       </main>
       <MobileBottomNav activeTab={activeTab} onTabChange={handleTabChange} />
+      <BackToTopButton />
     </div>
   )
 }
