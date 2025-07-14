@@ -196,12 +196,6 @@ export function TenantDetailSheet({
                              <a href={`tel:${tenant.phone}`} className="text-primary hover:underline">{tenant.phone}</a>
                         </div>
                     )}
-                     {tenant.whatsapp_number && (
-                        <div className="flex items-center gap-3">
-                            <WhatsAppIcon className="h-4 w-4 text-muted-foreground" />
-                             <a href={`https://wa.me/${tenant.whatsapp_number.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{tenant.whatsapp_number}</a>
-                        </div>
-                    )}
                 </CardContent>
             </Card>
 

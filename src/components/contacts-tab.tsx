@@ -108,7 +108,6 @@ export function ContactsTab() {
       name: formData.get('name') as string,
       email: formData.get('email') as string,
       phone: formData.get('phone') as string,
-      whatsapp_number: formData.get('whatsapp_number') as string,
       property: formData.get('property') as string,
       rent: Number(formData.get('rent')),
       join_date: formData.get('join_date') as string,
@@ -240,20 +239,6 @@ export function ContactsTab() {
       await deleteTenant(tenantId, toast);
     }, e);
   }
-  
-  const handleWhatsAppClick = (tenant: Tenant) => {
-    if (!tenant.whatsapp_number) {
-        toast({
-            title: "No WhatsApp Number",
-            description: `A WhatsApp number has not been set for ${tenant.name}.`,
-            variant: "destructive"
-        });
-        return;
-    }
-    const phoneNumber = tenant.whatsapp_number.replace(/[^0-9]/g, '');
-    const message = encodeURIComponent(`Hello ${tenant.name}, this is a message regarding your tenancy at ${settings.houseName}.`);
-    window.open(`https://wa.me/${phoneNumber}?text=${message}`, '_blank');
-  };
 
   const handleOpenChange = (isOpen: boolean) => {
     if (!isOpen) {
@@ -409,17 +394,13 @@ export function ContactsTab() {
                         <Label htmlFor="father_name">Father's Name</Label>
                         <Input id="father_name" name="father_name" defaultValue={editingTenant?.father_name} />
                       </div>
-                      <div className="space-y-2 md:col-span-2">
+                      <div className="space-y-2">
                         <Label htmlFor="email">Email Address</Label>
                         <Input id="email" name="email" type="email" defaultValue={editingTenant?.email} required />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="phone">Phone Number</Label>
                         <Input id="phone" name="phone" type="tel" defaultValue={editingTenant?.phone} />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="whatsapp_number">WhatsApp Number</Label>
-                        <Input id="whatsapp_number" name="whatsapp_number" type="tel" defaultValue={editingTenant?.whatsapp_number} placeholder="e.g. +8801..." />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="date_of_birth">Date of Birth</Label>
@@ -568,10 +549,6 @@ export function ContactsTab() {
                                     <DropdownMenuItem onClick={() => handleViewDetails(tenant)}>
                                       <FileText className="mr-2 h-4 w-4" />
                                       View Details
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => handleWhatsAppClick(tenant)}>
-                                      <WhatsAppIcon className="mr-2 h-4 w-4" />
-                                      Send WhatsApp
                                     </DropdownMenuItem>
                                     {isAdmin && <>
                                       <DropdownMenuSeparator />
