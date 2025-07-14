@@ -530,12 +530,12 @@ export function ContactsTab() {
         <CardContent className="p-0">
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead>Tenant</TableHead>
-                <TableHead className="hidden md:table-cell">Property</TableHead>
-                <TableHead className="hidden sm:table-cell">Rent</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+              <TableRow style={{ backgroundColor: 'hsl(var(--table-header-background))', color: 'hsl(var(--table-header-foreground))' }} className="hover:bg-[hsl(var(--table-header-background)/0.9)]">
+                <TableHead className="text-inherit">Tenant</TableHead>
+                <TableHead className="hidden md:table-cell text-inherit">Property</TableHead>
+                <TableHead className="hidden sm:table-cell text-inherit">Rent</TableHead>
+                <TableHead className="text-inherit">Status</TableHead>
+                <TableHead className="text-right text-inherit">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
