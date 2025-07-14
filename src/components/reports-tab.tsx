@@ -195,7 +195,7 @@ export function ReportsTab({ year }: { year: number }) {
   if (loading) {
     return (
       <div className="pt-4 space-y-6">
-        <Skeleton className="h-10 w-1/4" />
+        <Skeleton className="h-10 w-full" />
         <Skeleton className="h-64 w-full" />
         <Skeleton className="h-40 w-full" />
       </div>
@@ -383,7 +383,7 @@ export function ReportsTab({ year }: { year: number }) {
   return (
     <div className="pt-4 space-y-6">
       <Card className="no-print">
-          <CardContent className="p-4 flex flex-wrap items-center gap-4">
+          <CardContent className="p-4 flex flex-col md:flex-row md:items-end gap-4">
             <div className="flex-1 min-w-[150px]">
                 <Label>Report Type</Label>
                 <Select value={reportType} onValueChange={setReportType}>
@@ -420,7 +420,7 @@ export function ReportsTab({ year }: { year: number }) {
                     </Select>
                 </div>
             )}
-            <div className="flex items-end gap-2">
+            <div className="flex items-center gap-2">
               <Button variant="outline" onClick={handleDownloadPdf}><Download className="mr-2 h-4 w-4"/>PDF</Button>
               <Button variant="outline" onClick={handlePrint}><Printer className="mr-2 h-4 w-4"/>Print</Button>
             </div>
@@ -432,5 +432,7 @@ export function ReportsTab({ year }: { year: number }) {
     </div>
   )
 }
+
+    
 
     
