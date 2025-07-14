@@ -141,7 +141,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
                 }
                 if (err) {
                     const dbError = err as any;
-                    console.error("Realtime subscription error:", dbError);
+                    console.error("Realtime subscription error:", dbError.message);
                 }
             });
 
