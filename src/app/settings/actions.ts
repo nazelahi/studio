@@ -6,6 +6,7 @@ import { createClient } from '@supabase/supabase-js'
 import { revalidatePath } from 'next/cache'
 import 'dotenv/config'
 import { supabase as supabaseClient } from '@/lib/supabase'
+import { format, getMonth, getYear, parse } from 'date-fns'
 
 // This function creates a Supabase client with admin privileges.
 // It uses the service_role key and is intended for server-side use only
@@ -196,33 +197,43 @@ export async function updatePasscodeAction(formData: FormData) {
     return { success: true };
 }
 
-export async function clearAllDataAction() {
+
+export async function clearDataForPeriodAction(formData: FormData) {
     const supabaseAdmin = getSupabaseAdmin();
+    const year = Number(formData.get('year'));
+    const month = Number(formData.get('month'));
 
-    const tablesToDelete = [
-        'rent_entries',
-        'expenses',
-        'tenants',
-        'deposits',
-        'notices',
-        'work_details',
-        'zakat_transactions'
-    ];
+    if (isNaN(year) || isNaN(month)) {
+        return { error: 'Invalid year or month provided.' };
+    }
+
+    // Note: We don't delete from `tenants` or `work_details` as they are not strictly tied to a single month's record in the same way.
+    // Work details have a due_date, but might span longer. Tenants are persistent.
+    const tablesToClear = ['rent_entries', 'deposits', 'notices'];
     
-    // Note: This does not delete from storage. That would require listing files and deleting, which is more complex.
-    // For now, we clear the database tables.
-
     try {
-        for (const table of tablesToDelete) {
-            // Using a filter that will always be true to delete all rows.
-            // Supabase client libraries might not have a direct `truncate` or `deleteAll` method.
-            const { error } = await supabaseAdmin.from(table).delete().neq('id', '00000000-0000-0000-0000-000000000000');
+        for (const table of tablesToClear) {
+            const { error } = await supabaseAdmin.from(table).delete().match({ year, month });
             if (error) {
-                // If one fails, we stop and report the error.
                 console.error(`Error clearing table ${table}:`, error);
                 return { error: `Failed to clear data from ${table}: ${error.message}` };
             }
         }
+        
+        // Handle expenses separately as their date is a full timestamp
+        const startDate = format(new Date(year, month, 1), 'yyyy-MM-dd');
+        const endDate = format(new Date(year, month + 1, 1), 'yyyy-MM-dd');
+
+        const { error: expenseError } = await supabaseAdmin.from('expenses')
+            .delete()
+            .gte('date', startDate)
+            .lt('date', endDate);
+        
+        if (expenseError) {
+            console.error(`Error clearing table expenses:`, expenseError);
+            return { error: `Failed to clear data from expenses: ${expenseError.message}` };
+        }
+
     } catch (e: any) {
         console.error('An unexpected error occurred during data deletion:', e);
         return { error: e.message || "An unexpected error occurred." };

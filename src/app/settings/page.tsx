@@ -16,12 +16,13 @@ import { User, LogOut, MapPin, Menu, Settings, LoaderCircle, LogIn, Building, Ke
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useToast } from "@/hooks/use-toast"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
-import { updatePropertySettingsAction, updateUserCredentialsAction, updatePasscodeAction, clearAllDataAction } from "./actions"
+import { updatePropertySettingsAction, updateUserCredentialsAction, updatePasscodeAction, clearDataForPeriodAction } from "./actions"
 import { useProtection } from "@/context/protection-context"
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Textarea } from "@/components/ui/textarea"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 type SettingsTab = 'property' | 'account' | 'application' | 'labels';
 
@@ -38,6 +39,10 @@ function AccessDenied() {
   );
 }
 
+const months = [
+    "January", "February", "March", "April", "May", "June", 
+    "July", "August", "September", "October", "November", "December"
+];
 
 export default function SettingsPage() {
   const { settings, setSettings, refreshSettings } = useSettings();
@@ -63,6 +68,11 @@ export default function SettingsPage() {
   const [ownerPhotoPreview, setOwnerPhotoPreview] = React.useState<string | null>(null);
   const [ownerPhotoFile, setOwnerPhotoFile] = React.useState<File | null>(null);
   const ownerPhotoInputRef = React.useRef<HTMLInputElement>(null);
+
+  const currentYear = new Date().getFullYear();
+  const years = Array.from({ length: 10 }, (_, i) => (currentYear - i).toString());
+  const [clearYear, setClearYear] = useState(currentYear.toString());
+  const [clearMonth, setClearMonth] = useState(new Date().getMonth().toString());
 
   React.useEffect(() => {
     if (user?.email) {
@@ -205,14 +215,18 @@ export default function SettingsPage() {
     });
   }
   
-  const handleClearData = () => {
+  const handleClearDataForPeriod = () => {
     withProtection(() => {
+        const formData = new FormData();
+        formData.append('year', clearYear);
+        formData.append('month', clearMonth);
+
         startClearDataTransition(async () => {
-            const result = await clearAllDataAction();
-            if (result?.error) {
+            const result = await clearDataForPeriodAction(formData);
+            if (result.error) {
                 toast({ title: "Error Clearing Data", description: result.error, variant: "destructive"});
             } else {
-                toast({ title: "Data Cleared", description: "All application data has been successfully cleared." });
+                toast({ title: "Data Cleared", description: `Data for ${months[parseInt(clearMonth)]}, ${clearYear} has been cleared.` });
                 refreshSettings();
             }
         });
@@ -545,36 +559,56 @@ export default function SettingsPage() {
                           <CardDescription>These actions are irreversible. Please be certain before proceeding.</CardDescription>
                       </CardHeader>
                       <CardContent>
-                          <p>Clearing all data will permanently delete all tenants, rent entries, expenses, deposits, notices, and financial records from the database. This cannot be undone.</p>
+                          <p className="mb-4">Clearing data for a specific period will permanently delete all rent entries, expenses, deposits, and notices for that month. This cannot be undone.</p>
+                          <div className="flex flex-col sm:flex-row items-center gap-4 p-4 bg-muted rounded-lg">
+                            <div className="flex-1 w-full sm:w-auto">
+                                <Label htmlFor="clear-year">Year</Label>
+                                <Select value={clearYear} onValueChange={setClearYear}>
+                                    <SelectTrigger id="clear-year"><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        {years.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="flex-1 w-full sm:w-auto">
+                                <Label htmlFor="clear-month">Month</Label>
+                                <Select value={clearMonth} onValueChange={setClearMonth}>
+                                    <SelectTrigger id="clear-month"><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        {months.map((m, i) => <SelectItem key={i} value={i.toString()}>{m}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                             <div className="self-end w-full sm:w-auto">
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button variant="destructive" className="w-full" disabled={isClearDataPending}>
+                                            {isClearDataPending ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4"/>}
+                                            Clear Data
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                This action will permanently delete all rent, expense, deposit, and notice data for <strong>{months[parseInt(clearMonth)]}, {clearYear}</strong>. This action cannot be undone.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel disabled={isClearDataPending}>Cancel</AlertDialogCancel>
+                                            <AlertDialogAction
+                                                className={cn(buttonVariants({ variant: "destructive" }))}
+                                                onClick={handleClearDataForPeriod}
+                                                disabled={isClearDataPending}
+                                            >
+                                                Yes, Delete Data for this Period
+                                            </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                             </div>
+                          </div>
                       </CardContent>
-                      <CardFooter>
-                          <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                  <Button variant="destructive" disabled={isClearDataPending}>
-                                    {isClearDataPending ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4"/>}
-                                    Clear All Application Data
-                                  </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                      <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                      <AlertDialogDescription>
-                                          This is your final confirmation. This action will permanently delete all application data. This includes all tenants, rent history, expenses, and all other records. This action cannot be undone.
-                                      </AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                      <AlertDialogCancel disabled={isClearDataPending}>Cancel</AlertDialogCancel>
-                                      <AlertDialogAction
-                                          className={cn(buttonVariants({ variant: "destructive" }))}
-                                          onClick={handleClearData}
-                                          disabled={isClearDataPending}
-                                      >
-                                          Yes, Delete All Data
-                                      </AlertDialogAction>
-                                  </AlertDialogFooter>
-                              </AlertDialogContent>
-                          </AlertDialog>
-                      </CardFooter>
                   </Card>
                 </div>
               )}
@@ -720,5 +754,3 @@ export default function SettingsPage() {
       </div>
   )
 }
-
-    
