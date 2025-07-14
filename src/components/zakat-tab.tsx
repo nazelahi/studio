@@ -24,6 +24,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs"
 import { useSettings } from "@/context/settings-context"
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarImage, AvatarFallback } from "./ui/avatar"
+import { ZakatCalculator } from "./zakat-calculator"
 
 const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'BDT' }).format(amount).replace('BDT', '৳');
@@ -316,11 +317,15 @@ export function ZakatTab() {
         </CardContent>
       </Card>
       
-      <Tabs defaultValue="inflow" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+      <Tabs defaultValue="calculator" className="w-full">
+        <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="calculator">Calculator</TabsTrigger>
             <TabsTrigger value="inflow">Inflow</TabsTrigger>
             <TabsTrigger value="outflow">Outflow</TabsTrigger>
         </TabsList>
+        <TabsContent value="calculator">
+            <ZakatCalculator />
+        </TabsContent>
         <TabsContent value="inflow">
             <Card className="mt-4">
                 <CardHeader className="flex flex-row items-center justify-between">

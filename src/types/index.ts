@@ -137,3 +137,16 @@ export type WorkDetail = {
   due_date?: string;
   created_at?: string;
 };
+
+export type ZakatAssets = {
+    cash: string;
+    bank: string;
+    gold: string;
+    silver: string;
+    investments: string;
+    businessInventory: string;
+};
+
+export type ZakatLiabilities = {
+    shortTerm: string;
+};
