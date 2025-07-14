@@ -1306,13 +1306,15 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                           {loggedDeposit ? (
                               <div className="space-y-1">
                                   <div className="flex items-center justify-between">
-                                    <p className="text-sm font-medium text-muted-foreground">Deposit Status</p>
-                                    <DialogTrigger asChild>
-                                      <Button size="icon" variant="ghost" className="h-7 w-7 -mr-2" disabled={!isAdmin}>
-                                        <Edit className="h-4 w-4" />
-                                        <span className="sr-only">Edit Deposit</span>
-                                      </Button>
-                                    </DialogTrigger>
+                                    <div className="flex items-center gap-2">
+                                        <p className="text-sm font-medium text-muted-foreground">Deposit Status</p>
+                                        <DialogTrigger asChild>
+                                          <Button size="icon" variant="ghost" className="h-7 w-7" disabled={!isAdmin}>
+                                            <Edit className="h-4 w-4" />
+                                            <span className="sr-only">Edit Deposit</span>
+                                          </Button>
+                                        </DialogTrigger>
+                                    </div>
                                   </div>
                                   <div className="flex items-center gap-2 text-success font-semibold">
                                       <CheckCircle className="h-5 w-5" />
@@ -1329,13 +1331,15 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                             ) : (
                               <div className="space-y-1">
                                  <div className="flex items-center justify-between">
-                                    <p className="text-sm font-medium text-muted-foreground">Deposit Status</p>
-                                    <DialogTrigger asChild>
-                                      <Button size="icon" variant="ghost" className="h-7 w-7 -mr-2" disabled={!isAdmin}>
-                                        <PlusCircle className="h-4 w-4" />
-                                        <span className="sr-only">Log Deposit</span>
-                                      </Button>
-                                    </DialogTrigger>
+                                     <div className="flex items-center gap-2">
+                                        <p className="text-sm font-medium text-muted-foreground">Deposit Status</p>
+                                        <DialogTrigger asChild>
+                                          <Button size="icon" variant="ghost" className="h-7 w-7" disabled={!isAdmin}>
+                                            <PlusCircle className="h-4 w-4" />
+                                            <span className="sr-only">Log Deposit</span>
+                                          </Button>
+                                        </DialogTrigger>
+                                     </div>
                                   </div>
                                  <div className="flex items-center gap-2 text-warning-foreground font-semibold">
                                      <AlertCircle className="h-5 w-5" />
@@ -1462,4 +1466,5 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
 
 
     
+
 
