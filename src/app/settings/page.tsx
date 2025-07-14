@@ -80,6 +80,7 @@ export default function SettingsPage() {
   const [ownerPhotoFile, setOwnerPhotoFile] = React.useState<File | null>(null);
   const ownerPhotoInputRef = React.useRef<HTMLInputElement>(null);
   
+  const [expenseCategories, setExpenseCategories] = React.useState<string[]>([]);
   const [newCategory, setNewCategory] = React.useState('');
 
 
@@ -98,7 +99,8 @@ export default function SettingsPage() {
   React.useEffect(() => {
     setLogoPreview(settings.bankLogoUrl || null);
     setOwnerPhotoPreview(settings.ownerPhotoUrl || null);
-  }, [settings.bankLogoUrl, settings.ownerPhotoUrl]);
+    setExpenseCategories(settings.expenseCategories || []);
+  }, [settings]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -158,7 +160,9 @@ export default function SettingsPage() {
      formData.append('theme_table_footer_background', settings.theme.colors.table_footer_background);
      formData.append('theme_mobile_nav_background', settings.theme.colors.mobile_nav_background);
      formData.append('theme_mobile_nav_foreground', settings.theme.colors.mobile_nav_foreground);
-
+     
+     // Append all expense categories
+     expenseCategories.forEach(cat => formData.append('expense_categories[]', cat));
 
      startTransition(async () => {
         const result = await updatePropertySettingsAction(formData);
@@ -265,28 +269,20 @@ export default function SettingsPage() {
   }
 
   const handleExpenseCategoryChange = (index: number, value: string) => {
-    setSettings(prev => {
-        const newCategories = [...prev.expenseCategories];
-        newCategories[index] = value;
-        return { ...prev, expenseCategories: newCategories };
-    });
+    const newCategories = [...expenseCategories];
+    newCategories[index] = value;
+    setExpenseCategories(newCategories);
   };
 
   const handleAddExpenseCategory = () => {
-    if (newCategory.trim() !== '') {
-        setSettings(prev => ({
-            ...prev,
-            expenseCategories: [...prev.expenseCategories, newCategory.trim()]
-        }));
+    if (newCategory.trim() !== '' && !expenseCategories.includes(newCategory.trim())) {
+        setExpenseCategories(prev => [...prev, newCategory.trim()]);
         setNewCategory('');
     }
   };
 
   const handleRemoveExpenseCategory = (index: number) => {
-    setSettings(prev => ({
-        ...prev,
-        expenseCategories: prev.expenseCategories.filter((_, i) => i !== index)
-    }));
+    setExpenseCategories(prev => prev.filter((_, i) => i !== index));
   };
 
   if (!isAdmin) {
@@ -549,6 +545,40 @@ export default function SettingsPage() {
                             </div>
                         </CardContent>
                     </Card>
+
+                     <Card>
+                        <CardHeader>
+                            <CardTitle>Expense Categories</CardTitle>
+                            <CardDescription>Add, edit, or remove categories for logging expenses. These are saved to your database.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="space-y-2">
+                                {expenseCategories.map((category, index) => (
+                                    <div key={index} className="flex items-center gap-2">
+                                        <Input
+                                            value={category}
+                                            onChange={(e) => handleExpenseCategoryChange(index, e.target.value)}
+                                            className="flex-grow"
+                                        />
+                                        <Button variant="ghost" size="icon" type="button" onClick={() => handleRemoveExpenseCategory(index)}>
+                                            <Trash2 className="h-4 w-4 text-destructive" />
+                                        </Button>
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Input
+                                    placeholder="Add new category..."
+                                    value={newCategory}
+                                    onChange={(e) => setNewCategory(e.target.value)}
+                                    onKeyDown={(e) => { if(e.key === 'Enter') { e.preventDefault(); handleAddExpenseCategory(); }}}
+                                />
+                                <Button type="button" onClick={handleAddExpenseCategory}>
+                                    <PlusCircle className="mr-2 h-4 w-4" /> Add
+                                </Button>
+                            </div>
+                        </CardContent>
+                     </Card>
                     
                     <div className="flex justify-start">
                       <Button type="submit" disabled={isPending}>
@@ -758,42 +788,6 @@ export default function SettingsPage() {
                         </div>
                     </CardContent>
                   </Card>
-                   <Card>
-                    <CardHeader>
-                        <CardTitle>Expense Categories</CardTitle>
-                        <CardDescription>Add, edit, or remove categories for logging expenses. These are saved to your browser.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="space-y-2">
-                            {settings.expenseCategories.map((category, index) => (
-                                <div key={index} className="flex items-center gap-2">
-                                    <Input
-                                        value={category}
-                                        onChange={(e) => handleExpenseCategoryChange(index, e.target.value)}
-                                        className="flex-grow"
-                                    />
-                                    <Button variant="ghost" size="icon" onClick={() => handleRemoveExpenseCategory(index)}>
-                                        <Trash2 className="h-4 w-4 text-destructive" />
-                                    </Button>
-                                </div>
-                            ))}
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <Input
-                                placeholder="Add new category..."
-                                value={newCategory}
-                                onChange={(e) => setNewCategory(e.target.value)}
-                                onKeyDown={(e) => { if(e.key === 'Enter') { e.preventDefault(); handleAddExpenseCategory(); }}}
-                            />
-                            <Button onClick={handleAddExpenseCategory}>
-                                <PlusCircle className="mr-2 h-4 w-4" /> Add
-                            </Button>
-                        </div>
-                    </CardContent>
-                    <CardFooter>
-                         <Button onClick={handleSaveAppSettings}>Save Local Settings</Button>
-                    </CardFooter>
-                  </Card>
                 </div>
               )}
               
@@ -873,3 +867,5 @@ export default function SettingsPage() {
       </div>
   )
 }
+
+    

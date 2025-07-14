@@ -225,6 +225,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
                 combinedSettings.contactEmail = propertySettings.contact_email || defaultSettings.contactEmail;
                 combinedSettings.contactAddress = propertySettings.contact_address || defaultSettings.contactAddress;
                 combinedSettings.footerName = propertySettings.footer_name || defaultSettings.footerName;
+                combinedSettings.expenseCategories = propertySettings.expense_categories || defaultSettings.expenseCategories;
 
                 // Load theme from DB
                 combinedSettings.theme.colors.primary = propertySettings.theme_primary || defaultSettings.theme.colors.primary;
@@ -248,7 +249,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         const { 
             houseName, houseAddress, bankName, bankAccountNumber, bankLogoUrl, ownerName, ownerPhotoUrl, 
             zakatBankDetails, passcode, aboutUs, contactPhone, contactEmail, contactAddress, footerName,
-            theme,
+            theme, expenseCategories,
             ...localSettingsToSave 
         } = newSettings;
         try {
@@ -301,3 +302,5 @@ export function useSettings() {
   }
   return context;
 }
+
+    

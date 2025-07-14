@@ -118,6 +118,7 @@ export async function updatePropertySettingsAction(formData: FormData) {
         theme_table_footer_background: formData.get('theme_table_footer_background') as string,
         theme_mobile_nav_background: formData.get('theme_mobile_nav_background') as string,
         theme_mobile_nav_foreground: formData.get('theme_mobile_nav_foreground') as string,
+        expense_categories: formData.getAll('expense_categories[]') as string[],
     }
     
     const { error } = await supabaseAdmin
@@ -310,3 +311,5 @@ export async function backupSqlAction(): Promise<{ sql?: string; error?: string 
         return { error: error.message };
     }
 }
+
+    

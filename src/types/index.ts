@@ -84,6 +84,7 @@ export type PropertySettings = {
   theme_table_footer_background?: string;
   theme_mobile_nav_background?: string;
   theme_mobile_nav_foreground?: string;
+  expense_categories?: string[];
 };
 
 export type ZakatBankDetail = {
@@ -150,3 +151,5 @@ export type ZakatAssets = {
 export type ZakatLiabilities = {
     shortTerm: string;
 };
+
+    
