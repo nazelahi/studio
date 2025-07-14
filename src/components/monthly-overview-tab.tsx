@@ -1153,11 +1153,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
             </Tabs>
             
             <Card>
-                <CardHeader>
-                    <CardTitle>{settings.page_overview.financial_overview_title}</CardTitle>
-                    <CardDescription>{settings.page_overview.financial_overview_description}</CardDescription>
-                </CardHeader>
-                <CardContent>
+                <CardContent className="p-6">
                     <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
                         <Card className="border-green-200 bg-green-50/50 dark:border-green-600/30 dark:bg-green-500/10">
                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
