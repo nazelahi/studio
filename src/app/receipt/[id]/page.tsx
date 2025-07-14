@@ -167,7 +167,7 @@ export default function ReceiptPage() {
                         </div>
                         <div className="text-right">
                             <h2 className="text-3xl font-bold uppercase text-muted-foreground tracking-wider">Receipt</h2>
-                            <p className="text-sm text-muted-foreground">Receipt #: {rentEntry.id.substring(0, 8).toUpperCase()}</p>
+                            <p className="text-sm text-muted-foreground">Receipt #: {String(rentEntry.id).substring(0, 8).toUpperCase()}</p>
                         </div>
                     </header>
                     
