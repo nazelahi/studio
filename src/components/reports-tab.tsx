@@ -18,6 +18,8 @@ import jsPDF from "jspdf"
 import html2canvas from "html2canvas"
 import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
+import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from "@/components/ui/chart";
+
 
 const months = [
     "January", "February", "March", "April", "May", "June", 
@@ -41,16 +43,30 @@ const formatCurrency = (amount?: number) => {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'BDT' }).format(amount).replace('BDT', '৳');
 }
 
-const CustomTooltip = ({ active, payload }: TooltipProps<number, string>) => {
+const CustomTooltip = ({ active, payload, label }: TooltipProps<number, string>) => {
     if (active && payload && payload.length) {
       return (
         <div className="p-2 text-sm bg-background/80 backdrop-blur-sm border rounded-md shadow-lg">
-          <p className="font-bold">{`${payload[0].name}: ${formatCurrency(payload[0].value)}`}</p>
+          <p className="font-bold">{label}</p>
+          {payload.map((p, i) => (
+            <p key={i} style={{ color: p.color }}>{`${p.name}: ${formatCurrency(p.value)}`}</p>
+          ))}
         </div>
       );
     }
     return null;
 };
+
+const chartConfig = {
+    income: {
+        label: "Income",
+        color: "hsl(var(--chart-1))",
+    },
+    expenses: {
+        label: "Expenses",
+        color: "hsl(var(--chart-2))",
+    },
+}
 
 export function ReportsTab({ year }: { year: number }) {
   const { rentData, expenses, tenants, loading } = useData();
@@ -70,10 +86,22 @@ export function ReportsTab({ year }: { year: number }) {
     return { income, expenses: expenseTotal, net: income - expenseTotal };
   }, [year, rentData, expenses]);
   
-  const yearlyChartData = [
-      { name: 'Total Income', value: yearlySummary.income },
-      { name: 'Total Expenses', value: yearlySummary.expenses },
-  ];
+  const yearlyChartData = React.useMemo(() => {
+      return months.map((month, index) => {
+          const monthlyIncome = rentData
+              .filter(e => e.year === year && e.month === index && e.status === 'Paid')
+              .reduce((acc, e) => acc + e.rent, 0);
+          const monthlyExpenses = expenses
+              .filter(e => {
+                  try {
+                      const d = parseISO(e.date);
+                      return d.getFullYear() === year && d.getMonth() === index;
+                  } catch { return false; }
+              })
+              .reduce((acc, e) => acc + e.amount, 0);
+          return { name: month.slice(0, 3), income: monthlyIncome, expenses: monthlyExpenses };
+      });
+  }, [year, rentData, expenses]);
 
   // Monthly Data
   const monthlySummary = React.useMemo(() => {
@@ -183,39 +211,32 @@ export function ReportsTab({ year }: { year: number }) {
                 <Card>
                   <CardHeader>
                     <CardTitle>Yearly Financial Summary for {year}</CardTitle>
-                    <CardDescription>An overview of your finances for the entire year.</CardDescription>
+                    <CardDescription>A month-by-month overview of your income and expenses.</CardDescription>
                   </CardHeader>
-                  <CardContent className="grid md:grid-cols-2 gap-8 items-center">
-                     <div className="space-y-4">
+                  <CardContent className="space-y-6">
+                     <div className="grid md:grid-cols-3 gap-4">
                         <Card className="bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800/50">
-                            <CardContent className="p-4 flex justify-between items-center">
-                                <span className="font-medium text-green-600 dark:text-green-400">Total Income</span>
-                                <span className="font-bold text-xl text-green-700 dark:text-green-300">{formatCurrency(yearlySummary.income)}</span>
-                            </CardContent>
+                            <CardContent className="p-4"><p className="text-sm font-medium text-green-600 dark:text-green-400">Total Income</p><span className="font-bold text-xl text-green-700 dark:text-green-300">{formatCurrency(yearlySummary.income)}</span></CardContent>
                         </Card>
                          <Card className="bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800/50">
-                            <CardContent className="p-4 flex justify-between items-center">
-                                <span className="font-medium text-red-600 dark:text-red-400">Total Expenses</span>
-                                <span className="font-bold text-xl text-red-700 dark:text-red-300">{formatCurrency(yearlySummary.expenses)}</span>
-                            </CardContent>
+                            <CardContent className="p-4"><p className="text-sm font-medium text-red-600 dark:text-red-400">Total Expenses</p><span className="font-bold text-xl text-red-700 dark:text-red-300">{formatCurrency(yearlySummary.expenses)}</span></CardContent>
                         </Card>
                         <Card>
-                            <CardContent className="p-4 flex justify-between items-center">
-                                <span className="font-medium">Net Profit</span>
-                                <span className={`font-bold text-xl ${yearlySummary.net >= 0 ? 'text-primary' : 'text-destructive'}`}>{formatCurrency(yearlySummary.net)}</span>
-                            </CardContent>
+                            <CardContent className="p-4"><p className="text-sm font-medium">Net Profit</p><span className={`font-bold text-xl ${yearlySummary.net >= 0 ? 'text-primary' : 'text-destructive'}`}>{formatCurrency(yearlySummary.net)}</span></CardContent>
                         </Card>
                      </div>
-                     <div className="h-64">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                                <Pie data={yearlyChartData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} labelLine={false} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}>
-                                    <Cell fill="hsl(var(--chart-1))" />
-                                    <Cell fill="hsl(var(--destructive))" />
-                                </Pie>
-                                <Tooltip content={<CustomTooltip />} />
-                            </PieChart>
-                        </ResponsiveContainer>
+                     <div className="h-80 w-full">
+                        <ChartContainer config={chartConfig} className="w-full h-full">
+                            <BarChart data={yearlyChartData} margin={{ top: 20, right: 20, bottom: 5, left: 0 }}>
+                                <CartesianGrid vertical={false} />
+                                <XAxis dataKey="name" tickLine={false} axisLine={false} tickMargin={8} />
+                                <YAxis tickFormatter={(value) => formatCurrency(value as number)} tickLine={false} axisLine={false} />
+                                <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+                                <ChartLegend content={<ChartLegendContent />} />
+                                <Bar dataKey="income" fill="var(--color-income)" radius={4} />
+                                <Bar dataKey="expenses" fill="var(--color-expenses)" radius={4} />
+                            </BarChart>
+                        </ChartContainer>
                     </div>
                   </CardContent>
                 </Card>
@@ -411,3 +432,5 @@ export function ReportsTab({ year }: { year: number }) {
     </div>
   )
 }
+
+    
