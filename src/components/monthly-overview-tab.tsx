@@ -1202,17 +1202,17 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
             </Card>
 
             <div className="mt-6 space-y-6">
-                 <Card>
+                 <Card className="bg-yellow-50 border-yellow-200 dark:bg-yellow-900/20 dark:border-yellow-700/50">
                     <CardHeader className="flex flex-row items-center justify-between gap-4 p-4">
                         <div className="flex items-center gap-3">
-                            <Megaphone className="h-6 w-6 text-primary" />
-                            <h3 className="text-lg font-semibold">Monthly Notice</h3>
+                            <Megaphone className="h-6 w-6 text-yellow-600 dark:text-yellow-400" />
+                            <h3 className="text-lg font-semibold text-yellow-800 dark:text-yellow-300">Monthly Notice</h3>
                         </div>
                         {isAdmin && (
                             <div className="flex items-center gap-1">
                                 <Dialog open={isNoticeDialogOpen} onOpenChange={setIsNoticeDialogOpen}>
                                     <DialogTrigger asChild>
-                                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => {}}>
+                                        <Button size="icon" variant="ghost" className="h-8 w-8 hover:bg-yellow-100 dark:hover:bg-yellow-800/50" onClick={() => {}}>
                                             {monthlyNotice ? <Edit className="h-4 w-4" /> : <PlusCircle className="h-4 w-4" />}
                                         </Button>
                                     </DialogTrigger>
@@ -1244,7 +1244,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                                 {monthlyNotice && (
                                      <AlertDialog>
                                         <AlertDialogTrigger asChild>
-                                            <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive">
+                                            <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive hover:bg-yellow-100 dark:hover:bg-yellow-800/50">
                                                 <Trash2 className="h-4 w-4" />
                                             </Button>
                                         </AlertDialogTrigger>
@@ -1270,11 +1270,11 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                     </CardHeader>
                     {monthlyNotice?.content ? (
                         <CardContent className="p-4 pt-0">
-                            <p className="text-sm text-muted-foreground whitespace-pre-wrap">{monthlyNotice.content}</p>
+                            <p className="text-sm text-yellow-700 dark:text-yellow-400 whitespace-pre-wrap">{monthlyNotice.content}</p>
                         </CardContent>
                     ) : (
                          <CardContent className="p-4 pt-0">
-                            <p className="text-sm text-muted-foreground">No notice for this month.</p>
+                            <p className="text-sm text-yellow-600 dark:text-yellow-500">No notice for this month.</p>
                          </CardContent>
                     )}
                  </Card>
@@ -1447,4 +1447,5 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
     
 
     
+
 
