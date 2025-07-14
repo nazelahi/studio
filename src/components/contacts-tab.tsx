@@ -3,7 +3,7 @@
 "use client"
 
 import * as React from "react"
-import { MoreHorizontal, PlusCircle, Image as ImageIcon, Mail, Phone, Home, ChevronDown, Copy, X, Search, FileText, Check, UserPlus, Calendar, Briefcase, Upload, File, Trash2, LoaderCircle, ScanLine } from "lucide-react"
+import { MoreHorizontal, PlusCircle, Image as ImageIcon, Mail, Phone, Home, ChevronDown, Copy, X, Search, FileText, Check, UserPlus, Calendar, Briefcase, Upload, File, Trash2, LoaderCircle, ScanLine, Eye, Edit } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog"
@@ -26,13 +26,14 @@ import { Badge } from "./ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
 import { useProtection } from "@/context/protection-context"
 import { extractTenantInfo } from "@/ai/flows/extract-tenant-info-flow"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table"
+import { cn } from "@/lib/utils"
 
 const WhatsAppIcon = (props: React.SVGProps<SVGSVGElement>) => (
   <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
     <path d="M16.75 13.96c.25.13.43.2.5.33.08.13.12.28.12.48 0 .2-.04.38-.12.53s-.18.28-.3.4-.27.2-.42.28-.32.12-.5.12c-.2 0-.38-.03-.56-.08s-.36-.13-.55-.23c-.34-.16-.66-.36-1-.6-.33-.24-.6-.48-.84-.72s-.45-.5-.65-.77c-.2-.27-.37-.56-.48-.85s-.18-.58-.18-.88c0-.3.06-.56.18-.78.12-.22.28-.4.48-.55.2-.14.4-.22.6-.22.1 0 .2.02.3.05s.2.06.3.1c.1.04.2.1.3.18l.1.13c.04.07.1.18.17.32l.1.2c.07.15.12.3.15.43s.05.27.05.4c0 .1-.02.2-.05.3s-.07.2-.13.28l-.13.15c-.04.05-.1.1-.15.15l-.1.1c-.04.03-.07.06-.08.1s-.02.08-.02.13c0 .05.01.1.04.15s.05.1.08.14c.08.08.18.17.3.28.12.1.24.2.37.28.2.13.4.24.6.33.2.1.4.15.6.15.2 0 .4-.04.58-.12s.3-.18.4-.3c.04-.05.1-.1.14-.18s.1-.16.14-.25.1-.18.13-.26.06-.17.06-.25c0-.1-.02-.2-.04-.28s-.06-.16-.1-.23l-.1-.14c-.03-.04-.06-.1-.1-.13l-.04-.04c-.04-.02-.1-.04-.13-.07s-.06-.05-.1-.08l-.2-.14c-.04-.03-.1-.06-.1-.1s-.07-.1-.07-.16.02-.1.08-.15.1-.1.14-.14.1-.08.14-.1.1-.04.1-.04h.1c.07-.02.13-.04.2-.06s.1-.04.14-.05.1-.02.1-.02.13 0 .2.02c.1.02.2.05.3.1.1.04.2.1.3.16.1.07.2.14.3.2l.2.2c.08.1.15.2.2.3zM12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.4 0-8-3.6-8-8s3.6-8 8-8 8 3.6 8 8-3.6 8-8 8z"></path>
   </svg>
 );
-
 
 export function ContactsTab() {
   const { tenants, addTenant, updateTenant, deleteTenant, loading } = useData();
@@ -263,61 +264,48 @@ export function ContactsTab() {
     setOpen(isOpen);
   };
   
-  const getStatusBadge = (status: Tenant['status']) => {
+  const getStatusBadgeClass = (status: Tenant['status']) => {
     switch (status) {
       case 'Paid':
-        return 'bg-success text-success-foreground hover:bg-success/80';
+        return 'bg-green-100 text-green-800 border-green-200';
       case 'Active':
-        return 'bg-warning text-warning-foreground hover:bg-warning/80';
+        return 'bg-blue-100 text-blue-800 border-blue-200';
       case 'Overdue':
-        return 'bg-destructive text-destructive-foreground hover:bg-destructive/80';
+        return 'bg-red-100 text-red-800 border-red-200';
       default:
-        return '';
+        return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
-  
-  const TenantCardSkeleton = () => (
-    <Card className="flex flex-col overflow-hidden">
-        <Skeleton className="h-40 w-full bg-muted" />
-        <CardContent className="p-4 space-y-3">
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-full" />
-        </CardContent>
-    </Card>
-  );
-
 
   return (
     <>
       <Card className="mt-4 border-0 shadow-none">
-        <CardHeader>
-          <CardTitle>Tenants</CardTitle>
-          <CardDescription>
-            Manage your tenants and their information.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
-              <div className="relative w-full sm:max-w-xs">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input 
-                  placeholder="Search tenants..."
-                  className="pl-9"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-               {isAdmin && 
-                <Dialog open={open} onOpenChange={handleOpenChange}>
-                  <DialogTrigger asChild>
-                    <Button onClick={() => setEditingTenant(null)} className="w-full sm:w-auto">
-                      <PlusCircle className="mr-2 h-4 w-4" />
-                      Add Tenant
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-xl">
+        <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <CardTitle>Tenants</CardTitle>
+            <CardDescription>
+              A list of all tenants in your property.
+            </CardDescription>
+          </div>
+          <div className="flex items-center gap-2 w-full md:w-auto">
+            <div className="relative flex-grow">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input 
+                placeholder="Search tenants..."
+                className="pl-9 w-full"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            {isAdmin && 
+              <Dialog open={open} onOpenChange={handleOpenChange}>
+                <DialogTrigger asChild>
+                  <Button onClick={() => setEditingTenant(null)} className="shrink-0">
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Add Tenant
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-xl">
                     <DialogHeader>
                       <DialogTitle>{editingTenant ? 'Edit Tenant' : 'Add New Tenant'}</DialogTitle>
                       <DialogDescription>
@@ -535,90 +523,99 @@ export function ContactsTab() {
                       </DialogFooter>
                     </form>
                   </DialogContent>
-                </Dialog>
-              }
+              </Dialog>
+            }
           </div>
-          
-            {loading ? (
-                <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                    {[...Array(4)].map((_, i) => <TenantCardSkeleton key={i} />)}
-                </div>
-            ) : (
-                 <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                  {filteredTenants.length > 0 ? filteredTenants.map((tenant) => (
-                    <Card key={tenant.id} className="flex flex-col overflow-hidden shadow-md transition-shadow hover:shadow-lg">
-                        <div className="relative bg-muted">
-                            <img src={tenant.avatar} alt={tenant.name} className="w-full h-40 object-contain" data-ai-hint="person avatar" />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                            <div className="absolute bottom-0 left-0 p-4">
-                                <h3 className="font-bold text-lg text-white" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.7)' }}>{tenant.name}</h3>
-                                <div className="flex items-center gap-2">
-                                   <Home className="h-4 w-4 text-white/90" />
-                                   <p className="text-sm text-white/90" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.5)' }}>{tenant.property}</p>
-                                </div>
-                            </div>
-                             <div className="absolute top-2 right-2">
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger asChild>
-                                      <Button variant="secondary" size="icon" className="h-8 w-8 rounded-full">
-                                          <MoreHorizontal className="h-4 w-4" />
-                                          <span className="sr-only">More options</span>
-                                      </Button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onClick={() => handleViewDetails(tenant)}>
-                                      <FileText className="mr-2 h-4 w-4" />
-                                      View Details
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={(e) => handleWhatsappMessage(tenant, e)}>
-                                      <WhatsAppIcon className="mr-2 h-4 w-4" />
-                                      Send WhatsApp
-                                    </DropdownMenuItem>
-                                    {isAdmin && <>
-                                      <DropdownMenuSeparator />
-                                      <DropdownMenuItem onClick={(e) => handleEdit(tenant, e)}>Edit</DropdownMenuItem>
-                                      <DropdownMenuItem onClick={(e) => handleDelete(tenant.id, e)} className="text-destructive">
-                                          Delete
-                                      </DropdownMenuItem>
-                                    </>}
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
-                            </div>
+        </CardHeader>
+        <CardContent className="p-0">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Tenant</TableHead>
+                <TableHead className="hidden md:table-cell">Property</TableHead>
+                <TableHead className="hidden sm:table-cell">Rent</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {loading ? (
+                [...Array(5)].map((_, i) => (
+                  <TableRow key={i}>
+                    <TableCell colSpan={5}>
+                      <div className="flex items-center gap-4">
+                        <Skeleton className="h-10 w-10 rounded-full" />
+                        <div className="space-y-2">
+                          <Skeleton className="h-4 w-32" />
+                          <Skeleton className="h-3 w-24" />
                         </div>
-
-                        <CardContent className="p-4 flex-grow flex flex-col">
-                            <div className="text-sm space-y-3 flex-grow">
-                                <div className="flex items-center gap-3">
-                                    <Mail className="h-4 w-4 text-muted-foreground" />
-                                    <a href={`mailto:${tenant.email}`} className="truncate text-primary hover:underline">{tenant.email}</a>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <Phone className="h-4 w-4 text-muted-foreground"/>
-                                    <a href={`tel:${tenant.phone}`} className="text-primary hover:underline">{tenant.phone || "N/A"}</a>
-                                </div>
-                                {tenant.type && (
-                                    <div className="flex items-center gap-3">
-                                        <Briefcase className="h-4 w-4 text-muted-foreground"/>
-                                        <span>{tenant.type}</span>
-                                    </div>
-                                )}
-                                <div className="flex items-center gap-3">
-                                    <Calendar className="h-4 w-4 text-muted-foreground"/>
-                                    <span>Join Date: {format(parseISO(tenant.join_date), "MMM dd, yyyy")}</span>
-                                </div>
-                            </div>
-                            <div className="mt-4 pt-4 border-t">
-                                <Badge className={`${getStatusBadge(tenant.status)} w-full justify-center`}>{tenant.status}</Badge>
-                            </div>
-                        </CardContent>
-                    </Card>
-                  )) : (
-                    <div className="col-span-full text-center text-muted-foreground py-10">
-                        No tenants found.
-                    </div>
-                  )}
-                </div>
-            )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : filteredTenants.length > 0 ? (
+                filteredTenants.map((tenant) => (
+                  <TableRow key={tenant.id}>
+                    <TableCell>
+                      <div className="flex items-center gap-4">
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage src={tenant.avatar} alt={tenant.name} data-ai-hint="person avatar" />
+                          <AvatarFallback>{tenant.name.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <div className="font-medium">{tenant.name}</div>
+                          <div className="text-sm text-muted-foreground md:hidden">{tenant.property}</div>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">{tenant.property}</TableCell>
+                    <TableCell className="hidden sm:table-cell">৳{tenant.rent.toFixed(2)}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className={getStatusBadgeClass(tenant.status)}>
+                        {tenant.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button variant="ghost" size="sm" className="mr-2" onClick={() => handleViewDetails(tenant)}>
+                        <Eye className="mr-2 h-4 w-4" />
+                        View
+                      </Button>
+                      {isAdmin && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={(e) => handleEdit(tenant, e)}>
+                              <Edit className="mr-2 h-4 w-4" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={(e) => handleWhatsappMessage(tenant, e)}>
+                              <WhatsAppIcon className="mr-2 h-4 w-4" />
+                              Send WhatsApp
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem onClick={(e) => handleDelete(tenant.id, e)} className="text-destructive">
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center text-muted-foreground py-10">
+                    No tenants found.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
         </CardContent>
       </Card>
       {selectedTenantForSheet && (
