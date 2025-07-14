@@ -29,6 +29,12 @@ interface TenantDetailSheetProps {
   onOpenChange: (isOpen: boolean) => void;
 }
 
+const WhatsAppIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg viewBox="0 0 24 24" fill="currentColor" {...props}>
+      <path d="M16.75 13.96c.25.13.43.2.5.33.08.13.12.28.12.48 0 .2-.04.38-.12.53s-.18.28-.3.4-.27.2-.42.28-.32.12-.5.12c-.2 0-.38-.03-.56-.08s-.36-.13-.55-.23c-.34-.16-.66-.36-1-.6-.33-.24-.6-.48-.84-.72s-.45-.5-.65-.77c-.2-.27-.37-.56-.48-.85s-.18-.58-.18-.88c0-.3.06-.56.18-.78.12-.22.28-.4.48-.55.2-.14.4-.22.6-.22.1 0 .2.02.3.05s.2.06.3.1c.1.04.2.1.3.18l.1.13c.04.07.1.18.17.32l.1.2c.07.15.12.3.15.43s.05.27.05.4c0 .1-.02.2-.05.3s-.07.2-.13.28l-.13.15c-.04.05-.1.1-.15.15l-.1.1c-.04.03-.07.06-.08.1s-.02.08-.02.13c0 .05.01.1.04.15s.05.1.08.14c.08.08.18.17.3.28.12.1.24.2.37.28.2.13.4.24.6.33.2.1.4.15.6.15.2 0 .4-.04.58-.12s.3-.18.4-.3c.04-.05.1-.1.14-.18s.1-.16.14-.25.1-.18.13-.26.06-.17.06-.25c0-.1-.02-.2-.04-.28s-.06-.16-.1-.23l-.1-.14c-.03-.04-.06-.1-.1-.13l-.04-.04c-.04-.02-.1-.04-.13-.07s-.06-.05-.1-.08l-.2-.14c-.04-.03-.1-.06-.1-.1s-.07-.1-.07-.16.02-.1.08-.15.1-.1.14-.14.1-.08.14-.1.1-.04.1-.04h.1c.07-.02.13-.04.2-.06s.1-.04.14-.05.1-.02.1-.02.13 0 .2.02c.1.02.2.05.3.1.1.04.2.1.3.16.1.07.2.14.3.2l.2.2c.08.1.15.2.2.3zM12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2zm0 18c-4.4 0-8-3.6-8-8s3.6-8 8-8 8 3.6 8 8-3.6 8-8 8z"></path>
+    </svg>
+  );
+
 export function TenantDetailSheet({
   tenant,
   isOpen,
@@ -188,6 +194,12 @@ export function TenantDetailSheet({
                         <div className="flex items-center gap-3">
                             <Phone className="h-4 w-4 text-muted-foreground" />
                              <a href={`tel:${tenant.phone}`} className="text-primary hover:underline">{tenant.phone}</a>
+                        </div>
+                    )}
+                     {tenant.whatsapp_number && (
+                        <div className="flex items-center gap-3">
+                            <WhatsAppIcon className="h-4 w-4 text-muted-foreground" />
+                             <a href={`https://wa.me/${tenant.whatsapp_number.replace(/[^0-9]/g, '')}`} target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">{tenant.whatsapp_number}</a>
                         </div>
                     )}
                 </CardContent>
