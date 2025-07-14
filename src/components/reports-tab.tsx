@@ -12,7 +12,7 @@ import { Badge } from "./ui/badge"
 import { format, parseISO } from "date-fns"
 import type { Tenant, RentEntry, Expense } from "@/types"
 import { Button } from "./ui/button"
-import { Download, Printer, FileText, DollarSign, TrendingDown, Calculator, Landmark } from "lucide-react"
+import { Download, Printer, FileText, DollarSign, TrendingDown, Calculator, Landmark, Users } from "lucide-react"
 import { Label } from "@/components/ui/label"
 import jsPDF from "jspdf"
 import html2canvas from "html2canvas"
@@ -118,6 +118,28 @@ export function ReportsTab({ year }: { year: number }) {
       .filter(entry => entry.tenant_id === selectedTenant)
       .sort((a, b) => new Date(a.year, a.month).getTime() - new Date(b.year, b.month).getTime());
   }, [rentData, selectedTenant]);
+
+  // Tenant Ledger Data
+  const tenantLedgerData = React.useMemo(() => {
+      const entries = rentData.filter(e => e.year === year && e.month === selectedMonth);
+      const allTenantsForMonth = tenants.filter(t => {
+          const hasEntry = entries.some(e => e.tenant_id === t.id);
+          // Also include tenants who joined before this month but don't have an entry yet
+          const joinDate = parseISO(t.join_date);
+          const reportDate = new Date(year, selectedMonth, 1);
+          return hasEntry || (joinDate <= reportDate && !entries.some(e => e.tenant_id === t.id));
+      });
+
+      return allTenantsForMonth.map(tenant => {
+          const entry = entries.find(e => e.tenant_id === tenant.id);
+          return {
+              tenant,
+              entry: entry || null,
+              status: entry?.status || 'Missing'
+          };
+      });
+  }, [tenants, rentData, year, selectedMonth]);
+
 
   const handleDownloadPdf = async () => {
     const input = reportContentRef.current;
@@ -251,7 +273,49 @@ export function ReportsTab({ year }: { year: number }) {
                     </div>
                  </div>
             );
-        case 'tenant':
+        case 'tenant-ledger':
+            return (
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><Users /> Tenant Ledger for {months[selectedMonth]}, {year}</CardTitle>
+                        <CardDescription>A full list of all tenants and their payment status for the selected month.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Tenant</TableHead>
+                                    <TableHead>Property</TableHead>
+                                    <TableHead className="text-right">Rent</TableHead>
+                                    <TableHead className="text-center">Status</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {tenantLedgerData.length > 0 ? tenantLedgerData.map(({ tenant, entry, status }) => (
+                                    <TableRow key={tenant.id}>
+                                        <TableCell className="font-medium">{tenant.name}</TableCell>
+                                        <TableCell>{tenant.property}</TableCell>
+                                        <TableCell className="text-right">{formatCurrency(tenant.rent)}</TableCell>
+                                        <TableCell className="text-center">
+                                            <Badge className={cn(
+                                                status === "Paid" && "bg-green-100 text-green-800 border-green-200",
+                                                status === "Pending" && "bg-yellow-100 text-yellow-800 border-yellow-200",
+                                                status === "Overdue" && "bg-red-100 text-red-800 border-red-200",
+                                                status === "Missing" && "bg-gray-100 text-gray-800 border-gray-200",
+                                            )}>{status}</Badge>
+                                        </TableCell>
+                                    </TableRow>
+                                )) : (
+                                    <TableRow>
+                                        <TableCell colSpan={4} className="text-center text-muted-foreground p-8">No tenants found for this period.</TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </CardContent>
+                </Card>
+            );
+        case 'tenant-history':
             return (
                 <Card>
                     <CardHeader>
@@ -306,11 +370,12 @@ export function ReportsTab({ year }: { year: number }) {
                   <SelectContent>
                     <SelectItem value="monthly">Monthly Summary</SelectItem>
                     <SelectItem value="yearly">Yearly Summary</SelectItem>
-                    <SelectItem value="tenant">Tenant History</SelectItem>
+                    <SelectItem value="tenant-ledger">Tenant Ledger</SelectItem>
+                    <SelectItem value="tenant-history">Tenant History</SelectItem>
                   </SelectContent>
                 </Select>
             </div>
-            {reportType === 'monthly' && (
+            {(reportType === 'monthly' || reportType === 'tenant-ledger') && (
                 <div className="flex-1 min-w-[150px]">
                     <Label>Month</Label>
                     <Select value={selectedMonth.toString()} onValueChange={(v) => setSelectedMonth(Number(v))}>
@@ -321,7 +386,7 @@ export function ReportsTab({ year }: { year: number }) {
                     </Select>
                 </div>
             )}
-            {reportType === 'tenant' && (
+            {reportType === 'tenant-history' && (
                 <div className="flex-1 min-w-[150px]">
                     <Label>Tenant</Label>
                     <Select onValueChange={setSelectedTenant}>
@@ -346,5 +411,3 @@ export function ReportsTab({ year }: { year: number }) {
     </div>
   )
 }
-
-    

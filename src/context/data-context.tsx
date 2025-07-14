@@ -260,12 +260,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
                 rent: tenantData.rent,
                 avatar: tenantData.avatar,
             })
-            .eq('tenant_id', id)
-            .neq('status', 'Paid')
-            .gt('due_date', new Date().toISOString());
+            .eq('tenant_id', id);
 
         if (rentUpdateError) {
-            handleError(rentUpdateError, 'syncing future rent entries', toast);
+            handleError(rentUpdateError, 'syncing rent entries', toast);
         }
     };
 
