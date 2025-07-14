@@ -61,6 +61,7 @@ interface AppSettings {
   zakatBankDetails: ZakatBankDetail[];
   footerName: string;
   tabNames: TabNames;
+  expenseCategories: string[];
   theme: AppTheme;
   page_dashboard: PageDashboard;
   page_overview: PageOverview;
@@ -101,6 +102,7 @@ const defaultSettings: AppSettings = {
         reports: "Reports",
         zakat: "Zakat",
     },
+    expenseCategories: ["Electric Bill", "Cleaning Bill", "Internet Bill", "Maintenance", "Repairs", "Utilities", "Insurance", "Taxes", "Management Fee", "Other"],
     theme: {
         colors: {
             primary: '#14b8a6', // teal-500

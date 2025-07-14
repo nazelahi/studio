@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import * as React from "react"
@@ -51,8 +52,6 @@ const months = [
     "January", "February", "March", "April", "May", "June", 
     "July", "August", "September", "October", "November", "December"
 ];
-
-const expenseCategories = ["Maintenance", "Repairs", "Utilities", "Insurance", "Taxes", "Management Fee", "Other"];
 
 const getStatusBadge = (status: RentEntry["status"]) => {
     switch (status) {
@@ -410,7 +409,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
   const handleEditExpense = (expense: Expense, e: React.MouseEvent) => {
     withProtection(() => {
         setEditingExpense(expense);
-        const categoryIsPredefined = expenseCategories.includes(expense.category);
+        const categoryIsPredefined = settings.expenseCategories.includes(expense.category);
         if (categoryIsPredefined) {
             setExpenseCategory(expense.category);
             setCustomCategory('');
@@ -1054,7 +1053,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                                         <div className="space-y-2"><Label htmlFor="date">Date</Label><Input id="date" name="date" type="date" defaultValue={editingExpense?.date || new Date().toISOString().split('T')[0]} required /></div>
                                         <div className="space-y-2">
                                             <Label htmlFor="category">Category</Label>
-                                            <Select value={expenseCategory} onValueChange={setExpenseCategory}><SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger><SelectContent>{expenseCategories.map(cat => (<SelectItem key={cat} value={cat}>{cat}</SelectItem>))}</SelectContent></Select>
+                                            <Select value={expenseCategory} onValueChange={setExpenseCategory}><SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger><SelectContent>{settings.expenseCategories.map(cat => (<SelectItem key={cat} value={cat}>{cat}</SelectItem>))}</SelectContent></Select>
                                         </div>
                                         {expenseCategory === 'Other' && (<div className="space-y-2"><Label htmlFor="customCategory">Custom Category</Label><Input id="customCategory" name="customCategory" value={customCategory} onChange={(e) => setCustomCategory(e.target.value)} placeholder="Enter custom category" required/></div>)}
                                         <div className="space-y-2"><Label htmlFor="amount">Amount</Label><Input id="amount" name="amount" type="number" step="0.01" defaultValue={editingExpense?.amount} placeholder="0.00" required /></div>
