@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import * as React from "react"
@@ -1286,13 +1287,62 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                             <Landmark className="h-4 w-4 text-inherit" />
                             <h3 className="font-semibold text-sm text-inherit">Bank Deposit Information</h3>
                         </div>
+                    </CardHeader>
+                    <CardContent className="p-4 grid md:grid-cols-3 gap-6 items-start">
+                        <div className="space-y-1">
+                            <p className="text-sm font-medium text-muted-foreground">Bank Name</p>
+                             <div className="flex items-center gap-2">
+                                {settings.bankLogoUrl && (
+                                    <img src={settings.bankLogoUrl} alt={`${settings.bankName} logo`} className="h-6 object-contain" data-ai-hint="logo bank" />
+                                )}
+                                <p className="font-semibold">{settings.bankName || "Not Set"}</p>
+                            </div>
+                        </div>
+                         <div className="space-y-1">
+                            <p className="text-sm font-medium text-muted-foreground">Account Number</p>
+                            <p className="font-semibold">{settings.bankAccountNumber || "Not Set"}</p>
+                        </div>
                         <Dialog open={isDepositDialogOpen} onOpenChange={handleDepositOpenChange}>
-                            <DialogTrigger asChild>
-                                <Button size="icon" variant="secondary" className="h-7 w-7" disabled={!isAdmin}>
-                                    <PlusCircle className="h-4 w-4" />
-                                    <span className="sr-only">{loggedDeposit ? 'Edit Deposit' : 'Log Deposit'}</span>
-                                </Button>
-                            </DialogTrigger>
+                          {loggedDeposit ? (
+                              <div className="space-y-1">
+                                  <div className="flex items-center justify-between">
+                                    <p className="text-sm font-medium text-muted-foreground">Deposit Status</p>
+                                    <DialogTrigger asChild>
+                                      <Button size="icon" variant="ghost" className="h-7 w-7 -mr-2" disabled={!isAdmin}>
+                                        <Edit className="h-4 w-4" />
+                                        <span className="sr-only">Edit Deposit</span>
+                                      </Button>
+                                    </DialogTrigger>
+                                  </div>
+                                  <div className="flex items-center gap-2 text-success font-semibold">
+                                      <CheckCircle className="h-5 w-5" />
+                                      <span>Deposited on {format(parseISO(loggedDeposit.deposit_date), 'dd MMM, yyyy')}</span>
+                                  </div>
+                                  {loggedDeposit.receipt_url && (
+                                        <Button asChild variant="secondary" size="sm" className="mt-2">
+                                            <a href={loggedDeposit.receipt_url} target="_blank" rel="noopener noreferrer">
+                                                <Eye className="mr-2 h-4 w-4" /> View Receipt
+                                            </a>
+                                        </Button>
+                                    )}
+                              </div>
+                            ) : (
+                              <div className="space-y-1">
+                                 <div className="flex items-center justify-between">
+                                    <p className="text-sm font-medium text-muted-foreground">Deposit Status</p>
+                                    <DialogTrigger asChild>
+                                      <Button size="icon" variant="ghost" className="h-7 w-7 -mr-2" disabled={!isAdmin}>
+                                        <PlusCircle className="h-4 w-4" />
+                                        <span className="sr-only">Log Deposit</span>
+                                      </Button>
+                                    </DialogTrigger>
+                                  </div>
+                                 <div className="flex items-center gap-2 text-warning-foreground font-semibold">
+                                     <AlertCircle className="h-5 w-5" />
+                                     <span>Pending Deposit</span>
+                                 </div>
+                               </div>
+                            )}
                             <DialogContent>
                                 <DialogHeader>
                                     <DialogTitle>{loggedDeposit ? 'Edit Deposit' : 'Log New Deposit'}</DialogTitle>
@@ -1367,45 +1417,6 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                                 </form>
                             </DialogContent>
                         </Dialog>
-                    </CardHeader>
-                    <CardContent className="p-4 grid md:grid-cols-3 gap-6 items-start">
-                        <div className="space-y-1">
-                            <p className="text-sm font-medium text-muted-foreground">Bank Name</p>
-                             <div className="flex items-center gap-2">
-                                {settings.bankLogoUrl && (
-                                    <img src={settings.bankLogoUrl} alt={`${settings.bankName} logo`} className="h-6 object-contain" data-ai-hint="logo bank" />
-                                )}
-                                <p className="font-semibold">{settings.bankName || "Not Set"}</p>
-                            </div>
-                        </div>
-                         <div className="space-y-1">
-                            <p className="text-sm font-medium text-muted-foreground">Account Number</p>
-                            <p className="font-semibold">{settings.bankAccountNumber || "Not Set"}</p>
-                        </div>
-                        {loggedDeposit ? (
-                          <div className="space-y-1">
-                              <p className="text-sm font-medium text-muted-foreground">Deposit Status</p>
-                              <div className="flex items-center gap-2 text-success font-semibold">
-                                  <CheckCircle className="h-5 w-5" />
-                                  <span>Deposited on {format(parseISO(loggedDeposit.deposit_date), 'dd MMM, yyyy')}</span>
-                              </div>
-                               {loggedDeposit.receipt_url && (
-                                    <Button asChild variant="secondary" size="sm" className="mt-2">
-                                        <a href={loggedDeposit.receipt_url} target="_blank" rel="noopener noreferrer">
-                                            <Eye className="mr-2 h-4 w-4" /> View Receipt
-                                        </a>
-                                    </Button>
-                                )}
-                          </div>
-                        ) : (
-                          <div className="space-y-1">
-                             <p className="text-sm font-medium text-muted-foreground">Deposit Status</p>
-                             <div className="flex items-center gap-2 text-warning-foreground font-semibold">
-                                 <AlertCircle className="h-5 w-5" />
-                                 <span>Pending Deposit</span>
-                             </div>
-                           </div>
-                        )}
                     </CardContent>
                      {loggedDeposit ? (
                         <CardFooter style={{ backgroundColor: 'hsl(var(--success)/0.1)', borderTop: '1px solid hsl(var(--border))'}} className="p-2 text-center">
@@ -1451,3 +1462,4 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
 
 
     
+
