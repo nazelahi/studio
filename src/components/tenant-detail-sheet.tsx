@@ -25,7 +25,7 @@ import { useAuth } from "@/context/auth-context";
 import { useProtection } from "@/context/protection-context";
 import { useData } from "@/context/data-context";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "./ui/carousel";
-import { Dialog, DialogContent, DialogTrigger } from "./ui/dialog";
+import { Dialog, DialogContent, DialogTrigger, DialogHeader, DialogTitle as DialogTitleComponent } from "./ui/dialog";
 
 interface TenantDetailSheetProps {
   tenant: Tenant | null;
@@ -235,6 +235,9 @@ export function TenantDetailSheet({
                                             />
                                         </DialogTrigger>
                                         <DialogContent className="max-w-3xl p-2">
+                                            <DialogHeader className="sr-only">
+                                                <DialogTitleComponent>Document Viewer: Document {index + 1}</DialogTitleComponent>
+                                            </DialogHeader>
                                             <img src={doc} alt={`Document ${index + 1}`} className="w-full h-auto rounded-md" data-ai-hint="document id"/>
                                         </DialogContent>
                                     </Dialog>
