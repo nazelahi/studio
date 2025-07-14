@@ -69,11 +69,42 @@ export function TenantDetailSheet({
   const sheetContentRef = React.useRef<HTMLDivElement>(null);
 
   const handleDownloadPdf = async () => {
-    // ... same as before
+    const input = sheetContentRef.current;
+    if (!input) {
+        toast({ title: "Error", description: "Could not find content to download.", variant: "destructive" });
+        return;
+    }
+    toast({ title: "Generating PDF...", description: "Please wait a moment." });
+    try {
+        const canvas = await html2canvas(input, { scale: 2 });
+        const imgData = canvas.toDataURL('image/png');
+        const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: [canvas.width, canvas.height] });
+        pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
+        pdf.save(`Tenant_Details_${tenant?.name}.pdf`);
+        toast({ title: "Success", description: "PDF has been downloaded." });
+    } catch (error) {
+        console.error("Error generating PDF:", error);
+        toast({ title: "Error", description: "Failed to generate PDF.", variant: "destructive" });
+    }
   };
 
   const handlePrint = () => {
-    // ... same as before
+    const content = sheetContentRef.current;
+    if (content) {
+        const printWindow = window.open('', '', 'height=800,width=800');
+        printWindow?.document.write('<html><head><title>Print Tenant Details</title>');
+        // You may need to link your stylesheet here for accurate printing
+        printWindow?.document.write('<link rel="stylesheet" href="/globals.css" type="text/css" />');
+        printWindow?.document.write('</head><body>');
+        printWindow?.document.write(content.innerHTML);
+        printWindow?.document.write('</body></html>');
+        printWindow?.document.close();
+        printWindow?.focus();
+        setTimeout(() => {
+          printWindow?.print();
+          printWindow?.close();
+        }, 250)
+    }
   };
   
     const handleWhatsappMessage = (e: React.MouseEvent) => {
