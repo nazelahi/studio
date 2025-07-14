@@ -1,5 +1,4 @@
 
-
 "use client"
 
 import * as React from "react"
@@ -649,7 +648,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
         if (result.error) {
             toast({ title: 'Error deleting notice', description: result.error, variant: 'destructive' });
         } else {
-            toast({ title: 'Notice Deleted', description: 'The monthly notice has been removed.', variant: 'destructive' });
+            toast({ title: 'Notice Deleted', description: 'The monthly notice has been removed.' });
         }
     });
   }
@@ -1283,15 +1282,13 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                 
                  <Card>
                     <CardHeader className="flex flex-row items-center justify-between gap-3 p-3" style={{ backgroundColor: 'hsl(var(--table-header-background))', color: 'hsl(var(--table-header-foreground))' }}>
-                        <div className="flex items-center gap-3">
-                           <div className="flex-shrink-0 bg-primary-foreground/10 p-2 rounded-full">
-                               <Landmark className="h-5 w-5 text-inherit" />
-                            </div>
-                            <h3 className="font-semibold text-inherit">Bank Deposit Information</h3>
+                        <div className="flex items-center gap-2">
+                            <Landmark className="h-4 w-4 text-inherit" />
+                            <h3 className="font-semibold text-sm text-inherit">Bank Deposit Information</h3>
                         </div>
                         <Dialog open={isDepositDialogOpen} onOpenChange={handleDepositOpenChange}>
                             <DialogTrigger asChild>
-                                <Button size="icon" variant="secondary" className="h-8 w-8" disabled={!isAdmin}>
+                                <Button size="icon" variant="secondary" className="h-7 w-7" disabled={!isAdmin}>
                                     <PlusCircle className="h-4 w-4" />
                                     <span className="sr-only">{loggedDeposit ? 'Edit Deposit' : 'Log Deposit'}</span>
                                 </Button>
@@ -1374,10 +1371,12 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                     <CardContent className="p-4 grid md:grid-cols-3 gap-6 items-start">
                         <div className="space-y-1">
                             <p className="text-sm font-medium text-muted-foreground">Bank Name</p>
-                            <p className="font-semibold">{settings.bankName || "Not Set"}</p>
-                            {settings.bankLogoUrl && (
-                                <img src={settings.bankLogoUrl} alt={`${settings.bankName} logo`} className="h-10 mt-2 object-contain" data-ai-hint="logo bank" />
-                            )}
+                             <div className="flex items-center gap-2">
+                                {settings.bankLogoUrl && (
+                                    <img src={settings.bankLogoUrl} alt={`${settings.bankName} logo`} className="h-6 object-contain" data-ai-hint="logo bank" />
+                                )}
+                                <p className="font-semibold">{settings.bankName || "Not Set"}</p>
+                            </div>
                         </div>
                          <div className="space-y-1">
                             <p className="text-sm font-medium text-muted-foreground">Account Number</p>
@@ -1409,12 +1408,12 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                         )}
                     </CardContent>
                      {loggedDeposit ? (
-                        <CardFooter style={{ backgroundColor: 'hsl(var(--success)/0.1)', borderTop: '1px solid hsl(var(--border))'}} className="p-4 text-center">
-                            <p className="font-bold text-xl text-success w-full">৳{loggedDeposit.amount.toFixed(2)} Deposited</p>
+                        <CardFooter style={{ backgroundColor: 'hsl(var(--success)/0.1)', borderTop: '1px solid hsl(var(--border))'}} className="p-2 text-center">
+                            <p className="font-bold text-base text-success w-full">৳{loggedDeposit.amount.toFixed(2)} Deposited</p>
                         </CardFooter>
                      ) : (
-                        <CardFooter style={{ backgroundColor: 'hsl(var(--secondary))', borderTop: '1px solid hsl(var(--border))'}} className="p-4 text-center">
-                            <p className="font-bold text-xl text-primary w-full">৳{amountForDeposit.toFixed(2)} to Deposit</p>
+                        <CardFooter style={{ backgroundColor: 'hsl(var(--secondary))', borderTop: '1px solid hsl(var(--border))'}} className="p-2 text-center">
+                            <p className="font-bold text-base text-primary w-full">৳{amountForDeposit.toFixed(2)} to Deposit</p>
                         </CardFooter>
                      )}
                 </Card>
@@ -1449,3 +1448,6 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
     
 
 
+
+
+    
