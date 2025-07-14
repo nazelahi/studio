@@ -36,11 +36,19 @@ const WhatsAppIcon = (props: React.SVGProps<SVGSVGElement>) => (
 );
 
 export function ContactsTab() {
-  const { tenants, addTenant, updateTenant, deleteTenant, loading } = useData();
+  const { 
+    tenants, 
+    addTenant, 
+    updateTenant, 
+    deleteTenant, 
+    loading,
+    isTenantDialogOpen,
+    setIsTenantDialogOpen,
+    editingTenant,
+    setEditingTenant
+  } = useData();
   const { isAdmin } = useAuth();
   const { settings } = useSettings();
-  const [open, setOpen] = React.useState(false);
-  const [editingTenant, setEditingTenant] = React.useState<Tenant | null>(null);
   const { toast } = useToast();
   const [previewImage, setPreviewImage] = React.useState<string | null>(null);
   const [documentFiles, setDocumentFiles] = React.useState<File[]>([]);
@@ -59,6 +67,15 @@ export function ContactsTab() {
   const [selectedTenantForSheet, setSelectedTenantForSheet] = React.useState<Tenant | null>(null);
 
   const [searchTerm, setSearchTerm] = React.useState("");
+  
+  React.useEffect(() => {
+    if (editingTenant) {
+      setPreviewImage(editingTenant.avatar);
+      setExistingDocuments(editingTenant.documents || []);
+      setDocumentFiles([]);
+    }
+  }, [editingTenant]);
+
 
   const filteredTenants = React.useMemo(() => {
     if (!searchTerm) return tenants;
@@ -140,7 +157,7 @@ export function ContactsTab() {
         });
       }
       
-      setOpen(false);
+      handleOpenChange(false);
       resetDialogState();
     } catch (error) {
        toast({
@@ -230,10 +247,7 @@ export function ContactsTab() {
   const handleEdit = (tenant: Tenant, e: React.MouseEvent) => {
     withProtection(() => {
       setEditingTenant(tenant);
-      setPreviewImage(tenant.avatar);
-      setExistingDocuments(tenant.documents || []);
-      setDocumentFiles([]);
-      setOpen(true);
+      setIsTenantDialogOpen(true);
     }, e);
   };
 
@@ -261,7 +275,7 @@ export function ContactsTab() {
     if (!isOpen) {
       resetDialogState();
     }
-    setOpen(isOpen);
+    setIsTenantDialogOpen(isOpen);
   };
   
   const getStatusBadgeClass = (status: Tenant['status']) => {
@@ -298,7 +312,7 @@ export function ContactsTab() {
               />
             </div>
             {isAdmin && 
-              <Dialog open={open} onOpenChange={handleOpenChange}>
+              <Dialog open={isTenantDialogOpen} onOpenChange={handleOpenChange}>
                 <DialogTrigger asChild>
                   <Button onClick={() => setEditingTenant(null)} className="shrink-0">
                     <PlusCircle className="mr-2 h-4 w-4" />

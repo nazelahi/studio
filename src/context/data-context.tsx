@@ -46,6 +46,10 @@ interface DataContextType extends AppData {
   restoreAllData: (backupData: AppData, toast: ToastFn) => void;
   refreshData: () => Promise<void>;
   getRentEntryById: (id: string) => RentEntry | null;
+  isTenantDialogOpen: boolean;
+  setIsTenantDialogOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  editingTenant: Tenant | null;
+  setEditingTenant: React.Dispatch<React.SetStateAction<Tenant | null>>;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -64,6 +68,8 @@ const handleError = (error: any, context: string, toast: ToastFn) => {
 export function DataProvider({ children }: { children: ReactNode }) {
     const [data, setData] = useState<AppData>({ tenants: [], expenses: [], rentData: [], propertySettings: null, deposits: [], zakatTransactions: [], notices: [], workDetails: [], zakatBankDetails: [] });
     const [loading, setLoading] = useState(true);
+    const [isTenantDialogOpen, setIsTenantDialogOpen] = React.useState(false);
+    const [editingTenant, setEditingTenant] = React.useState<Tenant | null>(null);
     
     const { user, loading: authLoading } = useAuth();
     
@@ -652,7 +658,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
 
     return (
-        <DataContext.Provider value={{ ...data, addTenant, updateTenant, deleteTenant, addExpense, updateExpense, deleteExpense, deleteMultipleExpenses, addRentEntry, addRentEntriesBatch, updateRentEntry, deleteRentEntry, deleteMultipleRentEntries, syncTenantsForMonth, syncExpensesFromPreviousMonth, updatePropertySettings, loading, getAllData, restoreAllData, refreshData: fetchData, getRentEntryById }}>
+        <DataContext.Provider value={{ ...data, addTenant, updateTenant, deleteTenant, addExpense, updateExpense, deleteExpense, deleteMultipleExpenses, addRentEntry, addRentEntriesBatch, updateRentEntry, deleteRentEntry, deleteMultipleRentEntries, syncTenantsForMonth, syncExpensesFromPreviousMonth, updatePropertySettings, loading, getAllData, restoreAllData, refreshData: fetchData, getRentEntryById, isTenantDialogOpen, setIsTenantDialogOpen, editingTenant, setEditingTenant }}>
             {children}
         </DataContext.Provider>
     );
