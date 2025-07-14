@@ -8,12 +8,12 @@ import { useSettings } from "@/context/settings-context"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, Download, Printer, LoaderCircle, Building, User } from "lucide-react"
+import { ArrowLeft, Download, Printer, LoaderCircle, Building, User, Mail, Phone, MapPin } from "lucide-react"
 import { useRouter, useParams } from "next/navigation"
 import jsPDF from "jspdf"
 import html2canvas from "html2canvas"
 import { useToast } from "@/hooks/use-toast"
-import { type RentEntry } from "@/types"
+import { type RentEntry, type Tenant } from "@/types"
 import { format, parseISO } from "date-fns"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
@@ -34,6 +34,7 @@ export default function ReceiptPage() {
     const reportContentRef = React.useRef<HTMLDivElement>(null);
 
     const [rentEntry, setRentEntry] = React.useState<RentEntry | null>(null);
+    const [tenant, setTenant] = React.useState<Tenant | null>(null);
     const [loading, setLoading] = React.useState(true);
 
     const rentEntryId = Array.isArray(params.id) ? params.id[0] : params.id;
@@ -45,12 +46,12 @@ export default function ReceiptPage() {
                 return;
             }
 
+            let entryData: RentEntry | null = null;
             // First, try to get data from context
             const entryFromContext = getRentEntryById(rentEntryId);
             
             if (entryFromContext) {
-                setRentEntry(entryFromContext);
-                setLoading(false);
+                entryData = entryFromContext;
             } else if (!dataLoading) { 
                 // If not in context and context is done loading, fetch directly
                 try {
@@ -61,14 +62,31 @@ export default function ReceiptPage() {
                         .single();
                     
                     if (error) throw error;
-                    setRentEntry(data);
+                    entryData = data;
                 } catch (error) {
                     console.error("Failed to fetch receipt data directly:", error);
                     setRentEntry(null);
-                } finally {
-                    setLoading(false);
                 }
             }
+            
+            if (entryData) {
+                setRentEntry(entryData);
+                // Now fetch the full tenant details
+                try {
+                    const { data: tenantData, error: tenantError } = await supabase
+                        .from('tenants')
+                        .select('*')
+                        .eq('id', entryData.tenant_id)
+                        .single();
+                    if (tenantError) throw tenantError;
+                    setTenant(tenantData);
+                } catch (error) {
+                    console.error("Failed to fetch tenant details:", error);
+                    // We can still show the receipt with partial info
+                }
+            }
+            
+            setLoading(false);
         };
         
         // Only run fetch logic if the data context isn't loading, or if the rent entry is not yet found.
@@ -167,7 +185,6 @@ export default function ReceiptPage() {
                         </div>
                         <div className="text-right">
                             <h2 className="text-3xl font-bold uppercase text-muted-foreground tracking-wider">Receipt</h2>
-                            <p className="text-sm text-muted-foreground">Receipt #: {String(rentEntry.id).substring(0, 8).toUpperCase()}</p>
                         </div>
                     </header>
                     
@@ -178,9 +195,33 @@ export default function ReceiptPage() {
                                <User className="h-5 w-5 text-muted-foreground"/>
                                <h3 className="text-base font-semibold">Billed To</h3>
                             </CardHeader>
-                            <CardContent>
-                                <p className="font-bold text-lg">{rentEntry.name}</p>
-                                <p className="text-muted-foreground">{rentEntry.property}</p>
+                            <CardContent className="space-y-3">
+                               <div className="flex items-center gap-4">
+                                   <Avatar className="h-12 w-12">
+                                       <AvatarImage src={tenant?.avatar} data-ai-hint="person avatar" />
+                                       <AvatarFallback>{rentEntry.name.charAt(0)}</AvatarFallback>
+                                   </Avatar>
+                                   <div>
+                                     <p className="font-bold text-lg">{rentEntry.name}</p>
+                                     <p className="text-muted-foreground text-sm">{rentEntry.property}</p>
+                                   </div>
+                               </div>
+                               {tenant && (
+                                   <div className="text-sm space-y-2 pt-2 border-t">
+                                        <div className="flex items-start gap-2">
+                                            <Mail className="h-4 w-4 mt-0.5 text-muted-foreground"/>
+                                            <span className="truncate">{tenant.email}</span>
+                                        </div>
+                                         <div className="flex items-start gap-2">
+                                            <Phone className="h-4 w-4 mt-0.5 text-muted-foreground"/>
+                                            <span>{tenant.phone || 'N/A'}</span>
+                                        </div>
+                                         <div className="flex items-start gap-2">
+                                            <MapPin className="h-4 w-4 mt-0.5 text-muted-foreground"/>
+                                            <span>{tenant.address || 'N/A'}</span>
+                                        </div>
+                                   </div>
+                               )}
                             </CardContent>
                            </Card>
                         </div>
