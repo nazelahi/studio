@@ -98,7 +98,6 @@ const defaultSettings: AppSettings = {
         overview: "Overview",
         tenants: "Tenants",
         work: "Work",
-        integrations: "Integrations",
         reports: "Reports",
         zakat: "Zakat",
     },

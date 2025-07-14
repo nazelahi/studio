@@ -4,7 +4,6 @@ import * as React from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { MonthlyOverviewTab } from "@/components/monthly-overview-tab"
 import { ContactsTab } from "@/components/contacts-tab"
-import { IntegrationsTab } from "@/components/integrations-tab"
 import { ReportsTab } from "@/components/reports-tab"
 import { ZakatTab } from "@/components/zakat-tab"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -32,11 +31,10 @@ export default function DashboardTabs({ year, activeTab, onTabChange, selectedYe
     <div className="w-full">
       <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
         <div className="flex justify-between items-center mb-4">
-          <TabsList className={cn("hidden md:grid w-full", isAdmin ? "grid-cols-6" : "grid-cols-5")}>
+          <TabsList className="hidden md:grid w-full grid-cols-5">
             <TabsTrigger value="overview">{settings.tabNames.overview}</TabsTrigger>
             <TabsTrigger value="contacts">{settings.tabNames.tenants}</TabsTrigger>
             <TabsTrigger value="work">{settings.tabNames.work}</TabsTrigger>
-            {isAdmin && <TabsTrigger value="integrations">{settings.tabNames.integrations}</TabsTrigger>}
             <TabsTrigger value="reports">{settings.tabNames.reports}</TabsTrigger>
             <TabsTrigger value="zakat">{settings.tabNames.zakat}</TabsTrigger>
           </TabsList>
@@ -89,9 +87,6 @@ export default function DashboardTabs({ year, activeTab, onTabChange, selectedYe
         </TabsContent>
         <TabsContent value="work">
           <WorkDetailsTab year={year} />
-        </TabsContent>
-        <TabsContent value="integrations">
-            <IntegrationsTab />
         </TabsContent>
          <TabsContent value="reports">
             <ReportsTab year={year} />

@@ -12,7 +12,7 @@ import { useSettings } from "@/context/settings-context"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/context/auth-context"
 import { Button, buttonVariants } from "@/components/ui/button"
-import { User, LogOut, MapPin, Menu, Settings, LoaderCircle, LogIn, Building, KeyRound, Palette, Tag, Landmark, Upload, Banknote, UserCircle, MessageSquare, Info, Phone, Mail, AlertTriangle, Trash2, Database, HardDriveDownload } from "lucide-react"
+import { User, LogOut, MapPin, Menu, Settings, LoaderCircle, LogIn, Building, KeyRound, Palette, Tag, Landmark, Upload, Banknote, UserCircle, MessageSquare, Info, Phone, Mail, AlertTriangle, Trash2, Database, HardDriveDownload, Shield } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useToast } from "@/hooks/use-toast"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
@@ -24,9 +24,10 @@ import { Textarea } from "@/components/ui/textarea"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { saveAs } from "file-saver"
+import { IntegrationsTab } from "@/components/integrations-tab"
 
 
-type SettingsTab = 'property' | 'account' | 'application' | 'labels';
+type SettingsTab = 'property' | 'account' | 'application' | 'labels' | 'backup';
 
 function AccessDenied() {
   const router = useRouter();
@@ -281,6 +282,10 @@ export default function SettingsPage() {
       <button onClick={() => setActiveTab('labels')} className={cn("flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary", {'bg-muted text-primary': activeTab === 'labels'})}>
         <Tag className="h-4 w-4" />
         Page Labels
+      </button>
+      <button onClick={() => setActiveTab('backup')} className={cn("flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary", {'bg-muted text-primary': activeTab === 'backup'})}>
+        <Database className="h-4 w-4" />
+        Backup & Restore
       </button>
     </>
   );
@@ -764,10 +769,6 @@ export default function SettingsPage() {
                                     <Label htmlFor="tab_work">Work Tab</Label>
                                     <Input id="tab_work" name="tabNames.work" defaultValue={settings.tabNames.work} onChange={handleInputChange} />
                                 </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="tab_integrations">Integrations Tab</Label>
-                                    <Input id="tab_integrations" name="tabNames.integrations" defaultValue={settings.tabNames.integrations} onChange={handleInputChange} />
-                                </div>
                                  <div className="space-y-2">
                                     <Label htmlFor="tab_reports">Reports Tab</Label>
                                     <Input id="tab_reports" name="tabNames.reports" defaultValue={settings.tabNames.reports} onChange={handleInputChange} />
@@ -797,6 +798,9 @@ export default function SettingsPage() {
                         <Button onClick={handleSaveAppSettings}>Save Local Settings</Button>
                     </CardFooter>
                 </Card>
+              )}
+              {activeTab === 'backup' && (
+                <IntegrationsTab />
               )}
             </div>
 
