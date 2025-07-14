@@ -107,8 +107,8 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
     const checkMobile = () => setIsMobile(window.innerWidth < 768);
     checkMobile();
     window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', isMobile);
-  }, [isMobile]);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const selectedMonth = isMobile ? months[mobileSelectedMonth] : desktopSelectedMonth;
   const monthIndex = months.indexOf(selectedMonth);
@@ -1473,5 +1473,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
     </TooltipProvider>
   )
 }
+
+    
 
     
