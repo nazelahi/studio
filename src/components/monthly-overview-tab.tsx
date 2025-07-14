@@ -135,6 +135,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
   const [selectedRentEntryIds, setSelectedRentEntryIds] = React.useState<string[]>([]);
   const [selectedExpenseIds, setSelectedExpenseIds] = React.useState<string[]>([]);
 
+  const {isTenantDialogOpen, setIsTenantDialogOpen, editingTenant, setEditingTenant} = useData();
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
   const [selectedTenantForSheet, setSelectedTenantForSheet] = React.useState<Tenant | null>(null);
   
@@ -154,7 +155,9 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
 
 
   const filteredTenantsForMonth = React.useMemo(() => {
-    return rentData.filter(entry => entry.year === year && entry.month === monthIndex);
+    return rentData
+        .filter(entry => entry.year === year && entry.month === monthIndex)
+        .sort((a, b) => a.property.localeCompare(b.property, undefined, { numeric: true, sensitivity: 'base' }));
   }, [rentData, monthIndex, year]);
 
   const filteredExpenses = React.useMemo(() => {
