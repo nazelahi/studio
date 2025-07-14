@@ -202,38 +202,46 @@ export async function clearDataForPeriodAction(formData: FormData) {
     const supabaseAdmin = getSupabaseAdmin();
     const year = Number(formData.get('year'));
     const month = Number(formData.get('month'));
+    const category = formData.get('category') as string;
 
-    if (isNaN(year) || isNaN(month)) {
-        return { error: 'Invalid year or month provided.' };
+    if (isNaN(year) || isNaN(month) || !category) {
+        return { error: 'Invalid year, month, or category provided.' };
     }
 
-    // Note: We don't delete from `tenants` or `work_details` as they are not strictly tied to a single month's record in the same way.
-    // Work details have a due_date, but might span longer. Tenants are persistent.
-    const tablesToClear = ['rent_entries', 'deposits', 'notices'];
+    const tablesToClear: string[] = [];
+
+    switch (category) {
+        case 'all':
+            tablesToClear.push('rent_entries', 'deposits', 'notices', 'expenses');
+            break;
+        case 'rent_entries':
+        case 'deposits':
+        case 'notices':
+        case 'expenses':
+            tablesToClear.push(category);
+            break;
+        default:
+            return { error: 'Invalid category specified.' };
+    }
     
     try {
         for (const table of tablesToClear) {
-            const { error } = await supabaseAdmin.from(table).delete().match({ year, month });
+            let query = supabaseAdmin.from(table).delete();
+            
+            if (table === 'expenses') {
+                const startDate = format(new Date(year, month, 1), 'yyyy-MM-dd');
+                const endDate = format(new Date(year, month + 1, 0), 'yyyy-MM-dd'); // Use last day of month
+                query = query.gte('date', startDate).lte('date', endDate);
+            } else {
+                 query = query.match({ year, month });
+            }
+
+            const { error } = await query;
             if (error) {
                 console.error(`Error clearing table ${table}:`, error);
                 return { error: `Failed to clear data from ${table}: ${error.message}` };
             }
         }
-        
-        // Handle expenses separately as their date is a full timestamp
-        const startDate = format(new Date(year, month, 1), 'yyyy-MM-dd');
-        const endDate = format(new Date(year, month + 1, 1), 'yyyy-MM-dd');
-
-        const { error: expenseError } = await supabaseAdmin.from('expenses')
-            .delete()
-            .gte('date', startDate)
-            .lt('date', endDate);
-        
-        if (expenseError) {
-            console.error(`Error clearing table expenses:`, expenseError);
-            return { error: `Failed to clear data from expenses: ${expenseError.message}` };
-        }
-
     } catch (e: any) {
         console.error('An unexpected error occurred during data deletion:', e);
         return { error: e.message || "An unexpected error occurred." };

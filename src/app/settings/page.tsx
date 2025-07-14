@@ -43,6 +43,13 @@ const months = [
     "January", "February", "March", "April", "May", "June", 
     "July", "August", "September", "October", "November", "December"
 ];
+const dataCategories = [
+    { value: 'all', label: 'All Data for Period' },
+    { value: 'rent_entries', label: 'Rent Roll' },
+    { value: 'expenses', label: 'Expenses' },
+    { value: 'deposits', label: 'Deposits' },
+    { value: 'notices', label: 'Notices' },
+];
 
 export default function SettingsPage() {
   const { settings, setSettings, refreshSettings } = useSettings();
@@ -73,6 +80,7 @@ export default function SettingsPage() {
   const years = Array.from({ length: 10 }, (_, i) => (currentYear - i).toString());
   const [clearYear, setClearYear] = useState(currentYear.toString());
   const [clearMonth, setClearMonth] = useState(new Date().getMonth().toString());
+  const [clearCategory, setClearCategory] = useState('all');
 
   React.useEffect(() => {
     if (user?.email) {
@@ -220,13 +228,15 @@ export default function SettingsPage() {
         const formData = new FormData();
         formData.append('year', clearYear);
         formData.append('month', clearMonth);
+        formData.append('category', clearCategory);
 
         startClearDataTransition(async () => {
             const result = await clearDataForPeriodAction(formData);
             if (result.error) {
                 toast({ title: "Error Clearing Data", description: result.error, variant: "destructive"});
             } else {
-                toast({ title: "Data Cleared", description: `Data for ${months[parseInt(clearMonth)]}, ${clearYear} has been cleared.` });
+                const categoryLabel = dataCategories.find(c => c.value === clearCategory)?.label || 'Data';
+                toast({ title: "Data Cleared", description: `${categoryLabel} for ${months[parseInt(clearMonth)]}, ${clearYear} has been cleared.` });
                 refreshSettings();
             }
         });
@@ -559,7 +569,7 @@ export default function SettingsPage() {
                           <CardDescription>These actions are irreversible. Please be certain before proceeding.</CardDescription>
                       </CardHeader>
                       <CardContent>
-                          <p className="mb-4">Clearing data for a specific period will permanently delete all rent entries, expenses, deposits, and notices for that month. This cannot be undone.</p>
+                          <p className="mb-4">Clearing data for a specific period will permanently delete all data of the selected category for that month. This cannot be undone.</p>
                           <div className="flex flex-col sm:flex-row items-center gap-4 p-4 bg-muted rounded-lg">
                             <div className="flex-1 w-full sm:w-auto">
                                 <Label htmlFor="clear-year">Year</Label>
@@ -579,6 +589,15 @@ export default function SettingsPage() {
                                     </SelectContent>
                                 </Select>
                             </div>
+                            <div className="flex-1 w-full sm:w-auto">
+                                <Label htmlFor="clear-category">Category</Label>
+                                <Select value={clearCategory} onValueChange={setClearCategory}>
+                                    <SelectTrigger id="clear-category"><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                        {dataCategories.map((cat) => <SelectItem key={cat.value} value={cat.value}>{cat.label}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            </div>
                              <div className="self-end w-full sm:w-auto">
                                 <AlertDialog>
                                     <AlertDialogTrigger asChild>
@@ -591,7 +610,7 @@ export default function SettingsPage() {
                                         <AlertDialogHeader>
                                             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                                             <AlertDialogDescription>
-                                                This action will permanently delete all rent, expense, deposit, and notice data for <strong>{months[parseInt(clearMonth)]}, {clearYear}</strong>. This action cannot be undone.
+                                                This action will permanently delete all <strong>{dataCategories.find(c => c.value === clearCategory)?.label.toLowerCase()}</strong> for <strong>{months[parseInt(clearMonth)]}, {clearYear}</strong>. This action cannot be undone.
                                             </AlertDialogDescription>
                                         </AlertDialogHeader>
                                         <AlertDialogFooter>
@@ -601,7 +620,7 @@ export default function SettingsPage() {
                                                 onClick={handleClearDataForPeriod}
                                                 disabled={isClearDataPending}
                                             >
-                                                Yes, Delete Data for this Period
+                                                Yes, Delete This Data
                                             </AlertDialogAction>
                                         </AlertDialogFooter>
                                     </AlertDialogContent>
