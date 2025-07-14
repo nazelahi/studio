@@ -9,7 +9,7 @@ import { Logo } from "@/components/icons"
 import DashboardTabs from "@/components/dashboard-tabs"
 import { useAuth } from "@/context/auth-context"
 import { Button } from "@/components/ui/button"
-import { User, LogOut, MapPin, Menu, Settings, LogIn, UserCircle, LoaderCircle } from "lucide-react"
+import { User, LogOut, MapPin, Menu, Settings, LogIn, UserCircle, LoaderCircle, Moon, Sun } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
@@ -19,6 +19,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import { AppFooter } from "@/components/app-footer"
+import { useTheme } from "next-themes"
+
 
 function FullPageLoader() {
   return (
@@ -32,6 +34,7 @@ function FullPageLoader() {
 
 export default function HomePage() {
   const { settings, loading: settingsLoading } = useSettings();
+  const { setTheme, theme } = useTheme();
   const pathname = usePathname();
   const router = useRouter();
   const { isAdmin, user, signOut } = useAuth();
@@ -248,6 +251,10 @@ export default function HomePage() {
                           <Settings className="mr-2 h-4 w-4" />
                           <span>Settings</span>
                         </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setTheme(theme === "light" ? "dark" : "light")}>
+                          {theme === 'light' ? <Moon className="mr-2 h-4 w-4" /> : <Sun className="mr-2 h-4 w-4" />}
+                          <span>Toggle theme</span>
+                        </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={handleSignOut}>
                           <LogOut className="mr-2 h-4 w-4" />
@@ -258,6 +265,10 @@ export default function HomePage() {
                     <>
                         <DropdownMenuLabel>Guest</DropdownMenuLabel>
                         <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => setTheme(theme === "light" ? "dark" : "light")}>
+                          {theme === 'light' ? <Moon className="mr-2 h-4 w-4" /> : <Sun className="mr-2 h-4 w-4" />}
+                          <span>Toggle theme</span>
+                        </DropdownMenuItem>
                         <DropdownMenuItem onClick={handleLogIn}>
                             <LogIn className="mr-2 h-4 w-4" />
                             <span>Admin Log in</span>
