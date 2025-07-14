@@ -135,7 +135,7 @@ export function TenantDetailSheet({
   return (
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
       <SheetContent className="w-full sm:max-w-md p-0 flex flex-col">
-        <SheetHeader className="sr-only">
+        <SheetHeader className="p-6 pb-0 sr-only">
           <SheetTitle>Tenant Details: {tenant.name}</SheetTitle>
           <SheetDescription>A quick overview of the tenant's information.</SheetDescription>
         </SheetHeader>
@@ -146,9 +146,9 @@ export function TenantDetailSheet({
                     <p className="text-lg font-semibold text-primary">{settings.houseName}</p>
                     <p className="text-sm text-muted-foreground">{settings.houseAddress}</p>
                 </div>
-                <div className="relative h-20 bg-muted">
-                    <div className="absolute -bottom-10 left-1/2 -translate-x-1/2">
-                        <Avatar className="h-24 w-24 border-4 border-background shadow-lg">
+                <div className="relative h-24 bg-muted">
+                    <div className="absolute -bottom-16 left-1/2 -translate-x-1/2">
+                        <Avatar className="h-32 w-32 border-4 border-background shadow-lg">
                             <AvatarImage src={tenant.avatar} data-ai-hint="person avatar" />
                             <AvatarFallback>{tenant.name.charAt(0)}</AvatarFallback>
                         </Avatar>
@@ -156,7 +156,7 @@ export function TenantDetailSheet({
                 </div>
             </div>
             
-            <div className="text-center pt-12 pb-6 px-6 bg-background">
+            <div className="text-center pt-20 pb-6 px-6 bg-background">
                  <h2 className="text-2xl font-bold">{tenant.name}</h2>
                  <p className="text-muted-foreground">{tenant.property}</p>
             </div>
