@@ -1153,44 +1153,44 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
             </Tabs>
             
             <Card>
-                <CardContent className="p-6">
-                    <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
-                        <Card className="border-green-200 bg-green-50/50 dark:border-green-600/30 dark:bg-green-500/10">
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardContent className="p-0">
+                    <div className="grid gap-0 sm:grid-cols-2 md:grid-cols-4">
+                        <Card className="border-0 shadow-none rounded-none border-r border-green-200 bg-green-50/50 dark:border-green-600/30 dark:bg-green-500/10 p-4">
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-0">
                                 <CardTitle className="text-sm font-medium text-green-700 dark:text-green-400">Rent Collected</CardTitle>
                                 <DollarSign className="h-4 w-4 text-green-600 dark:text-green-500" />
                             </CardHeader>
-                            <CardContent>
+                            <CardContent className="p-0">
                                 <div className="text-2xl font-bold text-green-800 dark:text-green-300">{formatCurrency(totalRentCollected)}</div>
                                 <p className="text-xs text-green-600 dark:text-green-500">{collectionRate.toFixed(1)}% of total</p>
                             </CardContent>
                         </Card>
-                        <Card className="border-orange-200 bg-orange-50/50 dark:border-orange-600/30 dark:bg-orange-500/10">
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <Card className="border-0 shadow-none rounded-none border-r border-orange-200 bg-orange-50/50 dark:border-orange-600/30 dark:bg-orange-500/10 p-4">
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-0">
                                 <CardTitle className="text-sm font-medium text-orange-700 dark:text-orange-400">Pending Rent</CardTitle>
                                 <Receipt className="h-4 w-4 text-orange-600 dark:text-orange-500" />
                             </CardHeader>
-                            <CardContent>
+                            <CardContent className="p-0">
                                 <div className="text-2xl font-bold text-orange-800 dark:text-orange-300">{formatCurrency(pendingRent)}</div>
                                 <p className="text-xs text-orange-600 dark:text-orange-500">Yet to collect</p>
                             </CardContent>
                         </Card>
-                        <Card className="border-red-200 bg-red-50/50 dark:border-red-600/30 dark:bg-red-500/10">
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <Card className="border-0 shadow-none rounded-none border-r border-red-200 bg-red-50/50 dark:border-red-600/30 dark:bg-red-500/10 p-4">
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-0">
                                 <CardTitle className="text-sm font-medium text-red-700 dark:text-red-400">Total Expenses</CardTitle>
                                 <TrendingDown className="h-4 w-4 text-red-600 dark:text-red-500" />
                             </CardHeader>
-                            <CardContent>
+                            <CardContent className="p-0">
                                 <div className="text-2xl font-bold text-red-800 dark:text-red-300">{formatCurrency(totalExpenses)}</div>
                                 <p className="text-xs text-red-600 dark:text-red-500">This month</p>
                             </CardContent>
                         </Card>
-                        <Card className="border-blue-200 bg-blue-50/50 dark:border-blue-600/30 dark:bg-blue-500/10">
-                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <Card className="border-0 shadow-none rounded-none border-blue-200 bg-blue-50/50 dark:border-blue-600/30 dark:bg-blue-500/10 p-4">
+                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 p-0">
                                 <CardTitle className="text-sm font-medium text-blue-700 dark:text-blue-400">Net Amount</CardTitle>
                                 <Calculator className="h-4 w-4 text-blue-600 dark:text-blue-500" />
                             </CardHeader>
-                            <CardContent>
+                            <CardContent className="p-0">
                                 <div className={`text-2xl font-bold ${netResult >= 0 ? 'text-green-800 dark:text-green-300' : 'text-red-800 dark:text-red-300'}`}>
                                     {netResult >= 0 ? '+' : ''}{formatCurrency(netResult)}
                                 </div>
@@ -1447,3 +1447,4 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
     
 
     
+
