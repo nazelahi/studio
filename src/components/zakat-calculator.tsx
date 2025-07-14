@@ -15,17 +15,17 @@ const formatCurrency = (amount: number) => {
 
 const ZAKAT_RATE = 0.025; // 2.5%
 
-const AssetItem = ({ icon: Icon, label, value, onChange }: { icon: React.ElementType, label: string, value: string, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void }) => (
+const AssetItem = ({ icon: Icon, label, id, value, onChange }: { icon: React.ElementType, label: string, id: string, value: string, onChange: (e: React.ChangeEvent<HTMLInputElement>) => void }) => (
     <div className="flex items-center gap-4">
         <div className="flex items-center gap-2 w-1/3">
             <Icon className="h-5 w-5 text-muted-foreground" />
-            <Label htmlFor={label.toLowerCase().replace(' ', '-')} className="whitespace-nowrap">{label}</Label>
+            <Label htmlFor={id} className="whitespace-nowrap">{label}</Label>
         </div>
         <div className="relative flex-grow">
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">৳</span>
             <Input
                 type="number"
-                id={label.toLowerCase().replace(' ', '-')}
+                id={id}
                 value={value}
                 onChange={onChange}
                 placeholder="0.00"
