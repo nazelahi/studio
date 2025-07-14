@@ -917,7 +917,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                                    <Select
                                         value={entry.status}
                                         onValueChange={(newStatus) => handleStatusChange(entry, newStatus as RentEntry['status'])}
-                                        disabled={!isAdmin}
+                                        disabled={!isAdmin || entry.status === 'Paid'}
                                     >
                                         <SelectTrigger className={cn("w-32 border-0 shadow-none focus:ring-0", getStatusRowClass(entry.status))}>
                                             <SelectValue />
