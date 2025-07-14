@@ -1154,7 +1154,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
             
             <Card>
                 <CardHeader>
-                    <CardTitle>{settings.page_overview.financial_overview_title} - {month} {year}</CardTitle>
+                    <CardTitle>{settings.page_overview.financial_overview_title}</CardTitle>
                     <CardDescription>{settings.page_overview.financial_overview_description}</CardDescription>
                 </CardHeader>
                 <CardContent>
