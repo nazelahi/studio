@@ -18,6 +18,7 @@ import { format, parseISO } from "date-fns"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
 import { Logo } from "@/components/icons"
+import { supabase } from "@/lib/supabase"
 
 const formatCurrency = (amount?: number) => {
     if (amount === undefined || amount === null) return '-';
@@ -25,7 +26,7 @@ const formatCurrency = (amount?: number) => {
 };
 
 export default function ReceiptPage() {
-    const { getRentEntryById } = useData()
+    const { getRentEntryById, loading: dataLoading } = useData()
     const { settings, loading: settingsLoading } = useSettings()
     const router = useRouter()
     const params = useParams()
@@ -38,12 +39,45 @@ export default function ReceiptPage() {
     const rentEntryId = Array.isArray(params.id) ? params.id[0] : params.id;
 
     React.useEffect(() => {
-        if (rentEntryId) {
-            const entry = getRentEntryById(rentEntryId);
-            setRentEntry(entry);
+        const fetchReceiptData = async () => {
+            if (!rentEntryId) {
+                setLoading(false);
+                return;
+            }
+
+            // First, try to get data from context
+            const entryFromContext = getRentEntryById(rentEntryId);
+            
+            if (entryFromContext) {
+                setRentEntry(entryFromContext);
+                setLoading(false);
+            } else if (!dataLoading) { 
+                // If not in context and context is done loading, fetch directly
+                try {
+                    const { data, error } = await supabase
+                        .from('rent_entries')
+                        .select('*')
+                        .eq('id', rentEntryId)
+                        .single();
+                    
+                    if (error) throw error;
+                    setRentEntry(data);
+                } catch (error) {
+                    console.error("Failed to fetch receipt data directly:", error);
+                    setRentEntry(null);
+                } finally {
+                    setLoading(false);
+                }
+            }
+        };
+        
+        // Only run fetch logic if the data context isn't loading, or if the rent entry is not yet found.
+        if(!dataLoading || !rentEntry) {
+            fetchReceiptData();
         }
-        setLoading(false);
-    }, [rentEntryId, getRentEntryById]);
+
+    }, [rentEntryId, getRentEntryById, dataLoading, rentEntry]);
+
 
     const handlePrint = () => {
         window.print();
