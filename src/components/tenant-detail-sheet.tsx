@@ -22,6 +22,7 @@ import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { format, parseISO } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useSettings } from "@/context/settings-context";
 
 interface TenantDetailSheetProps {
   tenant: Tenant | null;
@@ -41,6 +42,7 @@ export function TenantDetailSheet({
   onOpenChange,
 }: TenantDetailSheetProps) {
   const { toast } = useToast();
+  const { settings } = useSettings();
   const sheetContentRef = React.useRef<HTMLDivElement>(null);
 
   const handleDownloadPdf = async () => {
@@ -106,6 +108,20 @@ export function TenantDetailSheet({
       }
   };
   
+    const handleWhatsappMessage = (e: React.MouseEvent) => {
+     e.preventDefault();
+     e.stopPropagation();
+     if (!tenant) return;
+     const number = tenant.whatsapp_number || tenant.phone;
+     if (!number) {
+        toast({ title: "No Number", description: "This tenant does not have a WhatsApp number set.", variant: "destructive" });
+        return;
+     }
+     const cleanNumber = number.replace(/[^0-9]/g, "");
+     const message = encodeURIComponent(`Hello ${tenant.name}, this is a message regarding your tenancy at ${settings.houseName}.`);
+     window.open(`https://wa.me/${cleanNumber}?text=${message}`, "_blank");
+  }
+
   if (!tenant) return null;
   
   const getStatusBadge = (status: Tenant['status']) => {
@@ -194,6 +210,12 @@ export function TenantDetailSheet({
                         <div className="flex items-center gap-3">
                             <Phone className="h-4 w-4 text-muted-foreground" />
                              <a href={`tel:${tenant.phone}`} className="text-primary hover:underline">{tenant.phone}</a>
+                        </div>
+                    )}
+                     {tenant.whatsapp_number && (
+                        <div className="flex items-center gap-3">
+                            <WhatsAppIcon className="h-4 w-4 text-muted-foreground" />
+                             <a href="#" onClick={handleWhatsappMessage} className="text-primary hover:underline">{tenant.whatsapp_number}</a>
                         </div>
                     )}
                 </CardContent>

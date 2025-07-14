@@ -196,6 +196,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
         if (cleanTenantData.father_name === '') delete (cleanTenantData as any).father_name;
         if (cleanTenantData.address === '') delete (cleanTenantData as any).address;
         if (cleanTenantData.nid_number === '') delete (cleanTenantData as any).nid_number;
+        if (cleanTenantData.whatsapp_number === '') delete (cleanTenantData as any).whatsapp_number;
+
 
         const { data: newTenant, error } = await supabase.from('tenants').insert([cleanTenantData]).select().single();
         if (error || !newTenant) {
@@ -245,6 +247,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
         if (cleanTenantData.father_name === '') delete (cleanTenantData as any).father_name;
         if (cleanTenantData.address === '') delete (cleanTenantData as any).address;
         if (cleanTenantData.nid_number === '') delete (cleanTenantData as any).nid_number;
+        if (cleanTenantData.whatsapp_number === '') (cleanTenantData as any).whatsapp_number = null;
+
 
         const { error } = await supabase.from('tenants').update(cleanTenantData).eq('id', id);
         if (error) {
