@@ -12,15 +12,16 @@ import { useSettings } from "@/context/settings-context"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/context/auth-context"
 import { Button } from "@/components/ui/button"
-import { User, LogOut, MapPin, Menu, Settings, LoaderCircle, LogIn, Building, KeyRound, Palette, Tag, Landmark, Upload, Banknote, UserCircle, MessageSquare, Info, Phone, Mail } from "lucide-react"
+import { User, LogOut, MapPin, Menu, Settings, LoaderCircle, LogIn, Building, KeyRound, Palette, Tag, Landmark, Upload, Banknote, UserCircle, MessageSquare, Info, Phone, Mail, AlertTriangle } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useToast } from "@/hooks/use-toast"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
-import { updatePropertySettingsAction, updateUserCredentialsAction, updatePasscodeAction } from "./actions"
+import { updatePropertySettingsAction, updateUserCredentialsAction, updatePasscodeAction, clearAllDataAction } from "./actions"
 import { useProtection } from "@/context/protection-context"
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Textarea } from "@/components/ui/textarea"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 
 type SettingsTab = 'property' | 'account' | 'application' | 'labels';
 
@@ -46,11 +47,12 @@ export default function SettingsPage() {
   const [isPending, startTransition] = useTransition();
   const [isCredentialsPending, startCredentialsTransition] = useTransition();
   const [isPasscodePending, startPasscodeTransition] = useTransition();
+  const [isClearDataPending, startClearDataTransition] = useTransition();
   const { withProtection } = useProtection();
   
   const [newEmail, setNewEmail] = useState(user?.email || '');
   const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
+  const [confirmPassword, setNewPassword] = useState('');
 
   const [activeTab, setActiveTab] = useState<SettingsTab>('property');
   
@@ -200,6 +202,20 @@ export default function SettingsPage() {
         toast({ title: 'Passcode Saved', description: 'Your secret passcode has been updated.' });
         refreshSettings();
       }
+    });
+  }
+  
+  const handleClearData = () => {
+    withProtection(() => {
+        startClearDataTransition(async () => {
+            const result = await clearAllDataAction();
+            if (result?.error) {
+                toast({ title: "Error Clearing Data", description: result.error, variant: "destructive"});
+            } else {
+                toast({ title: "Data Cleared", description: "All application data has been successfully cleared." });
+                refreshSettings();
+            }
+        });
     });
   }
 
@@ -520,6 +536,46 @@ export default function SettingsPage() {
                       </CardFooter>
                     </Card>
                   </form>
+                  <Card className="border-destructive">
+                      <CardHeader>
+                          <CardTitle className="text-destructive flex items-center gap-2">
+                            <AlertTriangle/>
+                            Danger Zone
+                          </CardTitle>
+                          <CardDescription>These actions are irreversible. Please be certain before proceeding.</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                          <p>Clearing all data will permanently delete all tenants, rent entries, expenses, deposits, notices, and financial records from the database. This cannot be undone.</p>
+                      </CardContent>
+                      <CardFooter>
+                          <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                  <Button variant="destructive" disabled={isClearDataPending}>
+                                    {isClearDataPending ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4"/>}
+                                    Clear All Application Data
+                                  </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                      <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                          This is your final confirmation. This action will permanently delete all application data. This includes all tenants, rent history, expenses, and all other records. This action cannot be undone.
+                                      </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                      <AlertDialogCancel disabled={isClearDataPending}>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction
+                                          className={cn(buttonVariants({ variant: "destructive" }))}
+                                          onClick={handleClearData}
+                                          disabled={isClearDataPending}
+                                      >
+                                          Yes, Delete All Data
+                                      </AlertDialogAction>
+                                  </AlertDialogFooter>
+                              </AlertDialogContent>
+                          </AlertDialog>
+                      </CardFooter>
+                  </Card>
                 </div>
               )}
 

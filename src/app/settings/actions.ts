@@ -195,3 +195,41 @@ export async function updatePasscodeAction(formData: FormData) {
 
     return { success: true };
 }
+
+export async function clearAllDataAction() {
+    const supabaseAdmin = getSupabaseAdmin();
+
+    const tablesToDelete = [
+        'rent_entries',
+        'expenses',
+        'tenants',
+        'deposits',
+        'notices',
+        'work_details',
+        'zakat_transactions'
+    ];
+    
+    // Note: This does not delete from storage. That would require listing files and deleting, which is more complex.
+    // For now, we clear the database tables.
+
+    try {
+        for (const table of tablesToDelete) {
+            // Using a filter that will always be true to delete all rows.
+            // Supabase client libraries might not have a direct `truncate` or `deleteAll` method.
+            const { error } = await supabaseAdmin.from(table).delete().neq('id', '00000000-0000-0000-0000-000000000000');
+            if (error) {
+                // If one fails, we stop and report the error.
+                console.error(`Error clearing table ${table}:`, error);
+                return { error: `Failed to clear data from ${table}: ${error.message}` };
+            }
+        }
+    } catch (e: any) {
+        console.error('An unexpected error occurred during data deletion:', e);
+        return { error: e.message || "An unexpected error occurred." };
+    }
+
+    revalidatePath('/');
+    revalidatePath('/settings');
+    
+    return { success: true };
+}
