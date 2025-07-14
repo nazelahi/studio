@@ -913,26 +913,29 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                                 <TableCell className="hidden md:table-cell">{entry.collected_by || '-'}</TableCell>
                                 <TableCell className="hidden sm:table-cell">{entry.payment_date ? format(parseISO(entry.payment_date), "dd MMM yyyy") : '-'}</TableCell>
                                 <TableCell>
-                                   <Select
-                                        value={entry.status}
-                                        onValueChange={(newStatus) => handleStatusChange(entry, newStatus as RentEntry['status'])}
-                                        disabled={!isAdmin || entry.status === 'Paid'}
-                                    >
-                                        <SelectTrigger className={cn("w-32 border-0 shadow-none focus:ring-0", getStatusRowClass(entry.status))}>
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="Pending">
-                                                <div className="flex items-center"><AlertCircle className="h-4 w-4 mr-2 text-yellow-500"/>Pending</div>
-                                            </SelectItem>
-                                            <SelectItem value="Paid">
-                                                <div className="flex items-center"><CheckCircle className="h-4 w-4 mr-2 text-green-500"/>Paid</div>
-                                            </SelectItem>
-                                            <SelectItem value="Overdue">
-                                                <div className="flex items-center"><XCircle className="h-4 w-4 mr-2 text-red-500"/>Overdue</div>
-                                            </SelectItem>
-                                        </SelectContent>
-                                    </Select>
+                                    {isAdmin && entry.status !== 'Paid' ? (
+                                       <Select
+                                            value={entry.status}
+                                            onValueChange={(newStatus) => handleStatusChange(entry, newStatus as RentEntry['status'])}
+                                        >
+                                            <SelectTrigger className={cn("w-32 border-0 shadow-none focus:ring-0", getStatusRowClass(entry.status))}>
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="Pending">
+                                                    <div className="flex items-center"><AlertCircle className="h-4 w-4 mr-2 text-yellow-500"/>Pending</div>
+                                                </SelectItem>
+                                                <SelectItem value="Paid">
+                                                    <div className="flex items-center"><CheckCircle className="h-4 w-4 mr-2 text-green-500"/>Paid</div>
+                                                </SelectItem>
+                                                <SelectItem value="Overdue">
+                                                    <div className="flex items-center"><XCircle className="h-4 w-4 mr-2 text-red-500"/>Overdue</div>
+                                                </SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    ) : (
+                                        <Badge className={cn("capitalize", getStatusBadge(entry.status))}>{entry.status}</Badge>
+                                    )}
                                 </TableCell>
                                 <TableCell className="hidden sm:table-cell">৳{entry.rent.toFixed(2)}</TableCell>
                                 <TableCell>
