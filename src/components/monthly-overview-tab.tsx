@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { DollarSign, Banknote, ArrowUpCircle, ArrowDownCircle, PlusCircle, Trash2, Pencil, CheckCircle, XCircle, AlertCircle, RefreshCw, ChevronDown, Copy, X, FileText, Upload, Building, Landmark, CalendarCheck, Edit, Eye, Image as ImageIcon, Megaphone, Download, Percent, Receipt } from "lucide-react"
+import { DollarSign, Banknote, ArrowUpCircle, ArrowDownCircle, PlusCircle, Trash2, Pencil, CheckCircle, XCircle, AlertCircle, RefreshCw, ChevronDown, Copy, X, FileText, Upload, Building, Landmark, CalendarCheck, Edit, Eye, Image as ImageIcon, Megaphone, Download, Percent, Receipt, TrendingDown, Calculator } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog"
@@ -191,6 +191,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
   
   const totalRentExpected = filteredTenantsForMonth.reduce((acc, t) => acc + t.rent, 0);
   const collectionRate = totalRentExpected > 0 ? (totalRentCollected / totalRentExpected) * 100 : 0;
+  const pendingRent = totalRentExpected - totalRentCollected;
 
   const totalExpenses = filteredExpenses.reduce((acc, expense) => acc + expense.amount, 0);
   const netResult = totalRentCollected - totalExpenses;
@@ -668,6 +669,11 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
         });
     }
   };
+  
+    const formatCurrency = (amount: number) => {
+        if (amount === undefined || amount === null) return '-';
+        return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'BDT' }).format(amount).replace('BDT', '৳');
+    };
 
   if (loading) {
     return (
@@ -724,6 +730,59 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
       {months.map(month => (
         <TabsContent key={month} value={month}>
           <div className="mt-6 space-y-6">
+            <Card>
+                <CardHeader>
+                    <CardTitle>{settings.page_overview.financial_overview_title} - {month} {year}</CardTitle>
+                    <CardDescription>{settings.page_overview.financial_overview_description}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-4">
+                        <Card className="border-green-200 bg-green-50/50 dark:border-green-600/30 dark:bg-green-500/10">
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium text-green-700 dark:text-green-400">Rent Collected</CardTitle>
+                                <DollarSign className="h-4 w-4 text-green-600 dark:text-green-500" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold text-green-800 dark:text-green-300">{formatCurrency(totalRentCollected)}</div>
+                                <p className="text-xs text-green-600 dark:text-green-500">{collectionRate.toFixed(1)}% of total</p>
+                            </CardContent>
+                        </Card>
+                        <Card className="border-orange-200 bg-orange-50/50 dark:border-orange-600/30 dark:bg-orange-500/10">
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium text-orange-700 dark:text-orange-400">Pending Rent</CardTitle>
+                                <Receipt className="h-4 w-4 text-orange-600 dark:text-orange-500" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold text-orange-800 dark:text-orange-300">{formatCurrency(pendingRent)}</div>
+                                <p className="text-xs text-orange-600 dark:text-orange-500">Yet to collect</p>
+                            </CardContent>
+                        </Card>
+                        <Card className="border-red-200 bg-red-50/50 dark:border-red-600/30 dark:bg-red-500/10">
+                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium text-red-700 dark:text-red-400">Total Expenses</CardTitle>
+                                <TrendingDown className="h-4 w-4 text-red-600 dark:text-red-500" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-2xl font-bold text-red-800 dark:text-red-300">{formatCurrency(totalExpenses)}</div>
+                                <p className="text-xs text-red-600 dark:text-red-500">This month</p>
+                            </CardContent>
+                        </Card>
+                        <Card className="border-blue-200 bg-blue-50/50 dark:border-blue-600/30 dark:bg-blue-500/10">
+                             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                <CardTitle className="text-sm font-medium text-blue-700 dark:text-blue-400">Net Amount</CardTitle>
+                                <Calculator className="h-4 w-4 text-blue-600 dark:text-blue-500" />
+                            </CardHeader>
+                            <CardContent>
+                                <div className={`text-2xl font-bold ${netResult >= 0 ? 'text-green-800 dark:text-green-300' : 'text-red-800 dark:text-red-300'}`}>
+                                    {netResult >= 0 ? '+' : ''}{formatCurrency(netResult)}
+                                </div>
+                                <p className="text-xs text-blue-600 dark:text-blue-500">Profit</p>
+                            </CardContent>
+                        </Card>
+                    </div>
+                </CardContent>
+            </Card>
+
             <Tabs defaultValue="rent-roll" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="rent-roll">Rent Roll</TabsTrigger>
@@ -1225,56 +1284,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                  </Card>
 
 
-                <Card>
-                    <CardHeader>
-                        <CardTitle>{settings.page_overview.financial_overview_title} - {month} {year}</CardTitle>
-                        <CardDescription>{settings.page_overview.financial_overview_description}</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
-                            <div className="flex items-center gap-4 rounded-lg border p-4">
-                                <Banknote className="h-8 w-8 text-muted-foreground" />
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Total Rent Expected</p>
-                                    <p className="text-2xl font-bold" style={{ color: 'hsl(var(--chart-1))' }}>৳{totalRentExpected.toFixed(2)}</p>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-4 rounded-lg border p-4">
-                                <ArrowDownCircle className="h-8 w-8 text-destructive" />
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Total Expenses</p>
-                                    <p className="text-2xl font-bold text-destructive">৳{totalExpenses.toFixed(2)}</p>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-4 rounded-lg border p-4">
-                                <DollarSign className="h-8 w-8 text-muted-foreground" />
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Net Result</p>
-                                    <p className={`text-2xl font-bold ${netResult >= 0 ? 'text-success' : 'text-destructive'}`}>
-                                        {netResult >= 0 ? '+' : ''}৳{netResult.toFixed(2)}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                        <Separator />
-                        <div className="grid gap-4 sm:grid-cols-2">
-                            <div className="flex items-center gap-4">
-                                <Percent className="h-6 w-6 text-muted-foreground" />
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Collection Rate</p>
-                                    <p className="text-xl font-bold text-primary">{collectionRate.toFixed(1)}%</p>
-                                </div>
-                            </div>
-                             <div className="flex items-center gap-4">
-                                <ArrowUpCircle className="h-6 w-6 text-success" />
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Available for Deposit</p>
-                                    <p className="text-xl font-bold text-success">৳{amountForDeposit.toFixed(2)}</p>
-                                </div>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
+                
                  <Card>
                     <CardHeader className="flex flex-row items-center justify-between gap-3 p-3" style={{ backgroundColor: 'hsl(var(--table-header-background))', color: 'hsl(var(--table-header-foreground))' }}>
                         <div className="flex items-center gap-3">
@@ -1436,3 +1446,6 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
 
 
 
+
+
+    
