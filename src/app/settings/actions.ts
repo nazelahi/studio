@@ -252,3 +252,61 @@ export async function clearDataForPeriodAction(formData: FormData) {
     
     return { success: true };
 }
+
+const escapeSqlValue = (value: any): string => {
+    if (value === null || value === undefined) {
+        return 'NULL';
+    }
+    if (typeof value === 'string') {
+        // Simple escape: replace single quotes with two single quotes
+        return `'${value.replace(/'/g, "''")}'`;
+    }
+    if (typeof value === 'number' || typeof value === 'boolean') {
+        return value.toString();
+    }
+    if (Array.isArray(value)) {
+        // Assuming array of strings for now, adjust if other types are needed
+        return `'{${value.map(item => `"${item.replace(/"/g, '""')}"`).join(',')}}'`;
+    }
+     if (typeof value === 'object') {
+        return `'${JSON.stringify(value).replace(/'/g, "''")}'`;
+    }
+    return `'${value.toString().replace(/'/g, "''")}'`;
+};
+
+const generateInsertStatements = (tableName: string, data: any[]): string => {
+    if (data.length === 0) {
+        return '';
+    }
+    const columns = Object.keys(data[0]);
+    let sql = '';
+    for (const row of data) {
+        const values = columns.map(col => escapeSqlValue(row[col])).join(', ');
+        sql += `INSERT INTO public.${tableName} (${columns.join(', ')}) VALUES (${values});\n`;
+    }
+    return sql;
+};
+
+export async function backupSqlAction(): Promise<{ sql?: string; error?: string }> {
+    const supabaseAdmin = getSupabaseAdmin();
+    const tables = ['tenants', 'rent_entries', 'expenses', 'deposits', 'notices', 'work_details', 'zakat_transactions', 'zakat_bank_details', 'property_settings'];
+    let sqlOutput = `-- RentFlow SQL Backup\n-- Generated on: ${new Date().toISOString()}\n\n`;
+
+    try {
+        for (const table of tables) {
+            const { data, error } = await supabaseAdmin.from(table).select('*');
+            if (error) {
+                throw new Error(`Error fetching data from ${table}: ${error.message}`);
+            }
+            if (data && data.length > 0) {
+                sqlOutput += `-- Data for table: ${table}\n`;
+                sqlOutput += generateInsertStatements(table, data);
+                sqlOutput += '\n';
+            }
+        }
+        return { sql: sqlOutput };
+    } catch (error: any) {
+        console.error('SQL Backup Error:', error);
+        return { error: error.message };
+    }
+}

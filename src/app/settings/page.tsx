@@ -12,17 +12,19 @@ import { useSettings } from "@/context/settings-context"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/context/auth-context"
 import { Button, buttonVariants } from "@/components/ui/button"
-import { User, LogOut, MapPin, Menu, Settings, LoaderCircle, LogIn, Building, KeyRound, Palette, Tag, Landmark, Upload, Banknote, UserCircle, MessageSquare, Info, Phone, Mail, AlertTriangle, Trash2 } from "lucide-react"
+import { User, LogOut, MapPin, Menu, Settings, LoaderCircle, LogIn, Building, KeyRound, Palette, Tag, Landmark, Upload, Banknote, UserCircle, MessageSquare, Info, Phone, Mail, AlertTriangle, Trash2, Database, HardDriveDownload } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useToast } from "@/hooks/use-toast"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
-import { updatePropertySettingsAction, updateUserCredentialsAction, updatePasscodeAction, clearDataForPeriodAction } from "./actions"
+import { updatePropertySettingsAction, updateUserCredentialsAction, updatePasscodeAction, clearDataForPeriodAction, backupSqlAction } from "./actions"
 import { useProtection } from "@/context/protection-context"
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Textarea } from "@/components/ui/textarea"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { saveAs } from "file-saver"
+
 
 type SettingsTab = 'property' | 'account' | 'application' | 'labels';
 
@@ -60,6 +62,7 @@ export default function SettingsPage() {
   const [isCredentialsPending, startCredentialsTransition] = useTransition();
   const [isPasscodePending, startPasscodeTransition] = useTransition();
   const [isClearDataPending, startClearDataTransition] = useTransition();
+  const [isBackupPending, startBackupTransition] = useTransition();
   const { withProtection } = useProtection();
   
   const [newEmail, setNewEmail] = useState(user?.email || '');
@@ -240,6 +243,20 @@ export default function SettingsPage() {
                 refreshSettings();
             }
         });
+    });
+  }
+  
+  const handleBackupSql = () => {
+    startBackupTransition(async () => {
+      toast({ title: "Generating SQL Backup...", description: "This might take a few moments." });
+      const result = await backupSqlAction();
+      if (result.error) {
+        toast({ title: "Backup Failed", description: result.error, variant: "destructive" });
+      } else if (result.sql) {
+        const blob = new Blob([result.sql], { type: "application/sql;charset=utf-8" });
+        saveAs(blob, `rentflow_backup_${new Date().toISOString()}.sql`);
+        toast({ title: "SQL Backup Downloaded", description: "The database backup has been saved." });
+      }
     });
   }
 
@@ -560,6 +577,21 @@ export default function SettingsPage() {
                       </CardFooter>
                     </Card>
                   </form>
+                   <Card>
+                    <CardHeader>
+                        <CardTitle>Backup & Restore</CardTitle>
+                        <CardDescription>Download a full SQL backup of your database.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Button onClick={handleBackupSql} disabled={isBackupPending}>
+                            {isBackupPending ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <HardDriveDownload />}
+                            Download SQL Backup
+                        </Button>
+                         <p className="text-xs text-muted-foreground mt-2">
+                            This will download a `.sql` file containing all your data. Keep it safe.
+                          </p>
+                    </CardContent>
+                   </Card>
                   <Card className="border-destructive">
                       <CardHeader>
                           <CardTitle className="text-destructive flex items-center gap-2">
