@@ -111,7 +111,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
                 zakatBankDetails: zakatBankDetailsRes.data as ZakatBankDetail[],
             });
         } catch (error: any) {
-            console.error(`Error in fetching data:`, error.message, error);
+             console.error(`Error in fetching data:`, error.message, error);
         } finally {
             setLoading(false);
         }

@@ -8,6 +8,7 @@ import { parseISO, getMonth, getYear, subMonths, format } from 'date-fns';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from './auth-context';
 import { Button } from '@/components/ui/button';
+import { fetchAllDataAction } from '@/app/actions/data';
 
 
 interface AppData {
@@ -76,48 +77,25 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const fetchData = useCallback(async () => {
         setLoading(true);
         try {
-            if (!supabase) {
-                console.log("Supabase not initialized, skipping data fetch.");
-                return;
-            }
+            const result = await fetchAllDataAction();
 
-            const [tenantsRes, expensesRes, rentDataRes, propertySettingsRes, depositsRes, zakatRes, noticesRes, workDetailsRes, zakatBankDetailsRes] = await Promise.all([
-                supabase.from('tenants').select('*').is('deleted_at', null),
-                supabase.from('expenses').select('*').is('deleted_at', null),
-                supabase.from('rent_entries').select('*').is('deleted_at', null),
-                supabase.from('property_settings').select('*').eq('id', 1).maybeSingle(),
-                supabase.from('deposits').select('*'),
-                supabase.from('zakat_transactions').select('*'),
-                supabase.from('notices').select('*'),
-                supabase.from('work_details').select('*'),
-                supabase.from('zakat_bank_details').select('*'),
-            ]);
-
-            if (tenantsRes.error) throw tenantsRes.error;
-            if (expensesRes.error) throw expensesRes.error;
-            if (rentDataRes.error) throw rentDataRes.error;
-            if (depositsRes.error) throw depositsRes.error;
-            if (zakatRes.error) throw zakatRes.error;
-            if (noticesRes.error) throw noticesRes.error;
-            if (workDetailsRes.error) throw workDetailsRes.error;
-            if (zakatBankDetailsRes.error) throw zakatBankDetailsRes.error;
-            if (propertySettingsRes.error && propertySettingsRes.error.code !== 'PGRST116') {
-                 throw propertySettingsRes.error;
+            if (result.error) {
+                throw new Error(result.error);
             }
             
             setData({
-                tenants: tenantsRes.data as Tenant[],
-                expenses: expensesRes.data as Expense[],
-                rentData: rentDataRes.data as RentEntry[],
-                propertySettings: propertySettingsRes.data as PropertySettings,
-                deposits: depositsRes.data as Deposit[],
-                zakatTransactions: zakatRes.data as ZakatTransaction[],
-                notices: noticesRes.data as Notice[],
-                workDetails: workDetailsRes.data as WorkDetail[],
-                zakatBankDetails: zakatBankDetailsRes.data as ZakatBankDetail[],
+                tenants: (result.tenants as Tenant[]) || [],
+                expenses: (result.expenses as Expense[]) || [],
+                rentData: (result.rentData as RentEntry[]) || [],
+                propertySettings: (result.propertySettings as PropertySettings) || null,
+                deposits: (result.deposits as Deposit[]) || [],
+                zakatTransactions: (result.zakatTransactions as ZakatTransaction[]) || [],
+                notices: (result.notices as Notice[]) || [],
+                workDetails: (result.workDetails as WorkDetail[]) || [],
+                zakatBankDetails: (result.zakatBankDetails as ZakatBankDetail[]) || [],
             });
         } catch (error: any) {
-            console.error(`Error in fetching data:`, error.message, error);
+             console.error("Error fetching data:", error);
         } finally {
             setLoading(false);
         }
@@ -143,7 +121,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
             )
             .subscribe((status, err) => {
                 if (status === 'SUBSCRIBED') {
-                    console.log('Successfully subscribed to real-time updates!');
+                    // console.log('Successfully subscribed to real-time updates!');
                 }
                 if (err) {
                     const dbError = err as any;
