@@ -30,9 +30,21 @@ const getSupabaseAdmin = () => {
 
 export async function updatePropertySettingsAction(formData: FormData) {
     const supabaseAdmin = getSupabaseAdmin();
+    
+    // Fetch the current settings to get existing image URLs
+    const { data: currentSettings, error: fetchError } = await supabaseAdmin
+        .from('property_settings')
+        .select('bank_logo_url, owner_photo_url')
+        .eq('id', 1)
+        .single();
+
+    if (fetchError) {
+        console.error('Supabase fetch settings error:', fetchError);
+        return { error: `Failed to fetch current settings: ${fetchError.message}` };
+    }
 
     const logoFile = formData.get('logoFile') as File | null;
-    let logoUrl: string | null = formData.get('bank_logo_url') as string || null;
+    let logoUrl: string | null = currentSettings?.bank_logo_url || null;
 
     if (logoFile && logoFile.size > 0) {
         const fileExt = logoFile.name.split('.').pop();
@@ -65,7 +77,7 @@ export async function updatePropertySettingsAction(formData: FormData) {
     }
 
     const ownerPhotoFile = formData.get('ownerPhotoFile') as File | null;
-    let ownerPhotoUrl: string | null = formData.get('owner_photo_url') as string || null;
+    let ownerPhotoUrl: string | null = currentSettings?.owner_photo_url || null;
 
     if (ownerPhotoFile && ownerPhotoFile.size > 0) {
         const fileExt = ownerPhotoFile.name.split('.').pop();
