@@ -1,10 +1,9 @@
-// src/app/receipt/[id]/page.tsx
 
 "use client"
 
 import * as React from "react"
-import { useData } from "@/context/data-context"
-import { useSettings } from "@/context/settings-context"
+import { useData, DataProvider } from "@/context/data-context"
+import { useSettings, SettingsProvider } from "@/context/settings-context"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
@@ -24,7 +23,7 @@ const formatCurrency = (amount?: number) => {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'BDT' }).format(amount).replace('BDT', '৳');
 };
 
-export default function ReceiptPage() {
+function ReceiptPageContent() {
     const { getRentEntryById } = useData()
     const { settings, loading: settingsLoading } = useSettings()
     const router = useRouter()
@@ -175,7 +174,7 @@ export default function ReceiptPage() {
                             <TableBody>
                                 <TableRow>
                                     <TableCell>
-                                        <div className="font-medium">Rent for {format(rentEntry.due_date, 'MMMM yyyy')}</div>
+                                        <div className="font-medium">Rent for {format(parseISO(rentEntry.due_date), 'MMMM yyyy')}</div>
                                         <div className="text-sm text-muted-foreground">Apartment/Unit: {rentEntry.property}</div>
                                     </TableCell>
                                     <TableCell className="text-right font-medium">{formatCurrency(rentEntry.rent)}</TableCell>
@@ -215,4 +214,14 @@ export default function ReceiptPage() {
             </div>
         </div>
     );
+}
+
+export default function ReceiptPage() {
+    return (
+        <DataProvider>
+            <SettingsProvider>
+                <ReceiptPageContent />
+            </SettingsProvider>
+        </DataProvider>
+    )
 }
