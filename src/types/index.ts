@@ -8,7 +8,6 @@ export type TabNames = {
   overview: string;
   tenants: string;
   work: string;
-  integrations: string;
   reports: string;
   zakat: string;
 };

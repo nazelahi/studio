@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import Link from "next/link"
@@ -70,27 +71,10 @@ export default function HomePage() {
   }
   
   const handleTabChange = (value: string) => {
-    // If user is not admin and clicks a protected tab, do nothing or show message.
-    // For now, just prevent switching if not admin and tab is integrations
-    if (!isAdmin && value === 'integrations') {
-      toast({
-        title: "Admin Access Required",
-        description: "You need to be an admin to view this tab.",
-        variant: "destructive"
-      })
-      return;
-    }
     setActiveTab(value);
     setIsSheetOpen(false); // Close sidebar on selection
   };
   
-  // After signing out, if on a protected tab, redirect to overview.
-  React.useEffect(() => {
-    if (!isAdmin && (activeTab === 'integrations')) {
-        setActiveTab('overview');
-    }
-  }, [isAdmin, activeTab]);
-
   const mainNavLinks = (
     <>
       <Link href="/" className={`hover:text-foreground ${pathname === '/' ? 'text-foreground' : 'text-muted-foreground'}`}>
@@ -112,7 +96,6 @@ export default function HomePage() {
       <button onClick={() => handleTabChange('overview')} className={`w-full text-left hover:text-foreground ${activeTab === 'overview' ? 'text-foreground' : 'text-muted-foreground'}`}>{settings.tabNames.overview}</button>
       <button onClick={() => handleTabChange('contacts')} className={`w-full text-left hover:text-foreground ${activeTab === 'contacts' ? 'text-foreground' : 'text-muted-foreground'}`}>{settings.tabNames.tenants}</button>
       <button onClick={() => handleTabChange('work')} className={`w-full text-left hover:text-foreground ${activeTab === 'work' ? 'text-foreground' : 'text-muted-foreground'}`}>{settings.tabNames.work}</button>
-      {isAdmin && <button onClick={() => handleTabChange('integrations')} className={`w-full text-left hover:text-foreground ${activeTab === 'integrations' ? 'text-foreground' : 'text-muted-foreground'}`}>{settings.tabNames.integrations}</button>}
       <button onClick={() => handleTabChange('reports')} className={`w-full text-left hover:text-foreground ${activeTab === 'reports' ? 'text-foreground' : 'text-muted-foreground'}`}>{settings.tabNames.reports}</button>
       <button onClick={() => handleTabChange('zakat')} className={`w-full text-left hover:text-foreground ${activeTab === 'zakat' ? 'text-foreground' : 'text-muted-foreground'}`}>{settings.tabNames.zakat}</button>
     </>
