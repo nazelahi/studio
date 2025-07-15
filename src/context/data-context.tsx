@@ -77,7 +77,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
             const twoYearsAgo = format(subYears(new Date(), 2), 'yyyy-MM-dd');
 
             const [tenantsRes, expensesRes, rentDataRes, propertySettingsRes, depositsRes, zakatRes, noticesRes, workDetailsRes, zakatBankDetailsRes] = await Promise.all([
-                supabase.from('tenants').select('*').is('deleted_at', null).order('name', { ascending: true }),
+                supabase.from('tenants').select('*').is('deleted_at', null).gte('created_at', twoYearsAgo).order('name', { ascending: true }),
                 supabase.from('expenses').select('*').is('deleted_at', null).gte('date', twoYearsAgo).order('date', { ascending: false }),
                 supabase.from('rent_entries').select('*').is('deleted_at', null).gte('due_date', twoYearsAgo).order('due_date', { ascending: false }),
                 supabase.from('property_settings').select('*').eq('id', 1).maybeSingle(),
