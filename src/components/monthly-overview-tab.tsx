@@ -132,7 +132,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
   const { toast } = useToast();
   const { withProtection } = useProtection();
 
-  const { tenants, expenses, rentData, deposits, notices, addRentEntry, addRentEntriesBatch, updateRentEntry, deleteRentEntry, addExpense, updateExpense, deleteExpense, syncTenantsForMonth, syncExpensesFromPreviousMonth, loading, deleteMultipleRentEntries, deleteMultipleExpenses, refreshData } = useData();
+  const { tenants, expenses, rentData, deposits, notices, addRentEntry, addRentEntriesBatch, updateRentEntry, deleteRentEntry, addExpense, updateExpense, deleteExpense, syncTenantsForMonth, syncExpensesFromPreviousMonth, loading, deleteMultipleRentEntries, deleteMultipleExpenses, refreshData, addExpensesBatch } = useData();
 
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = React.useState(false);
   const [editingExpense, setEditingExpense] = React.useState<Expense | null>(null);
@@ -164,6 +164,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
 
   const formRef = React.useRef<HTMLFormElement>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const expenseFileInputRef = React.useRef<HTMLInputElement>(null);
   const receiptInputRef = React.useRef<HTMLInputElement>(null);
 
 
@@ -705,6 +706,92 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
     }
   };
 
+    const handleDownloadExpenseTemplate = () => {
+        const headers = ["date", "category", "amount", "description", "status"];
+        const sampleData = [
+            ["2024-05-10", "Maintenance", 2500, "Fix leaking pipe in Apt 101", "Paid"],
+            ["2024-05-15", "Utilities", 5000, "Monthly electricity bill", "Due"]
+        ];
+        const worksheet = XLSX.utils.aoa_to_sheet([headers, ...sampleData]);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Expenses Template");
+        XLSX.writeFile(workbook, "Expenses_Template.xlsx");
+        toast({ title: "Template Downloaded", description: "Expenses_Template.xlsx has been downloaded." });
+    };
+
+    const handleImportExpenseClick = () => {
+        expenseFileInputRef.current?.click();
+    };
+
+    const handleExpenseFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        toast({ title: "Processing expense file...", description: "Please wait." });
+        
+        const reader = new FileReader();
+        reader.onload = async (e) => {
+            try {
+                const data = e.target?.result;
+                const workbook = XLSX.read(data, { type: 'array' });
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+
+                const json: any[] = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false });
+
+                if (json.length < 2) {
+                    toast({ title: "Empty or invalid sheet", variant: "destructive" });
+                    return;
+                }
+
+                const header: string[] = json[0].map((h: any) => String(h).toLowerCase().trim().replace(/ /g, '_'));
+                const rows = json.slice(1);
+
+                const expensesToCreate = rows.map(rowArray => {
+                    const row: { [key: string]: any } = {};
+                    header.forEach((h, i) => { row[h] = rowArray[i]; });
+
+                    const validStatuses = ["paid", "due"];
+                    const statusInput = String(row.status || 'Due').toLowerCase();
+                    const status = validStatuses.includes(statusInput) ? (statusInput.charAt(0).toUpperCase() + statusInput.slice(1)) as Expense['status'] : "Due";
+
+                    let date: string;
+                    const dateInput = row.date;
+                    if (typeof dateInput === 'number') {
+                        const d = XLSX.SSF.parse_date_code(dateInput);
+                        date = new Date(d.y, d.m - 1, d.d).toISOString().split('T')[0];
+                    } else {
+                        const parsed = new Date(dateInput);
+                        date = !isNaN(parsed.getTime()) ? parsed.toISOString().split('T')[0] : new Date(year, monthIndex, 1).toISOString().split('T')[0];
+                    }
+                  
+                    return {
+                        date,
+                        category: String(row.category || 'Other'),
+                        amount: Number(row.amount || 0),
+                        description: String(row.description || ''),
+                        status,
+                    };
+                }).filter(entry => entry.category && entry.amount > 0);
+                
+                if (expensesToCreate.length === 0) {
+                    toast({ title: "No Valid Data Found", description: "Ensure file has columns: date, category, amount.", variant: "destructive" });
+                    return;
+                }
+                
+                await addExpensesBatch(expensesToCreate, toast);
+                toast({ title: "Import Successful", description: `${expensesToCreate.length} expenses imported.` });
+
+            } catch (error) {
+                console.error("Error importing expense file:", error);
+                toast({ title: "Import Failed", description: "There was an error processing the file.", variant: "destructive" });
+            } finally {
+                if(event.target) event.target.value = '';
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    };
+
   if (loading) {
     return (
       <div className="pt-4 space-y-6">
@@ -1094,6 +1181,11 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                                 <TooltipTrigger asChild><Button size="icon" variant="outline" onClick={handleSyncExpenses} className="flex-1 sm:flex-initial"><RefreshCw className="h-4 w-4" /><span className="sr-only">Sync expenses</span></Button></TooltipTrigger><TooltipContent>Sync from Previous Month</TooltipContent>
                             </Tooltip>
                         </div>
+                         <div className="hidden sm:flex items-center gap-2">
+                            <Tooltip><TooltipTrigger asChild><Button size="icon" variant="outline" onClick={handleDownloadExpenseTemplate}><Download className="h-4 w-4" /><span className="sr-only">Download Template</span></Button></TooltipTrigger><TooltipContent>Download Template</TooltipContent></Tooltip>
+                            <Tooltip><TooltipTrigger asChild><Button size="icon" variant="outline" onClick={handleImportExpenseClick}><Upload className="h-4 w-4" /><span className="sr-only">Import from file</span></Button></TooltipTrigger><TooltipContent>Import</TooltipContent></Tooltip>
+                            <input type="file" ref={expenseFileInputRef} className="hidden" accept=".xlsx, .csv" onChange={handleExpenseFileChange}/>
+                        </div>
                       </div>
                     }
                   </CardHeader>
@@ -1203,7 +1295,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                 </Card>
               </TabsContent>
             </Tabs>
-            <div className="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mt-6">
                 <Card className="border-l-4 border-teal-500">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Rent Collected</CardTitle>
