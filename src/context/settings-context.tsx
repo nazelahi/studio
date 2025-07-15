@@ -27,7 +27,6 @@ interface PageSettings {
     app_settings: {
         title: string;
         description: string;
-        header_name_label: string;
     };
     overview_settings: {
         title: string;
@@ -49,7 +48,6 @@ interface AppTheme {
 }
 
 interface AppSettings {
-  appName: string;
   houseName: string;
   houseAddress: string;
   bankName: string;
@@ -82,8 +80,7 @@ interface SettingsContextType {
 }
 
 const defaultSettings: AppSettings = {
-    appName: "RentFlow",
-    houseName: "Property Name",
+    houseName: "RentFlow",
     houseAddress: "Property Address",
     bankName: "",
     bankAccountNumber: "",
@@ -136,7 +133,6 @@ const defaultSettings: AppSettings = {
         app_settings: {
             title: "Application Settings",
             description: "Customize the names and labels used throughout the application. These are saved in your browser.",
-            header_name_label: "Header Name",
         },
         overview_settings: {
             title: "Overview Settings",

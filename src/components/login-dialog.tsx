@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import * as React from "react";
@@ -10,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Logo } from "@/components/icons";
 import { LoaderCircle } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useSettings } from "@/context/settings-context";
 
 interface LoginDialogProps {
   isOpen: boolean;
@@ -21,6 +23,7 @@ export function LoginDialog({ isOpen, onOpenChange }: LoginDialogProps) {
   const [password, setPassword] = React.useState('');
   const [loading, setLoading] = React.useState(false);
   const { signIn } = useAuth();
+  const { settings } = useSettings();
   const { toast } = useToast();
 
   const handleSignIn = async (e: React.FormEvent) => {
@@ -65,7 +68,7 @@ export function LoginDialog({ isOpen, onOpenChange }: LoginDialogProps) {
         <DialogHeader>
             <div className="flex flex-col items-center text-center mb-4">
                <Logo className="h-12 w-12 mx-auto text-primary" />
-               <DialogTitle className="text-3xl font-bold mt-2">RentFlow</DialogTitle>
+               <DialogTitle className="text-3xl font-bold mt-2">{settings.houseName}</DialogTitle>
                <DialogDescription className="text-muted-foreground">Admin Login</DialogDescription>
             </div>
         </DialogHeader>

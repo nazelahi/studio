@@ -114,7 +114,7 @@ export default function HomePage() {
             className="flex items-center gap-2 text-lg font-semibold md:text-base"
           >
             <Logo className="h-6 w-6 text-primary" />
-            <span className="sr-only">{settings.appName}</span>
+            <span className="sr-only">{settings.houseName}</span>
           </Link>
           {mainNavLinks}
         </nav>

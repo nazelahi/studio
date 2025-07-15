@@ -266,7 +266,7 @@ export default function SettingsPage() {
             className="flex items-center gap-2 text-lg font-semibold md:text-base"
           >
             <Logo className="h-6 w-6 text-primary" />
-            <span className="sr-only">{settings.appName}</span>
+            <span className="sr-only">{settings.houseName}</span>
           </Link>
           <Link
             href="/"
@@ -304,7 +304,7 @@ export default function SettingsPage() {
                 className="flex items-center gap-2 text-lg font-semibold"
               >
                 <Logo className="h-6 w-6 text-primary" />
-                <span className="sr-only">{settings.appName}</span>
+                <span className="sr-only">{settings.houseName}</span>
               </Link>
               <Link href="/" className={`hover:text-foreground text-muted-foreground`}>
                 {settings.page_dashboard.nav_dashboard}
@@ -409,7 +409,7 @@ export default function SettingsPage() {
                     <Card>
                         <CardHeader>
                             <CardTitle>Property Details</CardTitle>
-                            <CardDescription>Set the name and address of your property.</CardDescription>
+                            <CardDescription>Set the name and address of your property. This will be displayed across the app.</CardDescription>
                         </CardHeader>
                         <CardContent className="grid md:grid-cols-2 gap-4">
                             <div className="space-y-2">
@@ -632,19 +632,6 @@ export default function SettingsPage() {
                 <div className="space-y-6">
                     <Card>
                       <CardHeader>
-                          <CardTitle>{settings.page_settings.app_settings.title}</CardTitle>
-                          <CardDescription>{settings.page_settings.app_settings.description}</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                          <div className="space-y-2">
-                              <Label htmlFor="appName">{settings.page_settings.app_settings.header_name_label}</Label>
-                              <Input id="appName" name="appName" defaultValue={settings.appName} onChange={handleInputChange} />
-                          </div>
-                      </CardContent>
-                    </Card>
-
-                    <Card>
-                      <CardHeader>
                         <CardTitle>Theme Colors</CardTitle>
                         <CardDescription>Customize the look and feel of the application.</CardDescription>
                       </CardHeader>
@@ -684,11 +671,10 @@ export default function SettingsPage() {
                               </div>
                           </div>
                       </CardContent>
+                       <CardFooter>
+                         <Button onClick={handleSaveAppSettings}>Save Application Settings</Button>
+                       </CardFooter>
                     </Card>
-
-                    <CardFooter>
-                      <Button onClick={handleSaveAppSettings}>Save Application Settings</Button>
-                    </CardFooter>
                 </div>
               )}
               
