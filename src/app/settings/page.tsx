@@ -117,12 +117,7 @@ export default function SettingsPage() {
 
   const [activeTab, setActiveTab] = useState<SettingsTab>('property');
   
-  const [logoPreview, setLogoPreview] = React.useState<string | null>(null);
-  const [logoFile, setLogoFile] = React.useState<File | null>(null);
   const logoInputRef = React.useRef<HTMLInputElement>(null);
-
-  const [ownerPhotoPreview, setOwnerPhotoPreview] = React.useState<string | null>(null);
-  const [ownerPhotoFile, setOwnerPhotoFile] = React.useState<File | null>(null);
   const ownerPhotoInputRef = React.useRef<HTMLInputElement>(null);
 
   React.useEffect(() => {
@@ -131,11 +126,6 @@ export default function SettingsPage() {
     }
   }, [user]);
 
-  React.useEffect(() => {
-    setLogoPreview(settings.bankLogoUrl || null);
-    setOwnerPhotoPreview(settings.ownerPhotoUrl || null);
-  }, [settings.bankLogoUrl, settings.ownerPhotoUrl]);
-  
   const handleSettingsChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       const { name, value } = e.target;
       setSettings(prev => ({ ...prev, [name]: value }));
@@ -159,28 +149,25 @@ export default function SettingsPage() {
     });
   };
 
-  
-  const handleLogoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, fileType: 'logoFile' | 'ownerPhotoFile') => {
     const file = e.target.files?.[0];
-    if (file) {
-        setLogoFile(file);
-        const reader = new FileReader();
-        reader.onloadend = () => {
-            setLogoPreview(reader.result as string);
-        };
-        reader.readAsDataURL(file);
-    }
-  };
+    if (!file) return;
 
-  const handleOwnerPhotoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-        setOwnerPhotoFile(file);
-        const reader = new FileReader();
-        reader.onloadend = () => {
-            setOwnerPhotoPreview(reader.result as string);
-        };
-        reader.readAsDataURL(file);
+    startTransition(async () => {
+      const formData = new FormData();
+      formData.append(fileType, file);
+      
+      const result = await updatePropertySettingsAction(formData);
+      if (result?.error) {
+        toast({ title: `Error Saving ${fileType === 'logoFile' ? 'Logo' : 'Photo'}`, description: result.error, variant: 'destructive'});
+      } else {
+        toast({ title: 'Image Saved', description: `Your new ${fileType === 'logoFile' ? 'logo' : 'photo'} has been updated.` });
+        refreshSettings();
+      }
+    });
+     // Reset file input to allow re-uploading the same file
+    if (e.target) {
+        e.target.value = '';
     }
   };
 
@@ -203,47 +190,26 @@ export default function SettingsPage() {
     startTransition(async () => {
         const formData = new FormData();
         formData.append(field, value);
-
-        // Ensure other settings are preserved when updating one field
-        Object.entries(settings).forEach(([key, val]) => {
-            if (key !== field) {
-                 if (Array.isArray(val)) {
-                    val.forEach(item => formData.append(key, item));
-                } else if (typeof val !== 'object') {
-                    formData.append(key, String(val));
-                }
-            }
-        });
         
         // Use keys that match the server action
-        const renamedFormData = new FormData();
-        renamedFormData.append('houseName', settings.houseName);
-        renamedFormData.append('houseAddress', settings.houseAddress);
-        renamedFormData.append('bankName', settings.bankName);
-        renamedFormData.append('bankAccountNumber', settings.bankAccountNumber);
-        renamedFormData.append('ownerName', settings.ownerName || '');
-        renamedFormData.append('aboutUs', settings.aboutUs || '');
-        renamedFormData.append('contact_phone', settings.contactPhone || '');
-        renamedFormData.append('contact_email', settings.contactEmail || '');
-        renamedFormData.append('contact_address', settings.contactAddress || '');
-        renamedFormData.append('footerName', settings.footerName || '');
-
-        // Now, update the changed field
         const keyMap: {[key: string]: string} = {
-            houseName: 'houseName',
-            houseAddress: 'houseAddress',
-            bankName: 'bankName',
-            bankAccountNumber: 'bankAccountNumber',
-            ownerName: 'ownerName',
+            houseName: 'house_name',
+            houseAddress: 'house_address',
+            bankName: 'bank_name',
+            bankAccountNumber: 'bank_account_number',
+            ownerName: 'owner_name',
             aboutUs: 'about_us',
             contactPhone: 'contact_phone',
             contactEmail: 'contact_email',
             contactAddress: 'contact_address',
-            footerName: 'footerName',
+            footerName: 'footer_name',
         };
 
+        const renamedFormData = new FormData();
         if (keyMap[field]) {
              renamedFormData.set(keyMap[field], value);
+        } else {
+             renamedFormData.set(field, value);
         }
 
         const result = await updatePropertySettingsAction(renamedFormData);
@@ -254,52 +220,25 @@ export default function SettingsPage() {
             refreshSettings();
         }
     });
-  }, [settings, refreshSettings, toast]);
+  }, [refreshSettings, toast]);
 
-  const handleImageSave = (event: React.FormEvent<HTMLFormElement>) => {
-     event.preventDefault();
-     const formData = new FormData();
+  const handleSaveIntegrationSettings = () => {
+    startTransition(async () => {
+        const formData = new FormData();
+        formData.append('whatsapp_reminders_enabled', settings.whatsappRemindersEnabled ? 'on' : 'off');
+        (settings.whatsappReminderSchedule || []).forEach(item => formData.append('whatsapp_reminder_schedule', item));
+        formData.append('whatsapp_reminder_template', settings.whatsappReminderTemplate || '');
 
-     if (logoFile) formData.append('logoFile', logoFile);
-     if (ownerPhotoFile) formData.append('ownerPhotoFile', ownerPhotoFile);
-
-     // If no new files, don't submit
-     if (!logoFile && !ownerPhotoFile) {
-        toast({title: "No new images to save", description: "Select a new owner photo or bank logo to upload."});
-        return;
-     }
-
-     // Add all other settings to formData to prevent them from being erased
-     formData.append('houseName', settings.houseName);
-     formData.append('houseAddress', settings.houseAddress);
-     formData.append('bankName', settings.bankName);
-     formData.append('bankAccountNumber', settings.bankAccountNumber);
-     formData.append('bank_logo_url', settings.bankLogoUrl || '');
-     if (settings.bankLogoUrl) formData.append('oldLogoUrl', settings.bankLogoUrl);
-     formData.append('ownerName', settings.ownerName || '');
-     formData.append('owner_photo_url', settings.ownerPhotoUrl || '');
-     if (settings.ownerPhotoUrl) formData.append('oldOwnerPhotoUrl', settings.ownerPhotoUrl);
-     formData.append('about_us', settings.aboutUs || '');
-     formData.append('contact_phone', settings.contactPhone || '');
-     formData.append('contact_email', settings.contactEmail || '');
-     formData.append('contact_address', settings.contactAddress || '');
-     formData.append('footerName', settings.footerName);
-     formData.append('whatsapp_reminders_enabled', settings.whatsappRemindersEnabled ? 'on' : 'off');
-     (settings.whatsappReminderSchedule || []).forEach(item => formData.append('whatsapp_reminder_schedule', item));
-     formData.append('whatsapp_reminder_template', settings.whatsappReminderTemplate || '');
-     
-     startTransition(async () => {
         const result = await updatePropertySettingsAction(formData);
         if (result?.error) {
-            toast({ title: 'Error Saving Images', description: result.error, variant: 'destructive'});
+            toast({ title: 'Error Saving Settings', description: result.error, variant: 'destructive'});
         } else {
-            toast({ title: 'Images Saved', description: 'Your new images have been updated.' });
-            setLogoFile(null);
-            setOwnerPhotoFile(null);
-            refreshSettings(); 
+            toast({ title: 'Integration Settings Saved', description: 'Your changes have been saved to the database.' });
+            refreshSettings();
         }
-     });
-  };
+    });
+  }
+
 
   const handleSaveAppSettings = () => {
     setSettings(settings); // This triggers the save-to-localStorage logic in the context
@@ -512,91 +451,77 @@ export default function SettingsPage() {
             <div className="grid gap-6">
               
               {activeTab === 'property' && (
-                <form onSubmit={handleImageSave}>
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Property Details</CardTitle>
-                            <CardDescription>Manage your property, owner, and contact information. Click the edit icon to change a value.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-8">
-                            {/* Owner & Property Information */}
-                            <div>
-                                <h3 className="text-lg font-medium">Owner & Property</h3>
-                                <Separator className="my-2" />
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
-                                    <div className="md:col-span-2 space-y-4">
-                                        <EditableField label="Owner Name" value={settings.ownerName || ''} onSave={(v) => handleSavePropertySettings('ownerName', v)} />
-                                        <EditableField label={settings.page_settings.property_details.house_name_label} value={settings.houseName} onSave={(v) => handleSavePropertySettings('houseName', v)} />
-                                        <EditableField label={settings.page_settings.property_details.house_address_label} value={settings.houseAddress} onSave={(v) => handleSavePropertySettings('houseAddress', v)} />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label>Owner Photo</Label>
-                                        <input type="hidden" name="owner_photo_url" value={settings.ownerPhotoUrl || ''} />
-                                        {settings.ownerPhotoUrl && <input type="hidden" name="oldOwnerPhotoUrl" value={settings.ownerPhotoUrl} />}
-                                        <div className="flex items-center gap-4">
-                                            <Avatar className="h-24 w-24 rounded-md">
-                                                <AvatarImage src={ownerPhotoPreview} data-ai-hint="person portrait"/>
-                                                <AvatarFallback className="rounded-md"><UserCircle className="h-10 w-10"/></AvatarFallback>
-                                            </Avatar>
-                                            <Button type="button" variant="outline" size="sm" onClick={() => ownerPhotoInputRef.current?.click()}>
-                                                <Upload className="mr-2 h-4 w-4"/>
-                                                Change
-                                            </Button>
-                                            <Input ref={ownerPhotoInputRef} type="file" name="ownerPhotoFile" className="hidden" accept="image/*" onChange={handleOwnerPhotoFileChange} />
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                  <Card>
+                      <CardHeader>
+                          <CardTitle>Property Details</CardTitle>
+                          <CardDescription>Manage your property, owner, and contact information. Click the edit icon to change a value.</CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-8">
+                          {/* Owner & Property Information */}
+                          <div>
+                              <h3 className="text-lg font-medium">Owner & Property</h3>
+                              <Separator className="my-2" />
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
+                                  <div className="md:col-span-2 space-y-4">
+                                      <EditableField label="Owner Name" value={settings.ownerName || ''} onSave={(v) => handleSavePropertySettings('ownerName', v)} />
+                                      <EditableField label={settings.page_settings.property_details.house_name_label} value={settings.houseName} onSave={(v) => handleSavePropertySettings('houseName', v)} />
+                                      <EditableField label={settings.page_settings.property_details.house_address_label} value={settings.houseAddress} onSave={(v) => handleSavePropertySettings('houseAddress', v)} />
+                                  </div>
+                                  <div className="space-y-2">
+                                      <Label>Owner Photo</Label>
+                                      <div className="flex items-center gap-4 group">
+                                          <Avatar className="h-24 w-24 rounded-md">
+                                              <AvatarImage src={settings.ownerPhotoUrl} data-ai-hint="person portrait"/>
+                                              <AvatarFallback className="rounded-md"><UserCircle className="h-10 w-10"/></AvatarFallback>
+                                          </Avatar>
+                                          <Button type="button" variant="ghost" size="icon" onClick={() => ownerPhotoInputRef.current?.click()} className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8">
+                                              <Edit className="h-4 w-4 text-muted-foreground"/>
+                                          </Button>
+                                          <Input ref={ownerPhotoInputRef} type="file" name="ownerPhotoFile" className="hidden" accept="image/*" onChange={(e) => handleFileChange(e, 'ownerPhotoFile')} />
+                                      </div>
+                                  </div>
+                              </div>
+                          </div>
 
-                            {/* Bank & Contact Information */}
-                            <div>
-                                <h3 className="text-lg font-medium">Bank & Contact Information</h3>
-                                <Separator className="my-2" />
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
-                                    <div className="md:col-span-2 space-y-4">
-                                        <EditableField label="Bank Name" value={settings.bankName} onSave={(v) => handleSavePropertySettings('bankName', v)} />
-                                        <EditableField label="Bank Account Number" value={settings.bankAccountNumber} onSave={(v) => handleSavePropertySettings('bankAccountNumber', v)} />
-                                        <EditableField label="Contact Email" value={settings.contactEmail || ''} onSave={(v) => handleSavePropertySettings('contactEmail', v)} />
-                                        <EditableField label="Contact Phone" value={settings.contactPhone || ''} onSave={(v) => handleSavePropertySettings('contactPhone', v)} />
-                                    </div>
-                                     <div className="space-y-2">
-                                        <Label>Bank Logo</Label>
-                                        <input type="hidden" name="bank_logo_url" value={settings.bankLogoUrl || ''} />
-                                        {settings.bankLogoUrl && <input type="hidden" name="oldLogoUrl" value={settings.bankLogoUrl} />}
-                                        <div className="flex items-center gap-4">
-                                            <Avatar className="h-24 w-24 rounded-md">
-                                                <AvatarImage src={logoPreview} data-ai-hint="logo bank"/>
-                                                <AvatarFallback className="rounded-md"><Banknote className="h-10 w-10"/></AvatarFallback>
-                                            </Avatar>
-                                            <Button type="button" variant="outline" size="sm" onClick={() => logoInputRef.current?.click()}>
-                                                <Upload className="mr-2 h-4 w-4"/>
-                                                Change
-                                            </Button>
-                                            <Input ref={logoInputRef} type="file" name="logoFile" className="hidden" accept="image/*" onChange={handleLogoFileChange} />
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            {/* About and Footer */}
-                             <div>
-                                <h3 className="text-lg font-medium">About & Footer</h3>
-                                <Separator className="my-2" />
-                                <div className="mt-4 space-y-4">
-                                     <EditableField label="About Us Section" value={settings.aboutUs || ''} onSave={(v) => handleSavePropertySettings('aboutUs', v)} isTextarea/>
-                                     <EditableField label="Contact Address" value={settings.contactAddress || ''} onSave={(v) => handleSavePropertySettings('contactAddress', v)} />
-                                     <EditableField label="Footer Copyright Text" value={settings.footerName} onSave={(v) => handleSavePropertySettings('footerName', v)} />
-                                </div>
-                            </div>
-                        </CardContent>
-                        <CardFooter className="border-t pt-6">
-                            <Button type="submit" disabled={isPending}>
-                                {isPending && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
-                                Save Image Changes
-                            </Button>
-                        </CardFooter>
-                    </Card>
-                </form>
+                          {/* Bank & Contact Information */}
+                          <div>
+                              <h3 className="text-lg font-medium">Bank & Contact Information</h3>
+                              <Separator className="my-2" />
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
+                                  <div className="md:col-span-2 space-y-4">
+                                      <EditableField label="Bank Name" value={settings.bankName} onSave={(v) => handleSavePropertySettings('bankName', v)} />
+                                      <EditableField label="Bank Account Number" value={settings.bankAccountNumber} onSave={(v) => handleSavePropertySettings('bankAccountNumber', v)} />
+                                      <EditableField label="Contact Email" value={settings.contactEmail || ''} onSave={(v) => handleSavePropertySettings('contactEmail', v)} />
+                                      <EditableField label="Contact Phone" value={settings.contactPhone || ''} onSave={(v) => handleSavePropertySettings('contactPhone', v)} />
+                                  </div>
+                                   <div className="space-y-2">
+                                      <Label>Bank Logo</Label>
+                                      <div className="flex items-center gap-4 group">
+                                          <Avatar className="h-24 w-24 rounded-md">
+                                              <AvatarImage src={settings.bankLogoUrl} data-ai-hint="logo bank"/>
+                                              <AvatarFallback className="rounded-md"><Banknote className="h-10 w-10"/></AvatarFallback>
+                                          </Avatar>
+                                          <Button type="button" variant="ghost" size="icon" onClick={() => logoInputRef.current?.click()} className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8">
+                                            <Edit className="h-4 w-4 text-muted-foreground"/>
+                                          </Button>
+                                          <Input ref={logoInputRef} type="file" name="logoFile" className="hidden" accept="image/*" onChange={(e) => handleFileChange(e, 'logoFile')} />
+                                      </div>
+                                  </div>
+                              </div>
+                          </div>
+                          
+                          {/* About and Footer */}
+                           <div>
+                              <h3 className="text-lg font-medium">About & Footer</h3>
+                              <Separator className="my-2" />
+                              <div className="mt-4 space-y-4">
+                                   <EditableField label="About Us Section" value={settings.aboutUs || ''} onSave={(v) => handleSavePropertySettings('aboutUs', v)} isTextarea/>
+                                   <EditableField label="Contact Address" value={settings.contactAddress || ''} onSave={(v) => handleSavePropertySettings('contactAddress', v)} />
+                                   <EditableField label="Footer Copyright Text" value={settings.footerName} onSave={(v) => handleSavePropertySettings('footerName', v)} />
+                              </div>
+                          </div>
+                      </CardContent>
+                  </Card>
               )}
 
               {activeTab === 'account' && (
@@ -670,7 +595,7 @@ export default function SettingsPage() {
               )}
 
               {activeTab === 'integrations' && (
-                <form onSubmit={handleImageSave} className="space-y-6">
+                <div className="space-y-6">
                   <Card>
                     <CardHeader>
                       <CardTitle>WhatsApp Automation</CardTitle>
@@ -733,15 +658,14 @@ export default function SettingsPage() {
                           </p>
                         </div>
                     </CardContent>
+                     <CardFooter>
+                         <Button onClick={handleSaveIntegrationSettings} disabled={isPending}>
+                           {isPending && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
+                           Save Integration Settings
+                         </Button>
+                     </CardFooter>
                   </Card>
-                  
-                  <div className="flex justify-start">
-                      <Button type="submit" disabled={isPending}>
-                         {isPending && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
-                         Save Integration Settings
-                      </Button>
-                    </div>
-                </form>
+                </div>
               )}
 
 
@@ -866,5 +790,5 @@ export default function SettingsPage() {
           </div>
         </main>
       </div>
-  )
+  );
 }

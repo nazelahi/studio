@@ -34,7 +34,7 @@ export async function updatePropertySettingsAction(formData: FormData) {
     // Fetch the current settings to get existing image URLs
     const { data: currentSettings, error: fetchError } = await supabaseAdmin
         .from('property_settings')
-        .select('bank_logo_url, owner_photo_url')
+        .select('*')
         .eq('id', 1)
         .single();
 
@@ -43,9 +43,24 @@ export async function updatePropertySettingsAction(formData: FormData) {
         return { error: `Failed to fetch current settings: ${fetchError.message}` };
     }
 
-    const logoFile = formData.get('logoFile') as File | null;
-    let logoUrl: string | null = currentSettings?.bank_logo_url || null;
+    const settingsData: { [key: string]: any } = {};
 
+    // Handle simple text fields from FormData
+    for (const [key, value] of formData.entries()) {
+        if (key !== 'logoFile' && key !== 'ownerPhotoFile') {
+            if (key === 'whatsapp_reminders_enabled') {
+                 settingsData[key] = value === 'on';
+            } else if (key === 'whatsapp_reminder_schedule') {
+                if (!settingsData[key]) settingsData[key] = [];
+                settingsData[key].push(value);
+            }
+             else {
+                settingsData[key] = value;
+            }
+        }
+    }
+    
+    const logoFile = formData.get('logoFile') as File | null;
     if (logoFile && logoFile.size > 0) {
         const fileExt = logoFile.name.split('.').pop();
         const filePath = `property-logos/${Date.now()}.${fileExt}`;
@@ -59,16 +74,13 @@ export async function updatePropertySettingsAction(formData: FormData) {
             return { error: `Failed to upload logo: ${uploadError.message}` };
         }
 
-        const { data: publicUrlData } = supabaseClient.storage
-            .from('deposit-receipts')
-            .getPublicUrl(filePath);
+        const { data: publicUrlData } = supabaseClient.storage.from('deposit-receipts').getPublicUrl(filePath);
+        settingsData.bank_logo_url = publicUrlData.publicUrl;
 
-        logoUrl = publicUrlData.publicUrl;
-
-        const oldLogoUrl = formData.get('oldLogoUrl') as string | undefined;
-        if (oldLogoUrl) {
+        // Delete the old logo if it exists
+        if (currentSettings?.bank_logo_url) {
             try {
-                const oldLogoPath = new URL(oldLogoUrl).pathname.split('/deposit-receipts/')[1];
+                const oldLogoPath = new URL(currentSettings.bank_logo_url).pathname.split('/deposit-receipts/')[1];
                 await supabaseClient.storage.from('deposit-receipts').remove([oldLogoPath]);
             } catch (e) {
                 console.error("Could not parse or delete old bank logo from storage:", e);
@@ -77,8 +89,6 @@ export async function updatePropertySettingsAction(formData: FormData) {
     }
 
     const ownerPhotoFile = formData.get('ownerPhotoFile') as File | null;
-    let ownerPhotoUrl: string | null = currentSettings?.owner_photo_url || null;
-
     if (ownerPhotoFile && ownerPhotoFile.size > 0) {
         const fileExt = ownerPhotoFile.name.split('.').pop();
         const filePath = `owner-photos/${Date.now()}.${fileExt}`;
@@ -92,16 +102,13 @@ export async function updatePropertySettingsAction(formData: FormData) {
             return { error: `Failed to upload owner photo: ${uploadError.message}` };
         }
 
-        const { data: publicUrlData } = supabaseClient.storage
-            .from('deposit-receipts')
-            .getPublicUrl(filePath);
+        const { data: publicUrlData } = supabaseClient.storage.from('deposit-receipts').getPublicUrl(filePath);
+        settingsData.owner_photo_url = publicUrlData.publicUrl;
 
-        ownerPhotoUrl = publicUrlData.publicUrl;
-
-        const oldOwnerPhotoUrl = formData.get('oldOwnerPhotoUrl') as string | undefined;
-        if (oldOwnerPhotoUrl) {
+        // Delete the old photo if it exists
+        if (currentSettings?.owner_photo_url) {
             try {
-                const oldPhotoPath = new URL(oldOwnerPhotoUrl).pathname.split('/deposit-receipts/')[1];
+                const oldPhotoPath = new URL(currentSettings.owner_photo_url).pathname.split('/deposit-receipts/')[1];
                 await supabaseClient.storage.from('deposit-receipts').remove([oldPhotoPath]);
             } catch (e) {
                 console.error("Could not parse or delete old owner photo from storage:", e);
@@ -109,24 +116,8 @@ export async function updatePropertySettingsAction(formData: FormData) {
         }
     }
 
-    const reminderSchedule = formData.getAll('whatsapp_reminder_schedule');
-
-    const settingsData = {
-        house_name: formData.get('houseName') as string,
-        house_address: formData.get('houseAddress') as string,
-        bank_name: formData.get('bankName') as string,
-        bank_account_number: formData.get('bankAccountNumber') as string,
-        bank_logo_url: logoUrl,
-        owner_name: formData.get('ownerName') as string,
-        owner_photo_url: ownerPhotoUrl,
-        about_us: formData.get('about_us') as string,
-        contact_phone: formData.get('contact_phone') as string,
-        contact_email: formData.get('contact_email') as string,
-        contact_address: formData.get('contact_address') as string,
-        footer_name: formData.get('footerName') as string,
-        whatsapp_reminders_enabled: formData.get('whatsapp_reminders_enabled') === 'on',
-        whatsapp_reminder_schedule: reminderSchedule,
-        whatsapp_reminder_template: formData.get('whatsapp_reminder_template') as string,
+    if (Object.keys(settingsData).length === 0) {
+        return { success: true, message: "No changes to save." };
     }
     
     const { error } = await supabaseAdmin
