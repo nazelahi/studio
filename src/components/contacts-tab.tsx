@@ -229,6 +229,7 @@ export function ContactsTab() {
   }
 
   const handleEdit = (tenant: Tenant, e: React.MouseEvent) => {
+    e.stopPropagation();
     withProtection(() => {
       setEditingTenant(tenant);
       setPreviewImage(tenant.avatar);
@@ -239,6 +240,7 @@ export function ContactsTab() {
   };
 
   const handleDelete = (tenantId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
     withProtection(async () => {
       await deleteTenant(tenantId, toast);
     }, e);
@@ -566,30 +568,43 @@ export function ContactsTab() {
                                 <AvatarFallback>{tenant.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
                             </Avatar>
                             <div className="flex-1">
-                                <div className="flex justify-between items-start">
-                                    <div>
-                                        <h3 className="font-bold text-lg text-primary">{tenant.name}</h3>
-                                        <p className="text-sm text-muted-foreground">{tenant.type || 'Tenant'}</p>
-                                    </div>
-                                    <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
-                                                <MoreHorizontal className="h-4 w-4" />
-                                                <span className="sr-only">More options</span>
+                                <button onClick={() => handleViewDetails(tenant)} className="text-left w-full">
+                                    <h3 className="font-bold text-lg text-primary hover:underline">{tenant.name}</h3>
+                                </button>
+                                <p className="text-sm text-muted-foreground">{tenant.type || 'Tenant'}</p>
+                                <div className="flex items-center gap-1 mt-2">
+                                     <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => openWhatsApp(tenant, e)}>
+                                        <MessageSquare className="h-4 w-4" />
+                                    </Button>
+                                    {isAdmin && (
+                                        <>
+                                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => handleEdit(tenant, e)}>
+                                                <Edit className="h-4 w-4" />
                                             </Button>
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
-                                            <DropdownMenuItem onClick={() => handleViewDetails(tenant)}><FileText className="mr-2 h-4 w-4" />View Details</DropdownMenuItem>
-                                            <DropdownMenuItem onClick={(e) => openWhatsApp(tenant, e)}><MessageSquare className="mr-2 h-4 w-4" />WhatsApp</DropdownMenuItem>
-                                            {isAdmin && <>
-                                                <DropdownMenuSeparator />
-                                                <DropdownMenuItem onClick={(e) => handleEdit(tenant, e)}>Edit</DropdownMenuItem>
-                                                <DropdownMenuItem onClick={(e) => handleDelete(tenant.id, e)} className="text-destructive">Delete</DropdownMenuItem>
-                                            </>}
-                                        </DropdownMenuContent>
-                                    </DropdownMenu>
+                                            <AlertDialog>
+                                                <AlertDialogTrigger asChild>
+                                                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:text-destructive" onClick={(e) => e.stopPropagation()}>
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                </AlertDialogTrigger>
+                                                <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                                                    <AlertDialogHeader>
+                                                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                                        <AlertDialogDescription>
+                                                            This will permanently delete {tenant.name} and all their data. This action cannot be undone.
+                                                        </AlertDialogDescription>
+                                                    </AlertDialogHeader>
+                                                    <AlertDialogFooter>
+                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                        <AlertDialogAction onClick={(e) => handleDelete(tenant.id, e)} className="bg-destructive hover:bg-destructive/90">
+                                                            Yes, Delete Tenant
+                                                        </AlertDialogAction>
+                                                    </AlertDialogFooter>
+                                                </AlertDialogContent>
+                                            </AlertDialog>
+                                        </>
+                                    )}
                                 </div>
-                                <Badge variant="secondary" className={cn("mt-2", getStatusBadge(tenant.status))}>{tenant.status}</Badge>
                             </div>
                         </div>
                         <div className="border-t px-4 py-3 space-y-3 text-sm">
@@ -601,9 +616,8 @@ export function ContactsTab() {
                                 <Wallet className="h-4 w-4 text-muted-foreground" />
                                 <span className="font-medium">{formatCurrency(tenant.rent)} <span className="text-muted-foreground">/ month</span></span>
                             </div>
-                            <div className="flex items-center gap-3">
-                                <Phone className="h-4 w-4 text-muted-foreground" />
-                                <a href={`tel:${tenant.phone}`} className="text-primary hover:underline">{tenant.phone || "N/A"}</a>
+                             <div className="flex items-center gap-3">
+                                <Badge variant="secondary" className={cn("mt-2", getStatusBadge(tenant.status))}>{tenant.status}</Badge>
                             </div>
                         </div>
                     </Card>
@@ -623,7 +637,7 @@ export function ContactsTab() {
                         </TableHeader>
                         <TableBody>
                             {filteredTenants.map(tenant => (
-                                <TableRow key={tenant.id} className="cursor-pointer" onClick={() => handleViewDetails(tenant)}>
+                                <TableRow key={tenant.id}>
                                     <TableCell>
                                         <div className="flex items-center gap-3">
                                             <Avatar className="h-10 w-10">
@@ -631,7 +645,7 @@ export function ContactsTab() {
                                                 <AvatarFallback>{tenant.name.charAt(0)}</AvatarFallback>
                                             </Avatar>
                                             <div>
-                                                <button className="font-medium text-left hover:underline">{tenant.name}</button>
+                                                <button onClick={() => handleViewDetails(tenant)} className="font-medium text-left hover:underline">{tenant.name}</button>
                                                 <div className="text-xs text-muted-foreground">{tenant.email}</div>
                                             </div>
                                         </div>
@@ -650,7 +664,7 @@ export function ContactsTab() {
                                             </Button>
                                             {isAdmin && (
                                                 <>
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); handleEdit(tenant, e); }}>
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => handleEdit(tenant, e)}>
                                                         <Edit className="h-4 w-4" />
                                                     </Button>
                                                     <AlertDialog>
