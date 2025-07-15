@@ -3,7 +3,7 @@
 "use client"
 
 import Link from "next/link"
-import React, { useState, useTransition } from "react"
+import React, { useState, useTransition, useCallback } from "react"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
@@ -12,7 +12,7 @@ import { useSettings } from "@/context/settings-context"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/context/auth-context"
 import { Button } from "@/components/ui/button"
-import { User, LogOut, MapPin, Menu, Settings, LoaderCircle, LogIn, Building, KeyRound, Palette, Tag, Landmark, Upload, Banknote, UserCircle, MessageSquare, Info, Phone, Mail, Database, Share2 } from "lucide-react"
+import { User, LogOut, MapPin, Menu, Settings, LoaderCircle, LogIn, Building, KeyRound, Palette, Tag, Landmark, Upload, Banknote, UserCircle, MessageSquare, Info, Phone, Mail, Database, Share2, Edit, Check, X } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useToast } from "@/hooks/use-toast"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
@@ -39,6 +39,67 @@ function AccessDenied() {
     </div>
   );
 }
+
+// In-place editable field component
+interface EditableFieldProps {
+  label: string;
+  value: string;
+  onSave: (newValue: string) => void;
+  isTextarea?: boolean;
+}
+
+const EditableField: React.FC<EditableFieldProps> = ({ label, value, onSave, isTextarea = false }) => {
+    const [isEditing, setIsEditing] = useState(false);
+    const [currentValue, setCurrentValue] = useState(value);
+
+    useEffect(() => {
+        setCurrentValue(value);
+    }, [value]);
+
+    const handleSave = () => {
+        onSave(currentValue);
+        setIsEditing(false);
+    };
+
+    const handleCancel = () => {
+        setCurrentValue(value);
+        setIsEditing(false);
+    };
+
+    return (
+        <div className="space-y-1">
+            <Label>{label}</Label>
+            {isEditing ? (
+                <div className="flex items-center gap-2">
+                    {isTextarea ? (
+                        <Textarea
+                            value={currentValue}
+                            onChange={(e) => setCurrentValue(e.target.value)}
+                            className="flex-1"
+                            rows={3}
+                        />
+                    ) : (
+                         <Input
+                            value={currentValue}
+                            onChange={(e) => setCurrentValue(e.target.value)}
+                            className="flex-1"
+                        />
+                    )}
+                    <Button size="icon" variant="ghost" onClick={handleSave} className="text-green-600 hover:text-green-700 hover:bg-green-100 h-8 w-8"><Check className="h-4 w-4"/></Button>
+                    <Button size="icon" variant="ghost" onClick={handleCancel} className="text-red-600 hover:text-red-700 hover:bg-red-100 h-8 w-8"><X className="h-4 w-4"/></Button>
+                </div>
+            ) : (
+                <div className="flex items-center justify-between group">
+                    <p className={cn("text-sm h-10 flex items-center", isTextarea && "h-auto min-h-[80px] whitespace-pre-wrap py-2")}>{value || <span className="text-muted-foreground">Not set</span>}</p>
+                    <Button size="icon" variant="ghost" onClick={() => setIsEditing(true)} className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8">
+                        <Edit className="h-4 w-4 text-muted-foreground"/>
+                    </Button>
+                </div>
+            )}
+        </div>
+    );
+};
+
 
 export default function SettingsPage() {
   const { settings, setSettings, refreshSettings } = useSettings();
@@ -138,29 +199,103 @@ export default function SettingsPage() {
     setSettings(prev => ({...prev, whatsappRemindersEnabled: checked}));
    };
 
-  const handleSavePropertyDetails = (event: React.FormEvent<HTMLFormElement>) => {
-     event.preventDefault();
-     const formData = new FormData(event.currentTarget);
-     if (logoFile) {
-        formData.append('logoFile', logoFile);
-     }
-     if (ownerPhotoFile) {
-        formData.append('ownerPhotoFile', ownerPhotoFile);
-     }
-     
-     formData.append('whatsapp_reminders_enabled', settings.whatsappRemindersEnabled ? 'on' : 'off');
-     (settings.whatsappReminderSchedule || []).forEach(item => {
-        formData.append('whatsapp_reminder_schedule', item);
-     });
-     formData.append('whatsapp_reminder_template', settings.whatsappReminderTemplate || '');
+  const handleSavePropertySettings = useCallback((field: string, value: string) => {
+    startTransition(async () => {
+        const formData = new FormData();
+        formData.append(field, value);
 
+        // Ensure other settings are preserved when updating one field
+        Object.entries(settings).forEach(([key, val]) => {
+            if (key !== field) {
+                 if (Array.isArray(val)) {
+                    val.forEach(item => formData.append(key, item));
+                } else if (typeof val !== 'object') {
+                    formData.append(key, String(val));
+                }
+            }
+        });
+        
+        // Use keys that match the server action
+        const renamedFormData = new FormData();
+        renamedFormData.append('houseName', settings.houseName);
+        renamedFormData.append('houseAddress', settings.houseAddress);
+        renamedFormData.append('bankName', settings.bankName);
+        renamedFormData.append('bankAccountNumber', settings.bankAccountNumber);
+        renamedFormData.append('ownerName', settings.ownerName || '');
+        renamedFormData.append('about_us', settings.aboutUs || '');
+        renamedFormData.append('contact_phone', settings.contactPhone || '');
+        renamedFormData.append('contact_email', settings.contactEmail || '');
+        renamedFormData.append('contact_address', settings.contactAddress || '');
+        renamedFormData.append('footerName', settings.footerName || '');
 
-     startTransition(async () => {
-        const result = await updatePropertySettingsAction(formData);
+        // Now, update the changed field
+        const keyMap: {[key: string]: string} = {
+            houseName: 'houseName',
+            houseAddress: 'houseAddress',
+            bankName: 'bankName',
+            bankAccountNumber: 'bankAccountNumber',
+            ownerName: 'ownerName',
+            aboutUs: 'about_us',
+            contactPhone: 'contact_phone',
+            contactEmail: 'contact_email',
+            contactAddress: 'contact_address',
+            footerName: 'footerName',
+        };
+
+        if (keyMap[field]) {
+             renamedFormData.set(keyMap[field], value);
+        }
+
+        const result = await updatePropertySettingsAction(renamedFormData);
         if (result?.error) {
             toast({ title: 'Error Saving Settings', description: result.error, variant: 'destructive'});
         } else {
-            toast({ title: 'Property Details Saved', description: 'Your property and bank details have been updated.' });
+            toast({ title: 'Setting Saved', description: 'Your change has been saved to the database.' });
+            refreshSettings();
+        }
+    });
+  }, [settings, refreshSettings, toast]);
+
+  const handleImageSave = (event: React.FormEvent<HTMLFormElement>) => {
+     event.preventDefault();
+     const formData = new FormData();
+
+     if (logoFile) formData.append('logoFile', logoFile);
+     if (ownerPhotoFile) formData.append('ownerPhotoFile', ownerPhotoFile);
+
+     // If no new files, don't submit
+     if (!logoFile && !ownerPhotoFile) {
+        toast({title: "No new images to save", description: "Select a new owner photo or bank logo to upload."});
+        return;
+     }
+
+     // Add all other settings to formData to prevent them from being erased
+     formData.append('houseName', settings.houseName);
+     formData.append('houseAddress', settings.houseAddress);
+     formData.append('bankName', settings.bankName);
+     formData.append('bankAccountNumber', settings.bankAccountNumber);
+     formData.append('bank_logo_url', settings.bankLogoUrl || '');
+     if (settings.bankLogoUrl) formData.append('oldLogoUrl', settings.bankLogoUrl);
+     formData.append('ownerName', settings.ownerName || '');
+     formData.append('owner_photo_url', settings.ownerPhotoUrl || '');
+     if (settings.ownerPhotoUrl) formData.append('oldOwnerPhotoUrl', settings.ownerPhotoUrl);
+     formData.append('about_us', settings.aboutUs || '');
+     formData.append('contact_phone', settings.contactPhone || '');
+     formData.append('contact_email', settings.contactEmail || '');
+     formData.append('contact_address', settings.contactAddress || '');
+     formData.append('footerName', settings.footerName);
+     formData.append('whatsapp_reminders_enabled', settings.whatsappRemindersEnabled ? 'on' : 'off');
+     (settings.whatsappReminderSchedule || []).forEach(item => formData.append('whatsapp_reminder_schedule', item));
+     formData.append('whatsapp_reminder_template', settings.whatsappReminderTemplate || '');
+     
+     startTransition(async () => {
+        const result = await updatePropertySettingsAction(formData);
+        if (result?.error) {
+            toast({ title: 'Error Saving Images', description: result.error, variant: 'destructive'});
+        } else {
+            toast({ title: 'Images Saved', description: 'Your new images have been updated.' });
+            setLogoFile(null);
+            setOwnerPhotoFile(null);
             refreshSettings(); 
         }
      });
@@ -377,11 +512,11 @@ export default function SettingsPage() {
             <div className="grid gap-6">
               
               {activeTab === 'property' && (
-                <form onSubmit={handleSavePropertyDetails}>
+                <form onSubmit={handleImageSave}>
                     <Card>
                         <CardHeader>
                             <CardTitle>Property Details</CardTitle>
-                            <CardDescription>Manage your property, owner, and contact information. This information is displayed across the app and on receipts.</CardDescription>
+                            <CardDescription>Manage your property, owner, and contact information. Click the edit icon to change a value.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-8">
                             {/* Owner & Property Information */}
@@ -390,20 +525,9 @@ export default function SettingsPage() {
                                 <Separator className="my-2" />
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
                                     <div className="md:col-span-2 space-y-4">
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                            <div className="space-y-1">
-                                                <Label htmlFor="ownerName">Owner Name</Label>
-                                                <Input id="ownerName" name="ownerName" defaultValue={settings.ownerName} />
-                                            </div>
-                                            <div className="space-y-1">
-                                                <Label htmlFor="houseName">{settings.page_settings.property_details.house_name_label}</Label>
-                                                <Input id="houseName" name="houseName" defaultValue={settings.houseName} />
-                                            </div>
-                                        </div>
-                                        <div className="space-y-1">
-                                            <Label htmlFor="houseAddress">{settings.page_settings.property_details.house_address_label}</Label>
-                                            <Input id="houseAddress" name="houseAddress" defaultValue={settings.houseAddress} />
-                                        </div>
+                                        <EditableField label="Owner Name" value={settings.ownerName || ''} onSave={(v) => handleSavePropertySettings('ownerName', v)} />
+                                        <EditableField label={settings.page_settings.property_details.house_name_label} value={settings.houseName} onSave={(v) => handleSavePropertySettings('houseName', v)} />
+                                        <EditableField label={settings.page_settings.property_details.house_address_label} value={settings.houseAddress} onSave={(v) => handleSavePropertySettings('houseAddress', v)} />
                                     </div>
                                     <div className="space-y-2">
                                         <Label>Owner Photo</Label>
@@ -424,32 +548,16 @@ export default function SettingsPage() {
                                 </div>
                             </div>
 
-                            {/* Bank & Footer Information */}
+                            {/* Bank & Contact Information */}
                             <div>
                                 <h3 className="text-lg font-medium">Bank & Contact Information</h3>
                                 <Separator className="my-2" />
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
                                     <div className="md:col-span-2 space-y-4">
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                            <div className="space-y-1">
-                                                <Label htmlFor="bankName">Bank Name</Label>
-                                                <Input id="bankName" name="bankName" defaultValue={settings.bankName} />
-                                            </div>
-                                            <div className="space-y-1">
-                                                <Label htmlFor="bankAccountNumber">Bank Account Number</Label>
-                                                <Input id="bankAccountNumber" name="bankAccountNumber" defaultValue={settings.bankAccountNumber} />
-                                            </div>
-                                        </div>
-                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                            <div className="space-y-1">
-                                                <Label htmlFor="contact_email">Contact Email</Label>
-                                                <Input id="contact_email" name="contact_email" type="email" defaultValue={settings.contactEmail}/>
-                                            </div>
-                                            <div className="space-y-1">
-                                                <Label htmlFor="contact_phone">Contact Phone</Label>
-                                                <Input id="contact_phone" name="contact_phone" defaultValue={settings.contactPhone}/>
-                                            </div>
-                                        </div>
+                                        <EditableField label="Bank Name" value={settings.bankName} onSave={(v) => handleSavePropertySettings('bankName', v)} />
+                                        <EditableField label="Bank Account Number" value={settings.bankAccountNumber} onSave={(v) => handleSavePropertySettings('bankAccountNumber', v)} />
+                                        <EditableField label="Contact Email" value={settings.contactEmail || ''} onSave={(v) => handleSavePropertySettings('contactEmail', v)} />
+                                        <EditableField label="Contact Phone" value={settings.contactPhone || ''} onSave={(v) => handleSavePropertySettings('contactPhone', v)} />
                                     </div>
                                      <div className="space-y-2">
                                         <Label>Bank Logo</Label>
@@ -475,25 +583,16 @@ export default function SettingsPage() {
                                 <h3 className="text-lg font-medium">About & Footer</h3>
                                 <Separator className="my-2" />
                                 <div className="mt-4 space-y-4">
-                                     <div className="space-y-1">
-                                        <Label htmlFor="about_us">About Us Section</Label>
-                                        <Textarea id="about_us" name="about_us" defaultValue={settings.aboutUs} placeholder="Write a short description about your property or business..."/>
-                                    </div>
-                                    <div className="space-y-1">
-                                        <Label htmlFor="contact_address">Contact Address</Label>
-                                        <Input id="contact_address" name="contact_address" defaultValue={settings.contactAddress}/>
-                                    </div>
-                                     <div className="space-y-1">
-                                        <Label htmlFor="footerName">Footer Copyright Text</Label>
-                                        <Input id="footerName" name="footerName" defaultValue={settings.footerName} />
-                                    </div>
+                                     <EditableField label="About Us Section" value={settings.aboutUs || ''} onSave={(v) => handleSavePropertySettings('aboutUs', v)} isTextarea/>
+                                     <EditableField label="Contact Address" value={settings.contactAddress || ''} onSave={(v) => handleSavePropertySettings('contactAddress', v)} />
+                                     <EditableField label="Footer Copyright Text" value={settings.footerName} onSave={(v) => handleSavePropertySettings('footerName', v)} />
                                 </div>
                             </div>
                         </CardContent>
                         <CardFooter className="border-t pt-6">
                             <Button type="submit" disabled={isPending}>
                                 {isPending && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
-                                Save Property Settings
+                                Save Image Changes
                             </Button>
                         </CardFooter>
                     </Card>
@@ -555,7 +654,7 @@ export default function SettingsPage() {
               )}
 
               {activeTab === 'integrations' && (
-                <form onSubmit={handleSavePropertyDetails} className="space-y-6">
+                <form onSubmit={handleImageSave} className="space-y-6">
                   <Card>
                     <CardHeader>
                       <CardTitle>WhatsApp Automation</CardTitle>
