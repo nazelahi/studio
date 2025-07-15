@@ -3,7 +3,7 @@
 "use client"
 
 import * as React from "react"
-import { MoreHorizontal, PlusCircle, Image as ImageIcon, Mail, Phone, Home, ChevronDown, Copy, X, Search, FileText, Check, UserPlus, Calendar, Briefcase, Upload, File, Trash2, LoaderCircle, ScanLine, Wallet, MessageSquare, LayoutGrid, List, Edit } from "lucide-react"
+import { MoreHorizontal, PlusCircle, Image as ImageIcon, Mail, Phone, Home, ChevronDown, Copy, X, Search, FileText, Check, UserPlus, Calendar, Briefcase, Upload, File, Trash2, LoaderCircle, ScanLine, Wallet, MessageSquare, LayoutGrid, List, Edit, CheckIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog"
@@ -38,6 +38,81 @@ const formatCurrency = (amount?: number) => {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'BDT' }).format(amount).replace('BDT', '৳');
 };
 
+const predefinedApartments = [
+  'Flat-1A', 'Flat-1B', 'Flat-2A', 'Flat-2B', 'Flat-3A', 'Flat-3B',
+  'Flat-4A', 'Flat-4B', 'Flat-5A', 'Flat-5B', 'Shop-01', 'Shop-02'
+].map(val => ({ value: val.toLowerCase(), label: val }));
+
+const predefinedTenantTypes = [
+  'Family', 'Bachelor', 'Commercial', 'Office', 'Student'
+].map(val => ({ value: val.toLowerCase(), label: val }));
+
+
+interface ComboboxProps {
+  options: { value: string; label: string }[];
+  value: string;
+  onValueChange: (value: string) => void;
+  placeholder: string;
+  searchPlaceholder: string;
+}
+
+const Combobox: React.FC<ComboboxProps> = ({ options, value, onValueChange, placeholder, searchPlaceholder }) => {
+  const [open, setOpen] = React.useState(false);
+  const displayValue = options.find(option => option.value === value.toLowerCase())?.label || value;
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          className="w-full justify-between font-normal"
+        >
+          {value ? displayValue : placeholder}
+          <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+        <Command>
+          <CommandInput
+            placeholder={searchPlaceholder}
+            onInput={(e) => onValueChange(e.currentTarget.value)}
+          />
+          <CommandEmpty>
+            <div className="p-2 text-sm text-muted-foreground">
+              No results. You can type a custom value.
+            </div>
+          </CommandEmpty>
+          <CommandGroup>
+            <CommandList>
+              {options.map((option) => (
+                <CommandItem
+                  key={option.value}
+                  value={option.value}
+                  onSelect={(currentValue) => {
+                    onValueChange(currentValue === value ? "" : currentValue);
+                    setOpen(false);
+                  }}
+                >
+                  <CheckIcon
+                    className={cn(
+                      "mr-2 h-4 w-4",
+                      value.toLowerCase() === option.value ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                  {option.label}
+                </CommandItem>
+              ))}
+            </CommandList>
+          </CommandGroup>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+
 export function ContactsTab() {
   const { tenants, addTenant, updateTenant, deleteTenant, loading } = useData();
   const { isAdmin } = useAuth();
@@ -52,6 +127,9 @@ export function ContactsTab() {
   const { withProtection } = useProtection();
   const [isScanning, setIsScanning] = React.useState(false);
 
+  const [propertyValue, setPropertyValue] = React.useState('');
+  const [typeValue, setTypeValue] = React.useState('');
+
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const docFileInputRef = React.useRef<HTMLInputElement>(null);
   const scanFileInputRef = React.useRef<HTMLInputElement>(null);
@@ -62,6 +140,13 @@ export function ContactsTab() {
   const [selectedTenantForSheet, setSelectedTenantForSheet] = React.useState<Tenant | null>(null);
 
   const [searchTerm, setSearchTerm] = React.useState("");
+
+  React.useEffect(() => {
+    if (editingTenant) {
+      setPropertyValue(editingTenant.property);
+      setTypeValue(editingTenant.type || '');
+    }
+  }, [editingTenant]);
 
   const filteredTenants = React.useMemo(() => {
     if (!searchTerm) return tenants;
@@ -113,11 +198,11 @@ export function ContactsTab() {
       email: formData.get('email') as string,
       phone: formData.get('phone') as string,
       whatsapp_number: formData.get('whatsapp_number') as string,
-      property: formData.get('property') as string,
+      property: propertyValue,
       rent: Number(formData.get('rent')),
       join_date: formData.get('join_date') as string,
       notes: formData.get('notes') as string,
-      type: formData.get('type') as string,
+      type: typeValue,
       avatar: previewImage || editingTenant?.avatar || 'https://placehold.co/80x80.png',
       documents: existingDocuments, // Start with the ones we didn't remove
       status: formData.get('status') as Tenant['status'] || editingTenant?.status || 'Active',
@@ -161,6 +246,8 @@ export function ContactsTab() {
     setPreviewImage(null);
     setDocumentFiles([]);
     setExistingDocuments([]);
+    setPropertyValue('');
+    setTypeValue('');
     if (formRef.current) {
         formRef.current.reset();
     }
@@ -174,11 +261,12 @@ export function ContactsTab() {
         getEl('name').value = tenant.name;
         getEl('email').value = tenant.email;
         getEl('phone').value = tenant.phone || '';
-        getEl('property').value = tenant.property;
+        getEl('whatsapp_number').value = tenant.whatsapp_number || '';
+        setPropertyValue(tenant.property);
         getEl('rent').value = tenant.rent.toString();
         getEl('join_date').value = tenant.join_date;
         getEl('notes').value = tenant.notes || '';
-        getEl('type').value = tenant.type || '';
+        setTypeValue(tenant.type || '');
         
         setPreviewImage(tenant.avatar);
         setExistingDocuments(tenant.documents || []);
@@ -280,8 +368,9 @@ export function ContactsTab() {
 
   const openWhatsApp = (tenant: Tenant, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (tenant.phone) {
-      const phoneNumber = tenant.phone.replace(/\D/g, ''); // Remove non-numeric characters
+    const phoneToUse = tenant.whatsapp_number || tenant.phone;
+    if (phoneToUse) {
+      const phoneNumber = phoneToUse.replace(/\D/g, ''); // Remove non-numeric characters
       const message = `Hello ${tenant.name}, regarding your tenancy at ${tenant.property}...`;
       const url = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
       window.open(url, '_blank', 'noopener,noreferrer');
@@ -430,13 +519,15 @@ export function ContactsTab() {
                               <Label htmlFor="email">Email Address</Label>
                               <Input id="email" name="email" type="email" defaultValue={editingTenant?.email} required />
                             </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="phone">Phone Number</Label>
-                              <Input id="phone" name="phone" type="tel" defaultValue={editingTenant?.phone} placeholder="Include country code, e.g. 880..." />
-                            </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="whatsapp_number">WhatsApp Number</Label>
-                              <Input id="whatsapp_number" name="whatsapp_number" type="tel" defaultValue={editingTenant?.whatsapp_number} placeholder="Include country code, e.g. 880..." />
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <Label htmlFor="phone">Phone Number</Label>
+                                <Input id="phone" name="phone" type="tel" defaultValue={editingTenant?.phone} placeholder="e.g. 880..." />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="whatsapp_number">WhatsApp Number</Label>
+                                <Input id="whatsapp_number" name="whatsapp_number" type="tel" defaultValue={editingTenant?.whatsapp_number} placeholder="e.g. 880..." />
+                              </div>
                             </div>
                              <div className="space-y-2">
                               <Label htmlFor="address">Address</Label>
@@ -467,7 +558,13 @@ export function ContactsTab() {
                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                <div className="space-y-2">
                                   <Label htmlFor="property">Apartment / Unit</Label>
-                                  <Input id="property" name="property" defaultValue={editingTenant?.property} required />
+                                  <Combobox
+                                    options={predefinedApartments}
+                                    value={propertyValue}
+                                    onValueChange={setPropertyValue}
+                                    placeholder="Select or type unit..."
+                                    searchPlaceholder="Search unit..."
+                                  />
                                 </div>
                                <div className="space-y-2">
                                 <Label htmlFor="rent">Rent Amount</Label>
@@ -486,8 +583,14 @@ export function ContactsTab() {
                             </div>
                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                               <div className="space-y-2">
-                                <Label htmlFor="type">Type</Label>
-                                <Input id="type" name="type" placeholder="e.g. Tenant, Electrician" defaultValue={editingTenant?.type} />
+                                <Label htmlFor="type">Tenant Type</Label>
+                                 <Combobox
+                                    options={predefinedTenantTypes}
+                                    value={typeValue}
+                                    onValueChange={setTypeValue}
+                                    placeholder="Select or type..."
+                                    searchPlaceholder="Search type..."
+                                  />
                               </div>
                               <div className="space-y-2">
                                   <Label htmlFor="status">Status</Label>
@@ -634,7 +737,7 @@ export function ContactsTab() {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead>Tenant</TableHead>
+                                <TableHead className="p-2">Tenant</TableHead>
                                 <TableHead className="hidden md:table-cell">Details</TableHead>
                                 <TableHead className="hidden sm:table-cell">Status</TableHead>
                                 <TableHead className="text-right">Actions</TableHead>
