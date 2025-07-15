@@ -751,7 +751,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
       
       {months.map(month => (
         <TabsContent key={month} value={month}>
-          <div className="mt-6 space-y-6">
+          <div className="mt-6">
             <Tabs defaultValue="rent-roll" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="rent-roll">Rent Roll</TabsTrigger>
@@ -1191,8 +1191,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                 </Card>
               </TabsContent>
             </Tabs>
-
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+            <div className="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <Card className="border-l-4 border-teal-500">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                         <CardTitle className="text-sm font-medium">Rent Collected</CardTitle>
