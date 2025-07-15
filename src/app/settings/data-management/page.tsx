@@ -56,6 +56,7 @@ export default function DataManagementPage() {
     const fileInputRef = React.useRef<HTMLInputElement>(null);
     const [isSqlPending, startSqlTransition] = React.useTransition();
     const [isClearPending, startClearTransition] = React.useTransition();
+    const [isClearAllOpen, setIsClearAllOpen] = React.useState(false);
 
     const currentYear = new Date().getFullYear();
     const [clearYear, setClearYear] = React.useState(currentYear.toString());
@@ -178,6 +179,7 @@ export default function DataManagementPage() {
                 } else {
                     toast({ title: 'All Data Cleared', description: result.message, variant: 'destructive' });
                 }
+                setIsClearAllOpen(false);
             });
         }, e);
     }
@@ -528,7 +530,7 @@ export default function DataManagementPage() {
                             </div>
                         </CardHeader>
                         <CardContent>
-                             <AlertDialog>
+                             <AlertDialog open={isClearAllOpen} onOpenChange={setIsClearAllOpen}>
                                 <AlertDialogTrigger asChild>
                                     <Button type="button" variant="destructive" className="w-full" disabled={isClearPending}>
                                         {isClearPending ? <LoaderCircle className="mr-2 animate-spin"/> : <Trash2 className="mr-2"/>}
