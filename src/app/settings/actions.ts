@@ -173,15 +173,20 @@ export async function updateUserCredentialsAction(formData: FormData) {
 
 export async function updatePasscodeAction(formData: FormData) {
     const supabaseAdmin = getSupabaseAdmin();
+    
+    const settingsData: { passcode_protection_enabled: boolean; passcode?: string } = {
+        passcode_protection_enabled: formData.get('passcode_protection_enabled') === 'on'
+    };
+    
     const passcode = formData.get('passcode') as string;
-
-    if (!passcode) {
-        return { error: 'Passcode cannot be empty.' };
+    // Only update the passcode if it's provided. This allows enabling/disabling without changing the passcode.
+    if (passcode) {
+        settingsData.passcode = passcode;
     }
 
     const { error } = await supabaseAdmin
         .from('property_settings')
-        .update({ passcode })
+        .update(settingsData)
         .eq('id', 1);
 
     if (error) {

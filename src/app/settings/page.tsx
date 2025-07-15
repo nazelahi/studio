@@ -222,7 +222,7 @@ export default function SettingsPage() {
         renamedFormData.append('bankName', settings.bankName);
         renamedFormData.append('bankAccountNumber', settings.bankAccountNumber);
         renamedFormData.append('ownerName', settings.ownerName || '');
-        renamedFormData.append('about_us', settings.aboutUs || '');
+        renamedFormData.append('aboutUs', settings.aboutUs || '');
         renamedFormData.append('contact_phone', settings.contactPhone || '');
         renamedFormData.append('contact_email', settings.contactEmail || '');
         renamedFormData.append('contact_address', settings.contactAddress || '');
@@ -354,7 +354,7 @@ export default function SettingsPage() {
       if (result?.error) {
         toast({ title: 'Error Saving Passcode', description: result.error, variant: 'destructive'});
       } else {
-        toast({ title: 'Passcode Saved', description: 'Your secret passcode has been updated.' });
+        toast({ title: 'Passcode Settings Saved', description: 'Your passcode settings have been updated.' });
         refreshSettings();
       }
     });
@@ -632,22 +632,38 @@ export default function SettingsPage() {
                   </form>
                   <form onSubmit={handleSavePasscode}>
                     <Card>
-                      <CardHeader>
-                        <CardTitle>Passcode</CardTitle>
-                        <CardDescription>Set a secret passcode required for edit and delete actions.</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                         <div className="space-y-2">
-                            <Label htmlFor="passcode">Secret Passcode</Label>
-                            <Input id="passcode" name="passcode" type="password" placeholder="e.g. 1234" defaultValue={settings.passcode} required/>
-                          </div>
-                      </CardContent>
-                       <CardFooter>
-                        <Button type="submit" disabled={isPasscodePending}>
-                            {isPasscodePending && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
-                            Save Passcode
-                        </Button>
-                      </CardFooter>
+                        <CardHeader>
+                            <CardTitle>Passcode Security</CardTitle>
+                            <CardDescription>
+                                Set a secret passcode required for sensitive actions like editing and deleting.
+                            </CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                             <div className="flex items-center justify-between space-x-2 rounded-lg border p-4">
+                                <Label htmlFor="passcode_protection_enabled" className="flex flex-col space-y-1">
+                                <span>Enable Passcode Protection</span>
+                                <span className="font-normal leading-snug text-muted-foreground">
+                                    If enabled, a passcode will be required for all destructive actions.
+                                </span>
+                                </Label>
+                                <Switch
+                                id="passcode_protection_enabled"
+                                name="passcode_protection_enabled"
+                                checked={settings.passcodeProtectionEnabled}
+                                onCheckedChange={(checked) => setSettings(prev => ({...prev, passcodeProtectionEnabled: checked}))}
+                                />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="passcode">Secret Passcode</Label>
+                                <Input id="passcode" name="passcode" type="password" placeholder="Leave blank to keep current" defaultValue={settings.passcode}/>
+                            </div>
+                        </CardContent>
+                        <CardFooter>
+                            <Button type="submit" disabled={isPasscodePending}>
+                                {isPasscodePending && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
+                                Save Passcode Settings
+                            </Button>
+                        </CardFooter>
                     </Card>
                   </form>
                 </div>

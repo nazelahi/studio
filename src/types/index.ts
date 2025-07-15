@@ -72,6 +72,7 @@ export type PropertySettings = {
   owner_name?: string;
   owner_photo_url?: string;
   passcode?: string;
+  passcode_protection_enabled?: boolean;
   about_us?: string;
   contact_phone?: string;
   contact_email?: string;

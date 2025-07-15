@@ -56,6 +56,7 @@ interface AppSettings {
   ownerName?: string;
   ownerPhotoUrl?: string;
   passcode?: string;
+  passcodeProtectionEnabled: boolean;
   zakatBankDetails: ZakatBankDetail[];
   footerName: string;
   tabNames: TabNames;
@@ -88,6 +89,7 @@ const defaultSettings: AppSettings = {
     ownerName: "Owner Name",
     ownerPhotoUrl: undefined,
     passcode: "",
+    passcodeProtectionEnabled: true,
     zakatBankDetails: [],
     footerName: "© 2024 RentFlow. All Rights Reserved.",
     aboutUs: "Your trusted partner in property management. Providing seamless rental experiences.",
@@ -220,6 +222,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
                 combinedSettings.ownerName = propertySettings.owner_name || defaultSettings.ownerName;
                 combinedSettings.ownerPhotoUrl = propertySettings.owner_photo_url || defaultSettings.ownerPhotoUrl;
                 combinedSettings.passcode = propertySettings.passcode || defaultSettings.passcode;
+                combinedSettings.passcodeProtectionEnabled = propertySettings.passcode_protection_enabled ?? defaultSettings.passcodeProtectionEnabled;
                 combinedSettings.aboutUs = propertySettings.about_us || defaultSettings.aboutUs;
                 combinedSettings.contactPhone = propertySettings.contact_phone || defaultSettings.contactPhone;
                 combinedSettings.contactEmail = propertySettings.contact_email || defaultSettings.contactEmail;
@@ -253,7 +256,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         
         const { 
             houseName, houseAddress, bankName, bankAccountNumber, bankLogoUrl, ownerName, ownerPhotoUrl, 
-            zakatBankDetails, passcode, aboutUs, contactPhone, contactEmail, contactAddress, footerName,
+            zakatBankDetails, passcode, passcodeProtectionEnabled, aboutUs, contactPhone, contactEmail, contactAddress, footerName,
             theme, whatsappRemindersEnabled, whatsappReminderSchedule, whatsappReminderTemplate,
             ...localSettingsToSave 
         } = newSettings;
