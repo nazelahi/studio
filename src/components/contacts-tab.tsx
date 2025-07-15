@@ -112,6 +112,7 @@ export function ContactsTab() {
       name: formData.get('name') as string,
       email: formData.get('email') as string,
       phone: formData.get('phone') as string,
+      whatsapp_number: formData.get('whatsapp_number') as string,
       property: formData.get('property') as string,
       rent: Number(formData.get('rent')),
       join_date: formData.get('join_date') as string,
@@ -433,6 +434,10 @@ export function ContactsTab() {
                               <Label htmlFor="phone">Phone Number</Label>
                               <Input id="phone" name="phone" type="tel" defaultValue={editingTenant?.phone} placeholder="Include country code, e.g. 880..." />
                             </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="whatsapp_number">WhatsApp Number</Label>
+                              <Input id="whatsapp_number" name="whatsapp_number" type="tel" defaultValue={editingTenant?.whatsapp_number} placeholder="Include country code, e.g. 880..." />
+                            </div>
                              <div className="space-y-2">
                               <Label htmlFor="address">Address</Label>
                               <Textarea id="address" name="address" rows={3} defaultValue={editingTenant?.address} placeholder="Full address..."/>
@@ -638,7 +643,7 @@ export function ContactsTab() {
                         <TableBody>
                             {filteredTenants.map(tenant => (
                                 <TableRow key={tenant.id}>
-                                    <TableCell>
+                                    <TableCell className="p-2">
                                         <div className="flex items-center gap-3">
                                             <Avatar className="h-10 w-10">
                                                 <AvatarImage src={tenant.avatar} />

@@ -17,6 +17,7 @@ export type Tenant = {
   name: string;
   email: string;
   phone?: string;
+  whatsapp_number?: string;
   property: string;
   rent: number;
   join_date: string;
