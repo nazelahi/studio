@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import * as React from "react"
@@ -298,43 +299,45 @@ export function ReportsTab({ year }: { year: number }) {
   return (
     <div className="pt-4 space-y-6">
       <Card className="no-print">
-          <CardContent className="p-4 flex flex-wrap items-center gap-4">
-            <div className="flex-1 min-w-[150px]">
-                <Label>Report Type</Label>
-                <Select value={reportType} onValueChange={setReportType}>
-                  <SelectTrigger><SelectValue placeholder="Select Report Type" /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="monthly">Monthly Summary</SelectItem>
-                    <SelectItem value="yearly">Yearly Summary</SelectItem>
-                    <SelectItem value="tenant">Tenant History</SelectItem>
-                  </SelectContent>
-                </Select>
-            </div>
-            {reportType === 'monthly' && (
-                <div className="flex-1 min-w-[150px]">
-                    <Label>Month</Label>
-                    <Select value={selectedMonth.toString()} onValueChange={(v) => setSelectedMonth(Number(v))}>
-                        <SelectTrigger><SelectValue placeholder="Select month..." /></SelectTrigger>
-                        <SelectContent>
-                            {months.map((month, index) => <SelectItem key={index} value={index.toString()}>{month}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
-                </div>
-            )}
-            {reportType === 'tenant' && (
-                <div className="flex-1 min-w-[150px]">
-                    <Label>Tenant</Label>
-                    <Select onValueChange={setSelectedTenant}>
-                      <SelectTrigger><SelectValue placeholder="Select a tenant..." /></SelectTrigger>
+          <CardContent className="p-4 flex flex-col sm:flex-row items-center gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1">
+                <div>
+                    <Label>Report Type</Label>
+                    <Select value={reportType} onValueChange={setReportType}>
+                      <SelectTrigger><SelectValue placeholder="Select Report Type" /></SelectTrigger>
                       <SelectContent>
-                        {tenants.map(tenant => (
-                          <SelectItem key={tenant.id} value={tenant.id}>{tenant.name} - {tenant.property}</SelectItem>
-                        ))}
+                        <SelectItem value="monthly">Monthly Summary</SelectItem>
+                        <SelectItem value="yearly">Yearly Summary</SelectItem>
+                        <SelectItem value="tenant">Tenant History</SelectItem>
                       </SelectContent>
                     </Select>
                 </div>
-            )}
-            <div className="flex items-end gap-2">
+                {reportType === 'monthly' && (
+                    <div>
+                        <Label>Month</Label>
+                        <Select value={selectedMonth.toString()} onValueChange={(v) => setSelectedMonth(Number(v))}>
+                            <SelectTrigger><SelectValue placeholder="Select month..." /></SelectTrigger>
+                            <SelectContent>
+                                {months.map((month, index) => <SelectItem key={index} value={index.toString()}>{month}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                )}
+                {reportType === 'tenant' && (
+                    <div>
+                        <Label>Tenant</Label>
+                        <Select onValueChange={setSelectedTenant}>
+                          <SelectTrigger><SelectValue placeholder="Select a tenant..." /></SelectTrigger>
+                          <SelectContent>
+                            {tenants.map(tenant => (
+                              <SelectItem key={tenant.id} value={tenant.id}>{tenant.name} - {tenant.property}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                    </div>
+                )}
+            </div>
+            <div className="flex items-end gap-2 self-end">
               <Button variant="outline" onClick={handleDownloadPdf}><Download className="mr-2 h-4 w-4"/>PDF</Button>
               <Button variant="outline" onClick={handlePrint}><Printer className="mr-2 h-4 w-4"/>Print</Button>
             </div>

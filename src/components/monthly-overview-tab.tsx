@@ -155,7 +155,18 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
 
 
   const filteredTenantsForMonth = React.useMemo(() => {
-    return rentData.filter(entry => entry.year === year && entry.month === monthIndex);
+    const tenantsForMonth = rentData.filter(entry => entry.year === year && entry.month === monthIndex);
+    
+    const extractNumber = (str: string) => {
+        const match = str.match(/\d+/);
+        return match ? parseInt(match[0], 10) : Infinity;
+    };
+    
+    return tenantsForMonth.sort((a, b) => {
+        const numA = extractNumber(a.property);
+        const numB = extractNumber(b.property);
+        return numA - numB;
+    });
   }, [rentData, monthIndex, year]);
 
   const filteredExpenses = React.useMemo(() => {
@@ -1032,8 +1043,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                                 </DialogContent>
                             </Dialog>
                              <Tooltip>
-                                <TooltipTrigger asChild><Button size="icon" variant="outline" onClick={handleSyncExpenses} className="flex-1 sm:flex-initial"><RefreshCw className="h-4 w-4" /><span className="sr-only">Sync expenses</span></Button></TooltipTrigger>
-                                <TooltipContent>Sync from Previous Month</TooltipContent>
+                                <TooltipTrigger asChild><Button size="icon" variant="outline" onClick={handleSyncExpenses} className="flex-1 sm:flex-initial"><RefreshCw className="h-4 w-4" /><span className="sr-only">Sync expenses</span></Button></TooltipTrigger><TooltipContent>Sync from Previous Month</TooltipContent>
                             </Tooltip>
                         </div>
                       </div>
@@ -1431,6 +1441,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
 }
 
     
+
 
 
 

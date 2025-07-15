@@ -10,50 +10,44 @@ export function AppFooter() {
     const { settings } = useSettings();
 
     return (
-        <footer className="mt-auto bg-background border-t">
-            <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <div className="space-y-4">
+        <footer className="mt-8 pt-8 border-t bg-background">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+                    <div className="md:col-span-2 space-y-4">
                         <div className="flex items-center gap-2">
-                            <Logo className="h-8 w-8 text-primary"/>
-                            <span className="text-xl font-bold">{settings.appName}</span>
+                            <Logo className="h-6 w-6 text-primary"/>
+                            <span className="text-lg font-bold">{settings.appName}</span>
                         </div>
-                        <p className="text-muted-foreground text-sm">
+                        <p className="text-muted-foreground text-xs max-w-md">
                             {settings.aboutUs}
                         </p>
                     </div>
-                    <div>
-                        <h3 className="text-sm font-semibold text-foreground tracking-wider uppercase">Contact Us</h3>
-                        <ul className="mt-4 space-y-4">
+                    <div className="md:col-span-2">
+                        <h3 className="text-sm font-semibold text-foreground tracking-wider uppercase">Contact Information</h3>
+                        <div className="mt-4 space-y-2 text-xs">
                             {settings.contactPhone && (
-                                <li>
-                                    <div className="flex items-start gap-3">
-                                        <Phone className="h-5 w-5 text-primary flex-shrink-0 mt-0.5"/>
-                                        <a href={`tel:${settings.contactPhone}`} className="text-sm text-muted-foreground hover:text-primary">{settings.contactPhone}</a>
-                                    </div>
-                                </li>
+                                <div className="flex items-center gap-3">
+                                    <Phone className="h-4 w-4 text-primary flex-shrink-0"/>
+                                    <a href={`tel:${settings.contactPhone}`} className="text-muted-foreground hover:text-primary">{settings.contactPhone}</a>
+                                </div>
                             )}
                             {settings.contactEmail && (
-                                <li>
-                                    <div className="flex items-start gap-3">
-                                        <Mail className="h-5 w-5 text-primary flex-shrink-0 mt-0.5"/>
-                                        <a href={`mailto:${settings.contactEmail}`} className="text-sm text-muted-foreground hover:text-primary">{settings.contactEmail}</a>
-                                    </div>
-                                </li>
+                                <div className="flex items-center gap-3">
+                                    <Mail className="h-4 w-4 text-primary flex-shrink-0"/>
+                                    <a href={`mailto:${settings.contactEmail}`} className="text-muted-foreground hover:text-primary">{settings.contactEmail}</a>
+                                </div>
                             )}
                             {settings.contactAddress && (
-                                 <li>
-                                    <div className="flex items-start gap-3">
-                                        <MapPin className="h-5 w-5 text-primary flex-shrink-0 mt-0.5"/>
-                                        <p className="text-sm text-muted-foreground">{settings.contactAddress}</p>
-                                    </div>
-                                </li>
+                                <div className="flex items-start gap-3">
+                                    <MapPin className="h-4 w-4 text-primary flex-shrink-0 mt-0.5"/>
+                                    <p className="text-muted-foreground">{settings.contactAddress}</p>
+                                </div>
                             )}
-                        </ul>
+                        </div>
                     </div>
                 </div>
-                <div className="mt-8 border-t border-border pt-8 text-center">
-                     <p className="text-sm text-muted-foreground">{settings.footerName}</p>
+                <div className="mt-8 border-t border-border py-4 text-center">
+                     <p className="text-xs text-muted-foreground">{settings.footerName}</p>
                 </div>
             </div>
         </footer>

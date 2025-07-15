@@ -19,6 +19,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import { AppFooter } from "@/components/app-footer"
+import { BackToTopButton } from "@/components/back-to-top-button"
 
 function FullPageLoader() {
   return (
@@ -280,6 +281,7 @@ export default function HomePage() {
         <AppFooter />
       </main>
       <MobileBottomNav activeTab={activeTab} onTabChange={handleTabChange} />
+      <BackToTopButton />
     </div>
   )
 }
