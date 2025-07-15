@@ -97,6 +97,7 @@ export async function updatePropertySettingsAction(formData: FormData) {
         }
     }
 
+    const reminderSchedule = formData.getAll('whatsapp_reminder_schedule');
 
     const settingsData = {
         house_name: formData.get('houseName') as string,
@@ -117,6 +118,9 @@ export async function updatePropertySettingsAction(formData: FormData) {
         theme_table_footer_background: formData.get('theme_table_footer_background') as string,
         theme_mobile_nav_background: formData.get('theme_mobile_nav_background') as string,
         theme_mobile_nav_foreground: formData.get('theme_mobile_nav_foreground') as string,
+        whatsapp_reminders_enabled: formData.get('whatsapp_reminders_enabled') === 'on',
+        whatsapp_reminder_schedule: reminderSchedule,
+        whatsapp_reminder_template: formData.get('whatsapp_reminder_template') as string,
     }
     
     const { error } = await supabaseAdmin

@@ -69,6 +69,9 @@ interface AppSettings {
   contactPhone?: string;
   contactEmail?: string;
   contactAddress?: string;
+  whatsappRemindersEnabled?: boolean;
+  whatsappReminderSchedule?: string[];
+  whatsappReminderTemplate?: string;
 }
 
 interface SettingsContextType {
@@ -94,6 +97,9 @@ const defaultSettings: AppSettings = {
     contactPhone: "+1 (555) 123-4567",
     contactEmail: "contact@rentflow.com",
     contactAddress: "123 Property Lane, Real Estate City, 12345",
+    whatsappRemindersEnabled: false,
+    whatsappReminderSchedule: ['before', 'on', 'after'],
+    whatsappReminderTemplate: "Hi {tenantName}, a friendly reminder that your rent of ৳{rentAmount} for {property} is due on {dueDate}. Thank you!",
     tabNames: {
         overview: "Overview",
         tenants: "Tenants",
@@ -231,6 +237,12 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
                 combinedSettings.theme.colors.table_footer_background = propertySettings.theme_table_footer_background || defaultSettings.theme.colors.table_footer_background;
                 combinedSettings.theme.colors.mobile_nav_background = propertySettings.theme_mobile_nav_background || defaultSettings.theme.colors.mobile_nav_background;
                 combinedSettings.theme.colors.mobile_nav_foreground = propertySettings.theme_mobile_nav_foreground || defaultSettings.theme.colors.mobile_nav_foreground;
+
+                // Load WhatsApp settings from DB
+                combinedSettings.whatsappRemindersEnabled = propertySettings.whatsapp_reminders_enabled ?? defaultSettings.whatsappRemindersEnabled;
+                combinedSettings.whatsappReminderSchedule = propertySettings.whatsapp_reminder_schedule || defaultSettings.whatsappReminderSchedule;
+                combinedSettings.whatsappReminderTemplate = propertySettings.whatsapp_reminder_template || defaultSettings.whatsappReminderTemplate;
+
             }
             
             combinedSettings.zakatBankDetails = zakatBankDetails || [];
@@ -246,7 +258,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         const { 
             houseName, houseAddress, bankName, bankAccountNumber, bankLogoUrl, ownerName, ownerPhotoUrl, 
             zakatBankDetails, passcode, aboutUs, contactPhone, contactEmail, contactAddress, footerName,
-            theme,
+            theme, whatsappRemindersEnabled, whatsappReminderSchedule, whatsappReminderTemplate,
             ...localSettingsToSave 
         } = newSettings;
         try {

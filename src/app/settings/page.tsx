@@ -12,7 +12,7 @@ import { useSettings } from "@/context/settings-context"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/context/auth-context"
 import { Button } from "@/components/ui/button"
-import { User, LogOut, MapPin, Menu, Settings, LoaderCircle, LogIn, Building, KeyRound, Palette, Tag, Landmark, Upload, Banknote, UserCircle, MessageSquare, Info, Phone, Mail, Database, RefreshCw, HardDriveDownload, HardDriveUpload, Trash2, SlidersHorizontal } from "lucide-react"
+import { User, LogOut, MapPin, Menu, Settings, LoaderCircle, LogIn, Building, KeyRound, Palette, Tag, Landmark, Upload, Banknote, UserCircle, MessageSquare, Info, Phone, Mail, Database, RefreshCw, HardDriveDownload, HardDriveUpload, Trash2, SlidersHorizontal, Share2 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useToast } from "@/hooks/use-toast"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
@@ -97,8 +97,13 @@ export default function SettingsPage() {
     setLogoPreview(settings.bankLogoUrl || null);
     setOwnerPhotoPreview(settings.ownerPhotoUrl || null);
   }, [settings.bankLogoUrl, settings.ownerPhotoUrl]);
+  
+  const handleSettingsChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      const { name, value } = e.target;
+      setSettings(prev => ({ ...prev, [name]: value }));
+  };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     const keys = name.split('.');
     
@@ -115,6 +120,7 @@ export default function SettingsPage() {
         return newState;
     });
   };
+
   
   const handleLogoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -140,6 +146,16 @@ export default function SettingsPage() {
     }
   };
 
+  const handleReminderScheduleChange = (checked: boolean, value: string) => {
+    setSettings(prev => {
+        const schedule = prev.whatsappReminderSchedule || [];
+        if (checked) {
+            return { ...prev, whatsappReminderSchedule: [...schedule, value] };
+        } else {
+            return { ...prev, whatsappReminderSchedule: schedule.filter(item => item !== value) };
+        }
+    });
+  };
 
   const handleSavePropertyDetails = (event: React.FormEvent<HTMLFormElement>) => {
      event.preventDefault();
@@ -150,12 +166,12 @@ export default function SettingsPage() {
      if (ownerPhotoFile) {
         formData.append('ownerPhotoFile', ownerPhotoFile);
      }
-     formData.append('theme_primary', settings.theme.colors.primary);
-     formData.append('theme_table_header_background', settings.theme.colors.table_header_background);
-     formData.append('theme_table_header_foreground', settings.theme.colors.table_header_foreground);
-     formData.append('theme_table_footer_background', settings.theme.colors.table_footer_background);
-     formData.append('theme_mobile_nav_background', settings.theme.colors.mobile_nav_background);
-     formData.append('theme_mobile_nav_foreground', settings.theme.colors.mobile_nav_foreground);
+     
+     formData.append('whatsapp_reminders_enabled', settings.whatsappRemindersEnabled ? 'on' : 'off');
+     (settings.whatsappReminderSchedule || []).forEach(item => {
+        formData.append('whatsapp_reminder_schedule', item);
+     });
+     formData.append('whatsapp_reminder_template', settings.whatsappReminderTemplate || '');
 
 
      startTransition(async () => {
@@ -352,7 +368,7 @@ export default function SettingsPage() {
         Account
       </button>
        <button onClick={() => setActiveTab('integrations')} className={cn("flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary", {'bg-muted text-primary': activeTab === 'integrations'})}>
-        <SlidersHorizontal className="h-4 w-4" />
+        <Share2 className="h-4 w-4" />
         Integrations
       </button>
       <button onClick={() => setActiveTab('application')} className={cn("flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-primary", {'bg-muted text-primary': activeTab === 'application'})}>
@@ -705,190 +721,202 @@ export default function SettingsPage() {
               )}
 
               {activeTab === 'integrations' && (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <Card>
+                <form onSubmit={handleSavePropertyDetails} className="space-y-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>WhatsApp Automation</CardTitle>
+                      <CardDescription>
+                        Configure automatic rent reminders via WhatsApp.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-6">
+                      <div className="flex items-center justify-between space-x-2 rounded-lg border p-4">
+                        <Label htmlFor="whatsapp_reminders_enabled" className="flex flex-col space-y-1">
+                          <span>Enable Auto-Reminders</span>
+                          <span className="font-normal leading-snug text-muted-foreground">
+                            Send automated reminders to tenants with pending payments.
+                          </span>
+                        </Label>
+                        <Switch
+                          id="whatsapp_reminders_enabled"
+                          name="whatsapp_reminders_enabled"
+                          checked={settings.whatsappRemindersEnabled}
+                          onCheckedChange={(checked) => setSettings(prev => ({...prev, whatsappRemindersEnabled: checked}))}
+                        />
+                      </div>
+                      <div className="space-y-4 rounded-lg border p-4" >
+                        <Label>Reminder Schedule</Label>
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                            <div className="flex items-center gap-2">
+                                <Checkbox id="schedule-before" value="before"
+                                  checked={(settings.whatsappReminderSchedule || []).includes('before')}
+                                  onCheckedChange={(checked) => handleReminderScheduleChange(Boolean(checked), 'before')}
+                                />
+                                <Label htmlFor="schedule-before" className="font-normal">3 days before due date</Label>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Checkbox id="schedule-on" value="on"
+                                  checked={(settings.whatsappReminderSchedule || []).includes('on')}
+                                  onCheckedChange={(checked) => handleReminderScheduleChange(Boolean(checked), 'on')}
+                                />
+                                <Label htmlFor="schedule-on" className="font-normal">On due date</Label>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Checkbox id="schedule-after" value="after"
+                                  checked={(settings.whatsappReminderSchedule || []).includes('after')}
+                                  onCheckedChange={(checked) => handleReminderScheduleChange(Boolean(checked), 'after')}
+                                />
+                                <Label htmlFor="schedule-after" className="font-normal">5 days after due date</Label>
+                            </div>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                          <Label htmlFor="whatsapp_reminder_template">Reminder Message Template</Label>
+                          <Textarea
+                            id="whatsapp_reminder_template"
+                            name="whatsapp_reminder_template"
+                            placeholder="e.g., Hi {tenantName}, a friendly reminder that your rent of ৳{rentAmount} for {property} is due on {dueDate}."
+                            value={settings.whatsappReminderTemplate || ''}
+                            onChange={(e) => setSettings(prev => ({...prev, whatsappReminderTemplate: e.target.value}))}
+                          />
+                          <p className="text-xs text-muted-foreground">
+                            Use placeholders like {"{tenantName}"}, {"{rentAmount}"}, {"{property}"}, and {"{dueDate}"}.
+                          </p>
+                        </div>
+                    </CardContent>
+                  </Card>
+                  <Card>
                       <CardHeader>
-                        <CardTitle>WhatsApp Automation</CardTitle>
-                        <CardDescription>
-                          Configure automatic rent reminders via WhatsApp. (UI Only)
-                        </CardDescription>
+                          <div className="flex items-center gap-3">
+                              <Database className="h-8 w-8 text-primary" />
+                              <div>
+                                  <CardTitle>File Backup & Restore</CardTitle>
+                                  <CardDescription>
+                                      Save a backup of all data to your computer, or restore it from a file.
+                                  </CardDescription>
+                              </div>
+                          </div>
                       </CardHeader>
-                      <fieldset disabled={!isAdmin} className="group">
-                      <CardContent className="space-y-6 group-disabled:opacity-50">
-                        <div className="flex items-center justify-between space-x-2">
-                          <Label htmlFor="enable-reminders" className="flex flex-col space-y-1">
-                            <span>Enable Auto-Reminders</span>
-                            <span className="font-normal leading-snug text-muted-foreground">
-                              Send automated reminders to tenants with pending payments.
-                            </span>
-                          </Label>
-                          <Switch id="enable-reminders" />
-                        </div>
-                        <div className="space-y-2">
-                          <Label>Reminder Schedule</Label>
-                          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-                              <div className="flex items-center gap-2">
-                                  <Checkbox id="schedule-before" />
-                                  <Label htmlFor="schedule-before" className="font-normal">3 days before due date</Label>
+                      <CardContent className="space-y-4">
+                          <div className="space-y-4">
+                              <div className="p-3 bg-secondary rounded-md text-sm">
+                                  <p className="font-medium text-secondary-foreground">Status: <span className="text-primary font-bold">Ready</span></p>
+                                  <p className="text-muted-foreground">Save your data to a JSON or SQL file.</p>
                               </div>
-                              <div className="flex items-center gap-2">
-                                  <Checkbox id="schedule-on" />
-                                  <Label htmlFor="schedule-on" className="font-normal">On due date</Label>
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                  <Button type="button" onClick={handleBackup} disabled={isProcessing} className="w-full">
+                                      {isProcessing ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <HardDriveDownload className="mr-2 h-4 w-4"/>}
+                                      {isProcessing ? "Processing..." : "JSON Backup"}
+                                  </Button>
+                                  <Button type="button" onClick={handleSqlBackup} disabled={isSqlPending} className="w-full">
+                                      {isSqlPending ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <HardDriveDownload className="mr-2 h-4 w-4"/>}
+                                      SQL Backup
+                                  </Button>
                               </div>
-                              <div className="flex items-center gap-2">
-                                  <Checkbox id="schedule-after" />
-                                  <Label htmlFor="schedule-after" className="font-normal">5 days after due date</Label>
-                              </div>
-                          </div>
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="reminder-template">Reminder Message Template</Label>
-                            <Textarea
-                              id="reminder-template"
-                              placeholder="e.g., Hi {tenantName}, a friendly reminder that your rent of ৳{rentAmount} for {property} is due on {dueDate}."
-                              defaultValue="Hi {tenantName}, just a friendly reminder that your rent of ৳{rentAmount} for your unit at {property} is due on {dueDate}. Thank you!"
-                            />
-                            <p className="text-xs text-muted-foreground">
-                              Use placeholders like {"{tenantName}"}, {"{rentAmount}"}, {"{property}"}, and {"{dueDate}"}.
-                            </p>
-                          </div>
-                      </CardContent>
-                      <CardFooter>
-                          <Button disabled={!isAdmin}>Save Settings</Button>
-                      </CardFooter>
-                      </fieldset>
-                    </Card>
-
-                    <div className="space-y-6">
-                      <Card>
-                          <CardHeader>
-                              <div className="flex items-center gap-3">
-                                  <Database className="h-8 w-8 text-primary" />
-                                  <div>
-                                      <CardTitle>File Backup & Restore</CardTitle>
-                                      <CardDescription>
-                                          Save a backup of all data to your computer, or restore it from a file.
-                                      </CardDescription>
-                                  </div>
-                              </div>
-                          </CardHeader>
-                          <fieldset disabled={!isAdmin} className="group">
-                              <CardContent className="space-y-4 group-disabled:opacity-50">
-                                  <div className="space-y-4">
-                                      <div className="p-3 bg-secondary rounded-md text-sm">
-                                          <p className="font-medium text-secondary-foreground">Status: <span className="text-primary font-bold">Ready</span></p>
-                                          <p className="text-muted-foreground">Save your data to a JSON or SQL file.</p>
-                                      </div>
-                                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                          <Button onClick={handleBackup} disabled={isProcessing} className="w-full">
-                                              {isProcessing ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <HardDriveDownload className="mr-2 h-4 w-4"/>}
-                                              {isProcessing ? "Processing..." : "JSON Backup"}
-                                          </Button>
-                                          <Button onClick={handleSqlBackup} disabled={isSqlPending} className="w-full">
-                                              {isSqlPending ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <HardDriveDownload className="mr-2 h-4 w-4"/>}
-                                              SQL Backup
-                                          </Button>
-                                      </div>
-                                      <div className="grid grid-cols-1">
-                                          <AlertDialog>
-                                              <AlertDialogTrigger asChild>
-                                                <Button variant="outline" disabled={isProcessing} className="w-full">
-                                                  <HardDriveUpload className="mr-2 h-4 w-4" />
-                                                  Restore from JSON
-                                                </Button>
-                                              </AlertDialogTrigger>
-                                              <AlertDialogContent>
-                                                <AlertDialogHeader>
-                                                  <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                                  <AlertDialogDescription>
-                                                    This action cannot be undone. Restoring from a file will overwrite all current tenant and financial data with the data from the backup.
-                                                  </AlertDialogDescription>
-                                                </AlertDialogHeader>
-                                                <AlertDialogFooter>
-                                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                  <AlertDialogAction onClick={handleRestoreClick} className="bg-destructive hover:bg-destructive/90">Choose File & Restore</AlertDialogAction>
-                                                </AlertDialogFooter>
-                                              </AlertDialogContent>
-                                            </AlertDialog>
-                                      </div>
-                                      <input
-                                          type="file"
-                                          ref={fileInputRef}
-                                          className="hidden"
-                                          accept="application/json"
-                                          onChange={handleFileChange}
-                                      />
-                                  </div>
-                              </CardContent>
-                              <CardFooter className="text-xs text-muted-foreground">
-                                  This feature lets you save a complete snapshot of your data. Keep your backup file in a safe place.
-                              </CardFooter>
-                          </fieldset>
-                        </Card>
-
-                        <Card>
-                          <CardHeader>
-                              <div className="flex items-center gap-3">
-                                  <Trash2 className="h-8 w-8 text-destructive" />
-                                  <div>
-                                      <CardTitle>Clear Data</CardTitle>
-                                      <CardDescription>
-                                          Permanently delete rent and expense data for a specific period.
-                                      </CardDescription>
-                                  </div>
-                              </div>
-                          </CardHeader>
-                          <CardContent className="space-y-4">
-                              <div className="grid grid-cols-2 gap-4">
-                                  <div>
-                                      <Label htmlFor="clear-year">Year</Label>
-                                      <Select value={clearYear} onValueChange={setClearYear}>
-                                          <SelectTrigger id="clear-year"><SelectValue /></SelectTrigger>
-                                          <SelectContent>{years.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}</SelectContent>
-                                      </Select>
-                                  </div>
-                                  <div>
-                                      <Label htmlFor="clear-month">Month (Optional)</Label>
-                                      <Select value={clearMonth} onValueChange={(val) => setClearMonth(val === 'all' ? undefined : val)}>
-                                          <SelectTrigger id="clear-month"><SelectValue placeholder="All Months" /></SelectTrigger>
-                                          <SelectContent>
-                                              <SelectItem value="all">All Months (Entire Year)</SelectItem>
-                                              {months.map((m, i) => <SelectItem key={i} value={i.toString()}>{m}</SelectItem>)}
-                                          </SelectContent>
-                                      </Select>
-                                  </div>
-                              </div>
-                              <AlertDialog>
-                                  <AlertDialogTrigger asChild>
-                                      <Button variant="destructive" className="w-full" disabled={isClearPending}>
-                                          {isClearPending ? <LoaderCircle className="mr-2 animate-spin"/> : <Trash2 className="mr-2"/>}
-                                          Clear Data
-                                      </Button>
-                                  </AlertDialogTrigger>
-                                  <AlertDialogContent>
-                                      <AlertDialogHeader>
+                              <div className="grid grid-cols-1">
+                                  <AlertDialog>
+                                      <AlertDialogTrigger asChild>
+                                        <Button type="button" variant="outline" disabled={isProcessing} className="w-full">
+                                          <HardDriveUpload className="mr-2 h-4 w-4" />
+                                          Restore from JSON
+                                        </Button>
+                                      </AlertDialogTrigger>
+                                      <AlertDialogContent>
+                                        <AlertDialogHeader>
                                           <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                                           <AlertDialogDescription>
-                                              This will permanently delete all rent and expense records for <span className="font-bold text-destructive">{clearMonth ? `${months[parseInt(clearMonth)]} ${clearYear}` : `the entire year ${clearYear}`}</span>. 
-                                              This action cannot be undone.
+                                            This action cannot be undone. Restoring from a file will overwrite all current tenant and financial data with the data from the backup.
                                           </AlertDialogDescription>
-                                      </AlertDialogHeader>
-                                      <AlertDialogFooter>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
                                           <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                          <AlertDialogAction onClick={handleClearData} disabled={isClearPending}>
-                                            {isClearPending && <LoaderCircle className="mr-2 animate-spin"/>}
-                                              Yes, Clear Data
-                                          </AlertDialogAction>
-                                      </AlertDialogFooter>
-                                  </AlertDialogContent>
-                              </AlertDialog>
-                          </CardContent>
-                          <CardFooter className="text-xs text-muted-foreground">
-                              Use with caution. Deleting data is permanent and cannot be recovered without a backup file.
-                          </CardFooter>
-                        </Card>
+                                          <AlertDialogAction onClick={handleRestoreClick} className="bg-destructive hover:bg-destructive/90">Choose File & Restore</AlertDialogAction>
+                                        </AlertDialogFooter>
+                                      </AlertDialogContent>
+                                    </AlertDialog>
+                              </div>
+                              <input
+                                  type="file"
+                                  ref={fileInputRef}
+                                  className="hidden"
+                                  accept="application/json"
+                                  onChange={handleFileChange}
+                              />
+                          </div>
+                      </CardContent>
+                      <CardFooter className="text-xs text-muted-foreground">
+                          This feature lets you save a complete snapshot of your data. Keep your backup file in a safe place.
+                      </CardFooter>
+                    </Card>
+
+                    <Card>
+                      <CardHeader>
+                          <div className="flex items-center gap-3">
+                              <Trash2 className="h-8 w-8 text-destructive" />
+                              <div>
+                                  <CardTitle>Clear Data</CardTitle>
+                                  <CardDescription>
+                                      Permanently delete rent and expense data for a specific period.
+                                  </CardDescription>
+                              </div>
+                          </div>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                          <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                  <Label htmlFor="clear-year">Year</Label>
+                                  <Select value={clearYear} onValueChange={setClearYear}>
+                                      <SelectTrigger id="clear-year"><SelectValue /></SelectTrigger>
+                                      <SelectContent>{years.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}</SelectContent>
+                                  </Select>
+                              </div>
+                              <div>
+                                  <Label htmlFor="clear-month">Month (Optional)</Label>
+                                  <Select value={clearMonth} onValueChange={(val) => setClearMonth(val === 'all' ? undefined : val)}>
+                                      <SelectTrigger id="clear-month"><SelectValue placeholder="All Months" /></SelectTrigger>
+                                      <SelectContent>
+                                          <SelectItem value="all">All Months (Entire Year)</SelectItem>
+                                          {months.map((m, i) => <SelectItem key={i} value={i.toString()}>{m}</SelectItem>)}
+                                      </SelectContent>
+                                  </Select>
+                              </div>
+                          </div>
+                          <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                  <Button type="button" variant="destructive" className="w-full" disabled={isClearPending}>
+                                      {isClearPending ? <LoaderCircle className="mr-2 animate-spin"/> : <Trash2 className="mr-2"/>}
+                                      Clear Data
+                                  </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                      <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                          This will permanently delete all rent and expense records for <span className="font-bold text-destructive">{clearMonth ? `${months[parseInt(clearMonth)]} ${clearYear}` : `the entire year ${clearYear}`}</span>. 
+                                          This action cannot be undone.
+                                      </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction onClick={handleClearData} disabled={isClearPending}>
+                                        {isClearPending && <LoaderCircle className="mr-2 animate-spin"/>}
+                                          Yes, Clear Data
+                                      </AlertDialogAction>
+                                  </AlertDialogFooter>
+                              </AlertDialogContent>
+                          </AlertDialog>
+                      </CardContent>
+                      <CardFooter className="text-xs text-muted-foreground">
+                          Use with caution. Deleting data is permanent and cannot be recovered without a backup file.
+                      </CardFooter>
+                    </Card>
+                    <div className="flex justify-start">
+                      <Button type="submit" disabled={isPending}>
+                         {isPending && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
+                         Save All Settings
+                      </Button>
                     </div>
-                  </div>
+                </form>
               )}
 
 
@@ -947,10 +975,6 @@ export default function SettingsPage() {
                                 <div className="space-y-2">
                                     <Label htmlFor="tab_work">Work Tab</Label>
                                     <Input id="tab_work" name="tabNames.work" defaultValue={settings.tabNames.work} onChange={handleInputChange} />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="tab_integrations">Integrations Tab</Label>
-                                    <Input id="tab_integrations" name="tabNames.integrations" defaultValue={settings.tabNames.integrations} onChange={handleInputChange} />
                                 </div>
                                  <div className="space-y-2">
                                     <Label htmlFor="tab_reports">Reports Tab</Label>

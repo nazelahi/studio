@@ -83,6 +83,9 @@ export type PropertySettings = {
   theme_table_footer_background?: string;
   theme_mobile_nav_background?: string;
   theme_mobile_nav_foreground?: string;
+  whatsapp_reminders_enabled?: boolean;
+  whatsapp_reminder_schedule?: string[];
+  whatsapp_reminder_template?: string;
 };
 
 export type ZakatBankDetail = {
@@ -135,4 +138,5 @@ export type WorkDetail = {
   worker_cost?: number;
   due_date?: string;
   created_at?: string;
+  deleted_at?: string | null;
 };
