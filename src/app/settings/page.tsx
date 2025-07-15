@@ -23,6 +23,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Switch } from "@/components/ui/switch"
+import { Separator } from "@/components/ui/separator"
 
 type SettingsTab = 'property' | 'account' | 'application' | 'labels' | 'integrations' | 'data';
 
@@ -376,125 +377,126 @@ export default function SettingsPage() {
             <div className="grid gap-6">
               
               {activeTab === 'property' && (
-                <form onSubmit={handleSavePropertyDetails} className="space-y-6">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Owner Details</CardTitle>
-                            <CardDescription>Set the name and photo of the property owner.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="grid md:grid-cols-2 gap-6">
-                            <div className="space-y-2">
-                                <Label htmlFor="ownerName">Owner Name</Label>
-                                <Input id="ownerName" name="ownerName" defaultValue={settings.ownerName} />
-                            </div>
-                             <div className="space-y-2">
-                                <Label>Owner Photo</Label>
-                                <input type="hidden" name="owner_photo_url" value={settings.ownerPhotoUrl || ''} />
-                                {settings.ownerPhotoUrl && <input type="hidden" name="oldOwnerPhotoUrl" value={settings.ownerPhotoUrl} />}
-                                <div className="flex items-center gap-4">
-                                    <Avatar className="h-20 w-20 rounded-md">
-                                        <AvatarImage src={ownerPhotoPreview} data-ai-hint="person portrait"/>
-                                        <AvatarFallback className="rounded-md"><UserCircle className="h-8 w-8"/></AvatarFallback>
-                                    </Avatar>
-                                    <Button type="button" variant="outline" onClick={() => ownerPhotoInputRef.current?.click()}>
-                                        <Upload className="mr-2 h-4 w-4"/>
-                                        Upload Photo
-                                    </Button>
-                                    <Input ref={ownerPhotoInputRef} type="file" name="ownerPhotoFile" className="hidden" accept="image/*" onChange={handleOwnerPhotoFileChange} />
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-
+                <form onSubmit={handleSavePropertyDetails}>
                     <Card>
                         <CardHeader>
                             <CardTitle>Property Details</CardTitle>
-                            <CardDescription>Set the name and address of your property. This will be displayed across the app.</CardDescription>
+                            <CardDescription>Manage your property, owner, and contact information. This information is displayed across the app and on receipts.</CardDescription>
                         </CardHeader>
-                        <CardContent className="grid md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="houseName">{settings.page_settings.property_details.house_name_label}</Label>
-                                <Input id="houseName" name="houseName" defaultValue={settings.houseName} />
+                        <CardContent className="space-y-8">
+                            {/* Owner & Property Information */}
+                            <div>
+                                <h3 className="text-lg font-medium">Owner & Property</h3>
+                                <Separator className="my-2" />
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
+                                    <div className="md:col-span-2 space-y-4">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <div className="space-y-1">
+                                                <Label htmlFor="ownerName">Owner Name</Label>
+                                                <Input id="ownerName" name="ownerName" defaultValue={settings.ownerName} />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <Label htmlFor="houseName">{settings.page_settings.property_details.house_name_label}</Label>
+                                                <Input id="houseName" name="houseName" defaultValue={settings.houseName} />
+                                            </div>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <Label htmlFor="houseAddress">{settings.page_settings.property_details.house_address_label}</Label>
+                                            <Input id="houseAddress" name="houseAddress" defaultValue={settings.houseAddress} />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Owner Photo</Label>
+                                        <input type="hidden" name="owner_photo_url" value={settings.ownerPhotoUrl || ''} />
+                                        {settings.ownerPhotoUrl && <input type="hidden" name="oldOwnerPhotoUrl" value={settings.ownerPhotoUrl} />}
+                                        <div className="flex items-center gap-4">
+                                            <Avatar className="h-24 w-24 rounded-md">
+                                                <AvatarImage src={ownerPhotoPreview} data-ai-hint="person portrait"/>
+                                                <AvatarFallback className="rounded-md"><UserCircle className="h-10 w-10"/></AvatarFallback>
+                                            </Avatar>
+                                            <Button type="button" variant="outline" size="sm" onClick={() => ownerPhotoInputRef.current?.click()}>
+                                                <Upload className="mr-2 h-4 w-4"/>
+                                                Change
+                                            </Button>
+                                            <Input ref={ownerPhotoInputRef} type="file" name="ownerPhotoFile" className="hidden" accept="image/*" onChange={handleOwnerPhotoFileChange} />
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="houseAddress">{settings.page_settings.property_details.house_address_label}</Label>
-                                <Input id="houseAddress" name="houseAddress" defaultValue={settings.houseAddress} />
-                            </div>
-                        </CardContent>
-                    </Card>
 
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Rental Bank Details</CardTitle>
-                            <CardDescription>Enter the bank details for monthly rent deposits.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="grid md:grid-cols-2 gap-6">
-                            <div className="space-y-4">
-                               <div className="space-y-2">
-                                  <Label htmlFor="bankName">Bank Name</Label>
-                                  <Input id="bankName" name="bankName" defaultValue={settings.bankName} />
-                               </div>
-                               <div className="space-y-2">
-                                  <Label htmlFor="bankAccountNumber">Bank Account Number</Label>
-                                  <Input id="bankAccountNumber" name="bankAccountNumber" defaultValue={settings.bankAccountNumber} />
-                               </div>
+                            {/* Bank & Footer Information */}
+                            <div>
+                                <h3 className="text-lg font-medium">Bank & Contact Information</h3>
+                                <Separator className="my-2" />
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
+                                    <div className="md:col-span-2 space-y-4">
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <div className="space-y-1">
+                                                <Label htmlFor="bankName">Bank Name</Label>
+                                                <Input id="bankName" name="bankName" defaultValue={settings.bankName} />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <Label htmlFor="bankAccountNumber">Bank Account Number</Label>
+                                                <Input id="bankAccountNumber" name="bankAccountNumber" defaultValue={settings.bankAccountNumber} />
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <div className="space-y-1">
+                                                <Label htmlFor="contact_email">Contact Email</Label>
+                                                <Input id="contact_email" name="contact_email" type="email" defaultValue={settings.contactEmail}/>
+                                            </div>
+                                            <div className="space-y-1">
+                                                <Label htmlFor="contact_phone">Contact Phone</Label>
+                                                <Input id="contact_phone" name="contact_phone" defaultValue={settings.contactPhone}/>
+                                            </div>
+                                        </div>
+                                    </div>
+                                     <div className="space-y-2">
+                                        <Label>Bank Logo</Label>
+                                        <input type="hidden" name="bank_logo_url" value={settings.bankLogoUrl || ''} />
+                                        {settings.bankLogoUrl && <input type="hidden" name="oldLogoUrl" value={settings.bankLogoUrl} />}
+                                        <div className="flex items-center gap-4">
+                                            <Avatar className="h-24 w-24 rounded-md">
+                                                <AvatarImage src={logoPreview} data-ai-hint="logo bank"/>
+                                                <AvatarFallback className="rounded-md"><Banknote className="h-10 w-10"/></AvatarFallback>
+                                            </Avatar>
+                                            <Button type="button" variant="outline" size="sm" onClick={() => logoInputRef.current?.click()}>
+                                                <Upload className="mr-2 h-4 w-4"/>
+                                                Change
+                                            </Button>
+                                            <Input ref={logoInputRef} type="file" name="logoFile" className="hidden" accept="image/*" onChange={handleLogoFileChange} />
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
-                            <div className="space-y-2">
-                                <Label>Bank Logo</Label>
-                                <input type="hidden" name="bank_logo_url" value={settings.bankLogoUrl || ''} />
-                                {settings.bankLogoUrl && <input type="hidden" name="oldLogoUrl" value={settings.bankLogoUrl} />}
-                                <div className="flex items-center gap-4">
-                                    <Avatar className="h-20 w-20 rounded-md">
-                                        <AvatarImage src={logoPreview} data-ai-hint="logo bank"/>
-                                        <AvatarFallback className="rounded-md"><Banknote className="h-8 w-8"/></AvatarFallback>
-                                    </Avatar>
-                                    <Button type="button" variant="outline" onClick={() => logoInputRef.current?.click()}>
-                                        <Upload className="mr-2 h-4 w-4"/>
-                                        Upload Logo
-                                    </Button>
-                                    <Input ref={logoInputRef} type="file" name="logoFile" className="hidden" accept="image/*" onChange={handleLogoFileChange} />
+                            
+                            {/* About and Footer */}
+                             <div>
+                                <h3 className="text-lg font-medium">About & Footer</h3>
+                                <Separator className="my-2" />
+                                <div className="mt-4 space-y-4">
+                                     <div className="space-y-1">
+                                        <Label htmlFor="about_us">About Us Section</Label>
+                                        <Textarea id="about_us" name="about_us" defaultValue={settings.aboutUs} placeholder="Write a short description about your property or business..."/>
+                                    </div>
+                                    <div className="space-y-1">
+                                        <Label htmlFor="contact_address">Contact Address</Label>
+                                        <Input id="contact_address" name="contact_address" defaultValue={settings.contactAddress}/>
+                                    </div>
+                                     <div className="space-y-1">
+                                        <Label htmlFor="footerName">Footer Copyright Text</Label>
+                                        <Input id="footerName" name="footerName" defaultValue={settings.footerName} />
+                                    </div>
                                 </div>
                             </div>
                         </CardContent>
+                        <CardFooter className="border-t pt-6">
+                            <Button type="submit" disabled={isPending}>
+                                {isPending && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
+                                Save Property Settings
+                            </Button>
+                        </CardFooter>
                     </Card>
-                    
-                    <Card>
-                        <CardHeader>
-                            <CardTitle>Footer Details</CardTitle>
-                            <CardDescription>Set the "About Us" and contact information for the footer.</CardDescription>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="about_us">About Us</Label>
-                                <Textarea id="about_us" name="about_us" defaultValue={settings.aboutUs} placeholder="Write a short description about your property or business..."/>
-                            </div>
-                             <div className="space-y-2">
-                                <Label htmlFor="footerName">Footer Copyright Text</Label>
-                                <Input id="footerName" name="footerName" defaultValue={settings.footerName} />
-                            </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="contact_email">Contact Email</Label>
-                                    <Input id="contact_email" name="contact_email" type="email" defaultValue={settings.contactEmail}/>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="contact_phone">Contact Phone</Label>
-                                    <Input id="contact_phone" name="contact_phone" defaultValue={settings.contactPhone}/>
-                                </div>
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="contact_address">Contact Address</Label>
-                                <Input id="contact_address" name="contact_address" defaultValue={settings.contactAddress}/>
-                            </div>
-                        </CardContent>
-                    </Card>
-
-                    <div className="flex justify-start">
-                      <Button type="submit" disabled={isPending}>
-                         {isPending && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
-                         Save Property Settings
-                      </Button>
-                    </div>
                 </form>
               )}
 
