@@ -84,7 +84,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
                 supabase.from('deposits').select('*').gte('deposit_date', twoYearsAgo).order('deposit_date', { ascending: false }),
                 supabase.from('zakat_transactions').select('*').gte('transaction_date', twoYearsAgo).order('transaction_date', { ascending: false }),
                 supabase.from('notices').select('*').gte('created_at', twoYearsAgo).order('created_at', { ascending: false }),
-                supabase.from('work_details').select('*').is('deleted_at', null).gte('created_at', twoYearsAgo).order('created_at', { ascending: false }),
+                supabase.from('work_details').select('*').gte('created_at', twoYearsAgo).order('created_at', { ascending: false }),
                 supabase.from('zakat_bank_details').select('*').order('bank_name', { ascending: true }),
             ]);
 
@@ -679,5 +679,3 @@ export function useData() {
   }
   return context;
 }
-
-    
