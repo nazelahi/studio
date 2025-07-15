@@ -127,27 +127,44 @@ export function DataProvider({ children }: { children: ReactNode }) {
     useEffect(() => {
         if (!supabase) return;
 
-        const channel = supabase
-            .channel('db-changes')
-            .on(
-                'postgres_changes',
-                { event: '*', schema: 'public' },
-                (payload) => {
-                    fetchData();
-                }
-            )
-            .subscribe((status, err) => {
-                if (status === 'SUBSCRIBED') {
-                    console.log('Successfully subscribed to real-time updates!');
-                }
-                if (err) {
-                    const dbError = err as any;
-                    console.error("Realtime subscription error:", dbError);
-                }
-            });
+        const tables = [
+            'tenants', 'expenses', 'rent_entries', 'property_settings', 
+            'deposits', 'zakat_transactions', 'notices', 'work_details', 'zakat_bank_details'
+        ];
+        
+        const subscriptions = tables.map(table => {
+            return supabase
+                .channel(`public:${table}`)
+                .on(
+                    'postgres_changes',
+                    { event: 'INSERT', schema: 'public', table: table },
+                    (payload) => { console.log(`New data in ${table}, refreshing...`); fetchData(); }
+                )
+                .on(
+                    'postgres_changes',
+                    { event: 'UPDATE', schema: 'public', table: table },
+                    (payload) => { console.log(`Data updated in ${table}, refreshing...`); fetchData(); }
+                )
+                 .on(
+                    'postgres_changes',
+                    { event: 'DELETE', schema: 'public', table: table },
+                    (payload) => { console.log(`Data deleted in ${table}, refreshing...`); fetchData(); }
+                )
+                .subscribe((status, err) => {
+                    if (status === 'SUBSCRIBED') {
+                        console.log(`Successfully subscribed to real-time updates for ${table}!`);
+                    }
+                    if (err) {
+                        const dbError = err as any;
+                        console.error(`Realtime subscription error on ${table}:`, dbError);
+                    }
+                });
+        });
 
         return () => {
-            supabase.removeChannel(channel);
+            subscriptions.forEach(subscription => {
+                supabase.removeChannel(subscription);
+            });
         };
     }, [fetchData]);
 
