@@ -87,6 +87,7 @@ export type PropertySettings = {
   whatsapp_reminders_enabled?: boolean;
   whatsapp_reminder_schedule?: string[];
   whatsapp_reminder_template?: string;
+  tenant_view_style?: 'grid' | 'list';
 };
 
 export type ZakatBankDetail = {

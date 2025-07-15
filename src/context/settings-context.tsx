@@ -71,6 +71,7 @@ interface AppSettings {
   whatsappRemindersEnabled?: boolean;
   whatsappReminderSchedule?: string[];
   whatsappReminderTemplate?: string;
+  tenantViewStyle: 'grid' | 'list';
 }
 
 interface SettingsContextType {
@@ -99,6 +100,7 @@ const defaultSettings: AppSettings = {
     whatsappRemindersEnabled: false,
     whatsappReminderSchedule: ['before', 'on', 'after'],
     whatsappReminderTemplate: "Hi {tenantName}, a friendly reminder that your rent of ৳{rentAmount} for {property} is due on {dueDate}. Thank you!",
+    tenantViewStyle: 'grid',
     tabNames: {
         overview: "Overview",
         tenants: "Tenants",
@@ -228,6 +230,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
                 combinedSettings.contactEmail = propertySettings.contact_email || defaultSettings.contactEmail;
                 combinedSettings.contactAddress = propertySettings.contact_address || defaultSettings.contactAddress;
                 combinedSettings.footerName = propertySettings.footer_name || defaultSettings.footerName;
+                combinedSettings.tenantViewStyle = propertySettings.tenant_view_style || defaultSettings.tenantViewStyle;
 
                 // Load theme from DB
                 combinedSettings.theme.colors.primary = propertySettings.theme_primary || defaultSettings.theme.colors.primary;
@@ -257,7 +260,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         const { 
             houseName, houseAddress, bankName, bankAccountNumber, bankLogoUrl, ownerName, ownerPhotoUrl, 
             zakatBankDetails, passcode, passcodeProtectionEnabled, aboutUs, contactPhone, contactEmail, contactAddress, footerName,
-            theme, whatsappRemindersEnabled, whatsappReminderSchedule, whatsappReminderTemplate,
+            theme, whatsappRemindersEnabled, whatsappReminderSchedule, whatsappReminderTemplate, tenantViewStyle,
             ...localSettingsToSave 
         } = newSettings;
         try {

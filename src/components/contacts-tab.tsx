@@ -3,7 +3,7 @@
 "use client"
 
 import * as React from "react"
-import { MoreHorizontal, PlusCircle, Image as ImageIcon, Mail, Phone, Home, ChevronDown, Copy, X, Search, FileText, Check, UserPlus, Calendar, Briefcase, Upload, File, Trash2, LoaderCircle, ScanLine, Wallet, MessageSquare } from "lucide-react"
+import { MoreHorizontal, PlusCircle, Image as ImageIcon, Mail, Phone, Home, ChevronDown, Copy, X, Search, FileText, Check, UserPlus, Calendar, Briefcase, Upload, File, Trash2, LoaderCircle, ScanLine, Wallet, MessageSquare, LayoutGrid, List } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog"
@@ -28,6 +28,8 @@ import { useProtection } from "@/context/protection-context"
 import { extractTenantInfo } from "@/ai/flows/extract-tenant-info-flow"
 import { cn } from "@/lib/utils"
 import { Separator } from "./ui/separator"
+import { updatePropertySettingsAction } from "@/app/settings/actions"
+import { Table, TableBody, TableCell, TableRow } from "./ui/table"
 
 const formatCurrency = (amount?: number) => {
   if (amount === undefined || amount === null) return '-';
@@ -37,7 +39,7 @@ const formatCurrency = (amount?: number) => {
 export function ContactsTab() {
   const { tenants, addTenant, updateTenant, deleteTenant, loading } = useData();
   const { isAdmin } = useAuth();
-  const { settings } = useSettings();
+  const { settings, refreshSettings } = useSettings();
   const [open, setOpen] = React.useState(false);
   const [editingTenant, setEditingTenant] = React.useState<Tenant | null>(null);
   const { toast } = useToast();
@@ -286,6 +288,20 @@ export function ContactsTab() {
     }
   };
 
+  const handleSetViewStyle = async (style: 'grid' | 'list') => {
+    if (settings.tenantViewStyle === style) return;
+    
+    const formData = new FormData();
+    formData.append('tenant_view_style', style);
+    const result = await updatePropertySettingsAction(formData);
+
+    if (result?.error) {
+      toast({ title: 'Error Saving View Preference', description: result.error, variant: 'destructive'});
+    } else {
+      refreshSettings(); // This will trigger a re-fetch of settings in the context
+    }
+  }
+
 
   return (
     <>
@@ -298,19 +314,29 @@ export function ContactsTab() {
         </CardHeader>
         <CardContent>
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
-              <div className="relative w-full sm:max-w-xs">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input 
-                  placeholder="Search tenants..."
-                  className="pl-9"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
+              <div className="flex items-center gap-2 w-full">
+                <div className="relative flex-1 sm:max-w-xs">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input 
+                    placeholder="Search tenants..."
+                    className="pl-9"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                  />
+                </div>
+                <div className="flex items-center gap-1 rounded-md bg-muted p-1">
+                  <Button variant={settings.tenantViewStyle === 'grid' ? 'secondary' : 'ghost'} size="icon" className="h-8 w-8" onClick={() => handleSetViewStyle('grid')}>
+                    <LayoutGrid className="h-4 w-4" />
+                  </Button>
+                   <Button variant={settings.tenantViewStyle === 'list' ? 'secondary' : 'ghost'} size="icon" className="h-8 w-8" onClick={() => handleSetViewStyle('list')}>
+                    <List className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
                {isAdmin && 
                 <Dialog open={open} onOpenChange={handleOpenChange}>
                   <DialogTrigger asChild>
-                    <Button onClick={() => setEditingTenant(null)} className="w-full sm:w-auto">
+                    <Button onClick={() => setEditingTenant(null)} className="w-full sm:w-auto shrink-0">
                       <PlusCircle className="mr-2 h-4 w-4" />
                       Add Tenant
                     </Button>
@@ -523,9 +549,13 @@ export function ContactsTab() {
                 <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
                     {[...Array(4)].map((_, i) => <TenantCardSkeleton key={i} />)}
                 </div>
-            ) : (
+            ) : filteredTenants.length === 0 ? (
+                 <div className="col-span-full text-center text-muted-foreground py-10">
+                    No tenants found.
+                </div>
+            ) : settings.tenantViewStyle === 'grid' ? (
                  <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {filteredTenants.length > 0 ? filteredTenants.map((tenant) => (
+                  {filteredTenants.map((tenant) => (
                      <Card key={tenant.id} className="overflow-hidden shadow-md transition-shadow hover:shadow-lg w-full">
                         <div className="flex items-start gap-4 p-4">
                             <Avatar className="h-16 w-16 border">
@@ -575,12 +605,55 @@ export function ContactsTab() {
                         </div>
                     </Card>
 
-                  )) : (
-                    <div className="col-span-full text-center text-muted-foreground py-10">
-                        No tenants found.
-                    </div>
-                  )}
+                  ))}
                 </div>
+            ) : (
+                <Card>
+                    <Table>
+                        <TableBody>
+                            {filteredTenants.map(tenant => (
+                                <TableRow key={tenant.id}>
+                                    <TableCell className="p-2">
+                                        <Avatar className="h-10 w-10">
+                                            <AvatarImage src={tenant.avatar} />
+                                            <AvatarFallback>{tenant.name.charAt(0)}</AvatarFallback>
+                                        </Avatar>
+                                    </TableCell>
+                                    <TableCell>
+                                        <div className="font-medium">{tenant.name}</div>
+                                        <div className="text-xs text-muted-foreground">{tenant.email}</div>
+                                    </TableCell>
+                                    <TableCell className="hidden md:table-cell">
+                                        <div className="font-medium">{tenant.property}</div>
+                                        <div className="text-xs text-muted-foreground">{formatCurrency(tenant.rent)}</div>
+                                    </TableCell>
+                                     <TableCell className="hidden sm:table-cell">
+                                        <Badge variant="secondary" className={getStatusBadge(tenant.status)}>{tenant.status}</Badge>
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+                                                    <MoreHorizontal className="h-4 w-4" />
+                                                    <span className="sr-only">More options</span>
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuItem onClick={() => handleViewDetails(tenant)}><FileText className="mr-2 h-4 w-4" />View Details</DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => openWhatsApp(tenant)}><MessageSquare className="mr-2 h-4 w-4" />WhatsApp</DropdownMenuItem>
+                                                {isAdmin && <>
+                                                    <DropdownMenuSeparator />
+                                                    <DropdownMenuItem onClick={(e) => handleEdit(tenant, e)}>Edit</DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={(e) => handleDelete(tenant.id, e)} className="text-destructive">Delete</DropdownMenuItem>
+                                                </>}
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </Card>
             )}
         </CardContent>
       </Card>
