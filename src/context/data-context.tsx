@@ -79,7 +79,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
             const twoYearsAgo = format(subYears(new Date(), 2), 'yyyy-MM-dd');
 
             const [tenantsRes, expensesRes, rentDataRes, propertySettingsRes, depositsRes, zakatRes, noticesRes, workDetailsRes, zakatBankDetailsRes] = await Promise.all([
-                supabase.from('tenants').select('id, name, email, phone, whatsapp_number, property, rent, join_date, notes, status, avatar, type, documents, father_name, address, date_of_birth, nid_number, advance_deposit, created_at').is('deleted_at', null).gte('created_at', twoYearsAgo).order('name', { ascending: true }),
+                supabase.from('tenants').select('id, name, email, phone, property, rent, join_date, notes, status, avatar, type, documents, father_name, address, date_of_birth, nid_number, advance_deposit, created_at').is('deleted_at', null).gte('created_at', twoYearsAgo).order('name', { ascending: true }),
                 supabase.from('expenses').select('id, date, category, amount, description, status').is('deleted_at', null).gte('date', twoYearsAgo).order('date', { ascending: false }),
                 supabase.from('rent_entries').select('id, tenant_id, name, property, rent, due_date, status, avatar, year, month, payment_date, collected_by').is('deleted_at', null).gte('due_date', twoYearsAgo).order('due_date', { ascending: false }),
                 supabase.from('property_settings').select('*').eq('id', 1).maybeSingle(),
@@ -216,7 +216,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
         if (cleanTenantData.father_name === '') delete (cleanTenantData as any).father_name;
         if (cleanTenantData.address === '') delete (cleanTenantData as any).address;
         if (cleanTenantData.nid_number === '') delete (cleanTenantData as any).nid_number;
-        if (cleanTenantData.whatsapp_number === '') delete (cleanTenantData as any).whatsapp_number;
 
         const { data: newTenant, error } = await supabase.from('tenants').insert([cleanTenantData]).select().single();
         if (error || !newTenant) {
@@ -267,7 +266,6 @@ export function DataProvider({ children }: { children: ReactNode }) {
         if (cleanTenantData.father_name === '') delete (cleanTenantData as any).father_name;
         if (cleanTenantData.address === '') delete (cleanTenantData as any).address;
         if (cleanTenantData.nid_number === '') delete (cleanTenantData as any).nid_number;
-        if (cleanTenantData.whatsapp_number === '') delete (cleanTenantData as any).whatsapp_number;
 
         const { error } = await supabase.from('tenants').update(cleanTenantData).eq('id', id);
         if (error || !id) {

@@ -197,7 +197,6 @@ export function ContactsTab() {
       name: formData.get('name') as string,
       email: formData.get('email') as string,
       phone: formData.get('phone') as string,
-      whatsapp_number: formData.get('whatsapp_number') as string,
       property: propertyValue,
       rent: Number(formData.get('rent')),
       join_date: formData.get('join_date') as string,
@@ -261,7 +260,6 @@ export function ContactsTab() {
         getEl('name').value = tenant.name;
         getEl('email').value = tenant.email;
         getEl('phone').value = tenant.phone || '';
-        getEl('whatsapp_number').value = tenant.whatsapp_number || '';
         setPropertyValue(tenant.property);
         getEl('rent').value = tenant.rent.toString();
         getEl('join_date').value = tenant.join_date;
@@ -368,7 +366,7 @@ export function ContactsTab() {
 
   const openWhatsApp = (tenant: Tenant, e: React.MouseEvent) => {
     e.stopPropagation();
-    const phoneToUse = tenant.whatsapp_number || tenant.phone;
+    const phoneToUse = tenant.phone;
     if (phoneToUse) {
       const phoneNumber = phoneToUse.replace(/\D/g, ''); // Remove non-numeric characters
       const message = `Hello ${tenant.name}, regarding your tenancy at ${tenant.property}...`;
@@ -519,15 +517,9 @@ export function ContactsTab() {
                               <Label htmlFor="email">Email Address</Label>
                               <Input id="email" name="email" type="email" defaultValue={editingTenant?.email} required />
                             </div>
-                            <div className="grid grid-cols-2 gap-4">
-                              <div className="space-y-2">
-                                <Label htmlFor="phone">Phone Number</Label>
-                                <Input id="phone" name="phone" type="tel" defaultValue={editingTenant?.phone} placeholder="e.g. 880..." />
-                              </div>
-                              <div className="space-y-2">
-                                <Label htmlFor="whatsapp_number">WhatsApp Number</Label>
-                                <Input id="whatsapp_number" name="whatsapp_number" type="tel" defaultValue={editingTenant?.whatsapp_number} placeholder="e.g. 880..." />
-                              </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="phone">Phone Number</Label>
+                              <Input id="phone" name="phone" type="tel" defaultValue={editingTenant?.phone} placeholder="e.g. 880..." />
                             </div>
                              <div className="space-y-2">
                               <Label htmlFor="address">Address</Label>
