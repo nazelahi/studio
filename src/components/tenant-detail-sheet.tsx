@@ -17,11 +17,15 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import type { Tenant } from "@/types";
-import { Mail, Phone, Home, Calendar, DollarSign, FileText, Download, Printer, ImageIcon, File as FileIcon, User, MapPin, Cake, CreditCard, ShieldCheck } from "lucide-react";
+import { Mail, Phone, Home, Calendar, DollarSign, FileText, Download, Printer, ImageIcon, File as FileIcon, User, MapPin, Cake, CreditCard, ShieldCheck, ChevronLeft, ChevronRight, X } from "lucide-react";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { format, parseISO } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
+import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
+import { cn } from "@/lib/utils";
+
 
 interface TenantDetailSheetProps {
   tenant: Tenant | null;
@@ -224,14 +228,34 @@ export function TenantDetailSheet({
                 <CardHeader>
                   <CardTitle className="text-base">Documents</CardTitle>
                 </CardHeader>
-                <CardContent className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {tenant.documents.map((doc, index) => (
-                    <a key={index} href={doc} target="_blank" rel="noopener noreferrer" className="group">
-                      <div className="aspect-square bg-muted rounded-md flex items-center justify-center group-hover:bg-accent transition-colors">
-                         <img src={doc} alt={`Document ${index + 1}`} className="max-h-full max-w-full object-contain" data-ai-hint="document id" />
-                      </div>
-                    </a>
-                  ))}
+                <CardContent>
+                   <Carousel
+                      opts={{
+                        align: "start",
+                      }}
+                      className="w-full"
+                    >
+                      <CarouselContent>
+                        {tenant.documents.map((doc, index) => (
+                          <CarouselItem key={index} className="md:basis-1/2 lg:basis-1/3">
+                            <div className="p-1">
+                               <Dialog>
+                                    <DialogTrigger asChild>
+                                      <div className="group aspect-video bg-muted rounded-md flex items-center justify-center overflow-hidden cursor-pointer">
+                                         <img src={doc} alt={`Document ${index + 1}`} className="w-full h-full object-cover transition-transform group-hover:scale-105" data-ai-hint="document id" />
+                                      </div>
+                                    </DialogTrigger>
+                                    <DialogContent className="max-w-4xl p-0 border-0 bg-transparent shadow-none">
+                                        <img src={doc} alt={`Document ${index + 1}`} className="w-full h-auto rounded-lg" />
+                                    </DialogContent>
+                                </Dialog>
+                            </div>
+                          </CarouselItem>
+                        ))}
+                      </CarouselContent>
+                      <CarouselPrevious />
+                      <CarouselNext />
+                    </Carousel>
                 </CardContent>
               </Card>
             )}

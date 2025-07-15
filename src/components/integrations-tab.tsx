@@ -10,17 +10,33 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuth } from "@/context/auth-context";
 import { useToast } from "@/hooks/use-toast";
-import { RefreshCw, HardDriveDownload, HardDriveUpload, Database } from "lucide-react";
+import { RefreshCw, HardDriveDownload, HardDriveUpload, Database, Trash2, LoaderCircle } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { useData } from "@/context/data-context";
 import { saveAs } from "file-saver";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
+import { clearMonthlyDataAction, clearYearlyDataAction, generateSqlBackupAction } from "@/app/actions/data";
+import { useProtection } from "@/context/protection-context";
+
+const months = [
+    "January", "February", "March", "April", "May", "June", 
+    "July", "August", "September", "October", "November", "December"
+];
 
 export function IntegrationsTab() {
   const { isAdmin } = useAuth();
   const { getAllData, restoreAllData } = useData();
   const { toast } = useToast();
+  const { withProtection } = useProtection();
   const [isProcessing, setIsProcessing] = React.useState(false);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const [isSqlPending, startSqlTransition] = React.useTransition();
+  const [isClearPending, startClearTransition] = React.useTransition();
+
+  const currentYear = new Date().getFullYear();
+  const [clearYear, setClearYear] = React.useState(currentYear.toString());
+  const [clearMonth, setClearMonth] = React.useState<string | undefined>(undefined);
+  const years = Array.from({ length: 5 }, (_, i) => (currentYear - i).toString());
 
   const handleBackup = () => {
     setIsProcessing(true);
@@ -47,6 +63,24 @@ export function IntegrationsTab() {
       }
     }, 1000);
   };
+
+  const handleSqlBackup = (e: React.MouseEvent) => {
+    withProtection(() => {
+        startSqlTransition(async () => {
+            toast({ title: "Generating SQL backup...", description: "This may take a few moments." });
+            const result = await generateSqlBackupAction();
+            if (result.error) {
+                toast({ title: "SQL Backup Failed", description: result.error, variant: "destructive" });
+            } else if (result.success && result.data) {
+                const blob = new Blob([result.data], { type: "application/sql;charset=utf-8" });
+                const date = new Date().toISOString().split('T')[0];
+                saveAs(blob, `rentflow_sql_backup_${date}.sql`);
+                toast({ title: "SQL Backup Complete", description: "Your data has been downloaded as a .sql file." });
+            }
+        });
+    }, e);
+  };
+
 
   const handleRestoreClick = () => {
     fileInputRef.current?.click();
@@ -86,6 +120,31 @@ export function IntegrationsTab() {
     reader.readAsText(file);
   };
 
+  const handleClearData = (e: React.MouseEvent) => {
+    withProtection(() => {
+        startClearTransition(async () => {
+            const formData = new FormData();
+            formData.set('year', clearYear);
+
+            if (clearMonth) { // Clear monthly data
+                formData.set('month', clearMonth);
+                const result = await clearMonthlyDataAction(formData);
+                if (result.error) {
+                    toast({ title: 'Error Clearing Data', description: result.error, variant: 'destructive' });
+                } else {
+                    toast({ title: 'Data Cleared', description: result.message, variant: 'destructive' });
+                }
+            } else { // Clear yearly data
+                const result = await clearYearlyDataAction(formData);
+                if (result.error) {
+                    toast({ title: 'Error Clearing Data', description: result.error, variant: 'destructive' });
+                } else {
+                    toast({ title: 'Data Cleared', description: result.message, variant: 'destructive' });
+                }
+            }
+        });
+    }, e)
+  }
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
@@ -93,7 +152,7 @@ export function IntegrationsTab() {
         <CardHeader>
           <CardTitle>WhatsApp Automation</CardTitle>
           <CardDescription>
-            Configure automatic rent reminders via WhatsApp.
+            Configure automatic rent reminders via WhatsApp. (UI Only)
           </CardDescription>
         </CardHeader>
         <fieldset disabled={!isAdmin} className="group">
@@ -142,65 +201,135 @@ export function IntegrationsTab() {
         </fieldset>
       </Card>
 
-      <Card>
-        <CardHeader>
-            <div className="flex items-center gap-3">
-                <Database className="h-8 w-8 text-primary" />
-                <div>
-                    <CardTitle>File Backup & Restore</CardTitle>
-                    <CardDescription>
-                        Save a backup of all data to your computer, or restore it from a file.
-                    </CardDescription>
-                </div>
-            </div>
-        </CardHeader>
-        <fieldset disabled={!isAdmin} className="group">
-            <CardContent className="space-y-4 group-disabled:opacity-50">
-                 <div className="space-y-4">
-                    <div className="p-3 bg-secondary rounded-md text-sm">
-                        <p className="font-medium text-secondary-foreground">Status: <span className="text-primary font-bold">Ready</span></p>
-                        <p className="text-muted-foreground">This will save a JSON file to your computer.</p>
+      <div className="space-y-6">
+        <Card>
+            <CardHeader>
+                <div className="flex items-center gap-3">
+                    <Database className="h-8 w-8 text-primary" />
+                    <div>
+                        <CardTitle>File Backup & Restore</CardTitle>
+                        <CardDescription>
+                            Save a backup of all data to your computer, or restore it from a file.
+                        </CardDescription>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                        <Button onClick={handleBackup} disabled={isProcessing} className="w-full">
-                            {isProcessing ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <HardDriveDownload className="mr-2 h-4 w-4"/>}
-                            {isProcessing ? "Processing..." : "Backup to File"}
+                </div>
+            </CardHeader>
+            <fieldset disabled={!isAdmin} className="group">
+                <CardContent className="space-y-4 group-disabled:opacity-50">
+                     <div className="space-y-4">
+                        <div className="p-3 bg-secondary rounded-md text-sm">
+                            <p className="font-medium text-secondary-foreground">Status: <span className="text-primary font-bold">Ready</span></p>
+                            <p className="text-muted-foreground">Save your data to a JSON or SQL file.</p>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            <Button onClick={handleBackup} disabled={isProcessing} className="w-full">
+                                {isProcessing ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <HardDriveDownload className="mr-2 h-4 w-4"/>}
+                                {isProcessing ? "Processing..." : "JSON Backup"}
+                            </Button>
+                             <Button onClick={handleSqlBackup} disabled={isSqlPending} className="w-full">
+                                {isSqlPending ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <HardDriveDownload className="mr-2 h-4 w-4"/>}
+                                SQL Backup
+                            </Button>
+                        </div>
+                        <div className="grid grid-cols-1">
+                             <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="outline" disabled={isProcessing} className="w-full">
+                                    <HardDriveUpload className="mr-2 h-4 w-4" />
+                                    Restore from JSON
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      This action cannot be undone. Restoring from a file will overwrite all current tenant and financial data with the data from the backup.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={handleRestoreClick} className="bg-destructive hover:bg-destructive/90">Choose File & Restore</AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                        </div>
+                         <input
+                            type="file"
+                            ref={fileInputRef}
+                            className="hidden"
+                            accept="application/json"
+                            onChange={handleFileChange}
+                         />
+                    </div>
+                </CardContent>
+                <CardFooter className="text-xs text-muted-foreground">
+                    This feature lets you save a complete snapshot of your data. Keep your backup file in a safe place.
+                </CardFooter>
+            </fieldset>
+          </Card>
+
+          <Card>
+             <CardHeader>
+                <div className="flex items-center gap-3">
+                    <Trash2 className="h-8 w-8 text-destructive" />
+                    <div>
+                        <CardTitle>Clear Data</CardTitle>
+                        <CardDescription>
+                            Permanently delete rent and expense data for a specific period.
+                        </CardDescription>
+                    </div>
+                </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                 <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <Label htmlFor="clear-year">Year</Label>
+                        <Select value={clearYear} onValueChange={setClearYear}>
+                            <SelectTrigger id="clear-year"><SelectValue /></SelectTrigger>
+                            <SelectContent>{years.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}</SelectContent>
+                        </Select>
+                    </div>
+                    <div>
+                        <Label htmlFor="clear-month">Month (Optional)</Label>
+                        <Select value={clearMonth} onValueChange={(val) => setClearMonth(val === 'all' ? undefined : val)}>
+                            <SelectTrigger id="clear-month"><SelectValue placeholder="All Months" /></SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Months (Entire Year)</SelectItem>
+                                {months.map((m, i) => <SelectItem key={i} value={i.toString()}>{m}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                 </div>
+                 <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <Button variant="destructive" className="w-full" disabled={isClearPending}>
+                            {isClearPending ? <LoaderCircle className="mr-2 animate-spin"/> : <Trash2 className="mr-2"/>}
+                            Clear Data
                         </Button>
-                         <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button variant="outline" disabled={isProcessing} className="w-full">
-                                <HardDriveUpload className="mr-2 h-4 w-4" />
-                                Restore from File
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  This action cannot be undone. Restoring from a file will overwrite all current tenant and financial data with the data from the backup.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={handleRestoreClick} className="bg-destructive hover:bg-destructive/90">Choose File & Restore</AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                    </div>
-                     <input
-                        type="file"
-                        ref={fileInputRef}
-                        className="hidden"
-                        accept="application/json"
-                        onChange={handleFileChange}
-                     />
-                </div>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                This will permanently delete all rent and expense records for <span className="font-bold text-destructive">{clearMonth ? `${months[parseInt(clearMonth)]} ${clearYear}` : `the entire year ${clearYear}`}</span>. 
+                                This action cannot be undone.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                         <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleClearData} disabled={isClearPending}>
+                               {isClearPending && <LoaderCircle className="mr-2 animate-spin"/>}
+                                Yes, Clear Data
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                 </AlertDialog>
             </CardContent>
             <CardFooter className="text-xs text-muted-foreground">
-                This feature lets you save a complete snapshot of your data. Keep your backup file in a safe place.
+                Use with caution. Deleting data is permanent and cannot be recovered without a backup file.
             </CardFooter>
-        </fieldset>
-      </Card>
+          </Card>
+      </div>
     </div>
   );
 }

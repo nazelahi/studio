@@ -3,7 +3,7 @@
 "use client"
 
 import * as React from "react"
-import { MoreHorizontal, PlusCircle, Image as ImageIcon, Mail, Phone, Home, ChevronDown, Copy, X, Search, FileText, Check, UserPlus, Calendar, Briefcase, Upload, File, Trash2, LoaderCircle, ScanLine } from "lucide-react"
+import { MoreHorizontal, PlusCircle, Image as ImageIcon, Mail, Phone, Home, ChevronDown, Copy, X, Search, FileText, Check, UserPlus, Calendar, Briefcase, Upload, File, Trash2, LoaderCircle, ScanLine, Wallet, MessageSquare } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog"
@@ -26,6 +26,12 @@ import { Badge } from "./ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
 import { useProtection } from "@/context/protection-context"
 import { extractTenantInfo } from "@/ai/flows/extract-tenant-info-flow"
+import { cn } from "@/lib/utils"
+
+const formatCurrency = (amount?: number) => {
+  if (amount === undefined || amount === null) return '-';
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'BDT' }).format(amount).replace('BDT', '৳');
+};
 
 export function ContactsTab() {
   const { tenants, addTenant, updateTenant, deleteTenant, loading } = useData();
@@ -245,11 +251,11 @@ export function ContactsTab() {
       case 'Paid':
         return 'bg-success text-success-foreground hover:bg-success/80';
       case 'Active':
-        return 'bg-warning text-warning-foreground hover:bg-warning/80';
+        return 'bg-primary text-primary-foreground hover:bg-primary/80';
       case 'Overdue':
         return 'bg-destructive text-destructive-foreground hover:bg-destructive/80';
       default:
-        return '';
+        return 'bg-secondary text-secondary-foreground';
     }
   };
   
@@ -257,18 +263,32 @@ export function ContactsTab() {
     <Card className="flex flex-col overflow-hidden">
         <Skeleton className="h-40 w-full bg-muted" />
         <CardContent className="p-4 space-y-3">
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-3/4" />
+            <Skeleton className="h-4 w-1/2" />
             <Skeleton className="h-4 w-full" />
         </CardContent>
     </Card>
   );
 
+  const openWhatsApp = (tenant: Tenant) => {
+    if (tenant.phone) {
+      const phoneNumber = tenant.phone.replace(/\D/g, ''); // Remove non-numeric characters
+      const message = `Hello ${tenant.name}, regarding your tenancy at ${tenant.property}...`;
+      const url = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+      window.open(url, '_blank', 'noopener,noreferrer');
+    } else {
+      toast({
+        title: "No Phone Number",
+        description: "This tenant does not have a phone number saved.",
+        variant: "destructive"
+      })
+    }
+  };
+
 
   return (
     <>
-      <Card className="mt-4 border-0 shadow-none">
+      <Card className="mt-4 border-0 shadow-none bg-transparent">
         <CardHeader>
           <CardTitle>Tenants</CardTitle>
           <CardDescription>
@@ -393,7 +413,7 @@ export function ContactsTab() {
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="phone">Phone Number</Label>
-                        <Input id="phone" name="phone" type="tel" defaultValue={editingTenant?.phone} />
+                        <Input id="phone" name="phone" type="tel" defaultValue={editingTenant?.phone} placeholder="Include country code, e.g. 880..." />
                       </div>
                       <div className="space-y-2">
                         <Label htmlFor="date_of_birth">Date of Birth</Label>
@@ -517,70 +537,57 @@ export function ContactsTab() {
                     {[...Array(4)].map((_, i) => <TenantCardSkeleton key={i} />)}
                 </div>
             ) : (
-                 <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                 <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {filteredTenants.length > 0 ? filteredTenants.map((tenant) => (
-                    <Card key={tenant.id} className="flex flex-col overflow-hidden shadow-md transition-shadow hover:shadow-lg">
-                        <div className="relative bg-muted">
-                            <img src={tenant.avatar} alt={tenant.name} className="w-full h-40 object-contain" data-ai-hint="person avatar" />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                            <div className="absolute bottom-0 left-0 p-4">
-                                <h3 className="font-bold text-lg text-white" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.7)' }}>{tenant.name}</h3>
-                                <div className="flex items-center gap-2">
-                                   <Home className="h-4 w-4 text-white/90" />
-                                   <p className="text-sm text-white/90" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.5)' }}>{tenant.property}</p>
+                     <Card key={tenant.id} className="overflow-hidden shadow-md transition-shadow hover:shadow-lg w-full">
+                        <div className="flex items-start gap-4 p-4">
+                            <Avatar className="h-16 w-16 border">
+                                <AvatarImage src={tenant.avatar} alt={tenant.name} data-ai-hint="person avatar" />
+                                <AvatarFallback>{tenant.name.split(' ').map(n => n[0]).join('')}</AvatarFallback>
+                            </Avatar>
+                            <div className="flex-1">
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <h3 className="font-bold text-lg text-primary">{tenant.name}</h3>
+                                        <p className="text-sm text-muted-foreground">{tenant.type || 'Tenant'}</p>
+                                    </div>
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+                                                <MoreHorizontal className="h-4 w-4" />
+                                                <span className="sr-only">More options</span>
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            <DropdownMenuItem onClick={() => handleViewDetails(tenant)}><FileText className="mr-2 h-4 w-4" />View Details</DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => openWhatsApp(tenant)}><MessageSquare className="mr-2 h-4 w-4" />WhatsApp</DropdownMenuItem>
+                                            {isAdmin && <>
+                                                <DropdownMenuSeparator />
+                                                <DropdownMenuItem onClick={(e) => handleEdit(tenant, e)}>Edit</DropdownMenuItem>
+                                                <DropdownMenuItem onClick={(e) => handleDelete(tenant.id, e)} className="text-destructive">Delete</DropdownMenuItem>
+                                            </>}
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
                                 </div>
-                            </div>
-                             <div className="absolute top-2 right-2">
-                                <DropdownMenu>
-                                  <DropdownMenuTrigger asChild>
-                                      <Button variant="secondary" size="icon" className="h-8 w-8 rounded-full">
-                                          <MoreHorizontal className="h-4 w-4" />
-                                          <span className="sr-only">More options</span>
-                                      </Button>
-                                  </DropdownMenuTrigger>
-                                  <DropdownMenuContent align="end">
-                                    <DropdownMenuItem onClick={() => handleViewDetails(tenant)}>
-                                      <FileText className="mr-2 h-4 w-4" />
-                                      View Details
-                                    </DropdownMenuItem>
-                                    {isAdmin && <>
-                                      <DropdownMenuSeparator />
-                                      <DropdownMenuItem onClick={(e) => handleEdit(tenant, e)}>Edit</DropdownMenuItem>
-                                      <DropdownMenuItem onClick={(e) => handleDelete(tenant.id, e)} className="text-destructive">
-                                          Delete
-                                      </DropdownMenuItem>
-                                    </>}
-                                  </DropdownMenuContent>
-                                </DropdownMenu>
+                                <Badge variant="secondary" className={cn("mt-2", getStatusBadge(tenant.status))}>{tenant.status}</Badge>
                             </div>
                         </div>
-
-                        <CardContent className="p-4 flex-grow flex flex-col">
-                            <div className="text-sm space-y-3 flex-grow">
-                                <div className="flex items-center gap-3">
-                                    <Mail className="h-4 w-4 text-muted-foreground" />
-                                    <a href={`mailto:${tenant.email}`} className="truncate text-primary hover:underline">{tenant.email}</a>
-                                </div>
-                                <div className="flex items-center gap-3">
-                                    <Phone className="h-4 w-4 text-muted-foreground"/>
-                                    <a href={`tel:${tenant.phone}`} className="text-primary hover:underline">{tenant.phone || "N/A"}</a>
-                                </div>
-                                {tenant.type && (
-                                    <div className="flex items-center gap-3">
-                                        <Briefcase className="h-4 w-4 text-muted-foreground"/>
-                                        <span>{tenant.type}</span>
-                                    </div>
-                                )}
-                                <div className="flex items-center gap-3">
-                                    <Calendar className="h-4 w-4 text-muted-foreground"/>
-                                    <span>Join Date: {format(parseISO(tenant.join_date), "MMM dd, yyyy")}</span>
-                                </div>
+                        <div className="border-t px-4 py-3 space-y-3 text-sm">
+                            <div className="flex items-center gap-3">
+                                <Home className="h-4 w-4 text-muted-foreground" />
+                                <span className="font-medium">{tenant.property}</span>
                             </div>
-                            <div className="mt-4 pt-4 border-t">
-                                <Badge className={`${getStatusBadge(tenant.status)} w-full justify-center`}>{tenant.status}</Badge>
+                            <div className="flex items-center gap-3">
+                                <Wallet className="h-4 w-4 text-muted-foreground" />
+                                <span className="font-medium">{formatCurrency(tenant.rent)} <span className="text-muted-foreground">/ month</span></span>
                             </div>
-                        </CardContent>
+                            <div className="flex items-center gap-3">
+                                <Phone className="h-4 w-4 text-muted-foreground" />
+                                <a href={`tel:${tenant.phone}`} className="text-primary hover:underline">{tenant.phone || "N/A"}</a>
+                            </div>
+                        </div>
                     </Card>
+
                   )) : (
                     <div className="col-span-full text-center text-muted-foreground py-10">
                         No tenants found.
