@@ -44,7 +44,7 @@ export async function clearMonthlyDataAction(formData: FormData) {
     
     // Clear expenses for the month
      const startDate = new Date(year, month, 1).toISOString();
-     const endDate = new Date(year, month + 1, 1).toISOString();
+     const endDate = new Date(year, month + 1, 0).toISOString(); // end of the month
 
     const { error: expenseError } = await supabaseAdmin
         .from('expenses')
@@ -100,6 +100,70 @@ export async function clearYearlyDataAction(formData: FormData) {
     return { success: true, message: `All data for the year ${year} has been cleared.` };
 }
 
+
+export async function clearTenantDataAction(formData: FormData) {
+    const supabaseAdmin = getSupabaseAdmin();
+    const tenantId = formData.get('tenantId') as string;
+
+    if (!tenantId) {
+        return { error: 'Invalid tenant ID provided.' };
+    }
+    
+    // Delete rent entries for the tenant
+    const { error: rentError } = await supabaseAdmin
+        .from('rent_entries')
+        .delete()
+        .eq('tenant_id', tenantId);
+
+    if (rentError) {
+        return { error: `Failed to clear rent entries for tenant: ${rentError.message}` };
+    }
+    
+    // Delete the tenant
+    const { error: tenantError } = await supabaseAdmin
+        .from('tenants')
+        .delete()
+        .eq('id', tenantId);
+
+    if (tenantError) {
+        return { error: `Failed to delete tenant: ${tenantError.message}` };
+    }
+
+    revalidatePath('/');
+    return { success: true, message: `All data for the selected tenant has been cleared.` };
+}
+
+export async function clearAllDataAction() {
+    const supabaseAdmin = getSupabaseAdmin();
+    // A list of all transactional data tables to clear.
+    // We intentionally leave out 'property_settings' and 'zakat_bank_details' as they are configuration.
+    const tablesToClear = [
+        'rent_entries',
+        'expenses',
+        'tenants',
+        'deposits',
+        'notices',
+        'work_details',
+        'zakat_transactions'
+    ];
+
+    for (const table of tablesToClear) {
+        const { error } = await supabaseAdmin
+            .from(table)
+            .delete()
+            .neq('id', '00000000-0000-0000-0000-000000000000'); // A trick to delete all rows
+
+        if (error) {
+            console.error(`Error clearing table ${table}:`, error);
+            return { error: `Failed to clear table ${table}: ${error.message}` };
+        }
+    }
+
+    revalidatePath('/');
+    return { success: true, message: 'All transactional application data has been cleared.' };
+}
+
+
 export async function generateSqlBackupAction() {
     const supabaseAdmin = getSupabaseAdmin();
     const tables = ['tenants', 'expenses', 'rent_entries', 'deposits', 'notices', 'work_details', 'zakat_transactions', 'zakat_bank_details', 'property_settings'];
@@ -119,7 +183,7 @@ export async function generateSqlBackupAction() {
 
             if (data && data.length > 0) {
                 sqlString += `\n-- Data for table: ${table}\n`;
-                const columns = Object.keys(data[0]).join(', ');
+                const columns = Object.keys(data[0]).map(col => `"${col}"`).join(', ');
 
                 data.forEach(row => {
                     const values = Object.values(row).map(value => {
@@ -131,7 +195,7 @@ export async function generateSqlBackupAction() {
                         if (typeof value === 'object') return `'${JSON.stringify(value).replace(/'/g, "''")}'::jsonb`;
                         return `'${String(value).replace(/'/g, "''")}'`;
                     }).join(', ');
-                    sqlString += `INSERT INTO ${table} (${columns}) VALUES (${values});\n`;
+                    sqlString += `INSERT INTO public.${table} (${columns}) VALUES (${values});\n`;
                 });
             }
         }

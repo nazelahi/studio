@@ -11,7 +11,7 @@ import { saveAs } from "file-saver"
 import { useToast } from "@/hooks/use-toast"
 import { useProtection } from "@/context/protection-context"
 
-import { clearMonthlyDataAction, clearYearlyDataAction, generateSqlBackupAction } from "@/app/actions/data"
+import { clearMonthlyDataAction, clearYearlyDataAction, generateSqlBackupAction, clearAllDataAction, clearTenantDataAction } from "@/app/actions/data"
 import { cn } from "@/lib/utils"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
@@ -23,7 +23,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Label } from "@/components/ui/label"
-import { Building, KeyRound, Palette, Tag, Database, RefreshCw, HardDriveDownload, HardDriveUpload, Trash2, User, LogOut, MapPin, Menu, Settings, LoaderCircle, LogIn, UserCircle, Share2 } from "lucide-react"
+import { Building, KeyRound, Palette, Tag, Database, RefreshCw, HardDriveDownload, HardDriveUpload, Trash2, User, LogOut, MapPin, Menu, Settings, LoaderCircle, LogIn, UserCircle, Share2, AlertTriangle } from "lucide-react"
 
 const months = [
     "January", "February", "March", "April", "May", "June", 
@@ -47,7 +47,7 @@ export default function DataManagementPage() {
     const router = useRouter();
     const { isAdmin, user, signOut } = useAuth();
     const { settings } = useSettings();
-    const { getAllData, restoreAllData } = useData();
+    const { tenants, getAllData, restoreAllData } = useData();
     const { toast } = useToast();
     const { withProtection } = useProtection();
     
@@ -59,6 +59,7 @@ export default function DataManagementPage() {
     const currentYear = new Date().getFullYear();
     const [clearYear, setClearYear] = React.useState(currentYear.toString());
     const [clearMonth, setClearMonth] = React.useState<string | undefined>(undefined);
+    const [clearTenantId, setClearTenantId] = React.useState<string | undefined>(undefined);
     const years = Array.from({ length: 5 }, (_, i) => (currentYear - i).toString());
 
     const handleBackup = () => {
@@ -141,7 +142,7 @@ export default function DataManagementPage() {
         reader.readAsText(file);
     };
 
-    const handleClearData = (e: React.MouseEvent) => {
+    const handleClearPeriodData = (e: React.MouseEvent) => {
         withProtection(() => {
             startClearTransition(async () => {
                 const formData = new FormData();
@@ -165,6 +166,39 @@ export default function DataManagementPage() {
                 }
             });
         }, e)
+    }
+    
+    const handleClearAllData = (e: React.MouseEvent) => {
+        withProtection(() => {
+            startClearTransition(async () => {
+                const result = await clearAllDataAction();
+                if (result.error) {
+                    toast({ title: 'Error Clearing Data', description: result.error, variant: 'destructive' });
+                } else {
+                    toast({ title: 'All Data Cleared', description: result.message, variant: 'destructive' });
+                }
+            });
+        }, e);
+    }
+
+    const handleClearTenantData = (e: React.MouseEvent) => {
+        if (!clearTenantId) {
+            toast({ title: "No Tenant Selected", description: "Please select a tenant to clear their data.", variant: "destructive" });
+            return;
+        }
+        withProtection(() => {
+            startClearTransition(async () => {
+                const formData = new FormData();
+                formData.set('tenantId', clearTenantId);
+                const result = await clearTenantDataAction(formData);
+                 if (result.error) {
+                    toast({ title: 'Error Clearing Tenant Data', description: result.error, variant: 'destructive' });
+                } else {
+                    toast({ title: 'Tenant Data Cleared', description: result.message, variant: 'destructive' });
+                    setClearTenantId(undefined);
+                }
+            });
+        }, e);
     }
 
     const handleSignOut = async () => {
@@ -309,68 +343,68 @@ export default function DataManagementPage() {
                     {navigationLinks}
                 </nav>
                 <div className="grid gap-6">
-                <Card>
-                    <CardHeader>
-                        <div className="flex items-center gap-3">
-                            <Database className="h-8 w-8 text-primary" />
-                            <div>
-                                <CardTitle>File Backup & Restore</CardTitle>
-                                <CardDescription>
-                                    Save a backup of all data to your computer, or restore it from a file.
-                                </CardDescription>
+                    <Card>
+                        <CardHeader>
+                            <div className="flex items-center gap-3">
+                                <Database className="h-8 w-8 text-primary" />
+                                <div>
+                                    <CardTitle>File Backup & Restore</CardTitle>
+                                    <CardDescription>
+                                        Save a backup of all data to your computer, or restore it from a file.
+                                    </CardDescription>
+                                </div>
                             </div>
-                        </div>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="space-y-4">
-                            <div className="p-3 bg-secondary rounded-md text-sm">
-                                <p className="font-medium text-secondary-foreground">Status: <span className="text-primary font-bold">Ready</span></p>
-                                <p className="text-muted-foreground">Save your data to a JSON or SQL file.</p>
-                            </div>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                <Button type="button" onClick={handleBackup} disabled={isProcessing} className="w-full">
-                                    {isProcessing ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <HardDriveDownload className="mr-2 h-4 w-4"/>}
-                                    {isProcessing ? "Processing..." : "JSON Backup"}
-                                </Button>
-                                <Button type="button" onClick={handleSqlBackup} disabled={isSqlPending} className="w-full">
-                                    {isSqlPending ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <HardDriveDownload className="mr-2 h-4 w-4"/>}
-                                    SQL Backup
-                                </Button>
-                            </div>
-                            <div className="grid grid-cols-1">
-                                <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                    <Button type="button" variant="outline" disabled={isProcessing} className="w-full">
-                                        <HardDriveUpload className="mr-2 h-4 w-4" />
-                                        Restore from JSON
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="space-y-4">
+                                <div className="p-3 bg-secondary rounded-md text-sm">
+                                    <p className="font-medium text-secondary-foreground">Status: <span className="text-primary font-bold">Ready</span></p>
+                                    <p className="text-muted-foreground">Save your data to a JSON or SQL file.</p>
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    <Button type="button" onClick={handleBackup} disabled={isProcessing} className="w-full">
+                                        {isProcessing ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <HardDriveDownload className="mr-2 h-4 w-4"/>}
+                                        {isProcessing ? "Processing..." : "JSON Backup"}
                                     </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                        This action cannot be undone. Restoring from a file will overwrite all current tenant and financial data with the data from the backup.
-                                        </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                        <AlertDialogAction onClick={handleRestoreClick} className="bg-destructive hover:bg-destructive/90">Choose File & Restore</AlertDialogAction>
-                                    </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                </AlertDialog>
+                                    <Button type="button" onClick={handleSqlBackup} disabled={isSqlPending} className="w-full">
+                                        {isSqlPending ? <RefreshCw className="mr-2 h-4 w-4 animate-spin" /> : <HardDriveDownload className="mr-2 h-4 w-4"/>}
+                                        SQL Backup
+                                    </Button>
+                                </div>
+                                <div className="grid grid-cols-1">
+                                    <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                        <Button type="button" variant="outline" disabled={isProcessing} className="w-full">
+                                            <HardDriveUpload className="mr-2 h-4 w-4" />
+                                            Restore from JSON
+                                        </Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                            This action cannot be undone. Restoring from a file will overwrite all current tenant and financial data with the data from the backup.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                            <AlertDialogAction onClick={handleRestoreClick} className="bg-destructive hover:bg-destructive/90">Choose File & Restore</AlertDialogAction>
+                                        </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
+                                </div>
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    className="hidden"
+                                    accept="application/json"
+                                    onChange={handleFileChange}
+                                />
                             </div>
-                            <input
-                                type="file"
-                                ref={fileInputRef}
-                                className="hidden"
-                                accept="application/json"
-                                onChange={handleFileChange}
-                            />
-                        </div>
-                    </CardContent>
-                    <CardFooter className="text-xs text-muted-foreground">
-                        This feature lets you save a complete snapshot of your data. Keep your backup file in a safe place.
-                    </CardFooter>
+                        </CardContent>
+                        <CardFooter className="text-xs text-muted-foreground">
+                            This feature lets you save a complete snapshot of your data. Keep your backup file in a safe place.
+                        </CardFooter>
                     </Card>
 
                     <Card>
@@ -378,7 +412,7 @@ export default function DataManagementPage() {
                         <div className="flex items-center gap-3">
                             <Trash2 className="h-8 w-8 text-destructive" />
                             <div>
-                                <CardTitle>Clear Data</CardTitle>
+                                <CardTitle>Clear Periodic Data</CardTitle>
                                 <CardDescription>
                                     Permanently delete rent and expense data for a specific period.
                                 </CardDescription>
@@ -409,7 +443,7 @@ export default function DataManagementPage() {
                             <AlertDialogTrigger asChild>
                                 <Button type="button" variant="destructive" className="w-full" disabled={isClearPending}>
                                     {isClearPending ? <LoaderCircle className="mr-2 animate-spin"/> : <Trash2 className="mr-2"/>}
-                                    Clear Data
+                                    Clear Periodic Data
                                 </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
@@ -422,7 +456,7 @@ export default function DataManagementPage() {
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
                                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction onClick={handleClearData} disabled={isClearPending}>
+                                    <AlertDialogAction onClick={handleClearPeriodData} disabled={isClearPending}>
                                     {isClearPending && <LoaderCircle className="mr-2 animate-spin"/>}
                                         Yes, Clear Data
                                     </AlertDialogAction>
@@ -433,6 +467,94 @@ export default function DataManagementPage() {
                     <CardFooter className="text-xs text-muted-foreground">
                         Use with caution. Deleting data is permanent and cannot be recovered without a backup file.
                     </CardFooter>
+                    </Card>
+
+                    <Card>
+                        <CardHeader>
+                             <div className="flex items-center gap-3">
+                                <User className="h-8 w-8 text-destructive" />
+                                <div>
+                                    <CardTitle>Clear Tenant Data</CardTitle>
+                                    <CardDescription>Permanently delete a single tenant and all their associated data.</CardDescription>
+                                </div>
+                            </div>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                             <div>
+                                <Label htmlFor="clear-tenant">Select Tenant</Label>
+                                <Select value={clearTenantId} onValueChange={setClearTenantId}>
+                                    <SelectTrigger id="clear-tenant"><SelectValue placeholder="Select a tenant to delete..." /></SelectTrigger>
+                                    <SelectContent>
+                                        {tenants.map((t) => <SelectItem key={t.id} value={t.id}>{t.name} ({t.property})</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                             <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button type="button" variant="destructive" className="w-full" disabled={isClearPending || !clearTenantId}>
+                                        {isClearPending ? <LoaderCircle className="mr-2 animate-spin"/> : <Trash2 className="mr-2"/>}
+                                        Clear Tenant Data
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            This will permanently delete <span className="font-bold text-destructive">{tenants.find(t => t.id === clearTenantId)?.name || 'the selected tenant'}</span> and all their rent entries.
+                                            This action cannot be undone.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction onClick={handleClearTenantData} disabled={isClearPending}>
+                                        {isClearPending && <LoaderCircle className="mr-2 animate-spin"/>}
+                                            Yes, Clear Tenant
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="border-destructive/50 bg-destructive/5">
+                        <CardHeader>
+                             <div className="flex items-center gap-3">
+                                <AlertTriangle className="h-8 w-8 text-destructive" />
+                                <div>
+                                    <CardTitle>Clear All Application Data</CardTitle>
+                                    <CardDescription className="text-destructive/80">This is the most destructive action. It will wipe all transactional data.</CardDescription>
+                                </div>
+                            </div>
+                        </CardHeader>
+                        <CardContent>
+                             <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button type="button" variant="destructive" className="w-full" disabled={isClearPending}>
+                                        {isClearPending ? <LoaderCircle className="mr-2 animate-spin"/> : <Trash2 className="mr-2"/>}
+                                        Clear All Data
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>Are you absolutely, positively sure?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            This will <span className="font-bold text-destructive">permanently delete ALL</span> tenants, rent entries, expenses, notices, deposits, and work details.
+                                            Only your core settings will remain. This action CANNOT be undone.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction onClick={handleClearAllData} disabled={isClearPending} className="bg-destructive hover:bg-destructive/90">
+                                            {isClearPending && <LoaderCircle className="mr-2 animate-spin"/>}
+                                            Yes, Delete Everything
+                                        </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        </CardContent>
+                         <CardFooter className="text-xs text-destructive/80">
+                            There is no going back from this. Only use this if you want to completely reset your application.
+                        </CardFooter>
                     </Card>
                 </div>
             </div>
