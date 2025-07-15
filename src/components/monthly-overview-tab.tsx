@@ -1316,94 +1316,11 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                     </CardContent>
                 </Card>
                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between gap-3 p-4">
-                        <div className="flex items-center gap-3">
-                           <div className="flex-shrink-0">
-                               <Landmark className="h-6 w-6 text-primary" />
-                            </div>
-                            <h3 className="font-semibold text-primary">Bank Deposit Information</h3>
+                    <CardHeader style={{ backgroundColor: 'hsl(var(--table-header-background))', color: 'hsl(var(--table-header-foreground))' }} className="p-4 rounded-t-lg">
+                        <div className="flex items-center gap-3 text-inherit">
+                           <Landmark className="h-6 w-6" />
+                            <h3 className="font-semibold text-base">Bank Deposit Information</h3>
                         </div>
-                        {isAdmin && <Dialog open={isDepositDialogOpen} onOpenChange={handleDepositOpenChange}>
-                            <DialogTrigger asChild>
-                                <Button size="sm" variant="outline" className="h-8" disabled={!isAdmin}>
-                                    <PlusCircle className="mr-2 h-4 w-4" />
-                                    {loggedDeposit ? 'Edit' : 'Log'} Deposit
-                                </Button>
-                            </DialogTrigger>
-                            <DialogContent>
-                                <DialogHeader>
-                                    <DialogTitle>{loggedDeposit ? 'Edit Deposit' : 'Log New Deposit'}</DialogTitle>
-                                    <DialogDescription>
-                                        Confirm the amount, date, and receipt for the deposit for {month}, {year}.
-                                    </DialogDescription>
-                                </DialogHeader>
-                                <form onSubmit={handleSaveDeposit}>
-                                    <input type="hidden" name="year" value={year} />
-                                    <input type="hidden" name="month" value={monthIndex} />
-                                    {loggedDeposit && <input type="hidden" name="depositId" value={loggedDeposit.id} />}
-                                    {loggedDeposit?.receipt_url && <input type="hidden" name="receipt_url" value={loggedDeposit.receipt_url} />}
-                                    <div className="grid gap-4 py-4">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="deposit-amount">Amount to Deposit</Label>
-                                            <Input id="deposit-amount" name="amount" type="number" step="0.01" value={depositAmount} onChange={(e) => setDepositAmount(e.target.value)} required />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="deposit-date">Deposit Date</Label>
-                                            <Input id="deposit-date" name="deposit_date" type="date" defaultValue={loggedDeposit?.deposit_date || new Date().toISOString().split('T')[0]} required />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label>Bank Receipt</Label>
-                                            <div className="flex items-center gap-4">
-                                                <div className="w-24 h-24 bg-muted rounded-md flex items-center justify-center">
-                                                    {receiptPreview || loggedDeposit?.receipt_url ? (
-                                                        <img src={receiptPreview || loggedDeposit?.receipt_url} alt="Receipt Preview" className="h-full w-full object-contain rounded-md" data-ai-hint="document receipt"/>
-                                                    ) : (
-                                                        <ImageIcon className="h-10 w-10 text-muted-foreground" />
-                                                    )}
-                                                </div>
-                                                <Button type="button" variant="outline" onClick={() => receiptInputRef.current?.click()}>
-                                                    <Upload className="mr-2 h-4 w-4"/>
-                                                    Upload Image
-                                                </Button>
-                                                <Input ref={receiptInputRef} type="file" className="hidden" accept="image/*" onChange={handleReceiptFileChange} />
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <DialogFooter className="justify-between">
-                                        {loggedDeposit ? (
-                                            <AlertDialog>
-                                                <AlertDialogTrigger asChild>
-                                                    <Button type="button" variant="destructive" disabled={isUploading}>Delete</Button>
-                                                </AlertDialogTrigger>
-                                                <AlertDialogContent>
-                                                     <AlertDialogHeader>
-                                                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                                        <AlertDialogDescription>
-                                                            This will remove the deposit log and receipt for {month}, {year}. This action cannot be undone.
-                                                        </AlertDialogDescription>
-                                                    </AlertDialogHeader>
-                                                     <AlertDialogFooter>
-                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                        <form onSubmit={handleDeleteDeposit}>
-                                                            <input type="hidden" name="depositId" value={loggedDeposit.id} />
-                                                            <input type="hidden" name="receiptPath" value={loggedDeposit.receipt_url} />
-                                                            <AlertDialogAction type="submit">Delete</AlertDialogAction>
-                                                        </form>
-                                                    </AlertDialogFooter>
-                                                </AlertDialogContent>
-                                            </AlertDialog>
-                                        ) : (<div></div>)}
-                                        <div className="flex gap-2">
-                                            <DialogClose asChild><Button type="button" variant="outline" disabled={isUploading}>Cancel</Button></DialogClose>
-                                            <Button type="submit" disabled={isUploading}>
-                                               {isUploading && <RefreshCw className="mr-2 h-4 w-4 animate-spin"/>}
-                                               {isUploading ? 'Saving...' : 'Save Deposit'}
-                                            </Button>
-                                        </div>
-                                    </DialogFooter>
-                                </form>
-                            </DialogContent>
-                        </Dialog>}
                     </CardHeader>
                     <CardContent className="p-4 grid md:grid-cols-3 gap-6 items-start">
                          <div className="space-y-2 col-span-1 md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -1423,7 +1340,17 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                          </div>
                         {loggedDeposit ? (
                           <div className="space-y-2">
+                            <div className="flex items-center justify-between">
                               <p className="text-sm font-medium text-muted-foreground">Deposit Status</p>
+                              {isAdmin && <Dialog open={isDepositDialogOpen} onOpenChange={handleDepositOpenChange}>
+                                  <DialogTrigger asChild>
+                                      <Button size="sm" variant="outline" className="h-7 px-2 py-1 text-xs">
+                                          <Pencil className="mr-1 h-3 w-3" /> Edit
+                                      </Button>
+                                  </DialogTrigger>
+                                   {/* Dialog content remains unchanged */}
+                              </Dialog>}
+                            </div>
                               <div className="flex items-center gap-2 text-success font-semibold">
                                   <CheckCircle className="h-5 w-5" />
                                   <span>Deposited on {format(parseISO(loggedDeposit.deposit_date), 'dd MMM, yyyy')}</span>
@@ -1438,7 +1365,17 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                           </div>
                         ) : (
                           <div className="space-y-2">
-                             <p className="text-sm font-medium text-muted-foreground">Deposit Status</p>
+                            <div className="flex items-center justify-between">
+                                <p className="text-sm font-medium text-muted-foreground">Deposit Status</p>
+                                {isAdmin && <Dialog open={isDepositDialogOpen} onOpenChange={handleDepositOpenChange}>
+                                <DialogTrigger asChild>
+                                    <Button size="sm" variant="outline" className="h-7 px-2 py-1 text-xs">
+                                        <PlusCircle className="mr-1 h-3 w-3" /> Log Deposit
+                                    </Button>
+                                </DialogTrigger>
+                                {/* Dialog content remains unchanged */}
+                                </Dialog>}
+                            </div>
                              <div className="flex items-center gap-2 text-warning-foreground font-semibold">
                                  <AlertCircle className="h-5 w-5" />
                                  <span>Pending Deposit</span>
@@ -1447,16 +1384,90 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                         )}
                     </CardContent>
                      {loggedDeposit && (
-                        <CardFooter className="p-3 text-center bg-green-50 dark:bg-green-900/20 border-t">
-                            <p className="font-bold text-lg text-green-600 dark:text-green-400 w-full">৳{loggedDeposit.amount.toFixed(2)} Deposited</p>
+                        <CardFooter className="p-2 text-center bg-green-50 dark:bg-green-900/20 border-t">
+                            <p className="font-bold text-base text-green-600 dark:text-green-400 w-full">৳{loggedDeposit.amount.toFixed(2)} Deposited</p>
                         </CardFooter>
                      )}
                 </Card>
             </div>
-
           </div>
         </TabsContent>
       ))}
+      <Dialog open={isDepositDialogOpen} onOpenChange={handleDepositOpenChange}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>{loggedDeposit ? 'Edit Deposit' : 'Log New Deposit'}</DialogTitle>
+                <DialogDescription>
+                    Confirm the amount, date, and receipt for the deposit for {month}, {year}.
+                </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleSaveDeposit}>
+                <input type="hidden" name="year" value={year} />
+                <input type="hidden" name="month" value={monthIndex} />
+                {loggedDeposit && <input type="hidden" name="depositId" value={loggedDeposit.id} />}
+                {loggedDeposit?.receipt_url && <input type="hidden" name="receipt_url" value={loggedDeposit.receipt_url} />}
+                <div className="grid gap-4 py-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="deposit-amount">Amount to Deposit</Label>
+                        <Input id="deposit-amount" name="amount" type="number" step="0.01" value={depositAmount} onChange={(e) => setDepositAmount(e.target.value)} required />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="deposit-date">Deposit Date</Label>
+                        <Input id="deposit-date" name="deposit_date" type="date" defaultValue={loggedDeposit?.deposit_date || new Date().toISOString().split('T')[0]} required />
+                    </div>
+                    <div className="space-y-2">
+                        <Label>Bank Receipt</Label>
+                        <div className="flex items-center gap-4">
+                            <div className="w-24 h-24 bg-muted rounded-md flex items-center justify-center">
+                                {receiptPreview || loggedDeposit?.receipt_url ? (
+                                    <img src={receiptPreview || loggedDeposit?.receipt_url} alt="Receipt Preview" className="h-full w-full object-contain rounded-md" data-ai-hint="document receipt"/>
+                                ) : (
+                                    <ImageIcon className="h-10 w-10 text-muted-foreground" />
+                                )}
+                            </div>
+                            <Button type="button" variant="outline" onClick={() => receiptInputRef.current?.click()}>
+                                <Upload className="mr-2 h-4 w-4"/>
+                                Upload Image
+                            </Button>
+                            <Input ref={receiptInputRef} type="file" className="hidden" accept="image/*" onChange={handleReceiptFileChange} />
+                        </div>
+                    </div>
+                </div>
+                <DialogFooter className="justify-between">
+                    {loggedDeposit ? (
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button type="button" variant="destructive" disabled={isUploading}>Delete</Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        This will remove the deposit log and receipt for {month}, {year}. This action cannot be undone.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <form onSubmit={handleDeleteDeposit}>
+                                        <input type="hidden" name="depositId" value={loggedDeposit.id} />
+                                        <input type="hidden" name="receiptPath" value={loggedDeposit.receipt_url} />
+                                        <AlertDialogAction type="submit">Delete</AlertDialogAction>
+                                    </form>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    ) : (<div></div>)}
+                    <div className="flex gap-2">
+                        <DialogClose asChild><Button type="button" variant="outline" disabled={isUploading}>Cancel</Button></DialogClose>
+                        <Button type="submit" disabled={isUploading}>
+                            {isUploading && <RefreshCw className="mr-2 h-4 w-4 animate-spin"/>}
+                            {isUploading ? 'Saving...' : 'Save Deposit'}
+                        </Button>
+                    </div>
+                </DialogFooter>
+            </form>
+        </DialogContent>
+     </Dialog>
     </Tabs>
     {selectedTenantForSheet && (
       <TenantDetailSheet 
