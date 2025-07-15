@@ -27,6 +27,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from ".
 import { useProtection } from "@/context/protection-context"
 import { extractTenantInfo } from "@/ai/flows/extract-tenant-info-flow"
 import { cn } from "@/lib/utils"
+import { Separator } from "./ui/separator"
 
 const formatCurrency = (amount?: number) => {
   if (amount === undefined || amount === null) return '-';
@@ -314,27 +315,20 @@ export function ContactsTab() {
                       Add Tenant
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="sm:max-w-xl">
-                    <DialogHeader>
-                      <DialogTitle>{editingTenant ? 'Edit Tenant' : 'Add New Tenant'}</DialogTitle>
-                      <DialogDescription>
-                        {editingTenant ? "Update the tenant's information below." : "Fill in the form to add a new tenant."}
-                      </DialogDescription>
-                    </DialogHeader>
-                    <form ref={formRef} onSubmit={handleSaveTenant} className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-6 py-4 max-h-[70vh] overflow-y-auto pr-2">
-                      
-                      {!editingTenant && (
-                        <div className="md:col-span-2 space-y-2">
-                           <Label>Start from scratch or use an helper</Label>
-                           <div className="grid grid-cols-2 gap-2">
-                                <Button type="button" variant="outline" onClick={() => scanFileInputRef.current?.click()} disabled={isScanning}>
+                  <DialogContent className="max-w-4xl p-0">
+                    <form ref={formRef} onSubmit={handleSaveTenant}>
+                      <DialogHeader className="p-6">
+                        <DialogTitle className="text-2xl">{editingTenant ? 'Edit Tenant Profile' : 'Add New Tenant'}</DialogTitle>
+                         {!editingTenant && (
+                            <div className="flex items-center gap-2 pt-4">
+                                <Button type="button" variant="outline" size="sm" onClick={() => scanFileInputRef.current?.click()} disabled={isScanning}>
                                     {isScanning ? <LoaderCircle className="animate-spin mr-2"/> : <ScanLine className="mr-2 h-4 w-4"/>}
                                     Scan Document
                                 </Button>
                                 <input ref={scanFileInputRef} type="file" className="hidden" accept="image/*" onChange={handleScanDocument}/>
                                <Popover open={isFinderOpen} onOpenChange={setIsFinderOpen}>
                                   <PopoverTrigger asChild>
-                                    <Button variant="outline" role="combobox" aria-expanded={isFinderOpen} className="w-full justify-between">
+                                    <Button type="button" size="sm" variant="outline" role="combobox" aria-expanded={isFinderOpen} className="justify-between">
                                       <span className="flex items-center gap-2 text-muted-foreground">
                                         <UserPlus className="h-4 w-4" />
                                         Copy info...
@@ -377,147 +371,140 @@ export function ContactsTab() {
                                   </PopoverContent>
                                 </Popover>
                            </div>
-                        </div>
-                      )}
+                        )}
+                      </DialogHeader>
 
-                      <div className="md:col-span-2 flex flex-col items-center gap-3">
-                        <Avatar className="h-24 w-24 border">
-                            <AvatarImage src={previewImage ?? undefined} alt="Tenant Avatar" data-ai-hint="person avatar"/>
-                            <AvatarFallback><ImageIcon className="text-muted-foreground h-10 w-10"/></AvatarFallback>
-                        </Avatar>
-                        <Button type="button" size="sm" variant="outline" onClick={() => fileInputRef.current?.click()}>
-                            Change Photo
-                        </Button>
-                        <Input
-                            ref={fileInputRef}
-                            name="avatar"
-                            type="file"
-                            className="hidden"
-                            accept="image/*"
-                            onChange={handleImageUpload}
-                        />
-                      </div>
+                      <Separator />
 
-
-                      <div className="space-y-2">
-                        <Label htmlFor="name">Full Name</Label>
-                        <Input id="name" name="name" defaultValue={editingTenant?.name} required />
-                      </div>
-                       <div className="space-y-2">
-                        <Label htmlFor="father_name">Father's Name</Label>
-                        <Input id="father_name" name="father_name" defaultValue={editingTenant?.father_name} />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="email">Email Address</Label>
-                        <Input id="email" name="email" type="email" defaultValue={editingTenant?.email} required />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="phone">Phone Number</Label>
-                        <Input id="phone" name="phone" type="tel" defaultValue={editingTenant?.phone} placeholder="Include country code, e.g. 880..." />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="date_of_birth">Date of Birth</Label>
-                        <Input id="date_of_birth" name="date_of_birth" type="date" defaultValue={editingTenant?.date_of_birth} />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="nid_number">NID Number</Label>
-                        <Input id="nid_number" name="nid_number" defaultValue={editingTenant?.nid_number} />
-                      </div>
-                      <div className="space-y-2 md:col-span-2">
-                        <Label htmlFor="address">Address</Label>
-                        <Textarea id="address" name="address" defaultValue={editingTenant?.address} placeholder="Full address..."/>
-                      </div>
-
-                       <div className="space-y-2">
-                        <Label htmlFor="property">Apartment / Unit</Label>
-                        <Input id="property" name="property" defaultValue={editingTenant?.property} required />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="rent">Rent Amount</Label>
-                        <Input
-                          id="rent"
-                          name="rent"
-                          type="number"
-                          defaultValue={editingTenant?.rent}
-                          required
-                          className="[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="advance_deposit">Advance Deposit</Label>
-                        <Input
-                          id="advance_deposit"
-                          name="advance_deposit"
-                          type="number"
-                          defaultValue={editingTenant?.advance_deposit}
-                          className="[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-                        />
-                      </div>
-                       <div className="space-y-2">
-                        <Label htmlFor="join_date">Join Date</Label>
-                        <Input id="join_date" name="join_date" type="date" defaultValue={editingTenant?.join_date} required />
-                      </div>
-                       <div className="space-y-2">
-                        <Label htmlFor="type">Type</Label>
-                        <Input id="type" name="type" placeholder="e.g. Tenant, Electrician" defaultValue={editingTenant?.type} />
-                      </div>
-                      <div className="space-y-2 md:col-span-2">
-                          <Label htmlFor="status">Status</Label>
-                          <Select name="status" defaultValue={editingTenant?.status || 'Active'}>
-                            <SelectTrigger id="status">
-                                <SelectValue placeholder="Select status" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="Active">Active</SelectItem>
-                                <SelectItem value="Paid">Paid</SelectItem>
-                                <SelectItem value="Overdue">Overdue</SelectItem>
-                            </SelectContent>
-                           </Select>
-                      </div>
-                      <div className="space-y-2 md:col-span-2">
-                        <Label htmlFor="notes">Notes</Label>
-                        <Textarea id="notes" name="notes" defaultValue={editingTenant?.notes} placeholder="Any relevant notes about the tenant..."/>
-                      </div>
-
-                      <div className="space-y-2 md:col-span-2">
-                         <Label>Documents</Label>
-                         <div className="border border-dashed rounded-lg p-4">
-                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mb-4">
-                               {existingDocuments.map((docUrl) => (
-                                 <div key={docUrl} className="relative group">
-                                    <a href={docUrl} target="_blank" rel="noopener noreferrer">
-                                        <img src={docUrl} alt="Document" className="w-full h-20 object-cover rounded-md" data-ai-hint="document id"/>
-                                    </a>
-                                    <Button type="button" variant="destructive" size="icon" className="absolute -top-2 -right-2 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100" onClick={() => handleRemoveExistingDocument(docUrl)}>
-                                        <Trash2 className="h-4 w-4"/>
-                                    </Button>
-                                 </div>
-                               ))}
-                               {documentFiles.map((file, index) => (
-                                 <div key={index} className="relative group">
-                                    <img src={URL.createObjectURL(file)} alt={file.name} className="w-full h-20 object-cover rounded-md" data-ai-hint="document id"/>
-                                    <Button type="button" variant="destructive" size="icon" className="absolute -top-2 -right-2 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100" onClick={() => handleRemoveNewDocument(index)}>
-                                        <Trash2 className="h-4 w-4"/>
-                                    </Button>
-                                 </div>
-                               ))}
+                      <div className="p-6 max-h-[65vh] overflow-y-auto">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                          {/* Left Column */}
+                          <div className="md:col-span-1 space-y-6">
+                            <div className="flex flex-col items-center gap-3">
+                              <Avatar className="h-32 w-32 border-4 border-muted">
+                                  <AvatarImage src={previewImage ?? undefined} alt="Tenant Avatar" data-ai-hint="person avatar"/>
+                                  <AvatarFallback><ImageIcon className="text-muted-foreground h-12 w-12"/></AvatarFallback>
+                              </Avatar>
+                              <Button type="button" size="sm" variant="outline" onClick={() => fileInputRef.current?.click()}>
+                                  Change Photo
+                              </Button>
+                              <Input ref={fileInputRef} name="avatar" type="file" className="hidden" accept="image/*" onChange={handleImageUpload}/>
                             </div>
-                            <Button type="button" variant="outline" className="w-full" onClick={() => docFileInputRef.current?.click()}>
-                                <Upload className="mr-2 h-4 w-4" />
-                                Upload Documents
-                            </Button>
-                             <Input
-                                ref={docFileInputRef}
-                                type="file"
-                                className="hidden"
-                                multiple
-                                accept="image/*,.pdf"
-                                onChange={handleDocumentUpload}
-                            />
-                         </div>
-                      </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="name">Full Name</Label>
+                              <Input id="name" name="name" defaultValue={editingTenant?.name} required />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="email">Email Address</Label>
+                              <Input id="email" name="email" type="email" defaultValue={editingTenant?.email} required />
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="phone">Phone Number</Label>
+                              <Input id="phone" name="phone" type="tel" defaultValue={editingTenant?.phone} placeholder="Include country code, e.g. 880..." />
+                            </div>
+                             <div className="space-y-2">
+                              <Label htmlFor="address">Address</Label>
+                              <Textarea id="address" name="address" rows={3} defaultValue={editingTenant?.address} placeholder="Full address..."/>
+                            </div>
+                          </div>
 
-                      <DialogFooter className="md:col-span-2 mt-4">
+                          {/* Right Column */}
+                          <div className="md:col-span-2 space-y-6">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <Label htmlFor="father_name">Father's Name</Label>
+                                <Input id="father_name" name="father_name" defaultValue={editingTenant?.father_name} />
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="date_of_birth">Date of Birth</Label>
+                                <Input id="date_of_birth" name="date_of_birth" type="date" defaultValue={editingTenant?.date_of_birth} />
+                              </div>
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label htmlFor="nid_number">NID Number</Label>
+                              <Input id="nid_number" name="nid_number" defaultValue={editingTenant?.nid_number} />
+                            </div>
+                            
+                            <Separator />
+                            
+                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                               <div className="space-y-2">
+                                  <Label htmlFor="property">Apartment / Unit</Label>
+                                  <Input id="property" name="property" defaultValue={editingTenant?.property} required />
+                                </div>
+                               <div className="space-y-2">
+                                <Label htmlFor="rent">Rent Amount</Label>
+                                <Input id="rent" name="rent" type="number" defaultValue={editingTenant?.rent} required className="[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"/>
+                              </div>
+                            </div>
+                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <Label htmlFor="advance_deposit">Advance Deposit</Label>
+                                <Input id="advance_deposit" name="advance_deposit" type="number" defaultValue={editingTenant?.advance_deposit} className="[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"/>
+                              </div>
+                               <div className="space-y-2">
+                                <Label htmlFor="join_date">Join Date</Label>
+                                <Input id="join_date" name="join_date" type="date" defaultValue={editingTenant?.join_date} required />
+                              </div>
+                            </div>
+                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <Label htmlFor="type">Type</Label>
+                                <Input id="type" name="type" placeholder="e.g. Tenant, Electrician" defaultValue={editingTenant?.type} />
+                              </div>
+                              <div className="space-y-2">
+                                  <Label htmlFor="status">Status</Label>
+                                  <Select name="status" defaultValue={editingTenant?.status || 'Active'}>
+                                    <SelectTrigger id="status"><SelectValue placeholder="Select status" /></SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="Active">Active</SelectItem>
+                                        <SelectItem value="Paid">Paid</SelectItem>
+                                        <SelectItem value="Overdue">Overdue</SelectItem>
+                                    </SelectContent>
+                                   </Select>
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              <Label htmlFor="notes">Notes</Label>
+                              <Textarea id="notes" name="notes" defaultValue={editingTenant?.notes} placeholder="Any relevant notes about the tenant..."/>
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label>Documents</Label>
+                              <div className="border border-dashed rounded-lg p-4">
+                                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mb-4">
+                                    {existingDocuments.map((docUrl) => (
+                                      <div key={docUrl} className="relative group">
+                                          <a href={docUrl} target="_blank" rel="noopener noreferrer">
+                                              <img src={docUrl} alt="Document" className="w-full h-20 object-cover rounded-md" data-ai-hint="document id"/>
+                                          </a>
+                                          <Button type="button" variant="destructive" size="icon" className="absolute -top-2 -right-2 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100" onClick={() => handleRemoveExistingDocument(docUrl)}>
+                                              <Trash2 className="h-4 w-4"/>
+                                          </Button>
+                                      </div>
+                                    ))}
+                                    {documentFiles.map((file, index) => (
+                                      <div key={index} className="relative group">
+                                          <img src={URL.createObjectURL(file)} alt={file.name} className="w-full h-20 object-cover rounded-md" data-ai-hint="document id"/>
+                                          <Button type="button" variant="destructive" size="icon" className="absolute -top-2 -right-2 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100" onClick={() => handleRemoveNewDocument(index)}>
+                                              <Trash2 className="h-4 w-4"/>
+                                          </Button>
+                                      </div>
+                                    ))}
+                                  </div>
+                                  <Button type="button" variant="outline" className="w-full" onClick={() => docFileInputRef.current?.click()}>
+                                      <Upload className="mr-2 h-4 w-4" />
+                                      Upload Documents
+                                  </Button>
+                                  <Input ref={docFileInputRef} type="file" className="hidden" multiple accept="image/*,.pdf" onChange={handleDocumentUpload} />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <DialogFooter className="p-6 bg-muted/50 border-t">
                         <DialogClose asChild>
                           <Button variant="outline" disabled={isUploading}>Cancel</Button>
                         </DialogClose>
