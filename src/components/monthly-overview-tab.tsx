@@ -375,6 +375,17 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
     }
   };
 
+  const handleStatusChange = (entry: RentEntry, newStatus: RentEntry['status'], e: React.MouseEvent) => {
+    withProtection(async () => {
+        let payment_date = entry.payment_date;
+        if (newStatus === 'Paid' && !payment_date) {
+            payment_date = new Date().toISOString().split('T')[0];
+        }
+        await updateRentEntry({ ...entry, status: newStatus, payment_date }, toast);
+        toast({ title: "Status Updated", description: `${entry.name}'s status is now ${newStatus}.`});
+    }, e);
+  }
+
   // Expense Handlers
   const handleSaveExpense = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -908,10 +919,29 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                                 <TableCell className="hidden md:table-cell">{entry.collected_by || '-'}</TableCell>
                                 <TableCell className="hidden sm:table-cell">{entry.payment_date ? format(parseISO(entry.payment_date), "dd MMM yyyy") : '-'}</TableCell>
                                 <TableCell>
-                                  <Badge className={getStatusBadge(entry.status)} variant="outline">
-                                    {getStatusIcon(entry.status)}
-                                    {entry.status}
-                                  </Badge>
+                                    {isAdmin && entry.status !== 'Paid' ? (
+                                        <Select
+                                            value={entry.status}
+                                            onValueChange={(newStatus) => withProtection((e) => handleStatusChange(entry, newStatus as RentEntry['status'], e))}
+                                        >
+                                            <SelectTrigger className={cn("w-[120px] h-auto py-1 px-2 border", getStatusBadge(entry.status))}>
+                                                <div className="flex items-center">
+                                                    {getStatusIcon(entry.status)}
+                                                    <SelectValue />
+                                                </div>
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="Pending">Pending</SelectItem>
+                                                <SelectItem value="Paid">Paid</SelectItem>
+                                                <SelectItem value="Overdue">Overdue</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    ) : (
+                                        <Badge className={getStatusBadge(entry.status)} variant="outline">
+                                            {getStatusIcon(entry.status)}
+                                            {entry.status}
+                                        </Badge>
+                                    )}
                                 </TableCell>
                                 <TableCell className="hidden sm:table-cell">৳{entry.rent.toFixed(2)}</TableCell>
                                 <TableCell>
@@ -1441,6 +1471,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
 }
 
     
+
 
 
 
