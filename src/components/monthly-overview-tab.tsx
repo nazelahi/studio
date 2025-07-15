@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { DollarSign, Banknote, ArrowUpCircle, ArrowDownCircle, PlusCircle, Trash2, Pencil, CheckCircle, XCircle, AlertCircle, RefreshCw, ChevronDown, Copy, X, FileText, Upload, Building, Landmark, CalendarCheck, Edit, Eye, Image as ImageIcon, Megaphone, Download, Percent, Receipt } from "lucide-react"
+import { DollarSign, Banknote, ArrowUpCircle, ArrowDownCircle, PlusCircle, Trash2, Pencil, CheckCircle, XCircle, AlertCircle, RefreshCw, ChevronDown, Copy, X, FileText, Upload, Building, Landmark, CalendarCheck, Edit, Eye, Image as ImageIcon, Megaphone, Download, Percent, Receipt, TrendingDown, Calculator } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog"
@@ -54,6 +54,11 @@ const months = [
 ];
 
 const expenseCategories = ["Maintenance", "Repairs", "Utilities", "Insurance", "Taxes", "Management Fee", "Other"];
+
+const formatCurrency = (amount?: number) => {
+  if (amount === undefined || amount === null) return '-';
+  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'BDT' }).format(amount).replace('BDT', '৳');
+};
 
 const getStatusBadge = (status: RentEntry["status"]) => {
     switch (status) {
@@ -202,6 +207,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
   
   const totalRentExpected = filteredTenantsForMonth.reduce((acc, t) => acc + t.rent, 0);
   const collectionRate = totalRentExpected > 0 ? (totalRentCollected / totalRentExpected) * 100 : 0;
+  const pendingRent = totalRentExpected - totalRentCollected;
 
   const totalExpenses = filteredExpenses.reduce((acc, expense) => acc + expense.amount, 0);
   const netResult = totalRentCollected - totalExpenses;
@@ -746,6 +752,49 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
       {months.map(month => (
         <TabsContent key={month} value={month}>
           <div className="mt-6 space-y-6">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <Card className="border-l-4 border-teal-500">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Rent Collected</CardTitle>
+                        <DollarSign className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold text-teal-600">{formatCurrency(totalRentCollected)}</div>
+                        <p className="text-xs text-muted-foreground">{collectionRate.toFixed(1)}% of total</p>
+                    </CardContent>
+                </Card>
+                <Card className="border-l-4 border-orange-500">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Pending Rent</CardTitle>
+                        <Receipt className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold text-orange-600">{formatCurrency(pendingRent)}</div>
+                        <p className="text-xs text-muted-foreground">Yet to collect</p>
+                    </CardContent>
+                </Card>
+                 <Card className="border-l-4 border-red-500">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
+                        <TrendingDown className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold text-red-600">{formatCurrency(totalExpenses)}</div>
+                        <p className="text-xs text-muted-foreground">This month</p>
+                    </CardContent>
+                </Card>
+                 <Card className="border-l-4 border-green-500">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Net Amount</CardTitle>
+                        <Calculator className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className={`text-2xl font-bold ${netResult >= 0 ? 'text-green-600' : 'text-red-600'}`}>{netResult >= 0 ? '+' : ''}{formatCurrency(netResult)}</div>
+                        <p className="text-xs text-muted-foreground">Profit</p>
+                    </CardContent>
+                </Card>
+            </div>
+
             <Tabs defaultValue="rent-roll" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="rent-roll">Rent Roll</TabsTrigger>
@@ -1185,211 +1234,6 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                 </Card>
               </TabsContent>
             </Tabs>
-            
-            <div className="mt-6 space-y-6">
-                 <Card>
-                    <CardHeader className="flex flex-row items-center justify-between gap-4 p-4">
-                        <div className="flex items-center gap-3">
-                            <Megaphone className="h-6 w-6 text-primary" />
-                            <h3 className="text-lg font-semibold">Monthly Notice</h3>
-                        </div>
-                        {isAdmin && (
-                            <div className="flex items-center gap-1">
-                                <Dialog open={isNoticeDialogOpen} onOpenChange={setIsNoticeDialogOpen}>
-                                    <DialogTrigger asChild>
-                                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => {}}>
-                                            {monthlyNotice ? <Edit className="h-4 w-4" /> : <PlusCircle className="h-4 w-4" />}
-                                        </Button>
-                                    </DialogTrigger>
-                                    <DialogContent>
-                                        <DialogHeader>
-                                            <DialogTitle>{monthlyNotice ? 'Edit' : 'Add'} Monthly Notice</DialogTitle>
-                                            <DialogDescription>
-                                                This notice will be displayed on the overview for {month}, {year}.
-                                            </DialogDescription>
-                                        </DialogHeader>
-                                        <form onSubmit={handleSaveNotice}>
-                                            <input type="hidden" name="year" value={year} />
-                                            <input type="hidden" name="month" value={monthIndex} />
-                                            {monthlyNotice && <input type="hidden" name="noticeId" value={monthlyNotice.id} />}
-                                            <div className="grid gap-4 py-4">
-                                                <div className="space-y-2">
-                                                    <Label htmlFor="notice-content">Notice Content</Label>
-                                                    <Textarea id="notice-content" name="content" rows={5} defaultValue={monthlyNotice?.content} required />
-                                                </div>
-                                            </div>
-                                            <DialogFooter>
-                                                <DialogClose asChild><Button type="button" variant="outline">Cancel</Button></DialogClose>
-                                                <Button type="submit" disabled={isNoticePending}>Save Notice</Button>
-                                            </DialogFooter>
-                                        </form>
-                                    </DialogContent>
-                                </Dialog>
-
-                                {monthlyNotice && (
-                                     <AlertDialog>
-                                        <AlertDialogTrigger asChild>
-                                            <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive">
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
-                                        </AlertDialogTrigger>
-                                        <AlertDialogContent>
-                                            <AlertDialogHeader>
-                                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                                <AlertDialogDescription>
-                                                    This action cannot be undone. This will permanently delete the notice for this month.
-                                                </AlertDialogDescription>
-                                            </AlertDialogHeader>
-                                            <AlertDialogFooter>
-                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                <form onSubmit={handleDeleteNotice}>
-                                                    <input type="hidden" name="noticeId" value={monthlyNotice.id} />
-                                                    <AlertDialogAction type="submit" disabled={isNoticePending}>Delete</AlertDialogAction>
-                                                </form>
-                                            </AlertDialogFooter>
-                                        </AlertDialogContent>
-                                    </AlertDialog>
-                                )}
-                            </div>
-                        )}
-                    </CardHeader>
-                    {monthlyNotice?.content ? (
-                        <CardContent className="p-4 pt-0">
-                            <p className="text-sm text-muted-foreground whitespace-pre-wrap">{monthlyNotice.content}</p>
-                        </CardContent>
-                    ) : (
-                         <CardContent className="p-4 pt-0">
-                            <p className="text-sm text-muted-foreground">No notice for this month.</p>
-                         </CardContent>
-                    )}
-                 </Card>
-
-
-                <Card>
-                    <CardHeader>
-                        <CardTitle>{settings.page_overview.financial_overview_title} - {month} {year}</CardTitle>
-                        <CardDescription>{settings.page_overview.financial_overview_description}</CardDescription>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
-                            <div className="flex items-center gap-4 rounded-lg border p-4">
-                                <Banknote className="h-8 w-8 text-muted-foreground" />
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Total Rent Expected</p>
-                                    <p className="text-2xl font-bold" style={{ color: 'hsl(var(--chart-1))' }}>৳{totalRentExpected.toFixed(2)}</p>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-4 rounded-lg border p-4">
-                                <ArrowDownCircle className="h-8 w-8 text-destructive" />
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Total Expenses</p>
-                                    <p className="text-2xl font-bold text-destructive">৳{totalExpenses.toFixed(2)}</p>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-4 rounded-lg border p-4">
-                                <DollarSign className="h-8 w-8 text-muted-foreground" />
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Net Result</p>
-                                    <p className={`text-2xl font-bold ${netResult >= 0 ? 'text-success' : 'text-destructive'}`}>
-                                        {netResult >= 0 ? '+' : ''}৳{netResult.toFixed(2)}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-                        <Separator />
-                        <div className="grid gap-4 sm:grid-cols-2">
-                            <div className="flex items-center gap-4">
-                                <Percent className="h-6 w-6 text-muted-foreground" />
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Collection Rate</p>
-                                    <p className="text-xl font-bold text-primary">{collectionRate.toFixed(1)}%</p>
-                                </div>
-                            </div>
-                             <div className="flex items-center gap-4">
-                                <ArrowUpCircle className="h-6 w-6 text-success" />
-                                <div>
-                                    <p className="text-sm text-muted-foreground">Available for Deposit</p>
-                                    <p className="text-xl font-bold text-success">৳{amountForDeposit.toFixed(2)}</p>
-                                </div>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-                 <Card>
-                    <CardHeader style={{ backgroundColor: 'hsl(var(--table-header-background))', color: 'hsl(var(--table-header-foreground))' }} className="p-4 rounded-t-lg">
-                        <div className="flex items-center gap-3 text-inherit">
-                           <Landmark className="h-6 w-6" />
-                            <h3 className="font-semibold text-base">Bank Deposit Information</h3>
-                        </div>
-                    </CardHeader>
-                    <CardContent className="p-4 grid md:grid-cols-3 gap-6 items-start">
-                         <div className="space-y-2 col-span-1 md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div className="flex items-center gap-3">
-                                {settings.bankLogoUrl && (
-                                    <img src={settings.bankLogoUrl} alt={`${settings.bankName} logo`} className="h-10 object-contain" data-ai-hint="logo bank" />
-                                )}
-                                <div>
-                                    <p className="text-sm font-medium text-muted-foreground">Bank Name</p>
-                                    <p className="font-semibold">{settings.bankName || "Not Set"}</p>
-                                </div>
-                            </div>
-                            <div>
-                                <p className="text-sm font-medium text-muted-foreground">Account Number</p>
-                                <p className="font-semibold">{settings.bankAccountNumber || "Not Set"}</p>
-                            </div>
-                         </div>
-                        {loggedDeposit ? (
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                              <p className="text-sm font-medium text-muted-foreground">Deposit Status</p>
-                              {isAdmin && <Dialog open={isDepositDialogOpen} onOpenChange={handleDepositOpenChange}>
-                                  <DialogTrigger asChild>
-                                      <Button size="sm" variant="outline" className="h-7 px-2 py-1 text-xs">
-                                          <Pencil className="mr-1 h-3 w-3" /> Edit
-                                      </Button>
-                                  </DialogTrigger>
-                                   {/* Dialog content remains unchanged */}
-                              </Dialog>}
-                            </div>
-                              <div className="flex items-center gap-2 text-success font-semibold">
-                                  <CheckCircle className="h-5 w-5" />
-                                  <span>Deposited on {format(parseISO(loggedDeposit.deposit_date), 'dd MMM, yyyy')}</span>
-                              </div>
-                               {loggedDeposit.receipt_url && (
-                                    <Button asChild variant="secondary" size="sm" className="mt-2">
-                                        <a href={loggedDeposit.receipt_url} target="_blank" rel="noopener noreferrer">
-                                            <Eye className="mr-2 h-4 w-4" /> View Receipt
-                                        </a>
-                                    </Button>
-                                )}
-                          </div>
-                        ) : (
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                                <p className="text-sm font-medium text-muted-foreground">Deposit Status</p>
-                                {isAdmin && <Dialog open={isDepositDialogOpen} onOpenChange={handleDepositOpenChange}>
-                                <DialogTrigger asChild>
-                                    <Button size="sm" variant="outline" className="h-7 px-2 py-1 text-xs">
-                                        <PlusCircle className="mr-1 h-3 w-3" /> Log Deposit
-                                    </Button>
-                                </DialogTrigger>
-                                {/* Dialog content remains unchanged */}
-                                </Dialog>}
-                            </div>
-                             <div className="flex items-center gap-2 text-warning-foreground font-semibold">
-                                 <AlertCircle className="h-5 w-5" />
-                                 <span>Pending Deposit</span>
-                             </div>
-                           </div>
-                        )}
-                    </CardContent>
-                     {loggedDeposit && (
-                        <CardFooter className="p-2 text-center bg-green-50 dark:bg-green-900/20 border-t">
-                            <p className="font-bold text-base text-green-600 dark:text-green-400 w-full">৳{loggedDeposit.amount.toFixed(2)} Deposited</p>
-                        </CardFooter>
-                     )}
-                </Card>
-            </div>
           </div>
         </TabsContent>
       ))}
