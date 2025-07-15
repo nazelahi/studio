@@ -7,12 +7,12 @@ import { useSettings, SettingsProvider } from "@/context/settings-context"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
-import { ArrowLeft, Download, Printer, LoaderCircle, Building, User } from "lucide-react"
+import { ArrowLeft, Download, Printer, LoaderCircle, Building, User, Phone, Mail } from "lucide-react"
 import { useRouter, useParams } from "next/navigation"
 import jsPDF from "jspdf"
 import html2canvas from "html2canvas"
 import { useToast } from "@/hooks/use-toast"
-import { type RentEntry } from "@/types"
+import { type RentEntry, type Tenant } from "@/types"
 import { format, parseISO } from "date-fns"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
@@ -24,7 +24,7 @@ const formatCurrency = (amount?: number) => {
 };
 
 function ReceiptPageContent() {
-    const { getRentEntryById } = useData()
+    const { getRentEntryById, tenants } = useData()
     const { settings, loading: settingsLoading } = useSettings()
     const router = useRouter()
     const params = useParams()
@@ -32,6 +32,7 @@ function ReceiptPageContent() {
     const reportContentRef = React.useRef<HTMLDivElement>(null);
 
     const [rentEntry, setRentEntry] = React.useState<RentEntry | null>(null);
+    const [tenant, setTenant] = React.useState<Tenant | null>(null);
     const [loading, setLoading] = React.useState(true);
 
     const rentEntryId = Array.isArray(params.id) ? params.id[0] : params.id;
@@ -40,9 +41,13 @@ function ReceiptPageContent() {
         if (rentEntryId) {
             const entry = getRentEntryById(rentEntryId);
             setRentEntry(entry);
+            if (entry && tenants) {
+                const associatedTenant = tenants.find(t => t.id === entry.tenant_id);
+                setTenant(associatedTenant || null);
+            }
         }
         setLoading(false);
-    }, [rentEntryId, getRentEntryById]);
+    }, [rentEntryId, getRentEntryById, tenants]);
 
     const handlePrint = () => {
         window.print();
@@ -139,14 +144,34 @@ function ReceiptPageContent() {
                     <section className="grid grid-cols-2 gap-8 my-8">
                         <div>
                            <Card className="h-full">
-                            <CardHeader className="flex flex-row items-center gap-3 space-y-0 pb-2">
-                               <User className="h-5 w-5 text-muted-foreground"/>
-                               <h3 className="text-base font-semibold">Billed To</h3>
-                            </CardHeader>
-                            <CardContent>
-                                <p className="font-bold text-lg">{rentEntry.name}</p>
-                                <p className="text-muted-foreground">{rentEntry.property}</p>
-                            </CardContent>
+                                <CardHeader className="flex flex-row items-center gap-3 space-y-0 pb-2">
+                                <User className="h-5 w-5 text-muted-foreground"/>
+                                <h3 className="text-base font-semibold">Billed To</h3>
+                                </CardHeader>
+                                <CardContent className="flex items-start gap-4 pt-2">
+                                    {tenant && (
+                                        <Avatar className="h-16 w-16">
+                                            <AvatarImage src={tenant.avatar} data-ai-hint="person avatar"/>
+                                            <AvatarFallback>{tenant.name.charAt(0)}</AvatarFallback>
+                                        </Avatar>
+                                    )}
+                                    <div className="space-y-1">
+                                        <p className="font-bold text-lg">{rentEntry.name}</p>
+                                        <p className="text-sm text-muted-foreground">{rentEntry.property}</p>
+                                        {tenant?.email && (
+                                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                                <Mail className="h-3 w-3"/>
+                                                <span>{tenant.email}</span>
+                                            </div>
+                                        )}
+                                        {tenant?.phone && (
+                                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                                <Phone className="h-3 w-3"/>
+                                                <span>{tenant.phone}</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </CardContent>
                            </Card>
                         </div>
                          <div>
