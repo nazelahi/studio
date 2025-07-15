@@ -1398,7 +1398,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
             <DialogHeader>
                 <DialogTitle>{loggedDeposit ? 'Edit Deposit' : 'Log New Deposit'}</DialogTitle>
                 <DialogDescription>
-                    Confirm the amount, date, and receipt for the deposit for {month}, {year}.
+                    Confirm the amount, date, and receipt for the deposit for {selectedMonth}, {year}.
                 </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSaveDeposit}>
@@ -1443,7 +1443,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                                     <AlertDialogHeader>
                                     <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                                     <AlertDialogDescription>
-                                        This will remove the deposit log and receipt for {month}, {year}. This action cannot be undone.
+                                        This will remove the deposit log and receipt for {selectedMonth}, {year}. This action cannot be undone.
                                     </AlertDialogDescription>
                                 </AlertDialogHeader>
                                     <AlertDialogFooter>
