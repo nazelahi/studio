@@ -148,13 +148,7 @@ function ReceiptPageContent() {
                                 <User className="h-5 w-5 text-muted-foreground"/>
                                 <h3 className="text-base font-semibold">Billed To</h3>
                                 </CardHeader>
-                                <CardContent className="flex items-start gap-4 pt-2">
-                                    {tenant && (
-                                        <Avatar className="h-16 w-16">
-                                            <AvatarImage src={tenant.avatar} data-ai-hint="person avatar"/>
-                                            <AvatarFallback>{tenant.name.charAt(0)}</AvatarFallback>
-                                        </Avatar>
-                                    )}
+                                <CardContent className="pt-2">
                                     <div className="space-y-1">
                                         <p className="font-bold text-lg">{rentEntry.name}</p>
                                         <p className="text-sm text-muted-foreground">{rentEntry.property}</p>
