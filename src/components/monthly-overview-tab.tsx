@@ -1316,18 +1316,18 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                     </CardContent>
                 </Card>
                  <Card>
-                    <CardHeader className="flex flex-row items-center justify-between gap-3 p-3" style={{ backgroundColor: 'hsl(var(--table-header-background))', color: 'hsl(var(--table-header-foreground))' }}>
+                    <CardHeader className="flex flex-row items-center justify-between gap-3 p-4">
                         <div className="flex items-center gap-3">
-                           <div className="flex-shrink-0 bg-primary-foreground/10 p-2 rounded-full">
-                               <Landmark className="h-5 w-5 text-inherit" />
+                           <div className="flex-shrink-0">
+                               <Landmark className="h-6 w-6 text-primary" />
                             </div>
-                            <h3 className="font-semibold text-inherit">Bank Deposit Information</h3>
+                            <h3 className="font-semibold text-primary">Bank Deposit Information</h3>
                         </div>
-                        <Dialog open={isDepositDialogOpen} onOpenChange={handleDepositOpenChange}>
+                        {isAdmin && <Dialog open={isDepositDialogOpen} onOpenChange={handleDepositOpenChange}>
                             <DialogTrigger asChild>
-                                <Button size="icon" variant="secondary" className="h-8 w-8" disabled={!isAdmin}>
-                                    <PlusCircle className="h-4 w-4" />
-                                    <span className="sr-only">{loggedDeposit ? 'Edit Deposit' : 'Log Deposit'}</span>
+                                <Button size="sm" variant="outline" className="h-8" disabled={!isAdmin}>
+                                    <PlusCircle className="mr-2 h-4 w-4" />
+                                    {loggedDeposit ? 'Edit' : 'Log'} Deposit
                                 </Button>
                             </DialogTrigger>
                             <DialogContent>
@@ -1403,22 +1403,26 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                                     </DialogFooter>
                                 </form>
                             </DialogContent>
-                        </Dialog>
+                        </Dialog>}
                     </CardHeader>
                     <CardContent className="p-4 grid md:grid-cols-3 gap-6 items-start">
-                        <div className="space-y-1">
-                            <p className="text-sm font-medium text-muted-foreground">Bank Name</p>
-                            <p className="font-semibold">{settings.bankName || "Not Set"}</p>
-                            {settings.bankLogoUrl && (
-                                <img src={settings.bankLogoUrl} alt={`${settings.bankName} logo`} className="h-10 mt-2 object-contain" data-ai-hint="logo bank" />
-                            )}
-                        </div>
-                         <div className="space-y-1">
-                            <p className="text-sm font-medium text-muted-foreground">Account Number</p>
-                            <p className="font-semibold">{settings.bankAccountNumber || "Not Set"}</p>
-                        </div>
+                         <div className="space-y-2 col-span-1 md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="flex items-center gap-3">
+                                {settings.bankLogoUrl && (
+                                    <img src={settings.bankLogoUrl} alt={`${settings.bankName} logo`} className="h-10 object-contain" data-ai-hint="logo bank" />
+                                )}
+                                <div>
+                                    <p className="text-sm font-medium text-muted-foreground">Bank Name</p>
+                                    <p className="font-semibold">{settings.bankName || "Not Set"}</p>
+                                </div>
+                            </div>
+                            <div>
+                                <p className="text-sm font-medium text-muted-foreground">Account Number</p>
+                                <p className="font-semibold">{settings.bankAccountNumber || "Not Set"}</p>
+                            </div>
+                         </div>
                         {loggedDeposit ? (
-                          <div className="space-y-1">
+                          <div className="space-y-2">
                               <p className="text-sm font-medium text-muted-foreground">Deposit Status</p>
                               <div className="flex items-center gap-2 text-success font-semibold">
                                   <CheckCircle className="h-5 w-5" />
@@ -1433,7 +1437,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                                 )}
                           </div>
                         ) : (
-                          <div className="space-y-1">
+                          <div className="space-y-2">
                              <p className="text-sm font-medium text-muted-foreground">Deposit Status</p>
                              <div className="flex items-center gap-2 text-warning-foreground font-semibold">
                                  <AlertCircle className="h-5 w-5" />
@@ -1442,13 +1446,9 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                            </div>
                         )}
                     </CardContent>
-                     {loggedDeposit ? (
-                        <CardFooter style={{ backgroundColor: 'hsl(var(--success)/0.1)', borderTop: '1px solid hsl(var(--border))'}} className="p-4 text-center">
-                            <p className="font-bold text-xl text-success w-full">৳{loggedDeposit.amount.toFixed(2)} Deposited</p>
-                        </CardFooter>
-                     ) : (
-                        <CardFooter style={{ backgroundColor: 'hsl(var(--secondary))', borderTop: '1px solid hsl(var(--border))'}} className="p-4 text-center">
-                            <p className="font-bold text-xl text-primary w-full">৳{amountForDeposit.toFixed(2)} to Deposit</p>
+                     {loggedDeposit && (
+                        <CardFooter className="p-3 text-center bg-green-50 dark:bg-green-900/20 border-t">
+                            <p className="font-bold text-lg text-green-600 dark:text-green-400 w-full">৳{loggedDeposit.amount.toFixed(2)} Deposited</p>
                         </CardFooter>
                      )}
                 </Card>
@@ -1471,10 +1471,3 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
 }
 
     
-
-
-
-
-
-
-

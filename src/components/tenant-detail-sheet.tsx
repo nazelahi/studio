@@ -16,7 +16,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
-import type { Tenant } from "@/types";
+import type { Tenant, RentEntry } from "@/types";
 import { Mail, Phone, Home, Calendar, DollarSign, FileText, Download, Printer, ImageIcon, File as FileIcon, User, MapPin, Cake, CreditCard, ShieldCheck, ChevronLeft, ChevronRight, X } from "lucide-react";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
@@ -25,6 +25,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { useData } from "@/context/data-context";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 
 
 interface TenantDetailSheetProps {
@@ -39,7 +41,19 @@ export function TenantDetailSheet({
   onOpenChange,
 }: TenantDetailSheetProps) {
   const { toast } = useToast();
+  const { rentData } = useData();
   const sheetContentRef = React.useRef<HTMLDivElement>(null);
+  
+  const tenantPaymentHistory = React.useMemo(() => {
+    if (!tenant) return [];
+    return rentData
+      .filter(entry => entry.tenant_id === tenant.id)
+      .sort((a, b) => {
+        const dateA = new Date(a.year, a.month);
+        const dateB = new Date(b.year, b.month);
+        return dateB.getTime() - dateA.getTime();
+      });
+  }, [rentData, tenant]);
 
   const handleDownloadPdf = async () => {
     const input = sheetContentRef.current;
@@ -48,14 +62,16 @@ export function TenantDetailSheet({
     toast({ title: "Generating PDF...", description: "Please wait a moment." });
     
     try {
-      // Temporarily remove box-shadow for cleaner canvas capture
-      const originalShadow = input.style.boxShadow;
-      input.style.boxShadow = 'none';
+      const originalBackgroundColor = document.body.style.backgroundColor;
+      document.body.style.backgroundColor = "white"; // Ensure a white background for PDF
 
-      const canvas = await html2canvas(input, { scale: 2 });
+      const canvas = await html2canvas(input, { 
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff'
+      });
       
-      // Restore box-shadow
-      input.style.boxShadow = originalShadow;
+      document.body.style.backgroundColor = originalBackgroundColor; // Restore original background color
 
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF({
@@ -76,31 +92,35 @@ export function TenantDetailSheet({
   const handlePrint = () => {
      const input = sheetContentRef.current;
      if (!input) return;
+      
+      const printContainer = document.createElement('div');
+      printContainer.innerHTML = input.innerHTML;
+
+      // Add Tailwind classes to a style tag
+      const styles = Array.from(document.styleSheets)
+        .map(sheet => {
+            try {
+                return Array.from(sheet.cssRules).map(rule => rule.cssText).join('');
+            } catch (e) {
+                console.warn('Cannot access stylesheet rules. Cross-origin policy may be blocking it.', e);
+                return '';
+            }
+        }).join('\n');
 
       const printWindow = window.open('', '', 'height=800,width=800');
       if (printWindow) {
           printWindow.document.write('<html><head><title>Print Tenant Details</title>');
-          // Inject styles
-          const styles = Array.from(document.styleSheets)
-              .map(styleSheet => {
-                  try {
-                      return Array.from(styleSheet.cssRules).map(rule => rule.cssText).join('');
-                  } catch (e) {
-                      console.log('Access to stylesheet %s is denied. Skipping.', styleSheet.href);
-                      return '';
-                  }
-              }).join('');
           printWindow.document.write(`<style>${styles}</style>`);
-          printWindow.document.write('</head><body >');
-          printWindow.document.write(input.innerHTML);
+          printWindow.document.write('</head><body>');
+          printWindow.document.write(printContainer.innerHTML);
           printWindow.document.write('</body></html>');
           printWindow.document.close();
           printWindow.focus();
-          // Use a timeout to ensure content is rendered before printing
+          
           setTimeout(() => {
             printWindow.print();
             printWindow.close();
-          }, 250);
+          }, 500);
       }
   };
   
@@ -115,9 +135,18 @@ export function TenantDetailSheet({
       case 'Overdue':
         return 'bg-destructive text-destructive-foreground hover:bg-destructive/80';
       default:
-        return '';
+        return 'bg-secondary text-secondary-foreground';
     }
   };
+  
+  const getPaymentStatusBadge = (status: RentEntry['status']) => {
+    switch (status) {
+      case 'Paid': return 'bg-green-100 text-green-800';
+      case 'Pending': return 'bg-yellow-100 text-yellow-800';
+      case 'Overdue': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  }
 
 
   return (
@@ -130,20 +159,21 @@ export function TenantDetailSheet({
           </SheetDescription>
         </SheetHeader>
 
-        <div ref={sheetContentRef} className="flex-grow overflow-y-auto bg-background">
-           <div className="relative bg-muted">
+        <div className="flex-grow overflow-y-auto bg-background printable-area" id="tenant-details-content">
+          <div ref={sheetContentRef} className="p-6">
+           <div className="relative -mx-6 -mt-6 bg-muted">
                 <a href={tenant.avatar} target="_blank" rel="noopener noreferrer" className="block">
-                  <img src={tenant.avatar} alt={tenant.name} className="w-full h-48 object-contain" data-ai-hint="person avatar" />
+                  <img src={tenant.avatar} alt={tenant.name} className="w-full h-48 object-cover" data-ai-hint="person avatar" />
                 </a>
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent pointer-events-none" />
                 <div className="absolute bottom-0 left-0 p-6 pointer-events-none">
                     <h2 className="text-3xl font-bold text-white" style={{ textShadow: '1px 1px 3px rgba(0,0,0,0.7)' }}>{tenant.name}</h2>
                     <p className="text-white/90" style={{ textShadow: '1px 1px 2px rgba(0,0,0,0.7)' }}>{tenant.property}</p>
-                    <Badge className={`mt-2 ${getStatusBadge(tenant.status)} pointer-events-auto`}>{tenant.status}</Badge>
+                    <Badge className={cn("mt-2 pointer-events-auto", getStatusBadge(tenant.status))}>{tenant.status}</Badge>
                 </div>
             </div>
 
-          <div className="space-y-6 p-6">
+          <div className="space-y-6 pt-6">
             <Card>
                 <CardHeader>
                     <CardTitle className="text-base">Personal Information</CardTitle>
@@ -222,6 +252,41 @@ export function TenantDetailSheet({
                     </div>
                 </CardContent>
             </Card>
+            
+            <Card>
+                <CardHeader>
+                    <CardTitle className="text-base">Payment History</CardTitle>
+                </CardHeader>
+                <CardContent>
+                     {tenantPaymentHistory.length > 0 ? (
+                        <div className="max-h-60 overflow-y-auto">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Period</TableHead>
+                                        <TableHead>Status</TableHead>
+                                        <TableHead className="text-right">Amount</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {tenantPaymentHistory.map(entry => (
+                                        <TableRow key={entry.id}>
+                                            <TableCell className="font-medium">{format(new Date(entry.year, entry.month), 'MMMM yyyy')}</TableCell>
+                                            <TableCell>
+                                                <Badge variant="outline" className={cn("text-xs", getPaymentStatusBadge(entry.status))}>{entry.status}</Badge>
+                                            </TableCell>
+                                            <TableCell className="text-right font-mono">৳{entry.rent.toFixed(2)}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </div>
+                     ) : (
+                        <p className="text-sm text-muted-foreground text-center py-4">No payment history available.</p>
+                     )}
+                </CardContent>
+            </Card>
+
 
              {tenant.documents && tenant.documents.length > 0 && (
               <Card>
@@ -271,9 +336,10 @@ export function TenantDetailSheet({
                 </Card>
             )}
           </div>
+          </div>
         </div>
         <Separator />
-        <SheetFooter className="mt-auto p-6 bg-background">
+        <SheetFooter className="mt-auto p-4 bg-background no-print">
           <div className="flex w-full justify-end gap-2">
             <Button variant="outline" onClick={handleDownloadPdf}>
               <Download className="mr-2 h-4 w-4" />
