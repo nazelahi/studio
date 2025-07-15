@@ -752,49 +752,6 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
       {months.map(month => (
         <TabsContent key={month} value={month}>
           <div className="mt-6 space-y-6">
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                <Card className="border-l-4 border-teal-500">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Rent Collected</CardTitle>
-                        <DollarSign className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-teal-600">{formatCurrency(totalRentCollected)}</div>
-                        <p className="text-xs text-muted-foreground">{collectionRate.toFixed(1)}% of total</p>
-                    </CardContent>
-                </Card>
-                <Card className="border-l-4 border-orange-500">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Pending Rent</CardTitle>
-                        <Receipt className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-orange-600">{formatCurrency(pendingRent)}</div>
-                        <p className="text-xs text-muted-foreground">Yet to collect</p>
-                    </CardContent>
-                </Card>
-                 <Card className="border-l-4 border-red-500">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
-                        <TrendingDown className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-red-600">{formatCurrency(totalExpenses)}</div>
-                        <p className="text-xs text-muted-foreground">This month</p>
-                    </CardContent>
-                </Card>
-                 <Card className="border-l-4 border-green-500">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Net Amount</CardTitle>
-                        <Calculator className="h-4 w-4 text-muted-foreground" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className={`text-2xl font-bold ${netResult >= 0 ? 'text-green-600' : 'text-red-600'}`}>{netResult >= 0 ? '+' : ''}{formatCurrency(netResult)}</div>
-                        <p className="text-xs text-muted-foreground">Profit</p>
-                    </CardContent>
-                </Card>
-            </div>
-
             <Tabs defaultValue="rent-roll" className="w-full">
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="rent-roll">Rent Roll</TabsTrigger>
@@ -1234,6 +1191,49 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                 </Card>
               </TabsContent>
             </Tabs>
+
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <Card className="border-l-4 border-teal-500">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Rent Collected</CardTitle>
+                        <DollarSign className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold text-teal-600">{formatCurrency(totalRentCollected)}</div>
+                        <p className="text-xs text-muted-foreground">{collectionRate.toFixed(1)}% of total</p>
+                    </CardContent>
+                </Card>
+                <Card className="border-l-4 border-orange-500">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Pending Rent</CardTitle>
+                        <Receipt className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold text-orange-600">{formatCurrency(pendingRent)}</div>
+                        <p className="text-xs text-muted-foreground">Yet to collect</p>
+                    </CardContent>
+                </Card>
+                 <Card className="border-l-4 border-red-500">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
+                        <TrendingDown className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold text-red-600">{formatCurrency(totalExpenses)}</div>
+                        <p className="text-xs text-muted-foreground">This month</p>
+                    </CardContent>
+                </Card>
+                 <Card className="border-l-4 border-green-500">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">Net Amount</CardTitle>
+                        <Calculator className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className={`text-2xl font-bold ${netResult >= 0 ? 'text-green-600' : 'text-red-600'}`}>{netResult >= 0 ? '+' : ''}{formatCurrency(netResult)}</div>
+                        <p className="text-xs text-muted-foreground">Profit</p>
+                    </CardContent>
+                </Card>
+            </div>
           </div>
         </TabsContent>
       ))}
