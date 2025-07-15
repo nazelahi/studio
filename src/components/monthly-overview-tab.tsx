@@ -81,6 +81,14 @@ const getStatusRowClass = (status: RentEntry["status"]) => {
     }
 };
 
+const getStatusNameColor = (status: RentEntry["status"]) => {
+    switch (status) {
+        case "Paid": return "text-green-600";
+        case "Overdue": return "text-red-600";
+        default: return "text-foreground";
+    }
+}
+
 
 const getStatusIcon = (status: RentEntry["status"]) => {
     switch(status) {
@@ -915,7 +923,15 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                                 </TableCell>}
                                 <TableCell>
                                   <div className="grid gap-1">
-                                    <p className="text-sm font-medium leading-none">{entry.name}</p>
+                                    <button
+                                        onClick={() => handleViewDetails(entry)}
+                                        className={cn(
+                                            "text-sm font-medium leading-none text-left hover:underline",
+                                            getStatusNameColor(entry.status)
+                                        )}
+                                    >
+                                        {entry.name}
+                                    </button>
                                     <p className="text-sm text-muted-foreground">
                                       {entry.property}
                                     </p>
@@ -958,10 +974,6 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                                           <span className="sr-only">View Receipt</span>
                                       </Button>
                                     )}
-                                    <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => handleViewDetails(entry)}>
-                                      <FileText className="h-4 w-4" />
-                                      <span className="sr-only">View Details</span>
-                                    </Button>
                                     {isAdmin && <>
                                         <Button size="icon" variant="ghost" className="h-8 w-8" onClick={(e) => handleEditRentEntry(entry, e)}>
                                           <Pencil className="h-4 w-4" />
