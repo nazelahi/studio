@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
@@ -77,15 +78,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
             const twoYearsAgo = format(subYears(new Date(), 2), 'yyyy-MM-dd');
 
             const [tenantsRes, expensesRes, rentDataRes, propertySettingsRes, depositsRes, zakatRes, noticesRes, workDetailsRes, zakatBankDetailsRes] = await Promise.all([
-                supabase.from('tenants').select('*').is('deleted_at', null).gte('created_at', twoYearsAgo).order('name', { ascending: true }),
-                supabase.from('expenses').select('*').is('deleted_at', null).gte('date', twoYearsAgo).order('date', { ascending: false }),
-                supabase.from('rent_entries').select('*').is('deleted_at', null).gte('due_date', twoYearsAgo).order('due_date', { ascending: false }),
+                supabase.from('tenants').select('id, name, email, phone, property, rent, join_date, notes, status, avatar, type, documents, father_name, address, date_of_birth, nid_number, advance_deposit, created_at').is('deleted_at', null).gte('created_at', twoYearsAgo).order('name', { ascending: true }),
+                supabase.from('expenses').select('id, date, category, amount, description, status').is('deleted_at', null).gte('date', twoYearsAgo).order('date', { ascending: false }),
+                supabase.from('rent_entries').select('id, tenant_id, name, property, rent, due_date, status, avatar, year, month, payment_date, collected_by').is('deleted_at', null).gte('due_date', twoYearsAgo).order('due_date', { ascending: false }),
                 supabase.from('property_settings').select('*').eq('id', 1).maybeSingle(),
-                supabase.from('deposits').select('*').gte('deposit_date', twoYearsAgo).order('deposit_date', { ascending: false }),
-                supabase.from('zakat_transactions').select('*').gte('transaction_date', twoYearsAgo).order('transaction_date', { ascending: false }),
-                supabase.from('notices').select('*').gte('created_at', twoYearsAgo).order('created_at', { ascending: false }),
-                supabase.from('work_details').select('*').is('deleted_at', null).gte('created_at', twoYearsAgo).order('created_at', { ascending: false }),
-                supabase.from('zakat_bank_details').select('*').order('bank_name', { ascending: true }),
+                supabase.from('deposits').select('id, year, month, amount, deposit_date, receipt_url').gte('deposit_date', twoYearsAgo).order('deposit_date', { ascending: false }),
+                supabase.from('zakat_transactions').select('id, transaction_date, type, amount, source_or_recipient, description, receipt_url').gte('transaction_date', twoYearsAgo).order('transaction_date', { ascending: false }),
+                supabase.from('notices').select('id, year, month, content').gte('created_at', twoYearsAgo).order('created_at', { ascending: false }),
+                supabase.from('work_details').select('id, title, description, category, status, product_cost, worker_cost, due_date, created_at').is('deleted_at', null).gte('created_at', twoYearsAgo).order('created_at', { ascending: false }),
+                supabase.from('zakat_bank_details').select('id, bank_name, account_number, account_holder, logo_url, location').order('bank_name', { ascending: true }),
             ]);
 
             if (tenantsRes.error) throw tenantsRes.error;
@@ -266,7 +267,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         if (cleanTenantData.nid_number === '') delete (cleanTenantData as any).nid_number;
 
         const { error } = await supabase.from('tenants').update(cleanTenantData).eq('id', id);
-        if (error) {
+        if (error || !id) {
             handleError(error, 'updating tenant', toast);
             return;
         }
