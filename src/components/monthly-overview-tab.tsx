@@ -390,7 +390,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
     }
   };
 
-  const handleStatusChange = (entry: RentEntry, newStatus: RentEntry['status'], e: React.MouseEvent) => {
+  const handleStatusChange = (entry: RentEntry, newStatus: RentEntry['status']) => {
     withProtection(async () => {
         let payment_date = entry.payment_date;
         if (newStatus === 'Paid' && !payment_date) {
@@ -398,7 +398,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
         }
         await updateRentEntry({ ...entry, status: newStatus, payment_date }, toast);
         toast({ title: "Status Updated", description: `${entry.name}'s status is now ${newStatus}.`});
-    }, e);
+    });
   }
 
   // Expense Handlers
@@ -1031,7 +1031,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                                     {isAdmin && entry.status !== 'Paid' ? (
                                         <Select
                                             value={entry.status}
-                                            onValueChange={(newStatus) => withProtection((e) => handleStatusChange(entry, newStatus as RentEntry['status'], e))}
+                                            onValueChange={(newStatus) => handleStatusChange(entry, newStatus as RentEntry['status'])}
                                         >
                                             <SelectTrigger className={cn("w-[120px] h-auto py-1 px-2 border", getStatusBadge(entry.status))}>
                                                 <div className="flex items-center">
@@ -1427,5 +1427,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
     </TooltipProvider>
   )
 }
+
+    
 
     
