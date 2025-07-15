@@ -9,8 +9,8 @@ import { Logo } from "@/components/icons"
 import DashboardTabs from "@/components/dashboard-tabs"
 import { useAuth } from "@/context/auth-context"
 import { Button } from "@/components/ui/button"
-import { User, LogOut, MapPin, Menu, Settings, LogIn, UserCircle, LoaderCircle } from "lucide-react"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { User, LogOut, MapPin, Menu, Settings, LogIn, UserCircle, LoaderCircle, Moon, Sun, Monitor } from "lucide-react"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent } from "@/components/ui/dropdown-menu"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { useToast } from "@/hooks/use-toast"
@@ -20,6 +20,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import { AppFooter } from "@/components/app-footer"
 import { BackToTopButton } from "@/components/back-to-top-button"
+import { useTheme } from "next-themes"
 
 function FullPageLoader() {
   return (
@@ -38,6 +39,7 @@ export default function HomePage() {
   const { isAdmin, user, signOut } = useAuth();
   const { toast } = useToast();
   const { withProtection } = useProtection();
+  const { setTheme } = useTheme();
   
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = React.useState(currentYear.toString());
@@ -231,6 +233,18 @@ export default function HomePage() {
                           <Settings className="mr-2 h-4 w-4" />
                           <span>Settings</span>
                         </DropdownMenuItem>
+                         <DropdownMenuSub>
+                          <DropdownMenuSubTrigger>
+                            <Sun className="h-4 w-4 mr-2 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+                            <Moon className="absolute h-4 w-4 mr-2 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+                            <span>Toggle theme</span>
+                          </DropdownMenuSubTrigger>
+                          <DropdownMenuSubContent>
+                            <DropdownMenuItem onClick={() => setTheme("light")}>Light</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setTheme("dark")}>Dark</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setTheme("system")}>System</DropdownMenuItem>
+                          </DropdownMenuSubContent>
+                        </DropdownMenuSub>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem onClick={handleSignOut}>
                           <LogOut className="mr-2 h-4 w-4" />
