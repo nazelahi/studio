@@ -613,15 +613,17 @@ export function ContactsTab() {
                         <TableBody>
                             {filteredTenants.map(tenant => (
                                 <TableRow key={tenant.id}>
-                                    <TableCell className="p-2">
-                                        <Avatar className="h-10 w-10">
-                                            <AvatarImage src={tenant.avatar} />
-                                            <AvatarFallback>{tenant.name.charAt(0)}</AvatarFallback>
-                                        </Avatar>
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="font-medium">{tenant.name}</div>
-                                        <div className="text-xs text-muted-foreground">{tenant.email}</div>
+                                    <TableCell className="w-[280px]">
+                                        <div className="flex items-center gap-3">
+                                            <Avatar className="h-10 w-10">
+                                                <AvatarImage src={tenant.avatar} />
+                                                <AvatarFallback>{tenant.name.charAt(0)}</AvatarFallback>
+                                            </Avatar>
+                                            <div>
+                                                <div className="font-medium">{tenant.name}</div>
+                                                <div className="text-xs text-muted-foreground">{tenant.email}</div>
+                                            </div>
+                                        </div>
                                     </TableCell>
                                     <TableCell className="hidden md:table-cell">
                                         <div className="font-medium">{tenant.property}</div>
