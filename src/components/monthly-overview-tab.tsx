@@ -997,7 +997,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                             {isAdmin && <TableHead className="w-10 text-inherit">
                                 <div className="text-white">
                                     <Checkbox
-                                        className="border-gray-400"
+                                        className="border-gray-400 data-[state=checked]:bg-primary-foreground data-[state=checked]:text-primary"
                                         checked={selectedRentEntryIds.length > 0 && selectedRentEntryIds.length === filteredTenantsForMonth.length}
                                         onCheckedChange={(checked) => {
                                             if (checked) {
@@ -1429,62 +1429,34 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                     <p className="text-muted-foreground">{settings.page_overview.financial_overview_description}</p>
                 </div>
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                    <Card className="border-teal-200 dark:border-teal-800">
-                        <CardContent className="p-4">
-                            <p className="text-sm text-muted-foreground">Rent Collected</p>
-                            <div className="flex items-baseline gap-2 mt-1">
-                                <DollarSign className="h-6 w-6 text-teal-500" />
-                                <span className="text-2xl font-bold text-teal-600">{formatCurrency(totalRentCollected)}</span>
-                            </div>
-                            <p className="text-xs text-muted-foreground mt-1">{collectionRate.toFixed(1)}% of total</p>
-                        </CardContent>
-                    </Card>
-                    <Card className="border-orange-200 dark:border-orange-800">
-                        <CardContent className="p-4">
-                            <p className="text-sm text-muted-foreground">Pending Rent</p>
-                            <div className="flex items-baseline gap-2 mt-1">
-                                <FileText className="h-6 w-6 text-orange-500" />
-                                <span className="text-2xl font-bold text-orange-600">{formatCurrency(pendingRent)}</span>
-                            </div>
-                            <p className="text-xs text-muted-foreground mt-1">Yet to collect</p>
-                        </CardContent>
-                    </Card>
-                     <Card className="border-red-200 dark:border-red-800">
-                        <CardContent className="p-4">
-                            <p className="text-sm text-muted-foreground">Total Expenses</p>
-                            <div className="flex items-baseline gap-2 mt-1">
-                                <TrendingDown className="h-6 w-6 text-red-500" />
-                                <span className="text-2xl font-bold text-red-600">{formatCurrency(totalExpensesPaid)}</span>
-                            </div>
-                            <p className="text-xs text-muted-foreground mt-1">This month</p>
-                        </CardContent>
-                    </Card>
-                     <Card className="border-green-200 dark:border-green-800">
-                        <CardContent className="p-4">
-                            <p className="text-sm text-muted-foreground">Net Amount</p>
-                            <div className="flex items-baseline gap-2 mt-1">
-                                <Calculator className="h-6 w-6 text-green-500" />
-                                <span className="text-2xl font-bold text-green-600">+{formatCurrency(netResult)}</span>
-                            </div>
-                            <p className="text-xs text-muted-foreground mt-1">Profit</p>
-                        </CardContent>
-                    </Card>
+                    <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">Total Rent Collected</p><div className="flex items-center gap-2"><DollarSign className="h-5 w-5 text-green-500"/><p className="text-xl font-bold text-green-600">{formatCurrency(totalRentCollected)}</p></div></CardContent></Card>
+                    <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">Total Expenses</p><div className="flex items-center gap-2"><TrendingDown className="h-5 w-5 text-red-500"/><p className="text-xl font-bold text-red-600">{formatCurrency(totalExpensesPaid)}</p></div></CardContent></Card>
+                    <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">Net Amount</p><div className="flex items-center gap-2"><Calculator className="h-5 w-5 text-blue-500"/><p className={`text-xl font-bold ${netResult >=0 ? 'text-blue-600':'text-red-600'}`}>{netResult >= 0 ? '+' : ''}{formatCurrency(netResult)}</p></div></CardContent></Card>
+                    <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">Pending Rent</p><div className="flex items-center gap-2"><FileText className="h-5 w-5 text-orange-500"/><p className="text-xl font-bold text-orange-600">{formatCurrency(pendingRent)}</p></div></CardContent></Card>
                 </div>
             </div>
             <div className="grid gap-4 mt-6">
                  <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-lg"><Landmark className="h-5 w-5 text-primary"/>Bank Deposit Information</CardTitle>
+                    <CardHeader className="p-4 bg-primary text-primary-foreground rounded-t-lg">
+                        <CardTitle className="flex items-center gap-2 text-lg"><Landmark className="h-5 w-5"/>Bank Deposit Information</CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="flex items-center gap-4 p-3 bg-muted rounded-md">
-                            <Avatar className="h-12 w-12 border">
-                                <AvatarImage src={settings.bankLogoUrl} data-ai-hint="logo bank"/>
-                                <AvatarFallback><Building/></AvatarFallback>
-                            </Avatar>
-                            <div>
-                                <p className="font-bold">{settings.bankName}</p>
-                                <p className="text-sm text-muted-foreground">{settings.bankAccountNumber}</p>
+                    <CardContent className="space-y-4 p-4">
+                        <div className="grid grid-cols-3 items-center gap-4 p-3 bg-muted rounded-md">
+                            <div className="col-span-1">
+                                <Avatar className="h-16 w-16 border">
+                                    <AvatarImage src={settings.bankLogoUrl} data-ai-hint="logo bank"/>
+                                    <AvatarFallback><Building/></AvatarFallback>
+                                </Avatar>
+                            </div>
+                            <div className="col-span-2 space-y-2">
+                                <div>
+                                    <p className="text-xs text-muted-foreground">Bank Name</p>
+                                    <p className="font-bold">{settings.bankName}</p>
+                                </div>
+                                <div>
+                                    <p className="text-xs text-muted-foreground">Account Number</p>
+                                    <p className="text-sm text-muted-foreground">{settings.bankAccountNumber}</p>
+                                </div>
                             </div>
                         </div>
 
