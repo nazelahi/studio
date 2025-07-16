@@ -727,13 +727,13 @@ export function ContactsTab() {
                   ))}
                 </div>
             ) : (
-                <Card className="p-0">
+                <div className="overflow-x-auto">
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead className="p-2">Tenant</TableHead>
-                                <TableHead className="hidden md:table-cell p-2">Details</TableHead>
-                                <TableHead className="hidden sm:table-cell p-2">Status</TableHead>
+                                <TableHead className="w-[300px] p-2">Tenant</TableHead>
+                                <TableHead className="p-2">Details</TableHead>
+                                <TableHead className="p-2">Status</TableHead>
                                 <TableHead className="text-right p-2">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
@@ -752,11 +752,11 @@ export function ContactsTab() {
                                             </div>
                                         </div>
                                     </TableCell>
-                                    <TableCell className="hidden md:table-cell p-2">
+                                    <TableCell className="p-2">
                                         <div className="font-medium">{tenant.property}</div>
                                         <div className="text-xs text-muted-foreground">{formatCurrency(tenant.rent)}</div>
                                     </TableCell>
-                                     <TableCell className="hidden sm:table-cell p-2">
+                                     <TableCell className="p-2">
                                         <Badge variant="secondary" className={getStatusBadge(tenant.status)}>{tenant.status}</Badge>
                                     </TableCell>
                                     <TableCell className="text-right p-2">
@@ -798,7 +798,7 @@ export function ContactsTab() {
                             ))}
                         </TableBody>
                     </Table>
-                </Card>
+                </div>
             )}
         </CardContent>
       </Card>
