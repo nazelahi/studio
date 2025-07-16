@@ -47,7 +47,7 @@ export async function updatePropertySettingsAction(formData: FormData) {
 
     // Handle simple text fields from FormData
     for (const [key, value] of formData.entries()) {
-        if (key !== 'logoFile' && key !== 'ownerPhotoFile') {
+        if (key !== 'logoFile' && key !== 'ownerPhotoFile' && key !== 'faviconFile') {
             if (key === 'whatsapp_reminders_enabled') {
                  settingsData[key] = value === 'on';
             } else if (key === 'whatsapp_reminder_schedule') {
@@ -112,6 +112,36 @@ export async function updatePropertySettingsAction(formData: FormData) {
                 await supabaseClient.storage.from('deposit-receipts').remove([oldPhotoPath]);
             } catch (e) {
                 console.error("Could not parse or delete old owner photo from storage:", e);
+            }
+        }
+    }
+
+    const faviconFile = formData.get('faviconFile') as File | null;
+    if (faviconFile && faviconFile.size > 0) {
+        const fileExt = faviconFile.name.split('.').pop();
+        const filePath = `favicons/${Date.now()}.${fileExt}`;
+
+        const { error: uploadError } = await supabaseClient.storage
+            .from('deposit-receipts')
+            .upload(filePath, faviconFile, {
+                upsert: true,
+            });
+
+        if (uploadError) {
+            console.error('Supabase favicon upload error:', uploadError);
+            return { error: `Failed to upload favicon: ${uploadError.message}` };
+        }
+
+        const { data: publicUrlData } = supabaseClient.storage.from('deposit-receipts').getPublicUrl(filePath);
+        settingsData.favicon_url = publicUrlData.publicUrl;
+
+        // Delete the old favicon if it exists
+        if (currentSettings?.favicon_url) {
+            try {
+                const oldFaviconPath = new URL(currentSettings.favicon_url).pathname.split('/deposit-receipts/')[1];
+                await supabaseClient.storage.from('deposit-receipts').remove([oldFaviconPath]);
+            } catch (e) {
+                console.error("Could not parse or delete old favicon from storage:", e);
             }
         }
     }

@@ -72,6 +72,8 @@ interface AppSettings {
   whatsappReminderSchedule?: string[];
   whatsappReminderTemplate?: string;
   tenantViewStyle: 'grid' | 'list';
+  metadataTitle?: string;
+  faviconUrl?: string;
 }
 
 interface SettingsContextType {
@@ -101,6 +103,8 @@ const defaultSettings: AppSettings = {
     whatsappReminderSchedule: ['before', 'on', 'after'],
     whatsappReminderTemplate: "Hi {tenantName}, a friendly reminder that your rent of ৳{rentAmount} for {property} is due on {dueDate}. Thank you!",
     tenantViewStyle: 'grid',
+    metadataTitle: "RentFlow",
+    faviconUrl: "/favicon.ico",
     tabNames: {
         overview: "Overview",
         tenants: "Tenants",
@@ -231,6 +235,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
                 combinedSettings.contactAddress = propertySettings.contact_address || defaultSettings.contactAddress;
                 combinedSettings.footerName = propertySettings.footer_name || defaultSettings.footerName;
                 combinedSettings.tenantViewStyle = propertySettings.tenant_view_style || defaultSettings.tenantViewStyle;
+                combinedSettings.metadataTitle = propertySettings.metadata_title || defaultSettings.metadataTitle;
+                combinedSettings.faviconUrl = propertySettings.favicon_url || defaultSettings.faviconUrl;
 
                 // Load theme from DB
                 combinedSettings.theme.colors.primary = propertySettings.theme_primary || defaultSettings.theme.colors.primary;
@@ -261,6 +267,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
             houseName, houseAddress, bankName, bankAccountNumber, bankLogoUrl, ownerName, ownerPhotoUrl, 
             zakatBankDetails, passcode, passcodeProtectionEnabled, aboutUs, contactPhone, contactEmail, contactAddress, footerName,
             theme, whatsappRemindersEnabled, whatsappReminderSchedule, whatsappReminderTemplate, tenantViewStyle,
+            metadataTitle, faviconUrl,
             ...localSettingsToSave 
         } = newSettings;
         try {

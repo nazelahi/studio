@@ -1,5 +1,5 @@
 
-import type {Metadata} from 'next';
+import type { Metadata, ResolvingMetadata } from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { SettingsProvider } from '@/context/settings-context';
@@ -7,11 +7,59 @@ import { DataProvider } from '@/context/data-context';
 import { AuthProvider } from '@/context/auth-context';
 import { ProtectionProvider } from '@/context/protection-context';
 import { ThemeProvider } from '@/components/theme-provider';
+import { createClient } from '@supabase/supabase-js';
 
-export const metadata: Metadata = {
-  title: 'RentFlow',
-  description: 'Manage your rental properties with ease.',
-};
+// It's safe to use service role key here as this runs on the server.
+const getSupabaseAdmin = () => {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+    if (!supabaseUrl || !supabaseServiceKey) {
+        console.warn('Supabase URL or service role key is not configured on the server. Please check your environment variables.');
+        return null;
+    }
+    
+    return createClient(supabaseUrl, supabaseServiceKey, {
+        auth: {
+            autoRefreshToken: false,
+            persistSession: false,
+        },
+    });
+}
+
+export async function generateMetadata(
+  parent: ResolvingMetadata
+): Promise<Metadata> {
+  const supabaseAdmin = getSupabaseAdmin();
+  let title = "RentFlow";
+  let description = "Manage your rental properties with ease.";
+  let icons = {};
+
+  if (supabaseAdmin) {
+      const { data: settings, error } = await supabaseAdmin
+        .from('property_settings')
+        .select('metadata_title, favicon_url')
+        .eq('id', 1)
+        .single();
+    
+      if (error && error.code !== 'PGRST116') { // Ignore "No rows found" error
+        console.error("Error fetching metadata:", error);
+      }
+      
+      if (settings) {
+        title = settings.metadata_title || "RentFlow";
+        if (settings.favicon_url) {
+            icons = { icon: settings.favicon_url };
+        }
+      }
+  }
+
+  return {
+    title: title,
+    description: description,
+    icons: icons,
+  }
+}
 
 export default function RootLayout({
   children,

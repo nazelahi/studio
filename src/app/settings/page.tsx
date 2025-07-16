@@ -12,7 +12,7 @@ import { useSettings } from "@/context/settings-context"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/context/auth-context"
 import { Button } from "@/components/ui/button"
-import { User, LogOut, MapPin, Menu, Settings, LoaderCircle, LogIn, Building, KeyRound, Palette, Tag, Landmark, Upload, Banknote, UserCircle, MessageSquare, Info, Phone, Mail, Database, Share2, Edit, Check, X } from "lucide-react"
+import { User, LogOut, MapPin, Menu, Settings, LoaderCircle, LogIn, Building, KeyRound, Palette, Tag, Landmark, Upload, Banknote, UserCircle, MessageSquare, Info, Phone, Mail, Database, Share2, Edit, Check, X, Image as ImageIcon } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useToast } from "@/hooks/use-toast"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
@@ -119,6 +119,7 @@ export default function SettingsPage() {
   
   const logoInputRef = React.useRef<HTMLInputElement>(null);
   const ownerPhotoInputRef = React.useRef<HTMLInputElement>(null);
+  const faviconInputRef = React.useRef<HTMLInputElement>(null);
 
   React.useEffect(() => {
     if (user?.email) {
@@ -149,7 +150,7 @@ export default function SettingsPage() {
     });
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, fileType: 'logoFile' | 'ownerPhotoFile') => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, fileType: 'logoFile' | 'ownerPhotoFile' | 'faviconFile') => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -203,6 +204,7 @@ export default function SettingsPage() {
             contactEmail: 'contact_email',
             contactAddress: 'contact_address',
             footerName: 'footer_name',
+            metadataTitle: 'metadata_title',
         };
 
         const renamedFormData = new FormData();
@@ -507,6 +509,33 @@ export default function SettingsPage() {
                                           <Input ref={logoInputRef} type="file" name="logoFile" className="hidden" accept="image/*" onChange={(e) => handleFileChange(e, 'logoFile')} />
                                       </div>
                                   </div>
+                              </div>
+                          </div>
+
+                          {/* App Branding */}
+                          <div>
+                              <h3 className="text-lg font-medium">Branding & Metadata</h3>
+                              <Separator className="my-2" />
+                              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
+                                <div className="md:col-span-2 space-y-4">
+                                  <EditableField label="Browser Tab Title" value={settings.metadataTitle || ''} onSave={(v) => handleSavePropertySettings('metadataTitle', v)} />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Favicon</Label>
+                                    <div className="flex items-center gap-4 group">
+                                        <div className="h-24 w-24 rounded-md border flex items-center justify-center bg-muted">
+                                            <Avatar className="h-16 w-16">
+                                                <AvatarImage src={settings.faviconUrl} data-ai-hint="logo icon"/>
+                                                <AvatarFallback><ImageIcon className="h-10 w-10 text-muted-foreground"/></AvatarFallback>
+                                            </Avatar>
+                                        </div>
+                                        <Button type="button" variant="ghost" size="icon" onClick={() => faviconInputRef.current?.click()} className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8">
+                                            <Edit className="h-4 w-4 text-muted-foreground"/>
+                                        </Button>
+                                        <Input ref={faviconInputRef} type="file" name="faviconFile" className="hidden" accept="image/png, image/x-icon, image/svg+xml" onChange={(e) => handleFileChange(e, 'faviconFile')} />
+                                    </div>
+                                    <p className="text-xs text-muted-foreground">Upload a .png, .ico, or .svg file.</p>
+                                </div>
                               </div>
                           </div>
                           
