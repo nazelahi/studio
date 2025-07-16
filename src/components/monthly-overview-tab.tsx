@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { DollarSign, Banknote, ArrowUpCircle, ArrowDownCircle, PlusCircle, Trash2, Pencil, CheckCircle, XCircle, AlertCircle, RefreshCw, ChevronDown, Copy, X, FileText, Upload, Building, Landmark, CalendarCheck, Edit, Eye, Image as ImageIcon, Megaphone, Download, Percent, Receipt, TrendingDown, Calculator } from "lucide-react"
+import { DollarSign, Banknote, ArrowUpCircle, ArrowDownCircle, PlusCircle, Trash2, Pencil, CheckCircle, XCircle, AlertCircle, RefreshCw, ChevronDown, Copy, X, FileText, Upload, Building, Landmark, CalendarCheck, Edit, Eye, Image as ImageIcon, Megaphone, Download, Percent, Receipt, TrendingDown, Calculator, LoaderCircle } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog"
@@ -1290,7 +1290,6 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                           </TableHead>}
                           <TableHead className="text-inherit">Details</TableHead>
                           <TableHead className="text-inherit hidden sm:table-cell">Category</TableHead>
-                          <TableHead className="text-inherit hidden sm:table-cell">Date</TableHead>
                           <TableHead className="text-inherit hidden sm:table-cell">Amount</TableHead>
                           <TableHead className="text-inherit">Status</TableHead>
                           <TableHead className="text-inherit">Actions</TableHead>
@@ -1318,9 +1317,6 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                               </TableCell>
                               <TableCell className="text-sm text-muted-foreground hidden sm:table-cell">
                                 {expense.category}
-                              </TableCell>
-                               <TableCell className="text-sm text-muted-foreground hidden sm:table-cell">
-                                {format(parseISO(expense.date), "dd MMM, yy")}
                               </TableCell>
                               <TableCell className="hidden sm:table-cell">{formatCurrency(expense.amount)}</TableCell>
                               <TableCell>
@@ -1379,7 +1375,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                           ))}
                            {filteredExpenses.length === 0 && (
                             <TableRow>
-                                <TableCell colSpan={isAdmin ? 7 : 6} className="h-24 text-center">
+                                <TableCell colSpan={isAdmin ? 6 : 5} className="h-24 text-center">
                                 <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
                                     <span>No expense data for {month} {year}.</span>
                                 </div>
@@ -1390,7 +1386,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                       {filteredExpenses.length > 0 && (
                         <TableFooter>
                           <TableRow style={{ backgroundColor: 'hsl(var(--table-footer-background))', color: 'hsl(var(--table-footer-foreground))' }} className="font-bold hover:bg-[hsl(var(--table-footer-background)/0.9)]">
-                            <TableCell colSpan={isAdmin ? 7 : 6} className="text-inherit p-2">
+                            <TableCell colSpan={isAdmin ? 6 : 5} className="text-inherit p-2">
                                <div className="flex flex-col sm:flex-row items-center justify-between px-2">
                                 <div className="sm:hidden text-center text-inherit font-bold">Total Paid</div>
                                 <div className="hidden sm:block text-left text-inherit font-bold">Total Paid</div>
@@ -1539,4 +1535,5 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
 }
 
     
+
 
