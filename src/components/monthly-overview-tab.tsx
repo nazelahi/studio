@@ -132,7 +132,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
   const { toast } = useToast();
   const { withProtection } = useProtection();
 
-  const { tenants, expenses, rentData, deposits, notices, addRentEntry, addRentEntriesBatch, updateRentEntry, deleteRentEntry, addExpense, updateExpense, deleteExpense, syncTenantsForMonth, syncExpensesFromPreviousMonth, loading, deleteMultipleRentEntries, deleteMultipleExpenses, refreshData, addExpensesBatch } = useData();
+  const { tenants, expenses, rentData, deposits, notices, addRentEntry, addRentEntriesBatch, updateRentEntry, deleteRentEntry, addExpense, addExpensesBatch, updateExpense, deleteExpense, syncTenantsForMonth, syncExpensesFromPreviousMonth, loading, deleteMultipleRentEntries, deleteMultipleExpenses, refreshData, getRentEntryById } = useData();
 
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = React.useState(false);
   const [editingExpense, setEditingExpense] = React.useState<Expense | null>(null);
@@ -187,7 +187,6 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
     return expenses.filter(expense => {
         if (!expense.date) return false;
         try {
-            // Split the date string to avoid timezone issues with parseISO
             const [expenseYear, expenseMonth] = expense.date.split('-').map(Number);
             return expenseYear === year && (expenseMonth - 1) === monthIndex;
         } catch {
@@ -1212,6 +1211,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                               }}
                             />
                           </TableHead>}
+                          <TableHead className="text-inherit">Date</TableHead>
                           <TableHead className="text-inherit">Details</TableHead>
                           <TableHead className="text-inherit">Amount</TableHead>
                           <TableHead className="text-inherit">Status</TableHead>
@@ -1231,9 +1231,12 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                                   }}
                                 />
                               </TableCell>}
+                              <TableCell className="text-sm text-muted-foreground">
+                                {format(parseISO(expense.date), "dd MMM, yy")}
+                              </TableCell>
                               <TableCell>
-                                <div className="font-medium">{expense.category}</div>
-                                <div className="text-sm text-muted-foreground hidden sm:block">{expense.description}</div>
+                                <div className="font-medium">{expense.description}</div>
+                                <div className="text-sm text-muted-foreground hidden sm:block">{expense.category}</div>
                               </TableCell>
                               <TableCell>৳{expense.amount.toFixed(2)}</TableCell>
                               <TableCell>
@@ -1277,7 +1280,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                           ))}
                            {filteredExpenses.length === 0 && (
                             <TableRow>
-                                <TableCell colSpan={isAdmin ? 5 : 4} className="h-24 text-center">
+                                <TableCell colSpan={isAdmin ? 6 : 5} className="h-24 text-center">
                                 <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
                                     <span>No expense data for {month} {year}.</span>
                                 </div>
@@ -1288,7 +1291,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                       {filteredExpenses.length > 0 && (
                         <TableFooter>
                           <TableRow style={{ backgroundColor: 'hsl(var(--table-footer-background))', color: 'hsl(var(--table-footer-foreground))' }} className="font-bold hover:bg-[hsl(var(--table-footer-background)/0.9)]">
-                              <TableCell colSpan={isAdmin ? 5 : 4} className="p-2 text-inherit">
+                              <TableCell colSpan={isAdmin ? 6 : 5} className="p-2 text-inherit">
                                   <div className="flex flex-col sm:flex-row items-center justify-between px-2">
                                       <div className="text-base font-bold text-inherit">Total Expenses</div>
                                       <div className="text-base font-bold text-inherit">৳{totalExpenses.toFixed(2)}</div>
@@ -1438,4 +1441,5 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
     
 
     
+
 
