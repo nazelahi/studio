@@ -468,7 +468,7 @@ export function ContactsTab() {
                                               onSelect={() => handleSelectTenantToCopy(tenant)}
                                               className="flex justify-between items-center"
                                             >
-                                                <div className="flex items-center gap-3">
+                                                <div className="flex items-center gap-3 pointer-events-none">
                                                     <Avatar className="h-8 w-8">
                                                         <AvatarImage src={tenant.avatar} />
                                                         <AvatarFallback>{tenant.name.charAt(0)}</AvatarFallback>
@@ -478,10 +478,12 @@ export function ContactsTab() {
                                                         <div className="text-xs text-muted-foreground">{tenant.property} &middot; ৳{tenant.rent}</div>
                                                     </div>
                                                 </div>
-                                                <Button variant="ghost" size="sm" className="h-auto px-2 py-1 text-xs">
-                                                    <Copy className="h-3 w-3 mr-1"/>
-                                                    Copy
-                                                </Button>
+                                                <div className="pointer-events-none">
+                                                    <Button variant="ghost" size="sm" className="h-auto px-2 py-1 text-xs">
+                                                        <Copy className="h-3 w-3 mr-1"/>
+                                                        Copy
+                                                    </Button>
+                                                </div>
                                             </CommandItem>
                                           ))}
                                         </CommandGroup>
@@ -651,7 +653,7 @@ export function ContactsTab() {
           </div>
           
             {loading ? (
-                <div className="grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 px-6">
+                <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-6">
                     {[...Array(4)].map((_, i) => <TenantCardSkeleton key={i} />)}
                 </div>
             ) : filteredTenants.length === 0 ? (
@@ -659,7 +661,7 @@ export function ContactsTab() {
                     No tenants found.
                 </div>
             ) : settings.tenantViewStyle === 'grid' ? (
-                 <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                 <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-6">
                   {filteredTenants.map((tenant) => (
                      <Card key={tenant.id} className="overflow-hidden shadow-md transition-shadow hover:shadow-lg w-full">
                         <div className="flex items-start gap-4 p-4">
