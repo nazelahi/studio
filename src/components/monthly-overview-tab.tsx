@@ -220,11 +220,9 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
   const collectionRate = totalRentExpected > 0 ? (totalRentCollected / totalRentExpected) * 100 : 0;
   const pendingRent = totalRentExpected - totalRentCollected;
 
-  const totalExpenses = filteredExpenses.filter(e => e.status === 'Paid').reduce((acc, expense) => acc + expense.amount, 0);
   const totalExpensesPaid = filteredExpenses.filter(e => e.status === 'Paid').reduce((acc, e) => acc + e.amount, 0);
-  const totalExpensesDue = filteredExpenses.filter(e => e.status === 'Due').reduce((acc, e) => acc + e.amount, 0);
   
-  const netResult = totalRentCollected - totalExpenses;
+  const netResult = totalRentCollected - totalExpensesPaid;
   const amountForDeposit = netResult > 0 ? netResult : 0;
 
   React.useEffect(() => {
@@ -774,21 +772,17 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                     let date: string;
                     const dateInput = row.date;
                     if (typeof dateInput === 'number') {
-                      // Handle Excel's serial date number (which is days since 1900-01-01, with a bug for leap year)
-                      const excelEpoch = new Date(1899, 11, 30);
+                      const excelEpoch = new Date(Date.UTC(1899, 11, 30));
                       const excelDate = new Date(excelEpoch.getTime() + dateInput * 86400000);
                       date = format(excelDate, 'yyyy-MM-dd');
                     } else if (typeof dateInput === 'string') {
-                      // Handle string dates, try to parse robustly
                       const parsed = new Date(dateInput);
-                      if (!isNaN(parsed.getTime())) {
+                       if (!isNaN(parsed.getTime())) {
                         date = format(parsed, 'yyyy-MM-dd');
                       } else {
-                        // Fallback for invalid string date
                         date = format(new Date(year, monthIndex, 1), 'yyyy-MM-dd');
                       }
                     } else {
-                      // Fallback for other invalid types
                       date = format(new Date(year, monthIndex, 1), 'yyyy-MM-dd');
                     }
                   
@@ -1327,12 +1321,8 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                       {filteredExpenses.length > 0 && (
                         <TableFooter>
                           <TableRow className="font-bold bg-muted/50">
-                              <TableCell colSpan={isAdmin ? 4 : 3} className="text-right">Total Paid:</TableCell>
-                              <TableCell colSpan={2} className="text-left font-bold text-green-600">{formatCurrency(totalExpensesPaid)}</TableCell>
-                          </TableRow>
-                           <TableRow className="font-bold bg-muted/50">
-                              <TableCell colSpan={isAdmin ? 4 : 3} className="text-right">Total Due:</TableCell>
-                              <TableCell colSpan={2} className="text-left font-bold text-orange-600">{formatCurrency(totalExpensesDue)}</TableCell>
+                              <TableCell colSpan={isAdmin ? 5 : 4} className="text-right">Total Paid:</TableCell>
+                              <TableCell colSpan={1} className="text-left font-bold text-green-600">{formatCurrency(totalExpensesPaid)}</TableCell>
                           </TableRow>
                         </TableFooter>
                       )}
@@ -1368,7 +1358,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                         <TrendingDown className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-red-600">{formatCurrency(totalExpenses)}</div>
+                        <div className="text-2xl font-bold text-red-600">{formatCurrency(totalExpensesPaid)}</div>
                         <p className="text-xs text-muted-foreground">This month</p>
                     </CardContent>
                 </Card>
