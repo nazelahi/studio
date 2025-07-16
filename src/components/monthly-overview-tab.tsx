@@ -187,6 +187,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
     return expenses.filter(expense => {
         if (!expense.date) return false;
         try {
+            // Split by '-' and take the first two parts to avoid timezone issues.
             const [expenseYear, expenseMonth] = expense.date.split('-').map(Number);
             return expenseYear === year && (expenseMonth - 1) === monthIndex;
         } catch {
@@ -464,6 +465,14 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
     deleteMultipleExpenses(selectedExpenseIds, toast);
     setSelectedExpenseIds([]);
   }
+  
+  const handleExpenseStatusChange = (expense: Expense, newStatus: Expense['status']) => {
+    withProtection(async () => {
+        await updateExpense({ ...expense, status: newStatus }, toast);
+        toast({ title: "Status Updated", description: `Expense status is now ${newStatus}.`});
+    });
+  }
+
 
   // Import Handler
   const handleImportClick = () => {
@@ -765,7 +774,16 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                         const excelEpoch = new Date(1899, 11, 30);
                         const excelDate = new Date(excelEpoch.getTime() + dateInput * 86400000);
                         date = format(excelDate, 'yyyy-MM-dd');
-                    } else {
+                    } else if (typeof dateInput === 'string') {
+                         const [day, month, year] = dateInput.split(/[-/]/);
+                         const parsed = new Date(Number(year), Number(month) - 1, Number(day));
+                         if (!isNaN(parsed.getTime())) {
+                            date = format(parsed, 'yyyy-MM-dd');
+                         } else {
+                            date = format(new Date(), 'yyyy-MM-dd');
+                         }
+                    }
+                    else {
                         // Handle string date, ensuring it doesn't shift timezone
                         const parsed = new Date(dateInput + "T00:00:00"); // Treat as local time
                         date = !isNaN(parsed.getTime()) ? format(parsed, 'yyyy-MM-dd') : format(new Date(year, monthIndex, 1), 'yyyy-MM-dd');
@@ -1211,8 +1229,8 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                               }}
                             />
                           </TableHead>}
-                          <TableHead className="text-inherit">Date</TableHead>
                           <TableHead className="text-inherit">Details</TableHead>
+                          <TableHead className="text-inherit">Date</TableHead>
                           <TableHead className="text-inherit">Amount</TableHead>
                           <TableHead className="text-inherit">Status</TableHead>
                           <TableHead className="text-inherit">Actions</TableHead>
@@ -1231,18 +1249,33 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                                   }}
                                 />
                               </TableCell>}
-                              <TableCell className="text-sm text-muted-foreground">
-                                {format(parseISO(expense.date), "dd MMM, yy")}
-                              </TableCell>
                               <TableCell>
                                 <div className="font-medium">{expense.description}</div>
-                                <div className="text-sm text-muted-foreground hidden sm:block">{expense.category}</div>
+                                <div className="text-sm text-muted-foreground">{expense.category}</div>
+                              </TableCell>
+                               <TableCell className="text-sm text-muted-foreground">
+                                {format(parseISO(expense.date), "dd MMM, yy")}
                               </TableCell>
                               <TableCell>৳{expense.amount.toFixed(2)}</TableCell>
                               <TableCell>
-                                <Badge className={getExpenseStatusBadge(expense.status)}>
-                                  {expense.status}
-                                </Badge>
+                                 {isAdmin ? (
+                                    <Select
+                                        value={expense.status}
+                                        onValueChange={(newStatus) => handleExpenseStatusChange(expense, newStatus as Expense['status'])}
+                                    >
+                                        <SelectTrigger className={cn("w-[120px] h-auto py-1 px-2 border", getExpenseStatusBadge(expense.status))}>
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="Due">Due</SelectItem>
+                                            <SelectItem value="Paid">Paid</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                ) : (
+                                    <Badge className={getExpenseStatusBadge(expense.status)}>
+                                        {expense.status}
+                                    </Badge>
+                                )}
                               </TableCell>
                               <TableCell>
                                 <div className="flex items-center gap-2">
@@ -1439,7 +1472,3 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
 }
 
     
-
-    
-
-
