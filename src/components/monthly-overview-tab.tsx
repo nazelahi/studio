@@ -188,7 +188,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
       if (!expense.date) return false;
       try {
         const expenseDate = parseISO(expense.date);
-        return getYear(expenseDate) === year && getMonth(expenseDate) === monthIndex;
+        return expenseDate.getUTCFullYear() === year && expenseDate.getUTCMonth() === monthIndex;
       } catch {
         return false;
       }
@@ -771,21 +771,26 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
 
                     let date: string;
                     const dateInput = row.date;
-                     if (typeof dateInput === 'number') {
-                        const excelEpoch = new Date(1899, 11, 30);
-                        const excelDate = new Date(excelEpoch.getTime() + dateInput * 86400000);
-                        date = format(excelDate, 'yyyy-MM-dd');
-                    } else if (typeof dateInput === 'string' && dateInput.match(/^\d{1,2}[-/]\d{1,2}[-/]\d{2,4}$/)) {
-                         const parts = dateInput.split(/[-/]/);
-                         const day = parseInt(parts[0], 10);
-                         const month = parseInt(parts[1], 10) - 1;
-                         let year = parseInt(parts[2], 10);
-                         if (year < 100) year += 2000;
-                         const parsed = new Date(year, month, day);
-                         date = !isNaN(parsed.getTime()) ? format(parsed, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
+                    if (typeof dateInput === 'number') {
+                      // Handle Excel's serial date number
+                      const excelEpoch = new Date(Date.UTC(1899, 11, 30));
+                      const excelDate = new Date(excelEpoch.getTime() + dateInput * 86400000);
+                      date = format(excelDate, 'yyyy-MM-dd');
+                    } else if (typeof dateInput === 'string') {
+                      // Handle string date, assuming it's in a parsable format
+                      const parsed = new Date(dateInput);
+                      if (!isNaN(parsed.getTime())) {
+                        // The date is valid, but new Date() might be local. Force UTC interpretation.
+                        const [year, month, day] = dateInput.split(/[-/]/).map(Number);
+                        const utcDate = new Date(Date.UTC(year, month - 1, day));
+                        date = format(utcDate, 'yyyy-MM-dd');
+                      } else {
+                        // Fallback for invalid string date
+                        date = format(new Date(year, monthIndex, 1), 'yyyy-MM-dd');
+                      }
                     } else {
-                        const parsed = new Date(dateInput);
-                        date = !isNaN(parsed.getTime()) ? format(parsed, 'yyyy-MM-dd') : format(new Date(year, monthIndex, 1), 'yyyy-MM-dd');
+                      // Fallback for other invalid types
+                      date = format(new Date(year, monthIndex, 1), 'yyyy-MM-dd');
                     }
                   
                     return {
@@ -1257,7 +1262,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                               </TableCell>
                               <TableCell>৳{expense.amount.toFixed(2)}</TableCell>
                               <TableCell>
-                                 {isAdmin ? (
+                                 {isAdmin && expense.status === 'Due' ? (
                                     <Select
                                         value={expense.status}
                                         onValueChange={(newStatus) => handleExpenseStatusChange(expense, newStatus as Expense['status'])}
