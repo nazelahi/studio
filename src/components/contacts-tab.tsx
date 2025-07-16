@@ -462,27 +462,26 @@ export function ContactsTab() {
                                       <CommandList>
                                         <CommandGroup>
                                           {allTenantsForFinder.map((tenant) => (
-                                            <CommandItem
+                                             <CommandItem
                                               key={tenant.id}
                                               value={`${tenant.name} ${tenant.property} ${tenant.email}`}
                                               onSelect={() => handleSelectTenantToCopy(tenant)}
+                                              className="flex justify-between w-full cursor-pointer"
                                             >
-                                                <div className="flex items-center justify-between w-full">
-                                                    <div className="flex items-center gap-3">
-                                                        <Avatar className="h-8 w-8">
-                                                            <AvatarImage src={tenant.avatar} />
-                                                            <AvatarFallback>{tenant.name.charAt(0)}</AvatarFallback>
-                                                        </Avatar>
-                                                        <div>
-                                                            <div className="font-medium">{tenant.name}</div>
-                                                            <div className="text-xs text-muted-foreground">{tenant.property} &middot; ৳{tenant.rent}</div>
-                                                        </div>
-                                                    </div>
-                                                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                                        <Copy className="h-3 w-3"/>
-                                                        Copy
-                                                    </div>
+                                              <div className="flex items-center gap-3 pointer-events-none">
+                                                <Avatar className="h-8 w-8">
+                                                  <AvatarImage src={tenant.avatar} />
+                                                  <AvatarFallback>{tenant.name.charAt(0)}</AvatarFallback>
+                                                </Avatar>
+                                                <div>
+                                                  <div className="font-medium">{tenant.name}</div>
+                                                  <div className="text-xs text-muted-foreground">{tenant.property} &middot; ৳{tenant.rent}</div>
                                                 </div>
+                                              </div>
+                                              <div className="flex items-center gap-1 text-xs text-muted-foreground pointer-events-none">
+                                                <Copy className="h-3 w-3" />
+                                                Copy
+                                              </div>
                                             </CommandItem>
                                           ))}
                                         </CommandGroup>
@@ -729,11 +728,11 @@ export function ContactsTab() {
                 <div className="overflow-x-auto">
                     <Table>
                         <TableHeader>
-                            <TableRow>
-                                <TableHead className="w-[300px] p-2">Tenant</TableHead>
-                                <TableHead className="p-2">Details</TableHead>
-                                <TableHead className="p-2">Status</TableHead>
-                                <TableHead className="text-right p-2">Actions</TableHead>
+                            <TableRow style={{ backgroundColor: 'hsl(var(--table-header-background))', color: 'hsl(var(--table-header-foreground))' }} className="hover:bg-[hsl(var(--table-header-background)/0.9)]">
+                                <TableHead className="w-[300px] p-2 text-inherit">Tenant</TableHead>
+                                <TableHead className="p-2 text-inherit">Details</TableHead>
+                                <TableHead className="p-2 text-inherit">Status</TableHead>
+                                <TableHead className="text-right p-2 text-inherit">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
