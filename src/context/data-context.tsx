@@ -8,6 +8,7 @@ import { parseISO, getMonth, getYear, subMonths, format, subYears } from 'date-f
 import { supabase } from '@/lib/supabase';
 import { useAuth } from './auth-context';
 import { Button } from '@/components/ui/button';
+import { addWorkDetailsBatch as addWorkDetailsBatchAction } from '@/app/actions/work';
 
 
 interface AppData {
@@ -47,6 +48,7 @@ interface DataContextType extends AppData {
   restoreAllData: (backupData: AppData, toast: ToastFn) => void;
   refreshData: () => Promise<void>;
   getRentEntryById: (id: string) => RentEntry | null;
+  addWorkDetailsBatch: (workDetails: Omit<WorkDetail, 'id' | 'created_at' | 'deleted_at'>[], toast: ToastFn) => Promise<void>;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -692,10 +694,20 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const getRentEntryById = (id: string): RentEntry | null => {
         return data.rentData.find(entry => entry.id === id) || null;
     }
+    
+    const addWorkDetailsBatch = async (workDetails: Omit<WorkDetail, 'id' | 'created_at' | 'deleted_at'>[], toast: ToastFn) => {
+        const result = await addWorkDetailsBatchAction(workDetails);
+        if (result.error) {
+            handleError(new Error(result.error), 'batch adding work details', toast);
+        } else {
+            toast({ title: "Import Successful", description: `${result.count} work items have been imported.` });
+        }
+        await fetchData();
+    };
 
 
     return (
-        <DataContext.Provider value={{ ...data, addTenant, updateTenant, deleteTenant, addExpense, addExpensesBatch, updateExpense, deleteExpense, deleteMultipleExpenses, addRentEntry, addRentEntriesBatch, updateRentEntry, deleteRentEntry, deleteMultipleRentEntries, syncTenantsForMonth, syncExpensesFromPreviousMonth, updatePropertySettings, loading, getAllData, restoreAllData, refreshData: fetchData, getRentEntryById }}>
+        <DataContext.Provider value={{ ...data, addTenant, updateTenant, deleteTenant, addExpense, addExpensesBatch, updateExpense, deleteExpense, deleteMultipleExpenses, addRentEntry, addRentEntriesBatch, updateRentEntry, deleteRentEntry, deleteMultipleRentEntries, syncTenantsForMonth, syncExpensesFromPreviousMonth, updatePropertySettings, loading, getAllData, restoreAllData, refreshData: fetchData, getRentEntryById, addWorkDetailsBatch }}>
             {children}
         </DataContext.Provider>
     );

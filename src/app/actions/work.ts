@@ -4,6 +4,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { revalidatePath } from 'next/cache'
 import 'dotenv/config'
+import type { WorkDetail } from '@/types'
 
 const getSupabaseAdmin = () => {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -86,4 +87,23 @@ export async function deleteWorkDetailAction(formData: FormData) {
     revalidatePath('/');
     
     return { success: true };
+}
+
+
+export async function addWorkDetailsBatch(workDetails: Omit<WorkDetail, 'id' | 'created_at' | 'deleted_at'>[]) {
+    if (!workDetails || workDetails.length === 0) {
+        return { error: 'No work details provided.' };
+    }
+    
+    const supabaseAdmin = getSupabaseAdmin();
+    
+    const { error } = await supabaseAdmin.from('work_details').insert(workDetails);
+
+    if (error) {
+        console.error('Error batch inserting work details:', error);
+        return { error: `Failed to insert work details: ${error.message}` };
+    }
+
+    revalidatePath('/');
+    return { success: true, count: workDetails.length };
 }

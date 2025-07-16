@@ -16,13 +16,15 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { PlusCircle, Edit, Trash2, LoaderCircle, ExternalLink } from "lucide-react"
+import { PlusCircle, Edit, Trash2, LoaderCircle, ExternalLink, Download, Upload } from "lucide-react"
 import type { WorkDetail, Tenant } from "@/types"
 import { saveWorkDetailAction, deleteWorkDetailAction } from "@/app/actions/work"
 import { format, parseISO, getYear } from "date-fns"
 import { cn } from "@/lib/utils"
 import { useRouter } from "next/navigation"
 import { useProtection } from "@/context/protection-context"
+import * as XLSX from 'xlsx';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip"
 
 const formatCurrency = (amount?: number) => {
     if (amount === undefined || amount === null) return '-';
@@ -33,7 +35,7 @@ const workCategories = ["Plumbing", "Electrical", "Painting", "Cleaning", "Appli
 
 
 export function WorkDetailsTab({ year }: { year: number }) {
-  const { workDetails, loading } = useData();
+  const { workDetails, loading, addWorkDetailsBatch } = useData();
   const { isAdmin } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
@@ -44,6 +46,8 @@ export function WorkDetailsTab({ year }: { year: number }) {
 
   const [workCategory, setWorkCategory] = React.useState('');
   const [customWorkCategory, setCustomWorkCategory] = React.useState('');
+  
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
   
   const filteredWorkDetails = React.useMemo(() => {
     return workDetails.filter(work => {
@@ -129,9 +133,107 @@ export function WorkDetailsTab({ year }: { year: number }) {
   const yearlyTotal = React.useMemo(() => {
     return filteredWorkDetails.reduce((acc, work) => acc + (work.product_cost || 0) + (work.worker_cost || 0), 0);
   }, [filteredWorkDetails]);
+  
+  const handleDownloadTemplate = () => {
+    const headers = ["title", "description", "category", "status", "product_cost", "worker_cost", "due_date"];
+    const sampleData = [
+        ["Repair kitchen sink", "Leaking faucet in Apt 2B", "Plumbing", "To Do", 500, 1500, format(new Date(), 'yyyy-MM-dd')],
+        ["Paint hallway", "Repaint the 3rd floor hallway", "Painting", "In Progress", 3000, 5000, format(new Date(), 'yyyy-MM-dd')]
+    ];
+    const worksheet = XLSX.utils.aoa_to_sheet([headers, ...sampleData]);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Work Details Template");
+    XLSX.writeFile(workbook, "WorkDetails_Template.xlsx");
+    toast({ title: "Template Downloaded", description: "WorkDetails_Template.xlsx has been downloaded." });
+  };
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+  
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    toast({ title: "Processing file...", description: "Please wait while we read your spreadsheet." });
+    
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        try {
+            const data = e.target?.result;
+            const workbook = XLSX.read(data, { type: 'array' });
+            const sheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[sheetName];
+
+            const json: any[] = XLSX.utils.sheet_to_json(worksheet, {
+                header: 1,
+                blankrows: false,
+                defval: '',
+            });
+
+            if (json.length < 2) {
+                toast({ title: "Empty or invalid sheet", description: "The sheet must have a header row and at least one data row.", variant: "destructive" });
+                return;
+            }
+
+            const header: string[] = json[0].map((h: any) => String(h).toLowerCase().trim().replace(/ /g, '_'));
+            const rows = json.slice(1);
+
+            const workDetailsToCreate = rows.map(rowArray => {
+                const row: { [key: string]: any } = {};
+                header.forEach((h, i) => { row[h] = rowArray[i]; });
+                
+                const validStatuses = ["to do", "in progress", "completed"];
+                const statusInput = String(row.status || 'To Do').toLowerCase();
+                const status = validStatuses.find(s => s === statusInput)
+                    ? statusInput.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') as WorkDetail['status']
+                    : 'To Do';
+                
+                let dueDate: string | null = null;
+                const dateInput = row.due_date;
+                 if (dateInput) {
+                    if (typeof dateInput === 'number') {
+                        const excelDate = new Date(Date.UTC(1900, 0, dateInput - 1));
+                        dueDate = format(excelDate, 'yyyy-MM-dd');
+                    } else {
+                        const parsed = new Date(dateInput);
+                        if (!isNaN(parsed.getTime())) {
+                            dueDate = format(parsed, 'yyyy-MM-dd');
+                        }
+                    }
+                }
+
+                return {
+                    title: String(row.title || ''),
+                    description: String(row.description || ''),
+                    category: String(row.category || 'Other'),
+                    status: status,
+                    product_cost: Number(row.product_cost) || null,
+                    worker_cost: Number(row.worker_cost) || null,
+                    due_date: dueDate,
+                };
+            }).filter(item => item.title);
+            
+             if (workDetailsToCreate.length === 0) {
+                toast({ title: "No Valid Data Found", description: "Ensure your file has a 'title' column.", variant: "destructive" });
+                return;
+            }
+
+            await addWorkDetailsBatch(workDetailsToCreate, toast);
+
+        } catch (error) {
+             console.error("Error importing file:", error);
+             toast({ title: "Import Failed", description: "There was an error processing your file.", variant: "destructive" });
+        } finally {
+             if (event.target) event.target.value = '';
+        }
+    };
+    reader.readAsArrayBuffer(file);
+  };
 
 
   return (
+    <TooltipProvider>
     <Card className="mt-4">
       <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between">
         <div>
@@ -144,97 +246,112 @@ export function WorkDetailsTab({ year }: { year: number }) {
             <ExternalLink className="ml-2 h-4 w-4" />
           </Button>
           {isAdmin && (
-              <Dialog open={isDialogOpen} onOpenChange={handleOpenChange}>
-                  <DialogTrigger asChild>
-                      <Button>
-                          <PlusCircle className="mr-2 h-4 w-4" />
-                          Add Work Item
-                      </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                      <DialogHeader>
-                          <DialogTitle>{editingWork ? 'Edit Work Item' : 'Add New Work Item'}</DialogTitle>
-                          <DialogDescription>Fill in the details for the job below.</DialogDescription>
-                      </DialogHeader>
-                      <form onSubmit={handleSave}>
-                          {editingWork && <input type="hidden" name="workId" value={editingWork.id} />}
-                          <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto pr-2">
-                              <div className="space-y-2">
-                                  <Label htmlFor="title">Title</Label>
-                                  <Input id="title" name="title" defaultValue={editingWork?.title} required />
-                              </div>
-                              <div className="space-y-2">
-                                  <Label htmlFor="description">Description</Label>
-                                  <Textarea id="description" name="description" defaultValue={editingWork?.description || ''} />
-                              </div>
-                              <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                      <Label htmlFor="category">Category</Label>
-                                      <Select value={workCategory} onValueChange={setWorkCategory}>
+              <div className="flex items-center gap-2">
+                  <Dialog open={isDialogOpen} onOpenChange={handleOpenChange}>
+                      <DialogTrigger asChild>
+                          <Button>
+                              <PlusCircle className="mr-2 h-4 w-4" />
+                              Add Work Item
+                          </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                          <DialogHeader>
+                              <DialogTitle>{editingWork ? 'Edit Work Item' : 'Add New Work Item'}</DialogTitle>
+                              <DialogDescription>Fill in the details for the job below.</DialogDescription>
+                          </DialogHeader>
+                          <form onSubmit={handleSave}>
+                              {editingWork && <input type="hidden" name="workId" value={editingWork.id} />}
+                              <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto pr-2">
+                                  <div className="space-y-2">
+                                      <Label htmlFor="title">Title</Label>
+                                      <Input id="title" name="title" defaultValue={editingWork?.title} required />
+                                  </div>
+                                  <div className="space-y-2">
+                                      <Label htmlFor="description">Description</Label>
+                                      <Textarea id="description" name="description" defaultValue={editingWork?.description || ''} />
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                          <Label htmlFor="category">Category</Label>
+                                          <Select value={workCategory} onValueChange={setWorkCategory}>
+                                              <SelectTrigger>
+                                                  <SelectValue placeholder="Select a category" />
+                                              </SelectTrigger>
+                                              <SelectContent>
+                                                  {workCategories.map(cat => (
+                                                      <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                                                  ))}
+                                              </SelectContent>
+                                          </Select>
+                                      </div>
+                                      <div className="space-y-2">
+                                          <Label htmlFor="due_date">Due Date</Label>
+                                          <Input id="due_date" name="due_date" type="date" defaultValue={editingWork?.due_date ? format(parseISO(editingWork.due_date), 'yyyy-MM-dd') : new Date(year, new Date().getMonth()).toISOString().split('T')[0]} />
+                                      </div>
+                                  </div>
+                                  
+                                  {workCategory === 'Other' && (
+                                      <div className="space-y-2">
+                                        <Label htmlFor="customCategory">Custom Category</Label>
+                                        <Input 
+                                          id="customCategory" 
+                                          name="customCategory" 
+                                          value={customWorkCategory}
+                                          onChange={(e) => setCustomWorkCategory(e.target.value)}
+                                          placeholder="Enter custom category" 
+                                          required 
+                                        />
+                                      </div>
+                                  )}
+    
+                                  <div className="grid grid-cols-2 gap-4">
+                                      <div className="space-y-2">
+                                          <Label htmlFor="product_cost">Product Cost</Label>
+                                          <Input id="product_cost" name="product_cost" type="number" step="0.01" defaultValue={editingWork?.product_cost || ''} placeholder="0.00" />
+                                      </div>
+                                      <div className="space-y-2">
+                                          <Label htmlFor="worker_cost">Worker Cost</Label>
+                                          <Input id="worker_cost" name="worker_cost" type="number" step="0.01" defaultValue={editingWork?.worker_cost || ''} placeholder="0.00" />
+                                      </div>
+                                  </div>
+                                  <div className="space-y-2">
+                                      <Label htmlFor="status">Status</Label>
+                                      <Select name="status" defaultValue={editingWork?.status || 'To Do'}>
                                           <SelectTrigger>
-                                              <SelectValue placeholder="Select a category" />
+                                              <SelectValue placeholder="Select status" />
                                           </SelectTrigger>
                                           <SelectContent>
-                                              {workCategories.map(cat => (
-                                                  <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                                              ))}
+                                              <SelectItem value="To Do">To Do</SelectItem>
+                                              <SelectItem value="In Progress">In Progress</SelectItem>
+                                              <SelectItem value="Completed">Completed</SelectItem>
                                           </SelectContent>
                                       </Select>
                                   </div>
-                                  <div className="space-y-2">
-                                      <Label htmlFor="due_date">Due Date</Label>
-                                      <Input id="due_date" name="due_date" type="date" defaultValue={editingWork?.due_date ? format(parseISO(editingWork.due_date), 'yyyy-MM-dd') : new Date(year, new Date().getMonth()).toISOString().split('T')[0]} />
-                                  </div>
                               </div>
-                              
-                              {workCategory === 'Other' && (
-                                  <div className="space-y-2">
-                                    <Label htmlFor="customCategory">Custom Category</Label>
-                                    <Input 
-                                      id="customCategory" 
-                                      name="customCategory" 
-                                      value={customWorkCategory}
-                                      onChange={(e) => setCustomWorkCategory(e.target.value)}
-                                      placeholder="Enter custom category" 
-                                      required 
-                                    />
-                                  </div>
-                              )}
-
-                              <div className="grid grid-cols-2 gap-4">
-                                  <div className="space-y-2">
-                                      <Label htmlFor="product_cost">Product Cost</Label>
-                                      <Input id="product_cost" name="product_cost" type="number" step="0.01" defaultValue={editingWork?.product_cost || ''} placeholder="0.00" />
-                                  </div>
-                                  <div className="space-y-2">
-                                      <Label htmlFor="worker_cost">Worker Cost</Label>
-                                      <Input id="worker_cost" name="worker_cost" type="number" step="0.01" defaultValue={editingWork?.worker_cost || ''} placeholder="0.00" />
-                                  </div>
-                              </div>
-                              <div className="space-y-2">
-                                  <Label htmlFor="status">Status</Label>
-                                  <Select name="status" defaultValue={editingWork?.status || 'To Do'}>
-                                      <SelectTrigger>
-                                          <SelectValue placeholder="Select status" />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                          <SelectItem value="To Do">To Do</SelectItem>
-                                          <SelectItem value="In Progress">In Progress</SelectItem>
-                                          <SelectItem value="Completed">Completed</SelectItem>
-                                      </SelectContent>
-                                  </Select>
-                              </div>
-                          </div>
-                          <DialogFooter>
-                              <DialogClose asChild><Button type="button" variant="outline" disabled={isPending}>Cancel</Button></DialogClose>
-                              <Button type="submit" disabled={isPending}>
-                                {isPending && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
-                                Save
-                              </Button>
-                          </DialogFooter>
-                      </form>
-                  </DialogContent>
-              </Dialog>
+                              <DialogFooter>
+                                  <DialogClose asChild><Button type="button" variant="outline" disabled={isPending}>Cancel</Button></DialogClose>
+                                  <Button type="submit" disabled={isPending}>
+                                    {isPending && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
+                                    Save
+                                  </Button>
+                              </DialogFooter>
+                          </form>
+                      </DialogContent>
+                  </Dialog>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button size="icon" variant="outline" onClick={handleDownloadTemplate}><Download className="h-4 w-4" /></Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Download Template</TooltipContent>
+                  </Tooltip>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button size="icon" variant="outline" onClick={handleImportClick}><Upload className="h-4 w-4" /></Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Import</TooltipContent>
+                  </Tooltip>
+                  <input type="file" ref={fileInputRef} className="hidden" accept=".xlsx, .csv" onChange={handleFileChange} />
+              </div>
           )}
         </div>
       </CardHeader>
@@ -331,5 +448,6 @@ export function WorkDetailsTab({ year }: { year: number }) {
         </Table>
       </CardContent>
     </Card>
+    </TooltipProvider>
   )
 }
