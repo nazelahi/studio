@@ -160,6 +160,8 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
   
   const [isNoticeDialogOpen, setIsNoticeDialogOpen] = React.useState(false);
   const [isNoticePending, startNoticeTransition] = React.useTransition();
+  const [navigatingToReceiptId, setNavigatingToReceiptId] = React.useState<string | null>(null);
+  const [isNavigating, startNavigation] = React.useTransition();
 
 
   const formRef = React.useRef<HTMLFormElement>(null);
@@ -1077,8 +1079,23 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                                 <TableCell>
                                   <div className="flex items-center gap-1">
                                     {entry.status === 'Paid' && (
-                                       <Button size="icon" variant="ghost" className="h-8 w-8" onClick={() => router.push(`/receipt/${entry.id}`)}>
-                                          <Receipt className="h-4 w-4" />
+                                       <Button
+                                          size="icon"
+                                          variant="ghost"
+                                          className="h-8 w-8"
+                                          onClick={() => {
+                                            setNavigatingToReceiptId(entry.id);
+                                            startNavigation(() => {
+                                                router.push(`/receipt/${entry.id}`);
+                                            });
+                                          }}
+                                          disabled={isNavigating && navigatingToReceiptId === entry.id}
+                                        >
+                                          {isNavigating && navigatingToReceiptId === entry.id ? (
+                                            <LoaderCircle className="h-4 w-4 animate-spin" />
+                                          ) : (
+                                            <Receipt className="h-4 w-4" />
+                                          )}
                                           <span className="sr-only">View Receipt</span>
                                       </Button>
                                     )}
@@ -1540,6 +1557,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
 }
 
     
+
 
 
 
