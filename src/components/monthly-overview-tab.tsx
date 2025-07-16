@@ -132,7 +132,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
   const { toast } = useToast();
   const { withProtection } = useProtection();
 
-  const { tenants, expenses, rentData, deposits, notices, addRentEntry, addRentEntriesBatch, updateRentEntry, deleteRentEntry, syncTenantsForMonth, syncExpensesFromPreviousMonth, loading, deleteMultipleRentEntries, deleteMultipleExpenses, refreshData, getRentEntryById } = useData();
+  const { tenants, expenses, rentData, deposits, notices, addRentEntry, addRentEntriesBatch, updateRentEntry, deleteRentEntry, syncTenantsForMonth, syncExpensesFromPreviousMonth, loading, deleteMultipleRentEntries, deleteMultipleExpenses, refreshData, getRentEntryById, addExpense, updateExpense, deleteExpense } = useData();
 
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = React.useState(false);
   const [editingExpense, setEditingExpense] = React.useState<Expense | null>(null);
@@ -231,7 +231,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
         if (loggedDeposit) {
             setDepositAmount(String(loggedDeposit.amount));
         } else {
-            setDepositAmount(amountForDeposit > 0 ? amountForDeposit.toFixed(2) : '');
+             setDepositAmount(amountForDeposit > 0 ? amountForDeposit.toFixed(2) : '');
         }
     }, [loggedDeposit, amountForDeposit]);
 
@@ -424,10 +424,10 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
     };
 
     if (editingExpense) {
-      await updateRentEntry({ ...editingExpense, ...expenseData } as any, toast);
+      await updateExpense({ ...editingExpense, ...expenseData } as any, toast);
       toast({ title: "Expense Updated", description: "The expense has been successfully updated." });
     } else {
-      await addRentEntry(expenseData as any, year, monthIndex, toast);
+      await addExpense(expenseData as any, toast);
       toast({ title: "Expense Added", description: "The new expense has been successfully added." });
     }
 
@@ -472,7 +472,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
   
   const handleExpenseStatusChange = (expense: Expense, newStatus: Expense['status']) => {
     withProtection(async () => {
-        await updateRentEntry({ ...expense, status: newStatus } as any, toast);
+        await updateExpense({ ...expense, status: newStatus } as any, toast);
         toast({ title: "Status Updated", description: `Expense status is now ${newStatus}.`});
     });
   }
@@ -1208,9 +1208,9 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                                             <Select value={expenseCategory} onValueChange={setExpenseCategory}><SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger><SelectContent>{expenseCategories.map(cat => (<SelectItem key={cat} value={cat}>{cat}</SelectItem>))}</SelectContent></Select>
                                         </div>
                                         {expenseCategory === 'Other' && (<div className="space-y-2"><Label htmlFor="customCategory">Custom Category</Label><Input id="customCategory" name="customCategory" value={customCategory} onChange={(e) => setCustomCategory(e.target.value)} placeholder="Enter custom category" required/></div>)}
-                                        <div className="space-y-2"><Label htmlFor="amount">Amount</Label><Input id="amount" name="amount" type="number" step="0.01" defaultValue={editingExpense?.amount} placeholder="0.00" required /></div>
+                                        <div className="space-y-2"><Label htmlFor="amount">Amount</Label><Input id="amount" name="amount" type="number" step="0.01" defaultValue={String(editingExpense?.amount ?? '')} placeholder="0.00" required /></div>
                                         <div className="space-y-2"><Label htmlFor="status">Status</Label><Select name="status" defaultValue={editingExpense?.status || 'Due'}><SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger><SelectContent><SelectItem value="Due">Due</SelectItem><SelectItem value="Paid">Paid</SelectItem></SelectContent></Select></div>
-                                        <div className="space-y-2"><Label htmlFor="description">Description</Label><Textarea id="description" name="description" defaultValue={editingExpense?.description} placeholder="Describe the expense..." /></div>
+                                        <div className="space-y-2"><Label htmlFor="description">Description</Label><Textarea id="description" name="description" defaultValue={editingExpense?.description || ""} placeholder="Describe the expense..." /></div>
                                         <DialogFooter><DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose><Button type="submit">Save Expense</Button></DialogFooter>
                                     </form>
                                 </DialogContent>
@@ -1479,19 +1479,19 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                                                 </div>
                                             </>
                                         ) : (
-                                            <div className="text-muted-foreground h-full flex items-center justify-center">
-                                                <p>No deposit logged for {month}, {year}.</p>
-                                            </div>
+                                            <p className="text-muted-foreground">No deposit logged for {month}, {year}.</p>
                                         )}
                                     </div>
-                                    {loggedDeposit ? (
-                                         <Button variant="secondary" size="sm" onClick={() => setIsDepositDialogOpen(true)}>
-                                             <Edit className="mr-2 h-4 w-4" />
-                                             Edit / View Receipt
-                                         </Button>
-                                    ) : (
-                                       <Button onClick={() => setIsDepositDialogOpen(true)} disabled={!isAdmin}>Log Deposit</Button>
-                                    )}
+                                     <div className="flex flex-col items-end gap-2">
+                                        {loggedDeposit ? (
+                                            <Button variant="secondary" size="sm" onClick={() => setIsDepositDialogOpen(true)}>
+                                                <Edit className="mr-2 h-4 w-4" />
+                                                Edit / View Receipt
+                                            </Button>
+                                        ) : (
+                                        <Button onClick={() => setIsDepositDialogOpen(true)} disabled={!isAdmin}>Log Deposit</Button>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         </div>
