@@ -993,16 +993,19 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                         <TableHeader>
                           <TableRow style={{ backgroundColor: 'hsl(var(--table-header-background))', color: 'hsl(var(--table-header-foreground))' }} className="hover:bg-[hsl(var(--table-header-background)/0.9)]">
                             {isAdmin && <TableHead className="w-10 text-inherit">
-                                <Checkbox
-                                    checked={selectedRentEntryIds.length > 0 && selectedRentEntryIds.length === filteredTenantsForMonth.length}
-                                    onCheckedChange={(checked) => {
-                                        if (checked) {
-                                            setSelectedRentEntryIds(filteredTenantsForMonth.map(t => t.id));
-                                        } else {
-                                            setSelectedRentEntryIds([]);
-                                        }
-                                    }}
-                                />
+                                <div className="text-white">
+                                    <Checkbox
+                                        className="border-gray-400"
+                                        checked={selectedRentEntryIds.length > 0 && selectedRentEntryIds.length === filteredTenantsForMonth.length}
+                                        onCheckedChange={(checked) => {
+                                            if (checked) {
+                                                setSelectedRentEntryIds(filteredTenantsForMonth.map(t => t.id));
+                                            } else {
+                                                setSelectedRentEntryIds([]);
+                                            }
+                                        }}
+                                    />
+                                </div>
                             </TableHead>}
                             <TableHead className="text-inherit">Tenant</TableHead>
                             <TableHead className="hidden md:table-cell text-inherit">Collected By</TableHead>
@@ -1309,7 +1312,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                               </TableCell>}
                               <TableCell>
                                 <div className="font-medium">{expense.description || expense.category}</div>
-                                <div className="text-xs text-muted-foreground sm:hidden">
+                                 <div className="text-xs text-muted-foreground sm:hidden">
                                     {format(parseISO(expense.date), "dd MMM, yy")}
                                 </div>
                                 <div className="text-sm text-muted-foreground hidden sm:block">
@@ -1537,6 +1540,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
 }
 
     
+
 
 
 
