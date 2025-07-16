@@ -42,6 +42,7 @@ export function WorkDetailsTab({ year }: { year: number }) {
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [editingWork, setEditingWork] = React.useState<WorkDetail | null>(null);
   const [isPending, startTransition] = React.useTransition();
+  const [isNavigating, startNavigating] = React.useTransition();
   const { withProtection } = useProtection();
 
   const [workCategory, setWorkCategory] = React.useState('');
@@ -231,6 +232,12 @@ export function WorkDetailsTab({ year }: { year: number }) {
     reader.readAsArrayBuffer(file);
   };
 
+  const handleViewReport = () => {
+    startNavigating(() => {
+      router.push('/work-report');
+    });
+  };
+
 
   return (
     <TooltipProvider>
@@ -241,9 +248,9 @@ export function WorkDetailsTab({ year }: { year: number }) {
           <CardDescription>Track maintenance, repairs, and other jobs for the property.</CardDescription>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={() => router.push('/work-report')}>
+          <Button variant="outline" onClick={handleViewReport} disabled={isNavigating}>
+            {isNavigating ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <ExternalLink className="mr-2 h-4 w-4" />}
             View Full Report
-            <ExternalLink className="ml-2 h-4 w-4" />
           </Button>
           {isAdmin && (
               <div className="flex items-center gap-2">
