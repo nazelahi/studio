@@ -132,7 +132,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
   const { toast } = useToast();
   const { withProtection } = useProtection();
 
-  const { tenants, expenses, rentData, deposits, notices, addRentEntry, addRentEntriesBatch, updateRentEntry, deleteRentEntry, addExpense, addExpensesBatch, updateExpense, deleteExpense, syncTenantsForMonth, syncExpensesFromPreviousMonth, loading, deleteMultipleRentEntries, deleteMultipleExpenses, refreshData, getRentEntryById } = useData();
+  const { tenants, expenses, rentData, deposits, notices, addRentEntry, addRentEntriesBatch, updateRentEntry, deleteRentEntry, syncTenantsForMonth, syncExpensesFromPreviousMonth, loading, deleteMultipleRentEntries, deleteMultipleExpenses, refreshData, getRentEntryById } = useData();
 
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = React.useState(false);
   const [editingExpense, setEditingExpense] = React.useState<Expense | null>(null);
@@ -424,10 +424,10 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
     };
 
     if (editingExpense) {
-      await updateExpense({ ...editingExpense, ...expenseData }, toast);
+      await updateRentEntry({ ...editingExpense, ...expenseData } as any, toast);
       toast({ title: "Expense Updated", description: "The expense has been successfully updated." });
     } else {
-      await addExpense(expenseData, toast);
+      await addRentEntry(expenseData as any, year, monthIndex, toast);
       toast({ title: "Expense Added", description: "The new expense has been successfully added." });
     }
 
@@ -472,7 +472,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
   
   const handleExpenseStatusChange = (expense: Expense, newStatus: Expense['status']) => {
     withProtection(async () => {
-        await updateExpense({ ...expense, status: newStatus }, toast);
+        await updateRentEntry({ ...expense, status: newStatus } as any, toast);
         toast({ title: "Status Updated", description: `Expense status is now ${newStatus}.`});
     });
   }
@@ -799,7 +799,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                     return;
                 }
                 
-                await addExpensesBatch(expensesToCreate, toast);
+                await addRentEntriesBatch(expensesToCreate as any, year, monthIndex, toast);
                 toast({ title: "Import Successful", description: `${expensesToCreate.length} expenses imported.` });
 
             } catch (error) {
@@ -1442,7 +1442,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                     </CardHeader>
                     <CardContent className="p-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-                            <div className="p-4 bg-muted rounded-md h-full flex flex-col justify-between">
+                             <div className="p-4 bg-muted rounded-md h-full flex flex-col justify-between">
                                  <div className="flex items-start justify-between">
                                     <div className="space-y-2">
                                         <p className="font-bold text-lg">{settings.bankName}</p>
@@ -1459,7 +1459,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                                     </div>
                                 ) : (
                                     <div className="pt-4 mt-auto">
-                                        
+                                        <Badge variant="secondary">Pending Deposit</Badge>
                                     </div>
                                 )}
                             </div>
@@ -1480,7 +1480,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                                             </>
                                         ) : (
                                             <div className="text-muted-foreground h-full flex items-center justify-center">
-                                                
+                                                <p>No deposit logged for {month}, {year}.</p>
                                             </div>
                                         )}
                                     </div>
@@ -1490,10 +1490,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                                              Edit / View Receipt
                                          </Button>
                                     ) : (
-                                       <div className="flex flex-col items-center justify-center h-full w-full text-center">
-                                         <p className="text-muted-foreground mb-2">No deposit logged for {month}, {year}.</p>
-                                         <Button onClick={() => setIsDepositDialogOpen(true)} disabled={!isAdmin}>Log Deposit</Button>
-                                       </div>
+                                       <Button onClick={() => setIsDepositDialogOpen(true)} disabled={!isAdmin}>Log Deposit</Button>
                                     )}
                                 </div>
                             </div>
