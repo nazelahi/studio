@@ -1134,6 +1134,72 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                       </Table>
                   </CardContent>
                 </Card>
+                <div className="mt-4 p-4 rounded-lg bg-yellow-50 border border-yellow-200 text-yellow-800">
+                    <div className="flex items-start gap-3">
+                        <Megaphone className="h-5 w-5 mt-1 flex-shrink-0" />
+                        <div className="flex-1">
+                            <h4 className="font-bold">Monthly Notice</h4>
+                            {monthlyNotice ? (
+                                <p className="text-sm mt-1 whitespace-pre-wrap">{monthlyNotice.content}</p>
+                            ) : (
+                                <p className="text-sm mt-1 text-yellow-700">No notice has been set for this month.</p>
+                            )}
+                        </div>
+                        {isAdmin && (
+                            <div className="flex flex-col gap-2">
+                                <Dialog open={isNoticeDialogOpen} onOpenChange={setIsNoticeDialogOpen}>
+                                    <DialogTrigger asChild>
+                                        <Button size="sm" variant="outline" className="text-yellow-800 border-yellow-300 hover:bg-yellow-100 hover:text-yellow-900">
+                                            <Pencil className="mr-2 h-4 w-4" />
+                                            {monthlyNotice ? "Edit" : "Add"} Notice
+                                        </Button>
+                                    </DialogTrigger>
+                                    <DialogContent>
+                                        <DialogHeader>
+                                            <DialogTitle>{monthlyNotice ? "Edit" : "Add"} Notice for {month} {year}</DialogTitle>
+                                        </DialogHeader>
+                                        <form onSubmit={handleSaveNotice}>
+                                            <input type="hidden" name="year" value={year} />
+                                            <input type="hidden" name="month" value={monthIndex} />
+                                            {monthlyNotice && <input type="hidden" name="noticeId" value={monthlyNotice.id} />}
+                                            <Textarea name="content" defaultValue={monthlyNotice?.content} rows={5} placeholder="Enter your notice here..."/>
+                                            <DialogFooter className="mt-4">
+                                                <DialogClose asChild><Button variant="outline" type="button">Cancel</Button></DialogClose>
+                                                <Button type="submit" disabled={isNoticePending}>
+                                                    {isNoticePending && <LoaderCircle className="mr-2 h-4 w-4 animate-spin"/>}
+                                                    Save Notice
+                                                </Button>
+                                            </DialogFooter>
+                                        </form>
+                                    </DialogContent>
+                                </Dialog>
+                                {monthlyNotice && (
+                                    <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                            <Button size="sm" variant="ghost" className="text-yellow-800 hover:bg-yellow-100 hover:text-yellow-900">
+                                                <Trash2 className="mr-2 h-4 w-4" />
+                                                Delete
+                                            </Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                             <form onSubmit={handleDeleteNotice}>
+                                                <input type="hidden" name="noticeId" value={monthlyNotice.id} />
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                    <AlertDialogDescription>This will permanently delete the notice for this month.</AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                    <AlertDialogAction type="submit" disabled={isNoticePending}>Delete</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </form>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
+                                )}
+                            </div>
+                        )}
+                    </div>
+                </div>
               </TabsContent>
               <TabsContent value="expenses">
                 <Card className="mt-4">
