@@ -1458,8 +1458,8 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                                         <Badge className="bg-success text-success-foreground hover:bg-success/80">Deposited</Badge>
                                     </div>
                                 ) : (
-                                    <div className="text-center pt-4 mt-auto">
-                                        <Button onClick={() => setIsDepositDialogOpen(true)} disabled={!isAdmin}>Log Deposit</Button>
+                                    <div className="pt-4 mt-auto">
+                                        
                                     </div>
                                 )}
                             </div>
@@ -1480,15 +1480,20 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                                             </>
                                         ) : (
                                             <div className="text-muted-foreground h-full flex items-center justify-center">
-                                                <p>No deposit logged for {month}, {year}.</p>
+                                                
                                             </div>
                                         )}
                                     </div>
-                                    {loggedDeposit && (
+                                    {loggedDeposit ? (
                                          <Button variant="secondary" size="sm" onClick={() => setIsDepositDialogOpen(true)}>
                                              <Edit className="mr-2 h-4 w-4" />
                                              Edit / View Receipt
                                          </Button>
+                                    ) : (
+                                       <div className="flex flex-col items-center justify-center h-full w-full text-center">
+                                         <p className="text-muted-foreground mb-2">No deposit logged for {month}, {year}.</p>
+                                         <Button onClick={() => setIsDepositDialogOpen(true)} disabled={!isAdmin}>Log Deposit</Button>
+                                       </div>
                                     )}
                                 </div>
                             </div>
