@@ -227,13 +227,13 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
   const netResult = totalRentCollected - totalExpensesPaid;
   const amountForDeposit = netResult > 0 ? netResult : 0;
 
-  React.useEffect(() => {
-    if (loggedDeposit) {
-        setDepositAmount(loggedDeposit.amount.toString());
-    } else {
-        setDepositAmount(amountForDeposit > 0 ? amountForDeposit.toFixed(2) : '');
-    }
-  }, [loggedDeposit, amountForDeposit]);
+    React.useEffect(() => {
+        if (loggedDeposit) {
+            setDepositAmount(String(loggedDeposit.amount));
+        } else {
+            setDepositAmount(amountForDeposit > 0 ? amountForDeposit.toFixed(2) : '');
+        }
+    }, [loggedDeposit, amountForDeposit]);
 
 
 
@@ -1424,7 +1424,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                     </div>
                 </div>
             <div className="mt-6">
-                <div className="mb-4">
+                 <div className="mb-4">
                     <h3 className="text-xl font-bold">{settings.page_overview.financial_overview_title}</h3>
                     <p className="text-muted-foreground">{settings.page_overview.financial_overview_description}</p>
                 </div>
@@ -1432,7 +1432,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                     <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">Total Rent Collected</p><div className="flex items-center gap-2"><DollarSign className="h-5 w-5 text-green-500"/><p className="text-xl font-bold text-green-600">{formatCurrency(totalRentCollected)}</p></div></CardContent></Card>
                     <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">Total Expenses</p><div className="flex items-center gap-2"><TrendingDown className="h-5 w-5 text-red-500"/><p className="text-xl font-bold text-red-600">{formatCurrency(totalExpensesPaid)}</p></div></CardContent></Card>
                     <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">Net Amount</p><div className="flex items-center gap-2"><Calculator className="h-5 w-5 text-blue-500"/><p className={`text-xl font-bold ${netResult >=0 ? 'text-blue-600':'text-red-600'}`}>{netResult >= 0 ? '+' : ''}{formatCurrency(netResult)}</p></div></CardContent></Card>
-                    <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">Pending Rent</p><div className="flex items-center gap-2"><FileText className="h-5 w-5 text-orange-500"/><p className="text-xl font-bold text-orange-600">{formatCurrency(pendingRent)}</p></div></CardContent></Card>
+                    <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">Available for Deposit</p><div className="flex items-center gap-2"><Landmark className="h-5 w-5 text-purple-500"/><p className="text-xl font-bold text-purple-600">{formatCurrency(amountForDeposit)}</p></div></CardContent></Card>
                 </div>
             </div>
             <div className="grid gap-4 mt-6">
@@ -1443,9 +1443,15 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                     <CardContent className="p-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
                             <div className="p-4 bg-muted rounded-md h-full flex flex-col justify-between">
-                                <div>
-                                    <p className="font-bold text-lg">{settings.bankName}</p>
-                                    <p className="text-sm text-muted-foreground">{settings.bankAccountNumber}</p>
+                                 <div className="flex items-start justify-between">
+                                    <div className="space-y-2">
+                                        <p className="font-bold text-lg">{settings.bankName}</p>
+                                        <p className="text-sm text-muted-foreground">{settings.bankAccountNumber}</p>
+                                    </div>
+                                    <Avatar className="h-12 w-12 border bg-background">
+                                        <AvatarImage src={settings.bankLogoUrl} data-ai-hint="logo bank"/>
+                                        <AvatarFallback><Building /></AvatarFallback>
+                                    </Avatar>
                                 </div>
                                 {loggedDeposit ? (
                                     <div className="pt-4 mt-auto">
