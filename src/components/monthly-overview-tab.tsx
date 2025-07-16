@@ -229,7 +229,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
 
     React.useEffect(() => {
         if (loggedDeposit) {
-            setDepositAmount(String(loggedDeposit.amount));
+            setDepositAmount(String(loggedDeposit.amount || ''));
         } else {
              setDepositAmount(amountForDeposit > 0 ? amountForDeposit.toFixed(2) : '');
         }
@@ -970,12 +970,12 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                                                     )}
                                                 </div>
                                             )}
-                                            <div className="space-y-2"><Label htmlFor="name">Tenant Name</Label><Input id="name" name="name" defaultValue={editingRentEntry?.name} required disabled={!!selectedHistoricalTenant} /></div>
-                                            <div className="space-y-2"><Label htmlFor="property">Property/Unit</Label><Input id="property" name="property" defaultValue={editingRentEntry?.property} required disabled={!!selectedHistoricalTenant}/></div>
-                                            <div className="space-y-2"><Label htmlFor="amount">Rent Amount</Label><Input id="amount" name="amount" type="number" step="0.01" defaultValue={editingRentEntry?.rent} required /></div>
+                                            <div className="space-y-2"><Label htmlFor="name">Tenant Name</Label><Input id="name" name="name" defaultValue={editingRentEntry?.name || ''} required disabled={!!selectedHistoricalTenant} /></div>
+                                            <div className="space-y-2"><Label htmlFor="property">Property/Unit</Label><Input id="property" name="property" defaultValue={editingRentEntry?.property || ''} required disabled={!!selectedHistoricalTenant}/></div>
+                                            <div className="space-y-2"><Label htmlFor="amount">Rent Amount</Label><Input id="amount" name="amount" type="number" step="0.01" defaultValue={editingRentEntry?.rent || ''} required /></div>
                                             <div className="space-y-2"><Label htmlFor="status">Status</Label><Select name="status" defaultValue={editingRentEntry?.status || 'Pending'}><SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger><SelectContent><SelectItem value="Pending">Pending</SelectItem><SelectItem value="Paid">Paid</SelectItem><SelectItem value="Overdue">Overdue</SelectItem></SelectContent></Select></div>
-                                            <div className="space-y-2"><Label htmlFor="payment_date">Payment Date</Label><Input id="payment_date" name="payment_date" type="date" defaultValue={editingRentEntry?.payment_date} /></div>
-                                            <div className="space-y-2"><Label htmlFor="collected_by">Collected By</Label><Input id="collected_by" name="collected_by" defaultValue={editingRentEntry?.collected_by} /></div>
+                                            <div className="space-y-2"><Label htmlFor="payment_date">Payment Date</Label><Input id="payment_date" name="payment_date" type="date" defaultValue={editingRentEntry?.payment_date || ''} /></div>
+                                            <div className="space-y-2"><Label htmlFor="collected_by">Collected By</Label><Input id="collected_by" name="collected_by" defaultValue={editingRentEntry?.collected_by || ''} /></div>
                                             <DialogFooter><DialogClose asChild><Button variant="outline">Cancel</Button></DialogClose><Button type="submit">Save Entry</Button></DialogFooter>
                                         </form>
                                     </DialogContent>
@@ -1453,15 +1453,6 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                                         <AvatarFallback><Building /></AvatarFallback>
                                     </Avatar>
                                 </div>
-                                {loggedDeposit ? (
-                                    <div className="pt-4 mt-auto">
-                                        <Badge className="bg-success text-success-foreground hover:bg-success/80">Deposited</Badge>
-                                    </div>
-                                ) : (
-                                    <div className="pt-4 mt-auto">
-                                        <Badge variant="secondary">Pending Deposit</Badge>
-                                    </div>
-                                )}
                             </div>
                             
                             <div className="p-4 bg-muted rounded-md min-h-[140px]">
@@ -1484,7 +1475,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                                     </div>
                                      <div className="flex flex-col items-end gap-2">
                                         {loggedDeposit ? (
-                                            <Button variant="secondary" size="sm" onClick={() => setIsDepositDialogOpen(true)}>
+                                             <Button variant="secondary" size="sm" onClick={() => setIsDepositDialogOpen(true)}>
                                                 <Edit className="mr-2 h-4 w-4" />
                                                 Edit / View Receipt
                                             </Button>
@@ -1517,7 +1508,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                 <div className="grid gap-4 py-4">
                     <div className="space-y-2">
                         <Label htmlFor="deposit-amount">Amount to Deposit</Label>
-                        <Input id="deposit-amount" name="amount" type="number" step="0.01" value={String(depositAmount || '')} onChange={(e) => setDepositAmount(e.target.value)} required />
+                        <Input id="deposit-amount" name="amount" type="number" step="0.01" value={depositAmount} onChange={(e) => setDepositAmount(e.target.value)} required />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="deposit-date">Deposit Date</Label>
@@ -1528,7 +1519,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                         <div className="flex items-center gap-4">
                             <div className="w-24 h-24 bg-muted rounded-md flex items-center justify-center">
                                 {receiptPreview || loggedDeposit?.receipt_url ? (
-                                    <img src={receiptPreview || loggedDeposit?.receipt_url} alt="Receipt Preview" className="h-full w-full object-contain rounded-md" data-ai-hint="document receipt"/>
+                                    <img src={receiptPreview || loggedDeposit?.receipt_url || ''} alt="Receipt Preview" className="h-full w-full object-contain rounded-md" data-ai-hint="document receipt"/>
                                 ) : (
                                     <ImageIcon className="h-10 w-10 text-muted-foreground" />
                                 )}
