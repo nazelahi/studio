@@ -751,7 +751,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                 const sheetName = workbook.SheetNames[0];
                 const worksheet = workbook.Sheets[sheetName];
 
-                const json: any[] = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false });
+                const json: any[] = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
 
                 if (json.length < 2) {
                     toast({ title: "Empty or invalid sheet", variant: "destructive" });
@@ -773,20 +773,13 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                     const dateInput = row.date;
                     if (typeof dateInput === 'number') {
                         // Handle Excel date serial number.
-                        // Formula from: https://stackoverflow.com/a/16229535
-                        const excelDate = new Date((dateInput - (25567 + 1)) * 86400 * 1000);
+                        const excelDate = new Date(Date.UTC(1900, 0, dateInput - 1));
                         date = format(excelDate, 'yyyy-MM-dd');
-                    } else if (typeof dateInput === 'string') {
-                        // Attempt to parse various string formats
-                        const parsed = new Date(dateInput);
-                        if (!isNaN(parsed.getTime())) {
-                            date = format(parsed, 'yyyy-MM-dd');
-                        } else {
-                            // Fallback for non-standard formats
-                            date = format(new Date(year, monthIndex, 1), 'yyyy-MM-dd');
-                        }
-                    } else {
-                        // Default to the first of the month if no date is provided
+                    } else if (typeof dateInput === 'string' && dateInput.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                        date = dateInput;
+                    }
+                    else {
+                        // Default to the first of the month if no date is provided or format is wrong
                         date = format(new Date(year, monthIndex, 1), 'yyyy-MM-dd');
                     }
                   
@@ -1231,8 +1224,9 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                             />
                           </TableHead>}
                           <TableHead className="text-inherit">Details</TableHead>
+                          <TableHead className="text-inherit hidden sm:table-cell">Category</TableHead>
                           <TableHead className="text-inherit">Date</TableHead>
-                          <TableHead className="text-inherit">Amount</TableHead>
+                          <TableHead className="text-inherit hidden sm:table-cell">Amount</TableHead>
                           <TableHead className="text-inherit">Status</TableHead>
                           <TableHead className="text-inherit">Actions</TableHead>
                         </TableRow>
@@ -1252,12 +1246,16 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                               </TableCell>}
                               <TableCell>
                                 <div className="font-medium">{expense.description}</div>
-                                <div className="text-sm text-muted-foreground">{expense.category}</div>
+                                <div className="text-sm text-muted-foreground hidden sm:block">{expense.category}</div>
+                                <p className="sm:hidden text-sm text-destructive font-semibold">{formatCurrency(expense.amount)}</p>
+                              </TableCell>
+                              <TableCell className="text-sm text-muted-foreground hidden sm:table-cell">
+                                {expense.category}
                               </TableCell>
                                <TableCell className="text-sm text-muted-foreground">
                                 {format(parseISO(expense.date), "dd MMM, yy")}
                               </TableCell>
-                              <TableCell>৳{expense.amount.toFixed(2)}</TableCell>
+                              <TableCell className="hidden sm:table-cell">{formatCurrency(expense.amount)}</TableCell>
                               <TableCell>
                                  {isAdmin && expense.status === 'Due' ? (
                                     <Select
@@ -1314,7 +1312,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                           ))}
                            {filteredExpenses.length === 0 && (
                             <TableRow>
-                                <TableCell colSpan={isAdmin ? 6 : 5} className="h-24 text-center">
+                                <TableCell colSpan={isAdmin ? 7 : 6} className="h-24 text-center">
                                 <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
                                     <span>No expense data for {month} {year}.</span>
                                 </div>
@@ -1325,7 +1323,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                       {filteredExpenses.length > 0 && (
                         <TableFooter>
                           <TableRow style={{ backgroundColor: 'hsl(var(--table-footer-background))', color: 'hsl(var(--table-footer-foreground))' }} className="font-bold hover:bg-[hsl(var(--table-footer-background)/0.9)]">
-                            <TableCell colSpan={isAdmin ? 6 : 5} className="text-inherit p-2">
+                            <TableCell colSpan={isAdmin ? 7 : 6} className="text-inherit p-2">
                               <div className="flex flex-col sm:flex-row items-center justify-between px-2">
                                 <div className="sm:hidden text-center text-inherit font-bold">Total Paid</div>
                                 <div className="hidden sm:block text-left text-inherit font-bold">Total Paid</div>
