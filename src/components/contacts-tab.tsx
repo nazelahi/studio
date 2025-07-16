@@ -405,8 +405,8 @@ export function ContactsTab() {
             Manage your tenants and their information.
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
+        <CardContent className="p-0 sm:p-6 sm:pt-0">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6 px-6 sm:px-0">
               <div className="flex items-center gap-2 w-full">
                 <div className="relative flex-1 sm:max-w-xs">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -466,19 +466,19 @@ export function ContactsTab() {
                                               key={tenant.id}
                                               value={`${tenant.name} ${tenant.property} ${tenant.email}`}
                                               onSelect={() => handleSelectTenantToCopy(tenant)}
-                                              className="flex justify-between items-center w-full cursor-pointer"
+                                              className="flex items-center justify-between cursor-pointer"
                                             >
-                                              <div className="flex items-center gap-3 pointer-events-none">
+                                              <div className="flex items-center gap-3">
                                                 <Avatar className="h-8 w-8">
                                                   <AvatarImage src={tenant.avatar} />
                                                   <AvatarFallback>{tenant.name.charAt(0)}</AvatarFallback>
                                                 </Avatar>
-                                                <div>
+                                                <div className="flex-1">
                                                   <div className="font-medium">{tenant.name}</div>
                                                   <div className="text-xs text-muted-foreground">{tenant.property} &middot; ৳{tenant.rent}</div>
                                                 </div>
                                               </div>
-                                              <div className="flex items-center gap-1 text-xs text-muted-foreground pointer-events-none">
+                                              <div className="flex items-center gap-1 text-xs text-muted-foreground ml-4">
                                                 <Copy className="h-3 w-3" />
                                                 Copy
                                               </div>
@@ -651,7 +651,7 @@ export function ContactsTab() {
           </div>
           
             {loading ? (
-                <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-6 sm:px-0">
                     {[...Array(4)].map((_, i) => <TenantCardSkeleton key={i} />)}
                 </div>
             ) : filteredTenants.length === 0 ? (
@@ -659,7 +659,7 @@ export function ContactsTab() {
                     No tenants found.
                 </div>
             ) : settings.tenantViewStyle === 'grid' ? (
-                 <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                 <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-6 sm:px-0">
                   {filteredTenants.map((tenant) => (
                      <Card key={tenant.id} className="overflow-hidden shadow-md transition-shadow hover:shadow-lg w-full">
                         <div className="flex items-start gap-4 p-4">
