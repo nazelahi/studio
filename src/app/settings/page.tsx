@@ -609,7 +609,7 @@ export default function SettingsPage() {
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="passcode">Secret Passcode</Label>
-                                <Input id="passcode" name="passcode" type="password" placeholder="Leave blank to keep current" defaultValue={settings.passcode}/>
+                                <Input id="passcode" name="passcode" type="password" placeholder="Leave blank to keep current" defaultValue={settings.passcode || ''}/>
                             </div>
                         </CardContent>
                         <CardFooter>
