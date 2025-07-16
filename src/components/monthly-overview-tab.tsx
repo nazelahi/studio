@@ -1423,52 +1423,56 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                         )}
                     </div>
                 </div>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mt-6">
-                <Card className="lg:col-span-2">
-                    <CardHeader>
-                        <CardTitle>{settings.page_overview.financial_overview_title}</CardTitle>
-                        <CardDescription>{settings.page_overview.financial_overview_description}</CardDescription>
-                    </CardHeader>
-                    <CardContent className="grid grid-cols-2 gap-4">
-                        <div className="flex items-center gap-4">
-                            <ArrowUpCircle className="h-8 w-8 text-green-500" />
-                            <div>
-                                <p className="text-sm text-muted-foreground">Rent Collected</p>
-                                <p className="text-2xl font-bold">{formatCurrency(totalRentCollected)}</p>
+            <div className="mt-6">
+                <div className="mb-4">
+                    <h3 className="text-xl font-bold">{settings.page_overview.financial_overview_title}</h3>
+                    <p className="text-muted-foreground">{settings.page_overview.financial_overview_description}</p>
+                </div>
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                    <Card className="border-teal-200 dark:border-teal-800">
+                        <CardContent className="p-4">
+                            <p className="text-sm text-muted-foreground">Rent Collected</p>
+                            <div className="flex items-baseline gap-2 mt-1">
+                                <DollarSign className="h-6 w-6 text-teal-500" />
+                                <span className="text-2xl font-bold text-teal-600">{formatCurrency(totalRentCollected)}</span>
                             </div>
-                        </div>
-                         <div className="flex items-center gap-4">
-                            <Percent className="h-8 w-8 text-blue-500" />
-                            <div>
-                                <p className="text-sm text-muted-foreground">Collection Rate</p>
-                                <p className="text-2xl font-bold">{collectionRate.toFixed(1)}%</p>
+                            <p className="text-xs text-muted-foreground mt-1">{collectionRate.toFixed(1)}% of total</p>
+                        </CardContent>
+                    </Card>
+                    <Card className="border-orange-200 dark:border-orange-800">
+                        <CardContent className="p-4">
+                            <p className="text-sm text-muted-foreground">Pending Rent</p>
+                            <div className="flex items-baseline gap-2 mt-1">
+                                <FileText className="h-6 w-6 text-orange-500" />
+                                <span className="text-2xl font-bold text-orange-600">{formatCurrency(pendingRent)}</span>
                             </div>
-                        </div>
-                        <div className="flex items-center gap-4">
-                            <ArrowDownCircle className="h-8 w-8 text-red-500" />
-                            <div>
-                                <p className="text-sm text-muted-foreground">Expenses Paid</p>
-                                <p className="text-2xl font-bold">{formatCurrency(totalExpensesPaid)}</p>
+                            <p className="text-xs text-muted-foreground mt-1">Yet to collect</p>
+                        </CardContent>
+                    </Card>
+                     <Card className="border-red-200 dark:border-red-800">
+                        <CardContent className="p-4">
+                            <p className="text-sm text-muted-foreground">Total Expenses</p>
+                            <div className="flex items-baseline gap-2 mt-1">
+                                <TrendingDown className="h-6 w-6 text-red-500" />
+                                <span className="text-2xl font-bold text-red-600">{formatCurrency(totalExpensesPaid)}</span>
                             </div>
-                        </div>
-                         <div className="flex items-center gap-4">
-                            <TrendingDown className="h-8 w-8 text-orange-500" />
-                            <div>
-                                <p className="text-sm text-muted-foreground">Pending Rent</p>
-                                <p className="text-2xl font-bold">{formatCurrency(pendingRent)}</p>
+                            <p className="text-xs text-muted-foreground mt-1">This month</p>
+                        </CardContent>
+                    </Card>
+                     <Card className="border-green-200 dark:border-green-800">
+                        <CardContent className="p-4">
+                            <p className="text-sm text-muted-foreground">Net Amount</p>
+                            <div className="flex items-baseline gap-2 mt-1">
+                                <Calculator className="h-6 w-6 text-green-500" />
+                                <span className="text-2xl font-bold text-green-600">+{formatCurrency(netResult)}</span>
                             </div>
-                        </div>
-                    </CardContent>
-                    <CardFooter className="flex flex-col items-start gap-2 border-t pt-4">
-                        <div className="text-lg font-bold flex justify-between w-full">
-                            <span>Net Amount:</span>
-                            <span className={netResult >= 0 ? 'text-primary' : 'text-destructive'}>
-                                {formatCurrency(netResult)}
-                            </span>
-                        </div>
-                    </CardFooter>
-                </Card>
-                 <Card className="lg:col-span-2">
+                            <p className="text-xs text-muted-foreground mt-1">Profit</p>
+                        </CardContent>
+                    </Card>
+                </div>
+            </div>
+            <div className="grid gap-4 mt-6">
+                 <Card>
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-lg"><Landmark className="h-5 w-5 text-primary"/>Bank Deposit Information</CardTitle>
                     </CardHeader>
