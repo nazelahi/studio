@@ -187,7 +187,9 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
     return expenses.filter(expense => {
       if (!expense.date) return false;
       try {
-        const expenseDate = parseISO(expense.date);
+        // Parse the date as UTC to avoid timezone issues
+        const [expYear, expMonth] = expense.date.split('-').map(Number);
+        const expenseDate = new Date(Date.UTC(expYear, expMonth - 1, 1));
         return expenseDate.getUTCFullYear() === year && expenseDate.getUTCMonth() === monthIndex;
       } catch {
         return false;
@@ -772,18 +774,15 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                     let date: string;
                     const dateInput = row.date;
                     if (typeof dateInput === 'number') {
-                      // Handle Excel's serial date number
-                      const excelEpoch = new Date(Date.UTC(1899, 11, 30));
+                      // Handle Excel's serial date number (which is days since 1900-01-01, with a bug for leap year)
+                      const excelEpoch = new Date(1899, 11, 30);
                       const excelDate = new Date(excelEpoch.getTime() + dateInput * 86400000);
                       date = format(excelDate, 'yyyy-MM-dd');
                     } else if (typeof dateInput === 'string') {
-                      // Handle string date, assuming it's in a parsable format
+                      // Handle string dates, try to parse robustly
                       const parsed = new Date(dateInput);
                       if (!isNaN(parsed.getTime())) {
-                        // The date is valid, but new Date() might be local. Force UTC interpretation.
-                        const [year, month, day] = dateInput.split(/[-/]/).map(Number);
-                        const utcDate = new Date(Date.UTC(year, month - 1, day));
-                        date = format(utcDate, 'yyyy-MM-dd');
+                        date = format(parsed, 'yyyy-MM-dd');
                       } else {
                         // Fallback for invalid string date
                         date = format(new Date(year, monthIndex, 1), 'yyyy-MM-dd');
