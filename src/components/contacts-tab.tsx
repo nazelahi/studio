@@ -152,7 +152,7 @@ export function ContactsTab() {
     if (!searchTerm) return tenants;
     return tenants.filter(tenant => 
       tenant.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      tenant.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (tenant.email && tenant.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
       tenant.property.toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [tenants, searchTerm]);
@@ -517,9 +517,11 @@ export function ContactsTab() {
                               <Label htmlFor="email">Email Address</Label>
                               <Input id="email" name="email" type="email" defaultValue={editingTenant?.email} required />
                             </div>
-                            <div className="space-y-2">
-                              <Label htmlFor="phone">Phone Number</Label>
-                              <Input id="phone" name="phone" type="tel" defaultValue={editingTenant?.phone} placeholder="e.g. 880..." />
+                             <div className="grid grid-cols-1 gap-4">
+                                <div className="space-y-2">
+                                  <Label htmlFor="phone">Phone Number</Label>
+                                  <Input id="phone" name="phone" type="tel" defaultValue={editingTenant?.phone} placeholder="e.g. 880..." />
+                                </div>
                             </div>
                              <div className="space-y-2">
                               <Label htmlFor="address">Address</Label>
@@ -725,14 +727,14 @@ export function ContactsTab() {
                   ))}
                 </div>
             ) : (
-                <Card>
+                <Card className="p-0">
                     <Table>
                         <TableHeader>
                             <TableRow>
                                 <TableHead className="p-2">Tenant</TableHead>
-                                <TableHead className="hidden md:table-cell">Details</TableHead>
-                                <TableHead className="hidden sm:table-cell">Status</TableHead>
-                                <TableHead className="text-right">Actions</TableHead>
+                                <TableHead className="hidden md:table-cell p-2">Details</TableHead>
+                                <TableHead className="hidden sm:table-cell p-2">Status</TableHead>
+                                <TableHead className="text-right p-2">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -750,14 +752,14 @@ export function ContactsTab() {
                                             </div>
                                         </div>
                                     </TableCell>
-                                    <TableCell className="hidden md:table-cell">
+                                    <TableCell className="hidden md:table-cell p-2">
                                         <div className="font-medium">{tenant.property}</div>
                                         <div className="text-xs text-muted-foreground">{formatCurrency(tenant.rent)}</div>
                                     </TableCell>
-                                     <TableCell className="hidden sm:table-cell">
+                                     <TableCell className="hidden sm:table-cell p-2">
                                         <Badge variant="secondary" className={getStatusBadge(tenant.status)}>{tenant.status}</Badge>
                                     </TableCell>
-                                    <TableCell className="text-right">
+                                    <TableCell className="text-right p-2">
                                         <div className="flex items-center justify-end gap-1">
                                             <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => openWhatsApp(tenant, e)}>
                                                 <MessageSquare className="h-4 w-4" />
