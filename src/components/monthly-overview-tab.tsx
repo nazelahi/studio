@@ -187,8 +187,9 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
     return expenses.filter(expense => {
         if (!expense.date) return false;
         try {
-            const expenseDate = parseISO(expense.date);
-            return expenseDate.getMonth() === monthIndex && expenseDate.getFullYear() === year;
+            // Split the date string to avoid timezone issues with parseISO
+            const [expenseYear, expenseMonth] = expense.date.split('-').map(Number);
+            return expenseYear === year && (expenseMonth - 1) === monthIndex;
         } catch {
             return false;
         }
@@ -511,12 +512,15 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
           const dateInput = row.payment_date;
           if (dateInput) {
             if (typeof dateInput === 'number') {
-              const date = XLSX.SSF.parse_date_code(dateInput);
-              paymentDate = new Date(date.y, date.m - 1, date.d).toISOString().split('T')[0];
+              // Handle Excel date serial number
+              const excelEpoch = new Date(1899, 11, 30);
+              const excelDate = new Date(excelEpoch.getTime() + dateInput * 86400000);
+              paymentDate = format(excelDate, 'yyyy-MM-dd');
             } else {
+              // Handle string date
               const parsed = new Date(dateInput);
               if (!isNaN(parsed.getTime())) {
-                paymentDate = parsed.toISOString().split('T')[0];
+                paymentDate = format(parsed, 'yyyy-MM-dd');
               }
             }
           }
@@ -758,11 +762,14 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                     let date: string;
                     const dateInput = row.date;
                     if (typeof dateInput === 'number') {
-                        const d = XLSX.SSF.parse_date_code(dateInput);
-                        date = new Date(d.y, d.m - 1, d.d).toISOString().split('T')[0];
+                        // Handle Excel date serial number
+                        const excelEpoch = new Date(1899, 11, 30);
+                        const excelDate = new Date(excelEpoch.getTime() + dateInput * 86400000);
+                        date = format(excelDate, 'yyyy-MM-dd');
                     } else {
-                        const parsed = new Date(dateInput);
-                        date = !isNaN(parsed.getTime()) ? parsed.toISOString().split('T')[0] : new Date(year, monthIndex, 1).toISOString().split('T')[0];
+                        // Handle string date, ensuring it doesn't shift timezone
+                        const parsed = new Date(dateInput + "T00:00:00"); // Treat as local time
+                        date = !isNaN(parsed.getTime()) ? format(parsed, 'yyyy-MM-dd') : format(new Date(year, monthIndex, 1), 'yyyy-MM-dd');
                     }
                   
                     return {
@@ -1431,3 +1438,4 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
     
 
     
+
