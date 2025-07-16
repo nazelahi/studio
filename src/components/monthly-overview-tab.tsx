@@ -185,15 +185,14 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
 
   const filteredExpenses = React.useMemo(() => {
     return expenses.filter(expense => {
-        if (!expense.date) return false;
-        try {
-            // Split by '-' and take the first two parts to avoid timezone issues.
-            const [expenseYear, expenseMonth] = expense.date.split('-').map(Number);
-            return expenseYear === year && (expenseMonth - 1) === monthIndex;
-        } catch {
-            return false;
-        }
-      });
+      if (!expense.date) return false;
+      try {
+        const expenseDate = parseISO(expense.date);
+        return getYear(expenseDate) === year && getMonth(expenseDate) === monthIndex;
+      } catch {
+        return false;
+      }
+    });
   }, [expenses, monthIndex, year]);
   
   const loggedDeposit = React.useMemo(() => {
@@ -219,7 +218,10 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
   const collectionRate = totalRentExpected > 0 ? (totalRentCollected / totalRentExpected) * 100 : 0;
   const pendingRent = totalRentExpected - totalRentCollected;
 
-  const totalExpenses = filteredExpenses.reduce((acc, expense) => acc + expense.amount, 0);
+  const totalExpenses = filteredExpenses.filter(e => e.status === 'Paid').reduce((acc, expense) => acc + expense.amount, 0);
+  const totalExpensesPaid = filteredExpenses.filter(e => e.status === 'Paid').reduce((acc, e) => acc + e.amount, 0);
+  const totalExpensesDue = filteredExpenses.filter(e => e.status === 'Due').reduce((acc, e) => acc + e.amount, 0);
+  
   const netResult = totalRentCollected - totalExpenses;
   const amountForDeposit = netResult > 0 ? netResult : 0;
 
@@ -769,23 +771,20 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
 
                     let date: string;
                     const dateInput = row.date;
-                    if (typeof dateInput === 'number') {
-                        // Handle Excel date serial number
+                     if (typeof dateInput === 'number') {
                         const excelEpoch = new Date(1899, 11, 30);
                         const excelDate = new Date(excelEpoch.getTime() + dateInput * 86400000);
                         date = format(excelDate, 'yyyy-MM-dd');
-                    } else if (typeof dateInput === 'string') {
-                         const [day, month, year] = dateInput.split(/[-/]/);
-                         const parsed = new Date(Number(year), Number(month) - 1, Number(day));
-                         if (!isNaN(parsed.getTime())) {
-                            date = format(parsed, 'yyyy-MM-dd');
-                         } else {
-                            date = format(new Date(), 'yyyy-MM-dd');
-                         }
-                    }
-                    else {
-                        // Handle string date, ensuring it doesn't shift timezone
-                        const parsed = new Date(dateInput + "T00:00:00"); // Treat as local time
+                    } else if (typeof dateInput === 'string' && dateInput.match(/^\d{1,2}[-/]\d{1,2}[-/]\d{2,4}$/)) {
+                         const parts = dateInput.split(/[-/]/);
+                         const day = parseInt(parts[0], 10);
+                         const month = parseInt(parts[1], 10) - 1;
+                         let year = parseInt(parts[2], 10);
+                         if (year < 100) year += 2000;
+                         const parsed = new Date(year, month, day);
+                         date = !isNaN(parsed.getTime()) ? format(parsed, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
+                    } else {
+                        const parsed = new Date(dateInput);
                         date = !isNaN(parsed.getTime()) ? format(parsed, 'yyyy-MM-dd') : format(new Date(year, monthIndex, 1), 'yyyy-MM-dd');
                     }
                   
@@ -1323,13 +1322,13 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                       </TableBody>
                       {filteredExpenses.length > 0 && (
                         <TableFooter>
-                          <TableRow style={{ backgroundColor: 'hsl(var(--table-footer-background))', color: 'hsl(var(--table-footer-foreground))' }} className="font-bold hover:bg-[hsl(var(--table-footer-background)/0.9)]">
-                              <TableCell colSpan={isAdmin ? 6 : 5} className="p-2 text-inherit">
-                                  <div className="flex flex-col sm:flex-row items-center justify-between px-2">
-                                      <div className="text-base font-bold text-inherit">Total Expenses</div>
-                                      <div className="text-base font-bold text-inherit">৳{totalExpenses.toFixed(2)}</div>
-                                  </div>
-                              </TableCell>
+                          <TableRow className="font-bold bg-muted/50">
+                              <TableCell colSpan={isAdmin ? 4 : 3} className="text-right">Total Paid:</TableCell>
+                              <TableCell colSpan={2} className="text-left font-bold text-green-600">{formatCurrency(totalExpensesPaid)}</TableCell>
+                          </TableRow>
+                           <TableRow className="font-bold bg-muted/50">
+                              <TableCell colSpan={isAdmin ? 4 : 3} className="text-right">Total Due:</TableCell>
+                              <TableCell colSpan={2} className="text-left font-bold text-orange-600">{formatCurrency(totalExpensesDue)}</TableCell>
                           </TableRow>
                         </TableFooter>
                       )}
@@ -1361,7 +1360,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                 </Card>
                  <Card className="border-l-4 border-red-500">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
+                        <CardTitle className="text-sm font-medium">Total Expenses (Paid)</CardTitle>
                         <TrendingDown className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
