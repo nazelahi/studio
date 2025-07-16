@@ -4,6 +4,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { revalidatePath } from 'next/cache'
 import 'dotenv/config'
+import { supabase as supabaseClient } from '@/lib/supabase'
 
 // This function creates a Supabase client with admin privileges.
 // It uses the service_role key and is intended for server-side use only
@@ -55,7 +56,7 @@ export async function logDepositAction(formData: FormData) {
             try {
                 // Extract the path from the full URL for deletion
                 const oldReceiptPath = new URL(oldReceiptUrl).pathname.split('/deposit-receipts/')[1];
-                 const { error: storageError } = await supabaseAdmin.storage
+                 const { error: storageError } = await supabaseClient.storage
                     .from('deposit-receipts')
                     .remove([oldReceiptPath]);
                 if (storageError) {
@@ -98,7 +99,7 @@ export async function deleteDepositAction(formData: FormData) {
     if (receiptUrl) {
         try {
             const receiptPath = new URL(receiptUrl).pathname.split('/deposit-receipts/')[1];
-            const { error: storageError } = await supabaseAdmin.storage
+            const { error: storageError } = await supabaseClient.storage
                 .from('deposit-receipts')
                 .remove([receiptPath]);
             
