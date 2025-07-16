@@ -1443,17 +1443,9 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                     <CardContent className="p-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
                             <div className="p-4 bg-muted rounded-md h-full flex flex-col justify-between">
-                                <div className="grid grid-cols-1 gap-4">
-                                    <div className="flex items-start gap-4">
-                                        <Avatar className="h-16 w-16 border">
-                                            <AvatarImage src={settings.bankLogoUrl} data-ai-hint="logo bank"/>
-                                            <AvatarFallback><Building/></AvatarFallback>
-                                        </Avatar>
-                                        <div>
-                                            <p className="font-bold text-lg">{settings.bankName}</p>
-                                            <p className="text-sm text-muted-foreground">{settings.bankAccountNumber}</p>
-                                        </div>
-                                    </div>
+                                <div>
+                                    <p className="font-bold text-lg">{settings.bankName}</p>
+                                    <p className="text-sm text-muted-foreground">{settings.bankAccountNumber}</p>
                                 </div>
                                 {loggedDeposit ? (
                                     <div className="pt-4 mt-auto">
@@ -1487,7 +1479,10 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                                         )}
                                     </div>
                                     {loggedDeposit && (
-                                         <Button variant="secondary" size="sm" onClick={() => setIsDepositDialogOpen(true)}>Edit / View Receipt</Button>
+                                         <Button variant="secondary" size="sm" onClick={() => setIsDepositDialogOpen(true)}>
+                                             <Edit className="mr-2 h-4 w-4" />
+                                             Edit / View Receipt
+                                         </Button>
                                     )}
                                 </div>
                             </div>
@@ -1514,7 +1509,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                 <div className="grid gap-4 py-4">
                     <div className="space-y-2">
                         <Label htmlFor="deposit-amount">Amount to Deposit</Label>
-                        <Input id="deposit-amount" name="amount" type="number" step="0.01" value={depositAmount} onChange={(e) => setDepositAmount(e.target.value)} required />
+                        <Input id="deposit-amount" name="amount" type="number" step="0.01" value={String(depositAmount || '')} onChange={(e) => setDepositAmount(e.target.value)} required />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="deposit-date">Deposit Date</Label>
@@ -1585,3 +1580,5 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
     </TooltipProvider>
   )
 }
+
+    
