@@ -1312,10 +1312,10 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                               </TableCell>}
                               <TableCell>
                                 <div className="font-medium">{expense.description || expense.category}</div>
-                                 <div className="text-xs text-muted-foreground sm:hidden">
-                                    {format(parseISO(expense.date), "dd MMM, yy")}
+                                <div className="text-xs text-muted-foreground md:hidden">
+                                  {format(parseISO(expense.date), "dd MMM, yy")}
                                 </div>
-                                <div className="text-sm text-muted-foreground hidden sm:block">
+                                <div className="text-sm text-muted-foreground hidden md:block">
                                     {format(parseISO(expense.date), "dd MMM, yyyy")}
                                 </div>
                                 <p className="sm:hidden text-sm text-destructive font-semibold">{formatCurrency(expense.amount)}</p>
@@ -1540,6 +1540,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
 }
 
     
+
 
 
 
