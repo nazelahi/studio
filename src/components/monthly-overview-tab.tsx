@@ -1146,12 +1146,12 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                             )}
                         </div>
                         {isAdmin && (
-                            <div className="flex flex-col gap-2">
+                            <div className="flex flex-row items-center gap-2">
                                 <Dialog open={isNoticeDialogOpen} onOpenChange={setIsNoticeDialogOpen}>
                                     <DialogTrigger asChild>
                                         <Button size="sm" variant="outline" className="text-yellow-800 border-yellow-300 hover:bg-yellow-100 hover:text-yellow-900">
                                             <Pencil className="mr-2 h-4 w-4" />
-                                            {monthlyNotice ? "Edit" : "Add"} Notice
+                                            {monthlyNotice ? "Edit" : "Add"}
                                         </Button>
                                     </DialogTrigger>
                                     <DialogContent>
@@ -1177,8 +1177,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                                     <AlertDialog>
                                         <AlertDialogTrigger asChild>
                                             <Button size="sm" variant="ghost" className="text-yellow-800 hover:bg-yellow-100 hover:text-yellow-900">
-                                                <Trash2 className="mr-2 h-4 w-4" />
-                                                Delete
+                                                <Trash2 className="h-4 w-4" />
                                             </Button>
                                         </AlertDialogTrigger>
                                         <AlertDialogContent>
@@ -1309,9 +1308,12 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                                 />
                               </TableCell>}
                               <TableCell>
-                                <div className="font-medium">{expense.description}</div>
-                                <div className="text-sm text-muted-foreground sm:hidden">
-                                  {format(parseISO(expense.date), "dd MMM, yy")}
+                                <div className="font-medium">{expense.description || expense.category}</div>
+                                <div className="text-xs text-muted-foreground sm:hidden">
+                                    {format(parseISO(expense.date), "dd MMM, yy")}
+                                </div>
+                                <div className="text-sm text-muted-foreground hidden sm:block">
+                                    {format(parseISO(expense.date), "dd MMM, yyyy")}
                                 </div>
                                 <p className="sm:hidden text-sm text-destructive font-semibold">{formatCurrency(expense.amount)}</p>
                               </TableCell>
@@ -1535,5 +1537,6 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
 }
 
     
+
 
 
