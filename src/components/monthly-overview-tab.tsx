@@ -1440,50 +1440,58 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                     <CardHeader className="p-4 bg-primary text-primary-foreground rounded-t-lg">
                         <CardTitle className="flex items-center gap-2 text-lg"><Landmark className="h-5 w-5"/>Bank Deposit Information</CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-4 p-4">
-                        <div className="grid grid-cols-3 items-center gap-4 p-3 bg-muted rounded-md">
-                            <div className="col-span-1">
-                                <Avatar className="h-16 w-16 border">
-                                    <AvatarImage src={settings.bankLogoUrl} data-ai-hint="logo bank"/>
-                                    <AvatarFallback><Building/></AvatarFallback>
-                                </Avatar>
-                            </div>
-                            <div className="col-span-2 space-y-2">
-                                <div>
-                                    <p className="text-xs text-muted-foreground">Bank Name</p>
-                                    <p className="font-bold">{settings.bankName}</p>
+                    <CardContent className="p-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                            <div className="p-4 bg-muted rounded-md h-full flex flex-col justify-between">
+                                <div className="grid grid-cols-1 gap-4">
+                                    <div className="flex items-start gap-4">
+                                        <Avatar className="h-16 w-16 border">
+                                            <AvatarImage src={settings.bankLogoUrl} data-ai-hint="logo bank"/>
+                                            <AvatarFallback><Building/></AvatarFallback>
+                                        </Avatar>
+                                        <div>
+                                            <p className="font-bold text-lg">{settings.bankName}</p>
+                                            <p className="text-sm text-muted-foreground">{settings.bankAccountNumber}</p>
+                                        </div>
+                                    </div>
                                 </div>
-                                <div>
-                                    <p className="text-xs text-muted-foreground">Account Number</p>
-                                    <p className="text-sm text-muted-foreground">{settings.bankAccountNumber}</p>
+                                {loggedDeposit ? (
+                                    <div className="pt-4 mt-auto">
+                                        <Badge className="bg-success text-success-foreground hover:bg-success/80">Deposited</Badge>
+                                    </div>
+                                ) : (
+                                    <div className="text-center pt-4 mt-auto">
+                                        <Button onClick={() => setIsDepositDialogOpen(true)} disabled={!isAdmin}>Log Deposit</Button>
+                                    </div>
+                                )}
+                            </div>
+                            
+                            <div className="p-4 bg-muted rounded-md min-h-[140px]">
+                                <div className="flex items-start justify-between">
+                                    <div className="space-y-2">
+                                        {loggedDeposit ? (
+                                            <>
+                                                <div>
+                                                    <p className="text-sm text-muted-foreground">Amount Deposited</p>
+                                                    <p className="font-bold text-xl text-primary">{formatCurrency(loggedDeposit.amount)}</p>
+                                                </div>
+                                                <div>
+                                                    <p className="text-sm text-muted-foreground">Deposit Date</p>
+                                                    <p className="font-medium">{format(parseISO(loggedDeposit.deposit_date), "dd MMM, yyyy")}</p>
+                                                </div>
+                                            </>
+                                        ) : (
+                                            <div className="text-muted-foreground h-full flex items-center justify-center">
+                                                <p>No deposit logged for {month}, {year}.</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                    {loggedDeposit && (
+                                         <Button variant="secondary" size="sm" onClick={() => setIsDepositDialogOpen(true)}>Edit / View Receipt</Button>
+                                    )}
                                 </div>
                             </div>
                         </div>
-
-                         <Separator />
-                         
-                         {loggedDeposit ? (
-                              <div className="space-y-3">
-                                 <div className="flex justify-between items-center">
-                                    <span className="font-medium text-sm">Amount Deposited:</span>
-                                    <span className="font-bold text-lg text-primary">{formatCurrency(loggedDeposit.amount)}</span>
-                                 </div>
-                                  <div className="flex justify-between items-center text-sm">
-                                    <span className="text-muted-foreground">Deposit Date:</span>
-                                    <span className="font-medium">{format(parseISO(loggedDeposit.deposit_date), "dd MMM, yyyy")}</span>
-                                 </div>
-                                 <div className="flex items-center justify-between pt-2">
-                                     <Badge className="bg-success text-success-foreground hover:bg-success/80">Deposited</Badge>
-                                     <Button variant="secondary" size="sm" onClick={() => setIsDepositDialogOpen(true)}>Edit / View Receipt</Button>
-                                 </div>
-                             </div>
-                         ) : (
-                             <div className="text-center py-4 space-y-3">
-                                <p className="text-sm text-muted-foreground">No deposit logged for {month}, {year}.</p>
-                                <Button onClick={() => setIsDepositDialogOpen(true)} disabled={!isAdmin}>Log Deposit</Button>
-                             </div>
-                         )}
-
                     </CardContent>
                 </Card>
             </div>
