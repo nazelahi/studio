@@ -1423,28 +1423,52 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                         )}
                     </div>
                 </div>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-2 mt-6">
-                <Card>
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mt-6">
+                <Card className="lg:col-span-2">
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-lg"><Calculator className="h-5 w-5 text-primary"/>Monthly Financial Summary</CardTitle>
+                        <CardTitle>{settings.page_overview.financial_overview_title}</CardTitle>
+                        <CardDescription>{settings.page_overview.financial_overview_description}</CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                        <div className="flex justify-between items-center p-3 bg-green-50 rounded-md">
-                            <span className="font-medium text-green-700">Rent Collected</span>
-                            <span className="font-bold text-green-800">{formatCurrency(totalRentCollected)}</span>
+                    <CardContent className="grid grid-cols-2 gap-4">
+                        <div className="flex items-center gap-4">
+                            <ArrowUpCircle className="h-8 w-8 text-green-500" />
+                            <div>
+                                <p className="text-sm text-muted-foreground">Rent Collected</p>
+                                <p className="text-2xl font-bold">{formatCurrency(totalRentCollected)}</p>
+                            </div>
                         </div>
-                        <div className="flex justify-between items-center p-3 bg-red-50 rounded-md">
-                            <span className="font-medium text-red-700">Expenses Paid</span>
-                            <span className="font-bold text-red-800">{formatCurrency(totalExpensesPaid)}</span>
+                         <div className="flex items-center gap-4">
+                            <Percent className="h-8 w-8 text-blue-500" />
+                            <div>
+                                <p className="text-sm text-muted-foreground">Collection Rate</p>
+                                <p className="text-2xl font-bold">{collectionRate.toFixed(1)}%</p>
+                            </div>
                         </div>
-                         <Separator />
-                         <div className="flex justify-between items-center p-3 bg-blue-50 rounded-md">
-                            <span className="font-medium text-blue-700">Net Amount Available</span>
-                            <span className={`font-bold text-xl ${netResult >= 0 ? 'text-blue-800' : 'text-red-800'}`}>{formatCurrency(netResult)}</span>
+                        <div className="flex items-center gap-4">
+                            <ArrowDownCircle className="h-8 w-8 text-red-500" />
+                            <div>
+                                <p className="text-sm text-muted-foreground">Expenses Paid</p>
+                                <p className="text-2xl font-bold">{formatCurrency(totalExpensesPaid)}</p>
+                            </div>
+                        </div>
+                         <div className="flex items-center gap-4">
+                            <TrendingDown className="h-8 w-8 text-orange-500" />
+                            <div>
+                                <p className="text-sm text-muted-foreground">Pending Rent</p>
+                                <p className="text-2xl font-bold">{formatCurrency(pendingRent)}</p>
+                            </div>
                         </div>
                     </CardContent>
+                    <CardFooter className="flex flex-col items-start gap-2 border-t pt-4">
+                        <div className="text-lg font-bold flex justify-between w-full">
+                            <span>Net Amount:</span>
+                            <span className={netResult >= 0 ? 'text-primary' : 'text-destructive'}>
+                                {formatCurrency(netResult)}
+                            </span>
+                        </div>
+                    </CardFooter>
                 </Card>
-                 <Card>
+                 <Card className="lg:col-span-2">
                     <CardHeader>
                         <CardTitle className="flex items-center gap-2 text-lg"><Landmark className="h-5 w-5 text-primary"/>Bank Deposit Information</CardTitle>
                     </CardHeader>
