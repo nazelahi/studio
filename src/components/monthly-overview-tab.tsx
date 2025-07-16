@@ -184,12 +184,12 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
   }, [rentData, monthIndex, year]);
 
   const filteredExpenses = React.useMemo(() => {
-    return expenses.filter(expense => {
+     return expenses.filter(expense => {
       if (!expense.date) return false;
       try {
-        // Parse the date as UTC to avoid timezone issues
-        const [expYear, expMonth] = expense.date.split('-').map(Number);
-        const expenseDate = new Date(Date.UTC(expYear, expMonth - 1, 1));
+        // Correctly parse 'YYYY-MM-DD' as UTC
+        const dateParts = expense.date.split('-').map(Number);
+        const expenseDate = new Date(Date.UTC(dateParts[0], dateParts[1] - 1, dateParts[2]));
         return expenseDate.getUTCFullYear() === year && expenseDate.getUTCMonth() === monthIndex;
       } catch {
         return false;
@@ -772,18 +772,22 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                     let date: string;
                     const dateInput = row.date;
                     if (typeof dateInput === 'number') {
-                      const excelEpoch = new Date(Date.UTC(1899, 11, 30));
-                      const excelDate = new Date(excelEpoch.getTime() + dateInput * 86400000);
-                      date = format(excelDate, 'yyyy-MM-dd');
+                        // Handle Excel date serial number.
+                        // Formula from: https://stackoverflow.com/a/16229535
+                        const excelDate = new Date((dateInput - (25567 + 1)) * 86400 * 1000);
+                        date = format(excelDate, 'yyyy-MM-dd');
                     } else if (typeof dateInput === 'string') {
-                      const parsed = new Date(dateInput);
-                       if (!isNaN(parsed.getTime())) {
-                        date = format(parsed, 'yyyy-MM-dd');
-                      } else {
-                        date = format(new Date(year, monthIndex, 1), 'yyyy-MM-dd');
-                      }
+                        // Attempt to parse various string formats
+                        const parsed = new Date(dateInput);
+                        if (!isNaN(parsed.getTime())) {
+                            date = format(parsed, 'yyyy-MM-dd');
+                        } else {
+                            // Fallback for non-standard formats
+                            date = format(new Date(year, monthIndex, 1), 'yyyy-MM-dd');
+                        }
                     } else {
-                      date = format(new Date(year, monthIndex, 1), 'yyyy-MM-dd');
+                        // Default to the first of the month if no date is provided
+                        date = format(new Date(year, monthIndex, 1), 'yyyy-MM-dd');
                     }
                   
                     return {
@@ -1320,9 +1324,14 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                       </TableBody>
                       {filteredExpenses.length > 0 && (
                         <TableFooter>
-                          <TableRow className="font-bold bg-muted/50">
-                              <TableCell colSpan={isAdmin ? 5 : 4} className="text-right">Total Paid:</TableCell>
-                              <TableCell colSpan={1} className="text-left font-bold text-green-600">{formatCurrency(totalExpensesPaid)}</TableCell>
+                          <TableRow style={{ backgroundColor: 'hsl(var(--table-footer-background))', color: 'hsl(var(--table-footer-foreground))' }} className="font-bold hover:bg-[hsl(var(--table-footer-background)/0.9)]">
+                            <TableCell colSpan={isAdmin ? 6 : 5} className="text-inherit p-2">
+                              <div className="flex flex-col sm:flex-row items-center justify-between px-2">
+                                <div className="sm:hidden text-center text-inherit font-bold">Total Paid</div>
+                                <div className="hidden sm:block text-left text-inherit font-bold">Total Paid</div>
+                                <div className="text-inherit font-bold">{formatCurrency(totalExpensesPaid)}</div>
+                              </div>
+                            </TableCell>
                           </TableRow>
                         </TableFooter>
                       )}
