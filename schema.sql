@@ -1,11 +1,4 @@
--- =================================================================
--- SQL for Documents Feature
--- =================================================================
-
--- Step 1: Create the documents table
--- This table will store metadata about your uploaded files.
--- Run this query in the Supabase SQL Editor.
--- -----------------------------------------------------------------
+-- 1. Create Documents Table
 CREATE TABLE IF NOT EXISTS public.documents (
     id uuid NOT NULL DEFAULT gen_random_uuid(),
     created_at timestamp with time zone NOT NULL DEFAULT now(),
@@ -13,42 +6,42 @@ CREATE TABLE IF NOT EXISTS public.documents (
     file_url text NOT NULL,
     file_type text NOT NULL,
     category text NOT NULL,
-    description text,
+    description text NULL,
     CONSTRAINT documents_pkey PRIMARY KEY (id)
 );
 
--- Step 2: Set up Row Level Security (RLS) for the table
--- -----------------------------------------------------------------
--- Enable Row Level Security
+-- Enable RLS if not already enabled
 ALTER TABLE public.documents ENABLE ROW LEVEL SECURITY;
 
--- Allow public read access to all documents
-CREATE POLICY "Allow public read access to documents"
+-- 2. Drop existing policies to avoid conflicts
+DROP POLICY IF EXISTS "Allow admin full access" ON public.documents;
+DROP POLICY IF EXISTS "Allow public read access" ON public.documents;
+DROP POLICY IF EXISTS "Allow admin all access to general documents" ON storage.objects;
+DROP POLICY IF EXISTS "Allow public read access to general documents" ON storage.objects;
+
+
+-- 3. Create Correct Policies for Documents Table
+-- Allow authenticated users (admins) to perform all operations
+CREATE POLICY "Allow authenticated users full access"
 ON public.documents
-FOR SELECT
-USING (true);
-
--- Allow admin users (service_role) to perform all actions
--- This is handled by the server-side actions using the service_role key,
--- which bypasses RLS. No explicit policy is needed for the service role.
-
-
--- Step 3: Set up the Storage Bucket
--- -----------------------------------------------------------------
--- 1. Go to the "Storage" section in your Supabase dashboard.
--- 2. Create a new **public** bucket named `general-documents`.
--- 3. The following policies will be automatically created by Supabase
---    when you make the bucket public, but you can run them if needed.
-
--- Allow public read access to files in the `general-documents` bucket
-CREATE POLICY "Public read access for general-documents"
-ON storage.objects FOR SELECT
-TO public
-USING ( bucket_id = 'general-documents' );
-
--- Allow authenticated users to upload files to the `general-documents` bucket.
--- The app's server-side code will handle the uploads.
-CREATE POLICY "Allow authenticated uploads to general-documents"
-ON storage.objects FOR INSERT
+FOR ALL
 TO authenticated
-WITH CHECK ( bucket_id = 'general-documents' );
+USING (true)
+WITH CHECK (true);
+
+-- 4. Create Correct Storage Bucket Policies
+-- This assumes you have a PUBLIC bucket named 'general-documents'
+
+-- Allow authenticated users (admins) to upload/manage all files in the bucket
+CREATE POLICY "Allow authenticated users all access to general documents"
+ON storage.objects
+FOR ALL
+TO authenticated
+USING (bucket_id = 'general-documents')
+WITH CHECK (bucket_id = 'general-documents');
+
+-- Allow anyone to view files (since it's a public bucket)
+CREATE POLICY "Allow public read access to general documents"
+ON storage.objects
+FOR SELECT
+USING (bucket_id = 'general-documents');
