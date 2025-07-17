@@ -228,6 +228,9 @@ export function DocumentsTab() {
                                                           </Card>
                                                         </DialogTrigger>
                                                         <DialogContent className="max-w-4xl p-0 border-0 bg-transparent shadow-none">
+                                                            <DialogHeader>
+                                                                <DialogTitle className="sr-only">{doc.description || doc.file_name}</DialogTitle>
+                                                            </DialogHeader>
                                                             <img src={doc.file_url} alt={doc.description || doc.file_name} className="w-full h-auto rounded-lg" data-ai-hint="document"/>
                                                         </DialogContent>
                                                     </Dialog>
