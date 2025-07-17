@@ -25,6 +25,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table"
 import { Badge } from "@/components/ui/badge"
+import { format, parseISO } from "date-fns"
 
 
 export function DocumentsTab() {
@@ -161,6 +162,7 @@ export function DocumentsTab() {
                 file_type: docUrl.toLowerCase().includes('.pdf') ? 'application/pdf' : 'image/jpeg',
                 category: tenant.name,
                 description: `Document for ${tenant.name}`,
+                created_at: tenant.created_at || new Date().toISOString(),
                 isTenantDoc: true,
             } as any));
             return { ...tenant, docs };
@@ -196,7 +198,9 @@ export function DocumentsTab() {
              <p className="text-sm font-medium" title={doc.description || doc.file_name}>
                 {doc.description || doc.file_name}
             </p>
-            <p className="text-xs text-muted-foreground">{doc.file_name}</p>
+        </TableCell>
+        <TableCell className="hidden md:table-cell">
+            <p className="text-sm text-muted-foreground">{doc.created_at ? format(parseISO(doc.created_at), 'dd MMM, yyyy') : '-'}</p>
         </TableCell>
         <TableCell className="hidden md:table-cell">
            {(doc as any).isTenantDoc ? (
@@ -247,6 +251,7 @@ export function DocumentsTab() {
             <TableRow>
                 <TableHead className="w-16">Preview</TableHead>
                 <TableHead>File Description</TableHead>
+                <TableHead className="hidden md:table-cell">Date</TableHead>
                 <TableHead className="hidden md:table-cell">Category</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
             </TableRow>

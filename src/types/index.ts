@@ -15,7 +15,7 @@ export type TabNames = {
 
 export type Document = {
   id: string;
-  created_at?: string;
+  created_at: string;
   file_name: string;
   file_url: string;
   file_type: string;
