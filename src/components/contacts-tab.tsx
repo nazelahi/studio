@@ -628,7 +628,7 @@ export function ContactsTab() {
                                           </div>
                                         ))}
                                         {documentFiles.map((file, index) => (
-                                          <div key={index} className="relative group aspect-square">
+                                          <div key={`${file.name}-${index}`} className="relative group aspect-square">
                                               <img src={URL.createObjectURL(file)} alt={file.name} className="w-full h-full object-cover rounded-md" data-ai-hint="document id"/>
                                               <Button type="button" variant="destructive" size="icon" className="absolute -top-1 -right-1 h-5 w-5 rounded-full opacity-0 group-hover:opacity-100" onClick={() => handleRemoveNewDocument(index)}>
                                                   <X className="h-3 w-3"/>

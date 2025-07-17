@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import * as React from "react"
@@ -305,7 +306,7 @@ export function DocumentsTab() {
         </TableHeader>
         <TableBody>
             {docs.length > 0 ? (
-                docs.map((doc, index) => <DocumentRow key={`${doc.file_url}-${index}`} doc={doc} />)
+                docs.map((doc, index) => <DocumentRow key={`${doc.id}-${doc.file_url}-${index}`} doc={doc} />)
             ) : (
                 <TableRow>
                     <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">No documents found.</TableCell>

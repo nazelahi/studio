@@ -194,6 +194,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
                 return null;
             }
 
+            if (!uploadData) {
+                handleError({ message: "Upload succeeded but no data was returned." }, `uploading file ${file.name}`, toast);
+                return null;
+            }
+
             const { data: publicUrlData } = supabase.storage
                 .from('tenant-documents')
                 .getPublicUrl(uploadData.path);
