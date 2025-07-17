@@ -344,18 +344,20 @@ export function WorkDetailsTab({ year }: { year: number }) {
                           </form>
                       </DialogContent>
                   </Dialog>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button size="icon" variant="outline" onClick={handleDownloadTemplate}><Download className="h-4 w-4" /></Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Download Template</TooltipContent>
-                  </Tooltip>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <Button size="icon" variant="outline" onClick={handleImportClick}><Upload className="h-4 w-4" /></Button>
-                    </TooltipTrigger>
-                    <TooltipContent>Import</TooltipContent>
-                  </Tooltip>
+                  <div className="hidden sm:flex items-center gap-2">
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button size="icon" variant="outline" onClick={handleDownloadTemplate}><Download className="h-4 w-4" /></Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Download Template</TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button size="icon" variant="outline" onClick={handleImportClick}><Upload className="h-4 w-4" /></Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Import</TooltipContent>
+                    </Tooltip>
+                  </div>
                   <input type="file" ref={fileInputRef} className="hidden" accept=".xlsx, .csv" onChange={handleFileChange} />
               </div>
           )}
