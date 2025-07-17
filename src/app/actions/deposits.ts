@@ -2,7 +2,6 @@
 "use server"
 
 import { createClient } from '@supabase/supabase-js'
-import { revalidatePath } from 'next/cache'
 import 'dotenv/config'
 import { supabase as supabaseClient } from '@/lib/supabase'
 
@@ -79,9 +78,6 @@ export async function logDepositAction(formData: FormData) {
         console.error('Supabase error:', error);
         return { error: error.message };
     }
-
-    // Revalidate the path to show the new data immediately
-    revalidatePath('/');
     
     return { success: true };
 }
@@ -121,8 +117,6 @@ export async function deleteDepositAction(formData: FormData) {
         console.error('Supabase delete error:', error);
         return { error: error.message };
     }
-
-    revalidatePath('/');
     
     return { success: true };
 }

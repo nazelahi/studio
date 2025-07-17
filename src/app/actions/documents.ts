@@ -3,7 +3,6 @@
 
 import { createClient } from '@supabase/supabase-js'
 import 'dotenv/config'
-import { revalidatePath } from 'next/cache'
 
 const getSupabaseAdmin = () => {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -137,7 +136,6 @@ export async function saveDocumentAction(formData: FormData) {
         }
     }
 
-    revalidatePath('/');
     return { success: true };
 }
 
@@ -177,6 +175,5 @@ export async function deleteDocumentAction(formData: FormData) {
         return { error: error.message };
     }
 
-    revalidatePath('/');
     return { success: true };
 }

@@ -2,7 +2,6 @@
 "use server"
 
 import { createClient } from '@supabase/supabase-js'
-import { revalidatePath } from 'next/cache'
 import 'dotenv/config'
 
 // This function creates a Supabase client with admin privileges.
@@ -58,8 +57,6 @@ export async function saveNoticeAction(formData: FormData) {
         console.error('Supabase error:', error);
         return { error: error.message };
     }
-
-    revalidatePath('/');
     
     return { success: true };
 }
@@ -82,8 +79,6 @@ export async function deleteNoticeAction(formData: FormData) {
         console.error('Supabase delete error:', error);
         return { error: error.message };
     }
-
-    revalidatePath('/');
     
     return { success: true };
 }

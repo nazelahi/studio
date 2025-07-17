@@ -2,7 +2,6 @@
 "use server"
 
 import { createClient } from '@supabase/supabase-js'
-import { revalidatePath } from 'next/cache'
 import 'dotenv/config'
 import type { WorkDetail } from '@/types'
 
@@ -59,8 +58,6 @@ export async function saveWorkDetailAction(formData: FormData) {
         console.error('Supabase error:', error);
         return { error: error.message };
     }
-
-    revalidatePath('/');
     
     return { success: true };
 }
@@ -83,8 +80,6 @@ export async function deleteWorkDetailAction(formData: FormData) {
         console.error('Supabase delete error:', error);
         return { error: error.message };
     }
-
-    revalidatePath('/');
     
     return { success: true };
 }
@@ -104,6 +99,5 @@ export async function addWorkDetailsBatch(workDetails: Omit<WorkDetail, 'id' | '
         return { error: `Failed to insert work details: ${error.message}` };
     }
 
-    revalidatePath('/');
     return { success: true, count: workDetails.length };
 }

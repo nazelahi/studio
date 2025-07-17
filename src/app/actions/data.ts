@@ -3,7 +3,6 @@
 
 import { createClient } from '@supabase/supabase-js'
 import 'dotenv/config'
-import { revalidatePath } from 'next/cache'
 
 const getSupabaseAdmin = () => {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -57,7 +56,6 @@ export async function clearMonthlyDataAction(formData: FormData) {
         return { error: `Failed to clear expense data: ${expenseError.message}` };
     }
     
-    revalidatePath('/');
     return { success: true, message: `Data for ${new Date(year, month).toLocaleString('default', { month: 'long' })} ${year} has been cleared.` };
 }
 
@@ -96,7 +94,6 @@ export async function clearYearlyDataAction(formData: FormData) {
         return { error: `Failed to clear expense data: ${expenseError.message}` };
     }
 
-    revalidatePath('/');
     return { success: true, message: `All data for the year ${year} has been cleared.` };
 }
 
@@ -129,7 +126,6 @@ export async function clearTenantDataAction(formData: FormData) {
         return { error: `Failed to delete tenant: ${tenantError.message}` };
     }
 
-    revalidatePath('/');
     return { success: true, message: `All data for the selected tenant has been cleared.` };
 }
 
@@ -159,7 +155,6 @@ export async function clearAllDataAction() {
         }
     }
 
-    revalidatePath('/');
     return { success: true, message: 'All transactional application data has been cleared.' };
 }
 

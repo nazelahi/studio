@@ -59,13 +59,13 @@ export function DataProvider({ children, initialData }: { children: ReactNode, i
     const refreshData = useCallback(async () => {
         setLoading(true);
         try {
-            // This is a placeholder for a more specific refresh logic if needed.
-            // For now, we assume the page will be reloaded or re-navigated to get fresh server data.
-            // You could implement a client-side fetch here if you want to refresh without a full page load.
+            // Using window.location.reload() is a simple and effective way to ensure
+            // the client has the freshest data from the server after a mutation.
+            // Next.js App Router will handle this efficiently.
             window.location.reload();
         } catch (error: any) {
             console.error(`Error in refreshing data:`, error.message, error);
-        } finally {
+            handleError(error, "refreshing data", () => {});
             setLoading(false);
         }
     }, []);
@@ -86,7 +86,8 @@ export function DataProvider({ children, initialData }: { children: ReactNode, i
             }
 
             if (!uploadData) {
-                handleError({ message: "Upload succeeded but no data was returned." }, `uploading file ${file.name}`, toast);
+                const uploadError = new Error("Upload succeeded but no data was returned.");
+                handleError(uploadError, `uploading file ${file.name}`, toast);
                 return null;
             }
 

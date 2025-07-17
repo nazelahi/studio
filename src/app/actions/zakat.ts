@@ -2,7 +2,6 @@
 "use server"
 
 import { createClient } from '@supabase/supabase-js'
-import { revalidatePath } from 'next/cache'
 import 'dotenv/config'
 import { supabase as supabaseClient } from '@/lib/supabase' // Use the client-side configured supabase for storage
 
@@ -93,8 +92,6 @@ export async function saveZakatTransactionAction(formData: FormData) {
         console.error('Supabase Zakat error:', error);
         return { error: error.message };
     }
-
-    revalidatePath('/');
     
     return { success: true };
 }
@@ -136,8 +133,6 @@ export async function deleteZakatTransactionAction(formData: FormData) {
         console.error('Supabase Zakat delete error:', error);
         return { error: error.message };
     }
-
-    revalidatePath('/');
     
     return { success: true };
 }
@@ -207,8 +202,6 @@ export async function saveZakatBankDetailAction(formData: FormData) {
         return { error: error.message };
     }
     
-    revalidatePath('/');
-    
     return { success: true };
 }
 
@@ -239,8 +232,6 @@ export async function deleteZakatBankDetailAction(formData: FormData) {
         console.error('Supabase error deleting Zakat bank detail:', error);
         return { error: error.message };
     }
-    
-    revalidatePath('/');
     
     return { success: true };
 }

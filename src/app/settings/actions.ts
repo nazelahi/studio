@@ -3,7 +3,6 @@
 "use server"
 
 import { createClient } from '@supabase/supabase-js'
-import { revalidatePath } from 'next/cache'
 import 'dotenv/config'
 import { supabase as supabaseClient } from '@/lib/supabase'
 
@@ -193,9 +192,6 @@ export async function updatePropertySettingsAction(formData: FormData) {
         console.error('Supabase error:', error);
         return { error: error.message };
     }
-
-    revalidatePath('/settings');
-    revalidatePath('/');
     
     return { success: true };
 }
@@ -232,8 +228,6 @@ export async function updateUserCredentialsAction(formData: FormData) {
         console.error('Supabase credentials update error:', updateError);
         return { error: updateError.message };
     }
-    
-    revalidatePath('/settings');
 
     return { success: true };
 }
@@ -260,8 +254,6 @@ export async function updatePasscodeAction(formData: FormData) {
         console.error('Supabase passcode update error:', error);
         return { error: error.message };
     }
-    
-    revalidatePath('/settings');
 
     return { success: true };
 }
