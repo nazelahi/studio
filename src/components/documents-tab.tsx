@@ -16,13 +16,14 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { PlusCircle, Edit, Trash2, LoaderCircle, Upload, Image as ImageIcon, FileText, Download, Folder, File, Briefcase } from "lucide-react"
 import { saveDocumentAction, deleteDocumentAction } from "@/app/actions/documents"
-import type { Document } from "@/types"
+import type { Document, Tenant } from "@/types"
 import { Skeleton } from "./ui/skeleton"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useSettings } from "@/context/settings-context"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { cn } from "@/lib/utils"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
 
 
 export function DocumentsTab() {
@@ -148,12 +149,12 @@ export function DocumentsTab() {
     }
   };
   
-  const tenantDocs = React.useMemo(() => {
-    const tenantDocMap = new Map<string, Document[]>();
-    tenants.forEach(tenant => {
-        if (tenant.documents && tenant.documents.length > 0) {
-            const docs: Document[] = tenant.documents.map(docUrl => ({
-                id: `${tenant.id}-${docUrl}`, // Create a more unique ID
+  const tenantsWithDocs = React.useMemo(() => {
+    return tenants
+        .filter(tenant => tenant.documents && tenant.documents.length > 0)
+        .map(tenant => {
+            const docs: Document[] = (tenant.documents || []).map(docUrl => ({
+                id: `${tenant.id}-${docUrl}`,
                 file_url: docUrl,
                 file_name: docUrl.split('/').pop() || 'Tenant Document',
                 file_type: docUrl.toLowerCase().includes('.pdf') ? 'application/pdf' : 'image/jpeg',
@@ -161,11 +162,9 @@ export function DocumentsTab() {
                 description: `Document for ${tenant.name}`,
                 isTenantDoc: true,
             } as any));
-            tenantDocMap.set(tenant.name, docs);
-        }
-    });
-    // Sort tenants by name
-    return new Map([...tenantDocMap.entries()].sort());
+            return { ...tenant, docs };
+        })
+        .sort((a,b) => a.name.localeCompare(b.name));
   }, [tenants]);
 
   const allDocuments = React.useMemo(() => {
@@ -250,6 +249,9 @@ export function DocumentsTab() {
                     <DialogContent>
                         <DialogHeader>
                             <DialogTitle>{editingDoc ? 'Edit Document' : 'Add New Document'}</DialogTitle>
+                            <DialogDescription>
+                                To upload documents for a specific tenant, please do so from the Tenants tab.
+                            </DialogDescription>
                         </DialogHeader>
                         <form onSubmit={handleSave}>
                           {editingDoc && <input type="hidden" name="documentId" value={editingDoc.id} />}
@@ -330,7 +332,7 @@ export function DocumentsTab() {
                     <Skeleton className="h-12 w-full" />
                     <Skeleton className="h-12 w-full" />
                 </div>
-            ) : allDocuments.length === 0 && tenantDocs.size === 0 ? (
+            ) : allDocuments.length === 0 && tenantsWithDocs.length === 0 ? (
                 <div className="text-center py-10 text-muted-foreground">No documents uploaded yet.</div>
             ) : (
                 <Tabs defaultValue="all" className="w-full">
@@ -339,7 +341,7 @@ export function DocumentsTab() {
                     {documentCategories.map(category => (
                         <TabsTrigger key={category} value={category}>{category}</TabsTrigger>
                     ))}
-                    {tenantDocs.size > 0 && <TabsTrigger value="tenants">Tenant Documents</TabsTrigger>}
+                    {tenantsWithDocs.length > 0 && <TabsTrigger value="tenants">Tenant Documents</TabsTrigger>}
                   </TabsList>
                   
                   <TabsContent value="all" className="mt-4 max-h-[500px] overflow-y-auto">
@@ -358,19 +360,46 @@ export function DocumentsTab() {
                     </TabsContent>
                   ))}
 
-                  <TabsContent value="tenants" className="mt-4 max-h-[500px] overflow-y-auto">
-                      <Accordion type="single" collapsible className="w-full">
-                          {Array.from(tenantDocs.entries()).map(([tenantName, docs]) => (
-                              <AccordionItem key={tenantName} value={tenantName}>
-                                  <AccordionTrigger>{tenantName} ({docs.length})</AccordionTrigger>
-                                  <AccordionContent>
-                                      <div className="space-y-1 pl-4">
-                                          {docs.map(doc => <DocumentItem key={doc.id} doc={doc} />)}
+                  <TabsContent value="tenants" className="mt-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {tenantsWithDocs.map((tenant) => (
+                           <Dialog key={tenant.id}>
+                                <DialogTrigger asChild>
+                                    <Card className="cursor-pointer hover:shadow-md transition-shadow">
+                                        <CardContent className="p-4 flex items-center gap-4">
+                                            <Avatar className="h-12 w-12">
+                                                <AvatarImage src={tenant.avatar} />
+                                                <AvatarFallback>{tenant.name.charAt(0)}</AvatarFallback>
+                                            </Avatar>
+                                            <div>
+                                                <p className="font-semibold">{tenant.name}</p>
+                                                <p className="text-sm text-muted-foreground">{tenant.property}</p>
+                                                <p className="text-xs text-muted-foreground">{tenant.docs.length} document(s)</p>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                </DialogTrigger>
+                                <DialogContent className="max-w-2xl">
+                                    <DialogHeader>
+                                        <DialogTitle>Documents for {tenant.name}</DialogTitle>
+                                        <DialogDescription>
+                                            All documents associated with this tenant.
+                                        </DialogDescription>
+                                    </DialogHeader>
+                                    <div className="max-h-[60vh] overflow-y-auto pr-4 -mr-4">
+                                      <div className="space-y-1">
+                                          {tenant.docs.map(doc => <DocumentItem key={doc.id} doc={doc} />)}
                                       </div>
-                                  </AccordionContent>
-                              </AccordionItem>
-                          ))}
-                      </Accordion>
+                                    </div>
+                                    <DialogFooter>
+                                        <DialogClose asChild>
+                                            <Button type="button" variant="outline">Close</Button>
+                                        </DialogClose>
+                                    </DialogFooter>
+                                </DialogContent>
+                           </Dialog>
+                        ))}
+                      </div>
                   </TabsContent>
                 </Tabs>
             )}
@@ -379,4 +408,3 @@ export function DocumentsTab() {
     </div>
   );
 }
-
