@@ -432,8 +432,8 @@ export function ContactsTab() {
                   </DialogTrigger>
                   <DialogContent className="max-w-4xl p-0">
                     <form ref={formRef} onSubmit={handleSaveTenant}>
-                      <DialogHeader className="p-6">
-                        <DialogTitle className="text-2xl">{editingTenant ? 'Edit Tenant Profile' : 'Add New Tenant'}</DialogTitle>
+                      <DialogHeader className="p-6 bg-muted/50">
+                        <DialogTitle className="text-2xl text-primary">{editingTenant ? 'Edit Tenant Profile' : 'Add New Tenant'}</DialogTitle>
                          {!editingTenant && (
                             <div className="flex items-center gap-2 pt-4">
                                 <Button type="button" variant="outline" size="sm" onClick={() => scanFileInputRef.current?.click()} disabled={isScanning}>
@@ -444,14 +444,14 @@ export function ContactsTab() {
                                <Popover open={isFinderOpen} onOpenChange={setIsFinderOpen}>
                                   <PopoverTrigger asChild>
                                     <Button type="button" size="sm" variant="outline" role="combobox" aria-expanded={isFinderOpen} className="justify-between w-full sm:w-auto">
-                                      <span className="flex items-center gap-2 text-muted-foreground">
+                                      <span className="flex items-center gap-2">
                                         <UserPlus className="h-4 w-4" />
                                         Copy info...
                                       </span>
                                       <ChevronDown className="h-4 w-4 shrink-0 opacity-50"/>
                                     </Button>
                                   </PopoverTrigger>
-                                  <PopoverContent className="w-full p-0" style={{ minWidth: '300px' }}>
+                                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
                                     <Command>
                                       <CommandInput placeholder="Search tenant..." />
                                       <CommandEmpty>No tenant found.</CommandEmpty>
