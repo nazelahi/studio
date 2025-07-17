@@ -849,7 +849,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
 
   return (
     <TooltipProvider>
-    <Tabs value={desktopSelectedMonth} onValueChange={setDesktopSelectedMonth} className="w-full pt-4 md:pt-0">
+    <Tabs value={desktopSelectedMonth} onValueChange={setDesktopSelectedMonth} className="w-full">
       
       {/* Desktop View: Tabs */}
       <div className="hidden md:block">
