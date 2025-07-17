@@ -4,6 +4,8 @@ import { getDashboardData } from '@/lib/data';
 import * as React from "react"
 import { DataProvider } from '@/context/data-context';
 import DashboardPageClient from './dashboard-page-client';
+import { SettingsProvider } from '@/context/settings-context';
+import { ProtectionProvider } from '@/context/protection-context';
 
 
 // This function creates a Supabase client with admin privileges for server-side use.
@@ -44,8 +46,11 @@ export default async function HomePage() {
 
   return (
     <DataProvider initialData={initialData}>
-        <DashboardPageClient serverSettings={settings} />
+      <SettingsProvider serverSettings={settings}>
+        <ProtectionProvider>
+          <DashboardPageClient />
+        </ProtectionProvider>
+      </SettingsProvider>
     </DataProvider>
   )
 }
-

@@ -21,7 +21,6 @@ import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import { AppFooter } from "@/components/app-footer"
 import { BackToTopButton } from "@/components/back-to-top-button"
 import { useTheme } from "next-themes"
-import { type PropertySettings } from "@/types"
 
 function FullPageLoader() {
   return (
@@ -32,21 +31,14 @@ function FullPageLoader() {
   );
 }
 
-export default function DashboardPageClient({ serverSettings }: { serverSettings: PropertySettings | null }) {
-  const { settings, loading: settingsLoading, setSettings } = useSettings();
+export default function DashboardPageClient() {
+  const { settings, loading: settingsLoading } = useSettings();
   const pathname = usePathname();
   const router = useRouter();
   const { isAdmin, user, signOut } = useAuth();
   const { toast } = useToast();
   const { withProtection } = useProtection();
   const { setTheme } = useTheme();
-  
-  React.useEffect(() => {
-    if(serverSettings){
-        setSettings(prev => ({...prev, ...serverSettings}))
-    }
-  }, [serverSettings, setSettings]);
-
 
   const currentYear = new Date().getFullYear();
   const [selectedYear, setSelectedYear] = React.useState(currentYear.toString());

@@ -2,10 +2,7 @@
 import type { Metadata, ResolvingMetadata } from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
-import { SettingsProvider } from '@/context/settings-context';
-import { DataProvider } from '@/context/data-context';
 import { AuthProvider } from '@/context/auth-context';
-import { ProtectionProvider } from '@/context/protection-context';
 import { ThemeProvider } from '@/components/theme-provider';
 import { createClient } from '@supabase/supabase-js';
 
@@ -81,13 +78,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <AuthProvider>
-            <DataProvider>
-              <SettingsProvider>
-                <ProtectionProvider>
-                  {children}
-                </ProtectionProvider>
-              </SettingsProvider>
-            </DataProvider>
+            {children}
           </AuthProvider>
           <Toaster />
         </ThemeProvider>

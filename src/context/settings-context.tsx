@@ -3,7 +3,6 @@
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useMemo } from 'react';
-import { useData } from '@/context/data-context';
 import type { ZakatBankDetail, PropertySettings as DbPropertySettings, TabNames } from '@/types';
 
 interface PageDashboard {
@@ -205,74 +204,67 @@ const hexToHsl = (hex: string): string => {
     return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
 };
 
-export function SettingsProvider({ children }: { children: ReactNode }) {
+interface SettingsProviderProps {
+    children: ReactNode;
+    serverSettings?: DbPropertySettings | null;
+}
+
+export function SettingsProvider({ children, serverSettings }: SettingsProviderProps) {
     const [settings, setSettings] = useState<AppSettings>(defaultSettings);
     const [isMounted, setIsMounted] = useState(false);
-    const { propertySettings, zakatBankDetails, loading: dataLoading, refreshData } = useData();
     
     useEffect(() => {
         setIsMounted(true);
-    }, []);
-
-    useEffect(() => {
-        if (isMounted && !dataLoading) {
-            let localSettings = {};
-            try {
-                const item = window.localStorage.getItem('appSettings');
-                if (item) {
-                    localSettings = JSON.parse(item);
-                }
-            } catch (error) {
-                console.error("Failed to parse settings from localStorage", error);
+        let localSettings = {};
+        try {
+            const item = window.localStorage.getItem('appSettings');
+            if (item) {
+                localSettings = JSON.parse(item);
             }
-
-            const combinedSettings = deepMerge(defaultSettings, localSettings);
-
-            if (propertySettings) {
-                combinedSettings.houseName = propertySettings.house_name || defaultSettings.houseName;
-                combinedSettings.houseAddress = propertySettings.house_address || defaultSettings.houseAddress;
-                combinedSettings.bankName = propertySettings.bank_name || defaultSettings.bankName;
-                combinedSettings.bankAccountNumber = propertySettings.bank_account_number || defaultSettings.bankAccountNumber;
-                combinedSettings.bankLogoUrl = propertySettings.bank_logo_url || defaultSettings.bankLogoUrl;
-                combinedSettings.ownerName = propertySettings.owner_name || defaultSettings.ownerName;
-                combinedSettings.ownerPhotoUrl = propertySettings.owner_photo_url || defaultSettings.ownerPhotoUrl;
-                combinedSettings.passcode = propertySettings.passcode || defaultSettings.passcode;
-                combinedSettings.passcodeProtectionEnabled = propertySettings.passcode_protection_enabled ?? defaultSettings.passcodeProtectionEnabled;
-                combinedSettings.aboutUs = propertySettings.about_us || defaultSettings.aboutUs;
-                combinedSettings.contactPhone = propertySettings.contact_phone || defaultSettings.contactPhone;
-                combinedSettings.contactEmail = propertySettings.contact_email || defaultSettings.contactEmail;
-                combinedSettings.contactAddress = propertySettings.contact_address || defaultSettings.contactAddress;
-                combinedSettings.footerName = propertySettings.footer_name || defaultSettings.footerName;
-                combinedSettings.tenantViewStyle = propertySettings.tenant_view_style || defaultSettings.tenantViewStyle;
-                combinedSettings.metadataTitle = propertySettings.metadata_title || defaultSettings.metadataTitle;
-                combinedSettings.faviconUrl = propertySettings.favicon_url || defaultSettings.faviconUrl;
-                combinedSettings.appLogoUrl = propertySettings.app_logo_url || defaultSettings.appLogoUrl;
-                combinedSettings.dateFormat = propertySettings.date_format || defaultSettings.dateFormat;
-                combinedSettings.currencySymbol = propertySettings.currency_symbol || defaultSettings.currencySymbol;
-                
-                // Load document categories from DB if they exist, otherwise use local/default
-                combinedSettings.documentCategories = propertySettings.document_categories || combinedSettings.documentCategories;
-
-                // Load theme from DB
-                combinedSettings.theme.colors.primary = propertySettings.theme_primary || defaultSettings.theme.colors.primary;
-                combinedSettings.theme.colors.table_header_background = propertySettings.theme_table_header_background || defaultSettings.theme.colors.table_header_background;
-                combinedSettings.theme.colors.table_header_foreground = propertySettings.theme_table_header_foreground || defaultSettings.theme.colors.table_header_foreground;
-                combinedSettings.theme.colors.table_footer_background = propertySettings.theme_table_footer_background || defaultSettings.theme.colors.table_footer_background;
-                combinedSettings.theme.colors.mobile_nav_background = propertySettings.theme_mobile_nav_background || defaultSettings.theme.colors.mobile_nav_background;
-                combinedSettings.theme.colors.mobile_nav_foreground = propertySettings.theme_mobile_nav_foreground || defaultSettings.theme.colors.mobile_nav_foreground;
-
-                // Load WhatsApp settings from DB
-                combinedSettings.whatsappRemindersEnabled = propertySettings.whatsapp_reminders_enabled ?? defaultSettings.whatsappRemindersEnabled;
-                combinedSettings.whatsappReminderSchedule = propertySettings.whatsapp_reminder_schedule || defaultSettings.whatsappReminderSchedule;
-                combinedSettings.whatsappReminderTemplate = propertySettings.whatsapp_reminder_template || defaultSettings.whatsappReminderTemplate;
-
-            }
-            
-            combinedSettings.zakatBankDetails = zakatBankDetails || [];
-
-            setSettings(combinedSettings);
+        } catch (error) {
+            console.error("Failed to parse settings from localStorage", error);
         }
-    }, [isMounted, propertySettings, zakatBankDetails, dataLoading]);
+
+        const combinedSettings = deepMerge(defaultSettings, localSettings);
+        
+        if (serverSettings) {
+             combinedSettings.houseName = serverSettings.house_name || defaultSettings.houseName;
+                combinedSettings.houseAddress = serverSettings.house_address || defaultSettings.houseAddress;
+                combinedSettings.bankName = serverSettings.bank_name || defaultSettings.bankName;
+                combinedSettings.bankAccountNumber = serverSettings.bank_account_number || defaultSettings.bankAccountNumber;
+                combinedSettings.bankLogoUrl = serverSettings.bank_logo_url || defaultSettings.bankLogoUrl;
+                combinedSettings.ownerName = serverSettings.owner_name || defaultSettings.ownerName;
+                combinedSettings.ownerPhotoUrl = serverSettings.owner_photo_url || defaultSettings.ownerPhotoUrl;
+                combinedSettings.passcode = serverSettings.passcode || defaultSettings.passcode;
+                combinedSettings.passcodeProtectionEnabled = serverSettings.passcode_protection_enabled ?? defaultSettings.passcodeProtectionEnabled;
+                combinedSettings.aboutUs = serverSettings.about_us || defaultSettings.aboutUs;
+                combinedSettings.contactPhone = serverSettings.contact_phone || defaultSettings.contactPhone;
+                combinedSettings.contactEmail = serverSettings.contact_email || defaultSettings.contactEmail;
+                combinedSettings.contactAddress = serverSettings.contact_address || defaultSettings.contactAddress;
+                combinedSettings.footerName = serverSettings.footer_name || defaultSettings.footerName;
+                combinedSettings.tenantViewStyle = serverSettings.tenant_view_style || defaultSettings.tenantViewStyle;
+                combinedSettings.metadataTitle = serverSettings.metadata_title || defaultSettings.metadataTitle;
+                combinedSettings.faviconUrl = serverSettings.favicon_url || defaultSettings.faviconUrl;
+                combinedSettings.appLogoUrl = serverSettings.app_logo_url || defaultSettings.appLogoUrl;
+                combinedSettings.dateFormat = serverSettings.date_format || defaultSettings.dateFormat;
+                combinedSettings.currencySymbol = serverSettings.currency_symbol || defaultSettings.currencySymbol;
+                
+                combinedSettings.documentCategories = serverSettings.document_categories || combinedSettings.documentCategories;
+
+                combinedSettings.theme.colors.primary = serverSettings.theme_primary || defaultSettings.theme.colors.primary;
+                combinedSettings.theme.colors.table_header_background = serverSettings.theme_table_header_background || defaultSettings.theme.colors.table_header_background;
+                combinedSettings.theme.colors.table_header_foreground = serverSettings.theme_table_header_foreground || defaultSettings.theme.colors.table_header_foreground;
+                combinedSettings.theme.colors.table_footer_background = serverSettings.theme_table_footer_background || defaultSettings.theme.colors.table_footer_background;
+                combinedSettings.theme.colors.mobile_nav_background = serverSettings.theme_mobile_nav_background || defaultSettings.theme.colors.mobile_nav_background;
+                combinedSettings.theme.colors.mobile_nav_foreground = serverSettings.theme_mobile_nav_foreground || defaultSettings.theme.colors.mobile_nav_foreground;
+
+                combinedSettings.whatsappRemindersEnabled = serverSettings.whatsapp_reminders_enabled ?? defaultSettings.whatsappRemindersEnabled;
+                combinedSettings.whatsappReminderSchedule = serverSettings.whatsapp_reminder_schedule || defaultSettings.whatsappReminderSchedule;
+                combinedSettings.whatsappReminderTemplate = serverSettings.whatsapp_reminder_template || defaultSettings.whatsappReminderTemplate;
+        }
+
+        setSettings(combinedSettings);
+    }, [serverSettings]);
 
 
     const handleSetSettings = (newSettingsOrFn: AppSettings | ((prev: AppSettings) => AppSettings)) => {
@@ -317,8 +309,12 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     const value = {
         settings,
         setSettings: handleSetSettings,
-        loading: !isMounted || dataLoading,
-        refreshSettings: refreshData,
+        loading: !isMounted,
+        refreshSettings: () => {
+             // This is a placeholder for a more robust refresh mechanism
+             // In a real app, this might trigger a re-fetch from the server
+             console.log("Refreshing settings...")
+        },
     };
 
     return (
