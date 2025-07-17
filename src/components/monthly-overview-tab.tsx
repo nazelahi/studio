@@ -808,48 +808,9 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
         reader.readAsArrayBuffer(file);
     };
 
-  if (loading) {
-    return (
-      <div className="pt-4 space-y-6">
-        <Skeleton className="h-10 w-1/4" />
-        <Skeleton className="h-10 w-full" />
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-6 w-1/2" />
-            <Skeleton className="h-4 w-3/4" />
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead><Skeleton className="h-5 w-20" /></TableHead>
-                  <TableHead><Skeleton className="h-5 w-20" /></TableHead>
-                  <TableHead><Skeleton className="h-5 w-20" /></TableHead>
-                  <TableHead><Skeleton className="h-5 w-20" /></TableHead>
-                  <TableHead><Skeleton className="h-5 w-20" /></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {[...Array(3)].map((_, i) => (
-                  <TableRow key={i}>
-                    <TableCell><Skeleton className="h-5 w-full" /></TableCell>
-                    <TableCell><Skeleton className="h-5 w-full" /></TableCell>
-                    <TableCell><Skeleton className="h-5 w-full" /></TableCell>
-                    <TableCell><Skeleton className="h-5 w-full" /></TableCell>
-                    <TableCell><Skeleton className="h-5 w-full" /></TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-      </div>
-    )
-  }
-
   return (
     <TooltipProvider>
-    <Tabs value={desktopSelectedMonth} onValueChange={setDesktopSelectedMonth} className="w-full">
+    <Tabs value={desktopSelectedMonth} onValueChange={setDesktopSelectedMonth} className="w-full pt-4 md:pt-0">
       
       {/* Desktop View: Tabs */}
       <div className="hidden md:block">
@@ -998,7 +959,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                             {isAdmin && <TableHead className="w-10 text-inherit">
                                 <div className="text-white">
                                     <Checkbox
-                                        className="border-gray-400 data-[state=checked]:bg-primary-foreground data-[state=checked]:text-primary"
+                                        className="border-primary data-[state=checked]:bg-primary-foreground data-[state=checked]:text-primary"
                                         checked={selectedRentEntryIds.length > 0 && selectedRentEntryIds.length === filteredTenantsForMonth.length}
                                         onCheckedChange={(checked) => {
                                             if (checked) {
@@ -1580,5 +1541,3 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
     </TooltipProvider>
   )
 }
-
-    

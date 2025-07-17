@@ -2,17 +2,14 @@
 "use client"
 
 import * as React from "react"
+import dynamic from 'next/dynamic'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { MonthlyOverviewTab } from "@/components/monthly-overview-tab"
-import { ContactsTab } from "@/components/contacts-tab"
-import { ReportsTab } from "@/components/reports-tab"
-import { ZakatTab } from "@/components/zakat-tab"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useSettings } from "@/context/settings-context"
-import { WorkDetailsTab } from "./work-details-tab"
 import { useAuth } from "@/context/auth-context"
 import { cn } from "@/lib/utils"
-import { DocumentsTab } from "./documents-tab"
+import { Skeleton } from "./ui/skeleton"
+import { Card, CardContent, CardHeader } from "./ui/card"
 
 interface DashboardTabsProps {
   year: number;
@@ -22,6 +19,37 @@ interface DashboardTabsProps {
   onYearChange: (year: string) => void;
   years: string[];
 }
+
+const LoadingSkeleton = () => (
+  <Card className="mt-4">
+    <CardHeader>
+      <Skeleton className="h-8 w-1/2" />
+      <Skeleton className="h-4 w-3/4" />
+    </CardHeader>
+    <CardContent>
+      <Skeleton className="h-40 w-full" />
+    </CardContent>
+  </Card>
+)
+
+const MonthlyOverviewTab = dynamic(() => import('@/components/monthly-overview-tab').then(mod => mod.MonthlyOverviewTab), {
+  loading: () => <LoadingSkeleton />,
+});
+const ContactsTab = dynamic(() => import('@/components/contacts-tab').then(mod => mod.ContactsTab), {
+  loading: () => <LoadingSkeleton />,
+});
+const WorkDetailsTab = dynamic(() => import('@/components/work-details-tab').then(mod => mod.WorkDetailsTab), {
+  loading: () => <LoadingSkeleton />,
+});
+const DocumentsTab = dynamic(() => import('@/components/documents-tab').then(mod => mod.DocumentsTab), {
+  loading: () => <LoadingSkeleton />,
+});
+const ReportsTab = dynamic(() => import('@/components/reports-tab').then(mod => mod.ReportsTab), {
+  loading: () => <LoadingSkeleton />,
+});
+const ZakatTab = dynamic(() => import('@/components/zakat-tab').then(mod => mod.ZakatTab), {
+  loading: () => <LoadingSkeleton />,
+});
 
 
 export default function DashboardTabs({ year, activeTab, onTabChange, selectedYear, onYearChange, years }: DashboardTabsProps) {
@@ -83,22 +111,22 @@ export default function DashboardTabs({ year, activeTab, onTabChange, selectedYe
 
 
         <TabsContent value="overview">
-          <MonthlyOverviewTab year={year} mobileSelectedMonth={selectedMonth} />
+          {activeTab === 'overview' && <MonthlyOverviewTab year={year} mobileSelectedMonth={selectedMonth} />}
         </TabsContent>
         <TabsContent value="contacts">
-          <ContactsTab />
+          {activeTab === 'contacts' && <ContactsTab />}
         </TabsContent>
         <TabsContent value="work">
-          <WorkDetailsTab year={year} />
+          {activeTab === 'work' && <WorkDetailsTab year={year} />}
         </TabsContent>
         <TabsContent value="documents">
-            <DocumentsTab />
+            {activeTab === 'documents' && <DocumentsTab />}
         </TabsContent>
          <TabsContent value="reports">
-            <ReportsTab year={year} />
+            {activeTab === 'reports' && <ReportsTab year={year} />}
         </TabsContent>
          <TabsContent value="zakat">
-            <ZakatTab />
+            {activeTab === 'zakat' && <ZakatTab />}
         </TabsContent>
       </Tabs>
     </div>
