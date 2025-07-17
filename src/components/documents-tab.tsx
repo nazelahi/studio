@@ -27,6 +27,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from ".
 import { Badge } from "@/components/ui/badge"
 import { format, parseISO } from "date-fns"
 import { generateDocumentDescription } from "@/ai/flows/generate-document-description-flow"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion"
 
 type StagedFile = {
   id: string;
@@ -108,6 +109,10 @@ export function DocumentsTab() {
     if (editingDoc) {
         if (docFile) formData.append('documentFile', docFile);
     } else {
+        if (stagedFiles.length === 0) {
+            toast({ title: "No files to upload", description: "Please select at least one document.", variant: "destructive" });
+            return;
+        }
         stagedFiles.forEach(sf => {
             formData.append('documentFiles', sf.file);
             formData.append('descriptions', sf.description);
@@ -181,7 +186,6 @@ export function DocumentsTab() {
                 }
             };
         } else {
-            // For non-image files, use the file name as description
              updateStagedFile(stagedFile.id, { description: stagedFile.file.name, isGenerating: false });
         }
     });
@@ -227,11 +231,11 @@ export function DocumentsTab() {
 
   const DocumentRow = ({ doc }: { doc: DocType }) => (
     <TableRow>
-        <TableCell>
+        <TableCell className="w-16 p-2">
             <a href={doc.file_url} target="_blank" rel="noopener noreferrer" className="block">
-                 <div className="flex-shrink-0 w-10 h-10 rounded-md bg-muted flex items-center justify-center overflow-hidden">
+                 <div className="flex-shrink-0 w-12 h-12 rounded-md bg-muted flex items-center justify-center overflow-hidden">
                     {doc.file_type.startsWith('image/') ? (
-                        <img src={doc.file_url} alt={doc.file_name} className="h-full w-full object-cover" data-ai-hint="document" />
+                        <img src={doc.file_url} alt={doc.description || doc.file_name} className="h-full w-full object-cover" data-ai-hint="document" />
                     ) : (
                         <FileText className="h-5 w-5 text-muted-foreground" />
                     )}
@@ -240,7 +244,7 @@ export function DocumentsTab() {
         </TableCell>
         <TableCell>
              <p className="text-sm font-medium" title={doc.description || doc.file_name}>
-                {doc.description || doc.file_name}
+                {doc.description}
             </p>
         </TableCell>
         <TableCell className="hidden md:table-cell">
@@ -274,7 +278,7 @@ export function DocumentsTab() {
                             <AlertDialogContent onClick={(e) => e.stopPropagation()}>
                                 <AlertDialogHeader>
                                     <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                    <AlertDialogDescription>This action will permanently delete the document "{doc.file_name}". This cannot be undone.</AlertDialogDescription>
+                                    <AlertDialogDescription>This action will permanently delete this document. This cannot be undone.</AlertDialogDescription>
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
                                     <AlertDialogCancel>Cancel</AlertDialogCancel>
@@ -293,7 +297,7 @@ export function DocumentsTab() {
     <Table>
         <TableHeader>
             <TableRow>
-                <TableHead className="w-16">Preview</TableHead>
+                <TableHead className="w-16 p-2">Preview</TableHead>
                 <TableHead>Description</TableHead>
                 <TableHead className="hidden md:table-cell">Date</TableHead>
                 <TableHead className="hidden md:table-cell">Category</TableHead>
@@ -305,7 +309,7 @@ export function DocumentsTab() {
                 docs.map(doc => <DocumentRow key={doc.id} doc={doc} />)
             ) : (
                 <TableRow>
-                    <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">No documents in this category.</TableCell>
+                    <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">No documents found.</TableCell>
                 </TableRow>
             )}
         </TableBody>
@@ -329,14 +333,12 @@ export function DocumentsTab() {
                             Add Document(s)
                         </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-w-4xl">
-                        <DialogHeader>
+                    <DialogContent className="max-w-4xl p-0">
+                      <form onSubmit={handleSave}>
+                        <DialogHeader className="p-6 pb-4">
                             <DialogTitle>{editingDoc ? 'Edit Document' : 'Add New Documents'}</DialogTitle>
                         </DialogHeader>
-                        <form onSubmit={handleSave}>
-                          {editingDoc && <input type="hidden" name="documentId" value={editingDoc.id} />}
-                          {editingDoc?.file_url && <input type="hidden" name="oldFileUrl" value={editingDoc.file_url} />}
-                          <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-4">
+                          <div className="grid gap-4 px-6 max-h-[70vh] overflow-y-auto">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                <div className="space-y-2">
                                     <Label htmlFor="category">Category</Label>
@@ -365,39 +367,43 @@ export function DocumentsTab() {
                             </div>
                            
                             {editingDoc ? (
-                                <div className="space-y-4">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="description">Description (Optional)</Label>
-                                        <Textarea id="description" name="description" defaultValue={editingDoc?.description || ''} />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <Label>File</Label>
-                                        <div className="flex items-center gap-4">
-                                            <Button type="button" variant="outline" onClick={() => docFileInputRef.current?.click()}>
-                                                <Upload className="mr-2 h-4 w-4"/>
-                                                Change File
-                                            </Button>
-                                            {docFile && <p className="text-xs text-muted-foreground truncate max-w-[150px]">{docFile.name}</p>}
-                                            {!docFile && editingDoc && <p className="text-xs text-muted-foreground truncate max-w-[150px]">{editingDoc.file_name}</p>}
+                                <>
+                                    <input type="hidden" name="documentId" value={editingDoc.id} />
+                                    {editingDoc.file_url && <input type="hidden" name="oldFileUrl" value={editingDoc.file_url} />}
+                                    <div className="space-y-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="description">Description (Optional)</Label>
+                                            <Textarea id="description" name="description" defaultValue={editingDoc?.description || ''} />
                                         </div>
-                                        <Input ref={docFileInputRef} name="documentFile" type="file" className="hidden" accept="image/*,.pdf" onChange={handleFileChange} />
+                                        <div className="space-y-2">
+                                            <Label>File</Label>
+                                            <div className="flex items-center gap-4">
+                                                <Button type="button" variant="outline" onClick={() => docFileInputRef.current?.click()}>
+                                                    <Upload className="mr-2 h-4 w-4"/>
+                                                    Change File
+                                                </Button>
+                                                <p className="text-xs text-muted-foreground truncate max-w-[150px]">{docFile ? docFile.name : editingDoc.file_name}</p>
+                                            </div>
+                                            <Input ref={docFileInputRef} name="documentFile" type="file" className="hidden" accept="image/*,.pdf" onChange={handleFileChange} />
+                                        </div>
                                     </div>
-                                </div>
+                                </>
                             ) : (
                                 <div className="space-y-4">
-                                    <div className="border border-dashed rounded-lg p-4 text-center">
-                                        <Button type="button" variant="outline" onClick={() => docFileInputRef.current?.click()}>
-                                            <Upload className="mr-2 h-4 w-4"/>
-                                            Click to Upload Documents
-                                        </Button>
+                                    <div 
+                                      className="border-2 border-dashed border-muted-foreground/30 rounded-lg p-8 text-center cursor-pointer hover:bg-muted/50 transition-colors"
+                                      onClick={() => docFileInputRef.current?.click()}
+                                    >
+                                        <Upload className="mx-auto h-12 w-12 text-muted-foreground/50"/>
+                                        <p className="mt-2 text-sm font-medium">Click to upload or drag & drop</p>
+                                        <p className="text-xs text-muted-foreground">You can select multiple files</p>
                                         <Input ref={docFileInputRef} type="file" className="hidden" multiple accept="image/*,.pdf" onChange={handleFileChange} />
-                                        <p className="text-xs text-muted-foreground mt-2">You can select multiple files at once.</p>
                                     </div>
                                     
                                     {stagedFiles.length > 0 && (
-                                        <div className="space-y-4">
+                                        <div className="space-y-3 pt-4 border-t">
                                             {stagedFiles.map((sf, index) => (
-                                                <div key={sf.id} className="flex items-start gap-4 p-3 border rounded-md">
+                                                <div key={sf.id} className="flex items-start gap-4 p-3 border rounded-md bg-background">
                                                     <div className="flex-shrink-0 w-16 h-16 bg-muted rounded-md flex items-center justify-center overflow-hidden">
                                                         {sf.file.type.startsWith('image/') ? (
                                                             <img src={sf.previewUrl} alt="preview" className="w-full h-full object-cover" />
@@ -416,7 +422,7 @@ export function DocumentsTab() {
                                                         />
                                                          {sf.isGenerating && <p className="text-xs text-muted-foreground flex items-center gap-1"><LoaderCircle className="h-3 w-3 animate-spin"/>Generating description...</p>}
                                                     </div>
-                                                    <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleRemoveStagedFile(sf.id)}>
+                                                    <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive shrink-0" onClick={() => handleRemoveStagedFile(sf.id)}>
                                                         <X className="h-4 w-4"/>
                                                     </Button>
                                                 </div>
@@ -427,7 +433,7 @@ export function DocumentsTab() {
                             )}
 
                           </div>
-                           <DialogFooter>
+                           <DialogFooter className="p-6 pt-4 border-t bg-muted/50">
                                 <DialogClose asChild><Button type="button" variant="outline" disabled={isPending}>Cancel</Button></DialogClose>
                                 <Button type="submit" disabled={isPending || stagedFiles.some(f => f.isGenerating)}>
                                 {isPending ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
@@ -456,12 +462,12 @@ export function DocumentsTab() {
                     {tenantsWithDocs.length > 0 && <TabsTrigger value="tenants">Tenant Documents</TabsTrigger>}
                   </TabsList>
                   
-                  <TabsContent value="all" className="mt-4 max-h-[500px] overflow-y-auto">
+                  <TabsContent value="all" className="mt-4">
                     <DocumentTable docs={allDocuments} />
                   </TabsContent>
 
                   {documentCategories.map(category => (
-                    <TabsContent key={category} value={category} className="mt-4 max-h-[500px] overflow-y-auto">
+                    <TabsContent key={category} value={category} className="mt-4">
                        <DocumentTable docs={allDocuments.filter(d => d.category === category)} />
                     </TabsContent>
                   ))}
