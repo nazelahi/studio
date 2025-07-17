@@ -17,7 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import type { Tenant, RentEntry } from "@/types";
-import { Mail, Phone, Home, Calendar, DollarSign, FileText, Download, Printer, ImageIcon, File as FileIcon, User, MapPin, Cake, CreditCard, ShieldCheck, ChevronLeft, ChevronRight, X, Flame, Zap } from "lucide-react";
+import { Mail, Phone, Home, Calendar, DollarSign, FileText, Download, Printer, ImageIcon, File as FileIcon, User, MapPin, Cake, CreditCard, ShieldCheck, ChevronLeft, ChevronRight, X, Flame, Zap, UserSquare2 } from "lucide-react";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { format, parseISO } from 'date-fns';
@@ -27,6 +27,8 @@ import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { useData } from "@/context/data-context";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
+import { TenantIdCard } from "./tenant-id-card";
+import { saveAs } from "file-saver";
 
 
 interface TenantDetailSheetProps {
@@ -43,6 +45,7 @@ export function TenantDetailSheet({
   const { toast } = useToast();
   const { rentData } = useData();
   const sheetContentRef = React.useRef<HTMLDivElement>(null);
+  const idCardRef = React.useRef<HTMLDivElement>(null);
   
   const tenantPaymentHistory = React.useMemo(() => {
     if (!tenant) return [];
@@ -88,6 +91,31 @@ export function TenantDetailSheet({
       toast({ title: "Error", description: "Failed to generate PDF.", variant: "destructive" });
     }
   };
+  
+  const handleDownloadIdCard = async () => {
+    const input = idCardRef.current;
+    if (!input || !tenant) return;
+    
+    toast({ title: "Generating ID Card...", description: "Please wait a moment." });
+
+    try {
+        const canvas = await html2canvas(input, {
+            scale: 3, // Higher scale for better quality
+            useCORS: true,
+            backgroundColor: null, // Transparent background
+        });
+        canvas.toBlob(function(blob) {
+            if (blob) {
+                saveAs(blob, `ID_Card_${tenant.name.replace(/\s/g, '_')}.png`);
+                 toast({ title: "Success", description: "ID Card has been downloaded." });
+            }
+        });
+    } catch (error) {
+        console.error("Error generating ID card:", error);
+        toast({ title: "Error", description: "Failed to generate ID card.", variant: "destructive" });
+    }
+  };
+
 
   const handlePrint = () => {
      const input = sheetContentRef.current;
@@ -150,6 +178,7 @@ export function TenantDetailSheet({
 
 
   return (
+    <>
     <Sheet open={isOpen} onOpenChange={onOpenChange}>
       <SheetContent className="sm:max-w-lg w-full flex flex-col p-0">
         <SheetHeader className="text-left sr-only">
@@ -352,7 +381,11 @@ export function TenantDetailSheet({
         </div>
         <Separator />
         <SheetFooter className="mt-auto p-4 bg-background no-print">
-          <div className="flex w-full justify-end gap-2">
+          <div className="flex w-full justify-end gap-2 flex-wrap">
+             <Button variant="outline" onClick={handleDownloadIdCard}>
+              <UserSquare2 className="mr-2 h-4 w-4" />
+              Download ID Card
+            </Button>
             <Button variant="outline" onClick={handleDownloadPdf}>
               <Download className="mr-2 h-4 w-4" />
               Download PDF
@@ -365,5 +398,10 @@ export function TenantDetailSheet({
         </SheetFooter>
       </SheetContent>
     </Sheet>
+    {/* This component is rendered off-screen for the canvas conversion */}
+    <div className="fixed -left-[9999px] top-0">
+        {tenant && <TenantIdCard tenant={tenant} innerRef={idCardRef} />}
+    </div>
+    </>
   );
 }
