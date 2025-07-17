@@ -24,7 +24,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 
 
 export function DocumentsTab() {
-  const { documents, loading } = useData();
+  const { documents, tenants, loading } = useData();
   const { isAdmin } = useAuth();
   const { toast } = useToast();
   const { withProtection } = useProtection();
@@ -173,6 +173,37 @@ export function DocumentsTab() {
 
   }, [documents, settings.documentCategories]);
 
+  const tenantDocuments = React.useMemo(() => {
+    const tenantDocs: Document[] = [];
+    tenants.forEach(tenant => {
+        if (tenant.documents && tenant.documents.length > 0) {
+            tenant.documents.forEach(docUrl => {
+                // Create a Document-like object from the tenant doc URL
+                tenantDocs.push({
+                    id: docUrl, // Use URL as a unique key for React
+                    file_url: docUrl,
+                    file_name: docUrl.split('/').pop() || 'Tenant Document',
+                    // A simple assumption based on file extension
+                    file_type: docUrl.toLowerCase().includes('.pdf') ? 'application/pdf' : 'image/jpeg', 
+                    category: `Tenant: ${tenant.name}`, // Dynamic category
+                    description: `Document for ${tenant.name}`,
+                });
+            });
+        }
+    });
+    
+    // Group these documents by tenant name
+    return tenantDocs.reduce((acc, doc) => {
+        const tenantName = doc.category;
+        if (!acc[tenantName]) {
+            acc[tenantName] = [];
+        }
+        acc[tenantName].push(doc);
+        return acc;
+    }, {} as Record<string, Document[]>);
+
+  }, [tenants]);
+
   return (
     <div className="pt-4 space-y-6">
       <Card>
@@ -272,10 +303,11 @@ export function DocumentsTab() {
                     <Skeleton className="h-12 w-full" />
                     <Skeleton className="h-12 w-full" />
                 </div>
-            ) : documents.length === 0 ? (
+            ) : documents.length === 0 && Object.keys(tenantDocuments).length === 0 ? (
                 <div className="text-center py-10 text-muted-foreground">No documents uploaded yet.</div>
             ) : (
-                <Accordion type="multiple" defaultValue={groupedDocuments.map(([category]) => category)} className="w-full">
+                <Accordion type="multiple" defaultValue={['general-documents', 'tenant-documents', ...groupedDocuments.map(([category]) => category)]} className="w-full">
+                    {/* General Documents */}
                     {groupedDocuments.map(([category, docs]) => (
                         <AccordionItem key={category} value={category}>
                             <AccordionTrigger>
@@ -341,6 +373,57 @@ export function DocumentsTab() {
                             </AccordionContent>
                         </AccordionItem>
                     ))}
+
+                    {/* Tenant-Specific Documents */}
+                    {Object.keys(tenantDocuments).length > 0 && (
+                        <AccordionItem value="tenant-documents">
+                            <AccordionTrigger>
+                                <div className="flex items-center gap-2 text-lg font-semibold">
+                                    <Folder className="h-5 w-5 text-primary"/>
+                                    Tenant Documents
+                                    <span className="text-sm font-normal text-muted-foreground">({Object.values(tenantDocuments).reduce((sum, docs) => sum + docs.length, 0)})</span>
+                                </div>
+                            </AccordionTrigger>
+                            <AccordionContent>
+                                <Accordion type="multiple" className="w-full pl-4 border-l">
+                                    {Object.entries(tenantDocuments).map(([tenantName, docs]) => (
+                                        <AccordionItem key={tenantName} value={tenantName}>
+                                            <AccordionTrigger>
+                                                <div className="flex items-center gap-2 text-base font-medium">
+                                                    {tenantName.replace('Tenant: ', '')}
+                                                    <span className="text-sm font-normal text-muted-foreground">({docs.length})</span>
+                                                </div>
+                                            </AccordionTrigger>
+                                            <AccordionContent>
+                                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pt-2">
+                                                    {docs.map(doc => (
+                                                        <Card key={doc.id} className="group overflow-hidden">
+                                                            <a href={doc.file_url} target="_blank" rel="noopener noreferrer" className="block">
+                                                                <div className="aspect-video bg-muted flex items-center justify-center">
+                                                                    {doc.file_type.startsWith('image/') ? (
+                                                                        <img src={doc.file_url} alt={doc.file_name} className="w-full h-full object-cover transition-transform group-hover:scale-105" data-ai-hint="document"/>
+                                                                    ) : (
+                                                                        <FileText className="w-12 h-12 text-muted-foreground" />
+                                                                    )}
+                                                                </div>
+                                                            </a>
+                                                            <CardFooter className="p-2 bg-muted/50 flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                                <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+                                                                    <a href={doc.file_url} target="_blank" rel="noopener noreferrer" download={doc.file_name}>
+                                                                        <Download className="h-4 w-4" />
+                                                                    </a>
+                                                                </Button>
+                                                            </CardFooter>
+                                                        </Card>
+                                                    ))}
+                                                </div>
+                                            </AccordionContent>
+                                        </AccordionItem>
+                                    ))}
+                                </Accordion>
+                            </AccordionContent>
+                        </AccordionItem>
+                    )}
                 </Accordion>
             )}
         </CardContent>
@@ -348,3 +431,4 @@ export function DocumentsTab() {
     </div>
   );
 }
+
