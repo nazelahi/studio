@@ -42,9 +42,10 @@ export function DocumentsTab() {
   const [customCategory, setCustomCategory] = React.useState('');
   
   React.useEffect(() => {
+    const categories = settings.documentCategories || [];
     if (editingDoc) {
         const docCategory = editingDoc.category || '';
-        if (settings.documentCategories.includes(docCategory)) {
+        if (categories.includes(docCategory)) {
             setCategory(docCategory);
             setCustomCategory('');
         } else if (docCategory) {
@@ -55,7 +56,7 @@ export function DocumentsTab() {
             setCustomCategory('');
         }
     } else {
-        setCategory(settings.documentCategories[0] || 'Miscellaneous');
+        setCategory(categories[0] || 'Miscellaneous');
     }
   }, [editingDoc, settings.documentCategories]);
 
@@ -65,7 +66,7 @@ export function DocumentsTab() {
       setEditingDoc(null);
       setDocFile(null);
       setDocPreview(null);
-      setCategory(settings.documentCategories[0] || 'Miscellaneous');
+      setCategory((settings.documentCategories || [])[0] || 'Miscellaneous');
       setCustomCategory('');
     }
     setIsDialogOpen(isOpen);
@@ -203,7 +204,7 @@ export function DocumentsTab() {
                                 <Select value={category} onValueChange={setCategory}>
                                     <SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger>
                                     <SelectContent>
-                                        {settings.documentCategories.map(cat => (
+                                        {(settings.documentCategories || []).map(cat => (
                                             <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                                         ))}
                                         <SelectItem value="Other">Other (specify)</SelectItem>
