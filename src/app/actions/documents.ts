@@ -25,75 +25,116 @@ export async function saveDocumentAction(formData: FormData) {
     const supabaseAdmin = getSupabaseAdmin();
     const documentId = formData.get('documentId') as string | undefined;
 
-    const docFile = formData.get('documentFile') as File | null;
-    let fileUrl: string | null = formData.get('file_url') as string || null;
-    let fileType: string | null = formData.get('file_type') as string || null;
-    let fileName: string | null = formData.get('file_name') as string || null;
+    const docFiles = formData.getAll('documentFiles') as File[];
+    const descriptions = formData.getAll('descriptions') as string[];
+    const category = formData.get('category') as string;
+    
+    if (!category) {
+        return { error: "Category is required." };
+    }
 
-    // Handle file upload only if a new file is provided
-    if (docFile && docFile.size > 0) {
-        const fileExt = docFile.name.split('.').pop();
-        const filePath = `general-documents/${Date.now()}.${fileExt}`;
+    // Handle single document update
+    if (documentId) {
+        const docFile = formData.get('documentFile') as File | null;
+        let fileUrl: string | null = formData.get('file_url') as string || null;
+        let fileType: string | null = formData.get('file_type') as string || null;
+        let fileName: string | null = formData.get('file_name') as string || null;
 
-        const { error: uploadError } = await supabaseAdmin.storage
-            .from('general-documents')
-            .upload(filePath, docFile);
-        
-        if (uploadError) {
-            console.error('Supabase storage upload error:', uploadError);
-            return { error: `Failed to upload document: ${uploadError.message}` };
-        }
+        if (docFile && docFile.size > 0) {
+            const fileExt = docFile.name.split('.').pop();
+            const filePath = `general-documents/${Date.now()}.${fileExt}`;
 
-        const { data: publicUrlData } = supabaseAdmin.storage
-            .from('general-documents')
-            .getPublicUrl(filePath);
+            const { error: uploadError } = await supabaseAdmin.storage
+                .from('general-documents')
+                .upload(filePath, docFile);
+            
+            if (uploadError) {
+                console.error('Supabase storage upload error:', uploadError);
+                return { error: `Failed to upload document: ${uploadError.message}` };
+            }
 
-        fileUrl = publicUrlData.publicUrl;
-        fileType = docFile.type;
-        fileName = docFile.name;
+            const { data: publicUrlData } = supabaseAdmin.storage
+                .from('general-documents')
+                .getPublicUrl(filePath);
 
-        // If updating, delete the old file from storage
-        const oldFileUrl = formData.get('oldFileUrl') as string | undefined;
-        if (oldFileUrl) {
-            try {
-                const oldFilePath = new URL(oldFileUrl).pathname.split('/general-documents/')[1];
-                await supabaseAdmin.storage.from('general-documents').remove([oldFilePath]);
-            } catch (e) {
-                 console.error("Could not parse or delete old document from storage:", e)
+            fileUrl = publicUrlData.publicUrl;
+            fileType = docFile.type;
+            fileName = docFile.name;
+
+            const oldFileUrl = formData.get('oldFileUrl') as string | undefined;
+            if (oldFileUrl) {
+                try {
+                    const oldFilePath = new URL(oldFileUrl).pathname.split('/general-documents/')[1];
+                    await supabaseAdmin.storage.from('general-documents').remove([oldFilePath]);
+                } catch (e) {
+                    console.error("Could not parse or delete old document from storage:", e)
+                }
             }
         }
-    }
-
-    const documentData = {
-        category: formData.get('category') as string,
-        description: formData.get('description') as string || null,
-        file_url: fileUrl,
-        file_type: fileType,
-        file_name: fileName,
-    }
-
-    if (!documentData.file_url) {
-        return { error: 'File is required. Please upload a document.' };
-    }
-
-    let error;
-
-    if (documentId) {
-        const { error: updateError } = await supabaseAdmin
+        
+        const documentData = {
+            category,
+            description: formData.get('description') as string || null,
+            file_url: fileUrl,
+            file_type: fileType,
+            file_name: fileName,
+        }
+        
+        const { error } = await supabaseAdmin
             .from('documents')
             .update(documentData)
             .eq('id', documentId);
-        error = updateError;
-    } else {
-        const { error: insertError } = await supabaseAdmin
-            .from('documents')
-            .insert(documentData);
-        error = insertError;
-    }
-    
-    if (error) {
-        console.error('Supabase document save error:', error);
-        return { error: error.message };
+        
+        if (error) {
+            console.error('Supabase document update error:', error);
+            return { error: error.message };
+        }
+
+    } else { // Handle batch document insert
+        if (docFiles.length === 0) {
+            return { error: 'No files selected for upload.' };
+        }
+
+        const documentsToInsert = [];
+
+        for (let i = 0; i < docFiles.length; i++) {
+            const file = docFiles[i];
+            const fileExt = file.name.split('.').pop();
+            const filePath = `general-documents/${Date.now()}-${i}.${fileExt}`;
+
+            const { error: uploadError } = await supabaseAdmin.storage
+                .from('general-documents')
+                .upload(filePath, file);
+
+            if (uploadError) {
+                console.error(`Supabase storage upload error for ${file.name}:`, uploadError);
+                // We'll skip this file, but you could also choose to halt the whole process.
+                continue; 
+            }
+
+            const { data: publicUrlData } = supabaseAdmin.storage
+                .from('general-documents')
+                .getPublicUrl(filePath);
+            
+            documentsToInsert.push({
+                category,
+                description: descriptions[i] || file.name,
+                file_url: publicUrlData.publicUrl,
+                file_type: file.type,
+                file_name: file.name,
+            });
+        }
+        
+        if (documentsToInsert.length > 0) {
+            const { error: insertError } = await supabaseAdmin
+                .from('documents')
+                .insert(documentsToInsert);
+            
+            if (insertError) {
+                 console.error('Supabase batch insert error:', insertError);
+                 return { error: insertError.message };
+            }
+        }
     }
 
     revalidatePath('/');

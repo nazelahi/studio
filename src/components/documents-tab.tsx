@@ -7,16 +7,16 @@ import { useData } from "@/context/data-context"
 import { useAuth } from "@/context/auth-context"
 import { useToast } from "@/hooks/use-toast"
 import { useProtection } from "@/context/protection-context"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { PlusCircle, Edit, Trash2, LoaderCircle, Upload, Image as ImageIcon, FileText, Download, Folder, File, Briefcase } from "lucide-react"
+import { PlusCircle, Edit, Trash2, LoaderCircle, Upload, Image as ImageIcon, FileText, Download, Briefcase, X } from "lucide-react"
 import { saveDocumentAction, deleteDocumentAction } from "@/app/actions/documents"
-import type { Document, Tenant } from "@/types"
+import type { Document as DocType, Tenant } from "@/types"
 import { Skeleton } from "./ui/skeleton"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useSettings } from "@/context/settings-context"
@@ -26,7 +26,15 @@ import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table"
 import { Badge } from "@/components/ui/badge"
 import { format, parseISO } from "date-fns"
+import { generateDocumentDescription } from "@/ai/flows/generate-document-description-flow"
 
+type StagedFile = {
+  id: string;
+  file: File;
+  previewUrl: string;
+  description: string;
+  isGenerating: boolean;
+};
 
 export function DocumentsTab() {
   const { documents, tenants, loading } = useData();
@@ -36,10 +44,11 @@ export function DocumentsTab() {
   const { settings } = useSettings();
 
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
-  const [editingDoc, setEditingDoc] = React.useState<Document | null>(null);
+  const [editingDoc, setEditingDoc] = React.useState<DocType | null>(null);
   const [isPending, startTransition] = React.useTransition();
   
-  const [docPreview, setDocPreview] = React.useState<string | null>(null);
+  const [stagedFiles, setStagedFiles] = React.useState<StagedFile[]>([]);
+  
   const [docFile, setDocFile] = React.useState<File | null>(null);
   const docFileInputRef = React.useRef<HTMLInputElement>(null);
   
@@ -70,18 +79,17 @@ export function DocumentsTab() {
     if (!isOpen) {
       setEditingDoc(null);
       setDocFile(null);
-      setDocPreview(null);
+      setStagedFiles([]);
       setCategory((settings.documentCategories || [])[0] || '');
       setCustomCategory('');
     }
     setIsDialogOpen(isOpen);
   };
   
-  const handleEdit = (doc: Document, e: React.MouseEvent) => {
+  const handleEdit = (doc: DocType, e: React.MouseEvent) => {
     e.stopPropagation();
     withProtection(() => {
       setEditingDoc(doc);
-      setDocPreview(doc.file_url);
       setIsDialogOpen(true);
     }, e);
   };
@@ -97,27 +105,27 @@ export function DocumentsTab() {
     }
     formData.set('category', finalCategory);
 
-    if (docFile) {
-        formData.append('documentFile', docFile);
-    }
     if (editingDoc) {
-      formData.set('file_url', editingDoc.file_url)
-      formData.set('file_type', editingDoc.file_type)
-      formData.set('file_name', editingDoc.file_name)
+        if (docFile) formData.append('documentFile', docFile);
+    } else {
+        stagedFiles.forEach(sf => {
+            formData.append('documentFiles', sf.file);
+            formData.append('descriptions', sf.description);
+        });
     }
 
     startTransition(async () => {
       const result = await saveDocumentAction(formData);
       if (result.error) {
-        toast({ title: 'Error saving document', description: result.error, variant: 'destructive' });
+        toast({ title: 'Error saving document(s)', description: result.error, variant: 'destructive' });
       } else {
-        toast({ title: editingDoc ? 'Document Updated' : 'Document Added', description: 'The document has been saved successfully.' });
+        toast({ title: editingDoc ? 'Document Updated' : 'Document(s) Added', description: 'Your documents have been saved successfully.' });
         handleOpenChange(false);
       }
     });
   };
 
-  const handleDelete = (e: React.MouseEvent, doc: Document) => {
+  const handleDelete = (e: React.MouseEvent, doc: DocType) => {
     e.preventDefault();
     const formData = new FormData();
     formData.append('documentId', doc.id);
@@ -136,26 +144,62 @@ export function DocumentsTab() {
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-        setDocFile(file);
-        if (file.type.startsWith('image/')) {
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setDocPreview(reader.result as string);
-            };
-            reader.readAsDataURL(file);
-        } else {
-            setDocPreview(null); // No preview for non-image files like PDFs
-        }
+    if (editingDoc) {
+        const file = e.target.files?.[0];
+        if (file) setDocFile(file);
+    } else {
+        handleMultipleFiles(e.target.files);
     }
+  };
+
+  const handleMultipleFiles = (files: FileList | null) => {
+    if (!files) return;
+    const newFiles = Array.from(files);
+
+    const newStagedFiles: StagedFile[] = newFiles.map(file => ({
+        id: `${file.name}-${file.lastModified}`,
+        file,
+        previewUrl: URL.createObjectURL(file),
+        description: 'Generating description...',
+        isGenerating: true,
+    }));
+
+    setStagedFiles(prev => [...prev, ...newStagedFiles]);
+
+    newStagedFiles.forEach(stagedFile => {
+        if (stagedFile.file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.readAsDataURL(stagedFile.file);
+            reader.onload = async () => {
+                const photoDataUri = reader.result as string;
+                try {
+                    const result = await generateDocumentDescription({ photoDataUri });
+                    updateStagedFile(stagedFile.id, { description: result.description, isGenerating: false });
+                } catch (error) {
+                    console.error('AI description generation failed:', error);
+                    updateStagedFile(stagedFile.id, { description: stagedFile.file.name, isGenerating: false });
+                }
+            };
+        } else {
+            // For non-image files, use the file name as description
+             updateStagedFile(stagedFile.id, { description: stagedFile.file.name, isGenerating: false });
+        }
+    });
+  };
+  
+  const updateStagedFile = (id: string, updates: Partial<StagedFile>) => {
+    setStagedFiles(prev => prev.map(sf => sf.id === id ? { ...sf, ...updates } : sf));
+  };
+  
+  const handleRemoveStagedFile = (id: string) => {
+    setStagedFiles(prev => prev.filter(sf => sf.id !== id));
   };
   
   const tenantsWithDocs = React.useMemo(() => {
     return tenants
         .filter(tenant => tenant.documents && tenant.documents.length > 0)
         .map(tenant => {
-            const docs: Document[] = (tenant.documents || []).map(docUrl => ({
+            const docs: DocType[] = (tenant.documents || []).map(docUrl => ({
                 id: `${tenant.id}-${docUrl}`,
                 file_url: docUrl,
                 file_name: docUrl.split('/').pop() || 'Tenant Document',
@@ -164,14 +208,14 @@ export function DocumentsTab() {
                 description: `Document for ${tenant.name}`,
                 created_at: tenant.created_at || new Date().toISOString(),
                 isTenantDoc: true,
-            } as any));
+            }));
             return { ...tenant, docs };
         })
         .sort((a,b) => a.name.localeCompare(b.name));
   }, [tenants]);
 
   const allDocuments = React.useMemo(() => {
-    return [...documents].sort((a,b) => (a.category || '').localeCompare(b.category || ''));
+    return [...documents].sort((a,b) => (a.created_at || '').localeCompare(b.created_at || '')).reverse();
   }, [documents]);
 
 
@@ -181,10 +225,10 @@ export function DocumentsTab() {
   }, [allDocuments]);
 
 
-  const DocumentRow = ({ doc }: { doc: Document }) => (
+  const DocumentRow = ({ doc }: { doc: DocType }) => (
     <TableRow>
         <TableCell>
-            <a href={doc.file_url} target="_blank" rel="noopener noreferrer">
+            <a href={doc.file_url} target="_blank" rel="noopener noreferrer" className="block">
                  <div className="flex-shrink-0 w-10 h-10 rounded-md bg-muted flex items-center justify-center overflow-hidden">
                     {doc.file_type.startsWith('image/') ? (
                         <img src={doc.file_url} alt={doc.file_name} className="h-full w-full object-cover" data-ai-hint="document" />
@@ -245,19 +289,25 @@ export function DocumentsTab() {
     </TableRow>
   );
 
-  const DocumentTable = ({ docs }: { docs: Document[] }) => (
+  const DocumentTable = ({ docs }: { docs: DocType[] }) => (
     <Table>
         <TableHeader>
             <TableRow>
                 <TableHead className="w-16">Preview</TableHead>
-                <TableHead>File Description</TableHead>
+                <TableHead>Description</TableHead>
                 <TableHead className="hidden md:table-cell">Date</TableHead>
                 <TableHead className="hidden md:table-cell">Category</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
             </TableRow>
         </TableHeader>
         <TableBody>
-            {docs.map(doc => <DocumentRow key={doc.id} doc={doc} />)}
+            {docs.length > 0 ? (
+                docs.map(doc => <DocumentRow key={doc.id} doc={doc} />)
+            ) : (
+                <TableRow>
+                    <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">No documents in this category.</TableCell>
+                </TableRow>
+            )}
         </TableBody>
     </Table>
   );
@@ -276,81 +326,112 @@ export function DocumentsTab() {
                     <DialogTrigger asChild>
                         <Button>
                             <PlusCircle className="mr-2 h-4 w-4" />
-                            Add Document
+                            Add Document(s)
                         </Button>
                     </DialogTrigger>
-                    <DialogContent>
+                    <DialogContent className="max-w-4xl">
                         <DialogHeader>
-                            <DialogTitle>{editingDoc ? 'Edit Document' : 'Add New Document'}</DialogTitle>
-                            <DialogDescription>
-                                To upload documents for a specific tenant, please do so from the Tenants tab.
-                            </DialogDescription>
+                            <DialogTitle>{editingDoc ? 'Edit Document' : 'Add New Documents'}</DialogTitle>
                         </DialogHeader>
                         <form onSubmit={handleSave}>
                           {editingDoc && <input type="hidden" name="documentId" value={editingDoc.id} />}
-                          {editingDoc && <input type="hidden" name="oldFileUrl" value={editingDoc.file_url} />}
-                          <div className="grid gap-4 py-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="category">Category</Label>
-                                <Select value={category} onValueChange={setCategory}>
-                                    <SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger>
-                                    <SelectContent>
-                                        {(settings.documentCategories || []).map(cat => (
-                                            <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                                        ))}
-                                        <SelectItem value="Other">Other (specify)</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                          {editingDoc?.file_url && <input type="hidden" name="oldFileUrl" value={editingDoc.file_url} />}
+                          <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-4">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                               <div className="space-y-2">
+                                    <Label htmlFor="category">Category</Label>
+                                    <Select value={category} onValueChange={setCategory}>
+                                        <SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger>
+                                        <SelectContent>
+                                            {(settings.documentCategories || []).map(cat => (
+                                                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                                            ))}
+                                            <SelectItem value="Other">Other (specify)</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                                {category === 'Other' && (
+                                    <div className="space-y-2">
+                                        <Label htmlFor="customCategory">Custom Category Name</Label>
+                                        <Input 
+                                            id="customCategory" 
+                                            value={customCategory}
+                                            onChange={e => setCustomCategory(e.target.value)}
+                                            placeholder="Enter custom category"
+                                            required
+                                        />
+                                    </div>
+                                )}
                             </div>
-
-                            {category === 'Other' && (
-                                <div className="space-y-2">
-                                    <Label htmlFor="customCategory">Custom Category Name</Label>
-                                    <Input 
-                                        id="customCategory" 
-                                        value={customCategory}
-                                        onChange={e => setCustomCategory(e.target.value)}
-                                        placeholder="Enter custom category"
-                                        required
-                                    />
+                           
+                            {editingDoc ? (
+                                <div className="space-y-4">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="description">Description (Optional)</Label>
+                                        <Textarea id="description" name="description" defaultValue={editingDoc?.description || ''} />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>File</Label>
+                                        <div className="flex items-center gap-4">
+                                            <Button type="button" variant="outline" onClick={() => docFileInputRef.current?.click()}>
+                                                <Upload className="mr-2 h-4 w-4"/>
+                                                Change File
+                                            </Button>
+                                            {docFile && <p className="text-xs text-muted-foreground truncate max-w-[150px]">{docFile.name}</p>}
+                                            {!docFile && editingDoc && <p className="text-xs text-muted-foreground truncate max-w-[150px]">{editingDoc.file_name}</p>}
+                                        </div>
+                                        <Input ref={docFileInputRef} name="documentFile" type="file" className="hidden" accept="image/*,.pdf" onChange={handleFileChange} />
+                                    </div>
+                                </div>
+                            ) : (
+                                <div className="space-y-4">
+                                    <div className="border border-dashed rounded-lg p-4 text-center">
+                                        <Button type="button" variant="outline" onClick={() => docFileInputRef.current?.click()}>
+                                            <Upload className="mr-2 h-4 w-4"/>
+                                            Click to Upload Documents
+                                        </Button>
+                                        <Input ref={docFileInputRef} type="file" className="hidden" multiple accept="image/*,.pdf" onChange={handleFileChange} />
+                                        <p className="text-xs text-muted-foreground mt-2">You can select multiple files at once.</p>
+                                    </div>
+                                    
+                                    {stagedFiles.length > 0 && (
+                                        <div className="space-y-4">
+                                            {stagedFiles.map((sf, index) => (
+                                                <div key={sf.id} className="flex items-start gap-4 p-3 border rounded-md">
+                                                    <div className="flex-shrink-0 w-16 h-16 bg-muted rounded-md flex items-center justify-center overflow-hidden">
+                                                        {sf.file.type.startsWith('image/') ? (
+                                                            <img src={sf.previewUrl} alt="preview" className="w-full h-full object-cover" />
+                                                        ) : (
+                                                            <FileText className="h-8 w-8 text-muted-foreground" />
+                                                        )}
+                                                    </div>
+                                                    <div className="flex-1 space-y-2">
+                                                        <Textarea 
+                                                            name={`description-${index}`}
+                                                            value={sf.description}
+                                                            onChange={(e) => updateStagedFile(sf.id, { description: e.target.value })}
+                                                            placeholder="Enter a description..."
+                                                            rows={2}
+                                                            disabled={sf.isGenerating}
+                                                        />
+                                                         {sf.isGenerating && <p className="text-xs text-muted-foreground flex items-center gap-1"><LoaderCircle className="h-3 w-3 animate-spin"/>Generating description...</p>}
+                                                    </div>
+                                                    <Button type="button" variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleRemoveStagedFile(sf.id)}>
+                                                        <X className="h-4 w-4"/>
+                                                    </Button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                             )}
 
-                            <div className="space-y-2">
-                                <Label htmlFor="description">Description (Optional)</Label>
-                                <Textarea id="description" name="description" defaultValue={editingDoc?.description || ''} />
-                            </div>
-                            <div className="space-y-2">
-                                <Label>File</Label>
-                                <div className="flex items-center gap-4">
-                                    <div className="w-24 h-24 bg-muted rounded-md flex items-center justify-center">
-                                        {docPreview ? (
-                                            <img src={docPreview} alt="Document Preview" className="h-full w-full object-contain rounded-md" data-ai-hint="document"/>
-                                        ) : editingDoc?.file_type?.startsWith('image/') ? (
-                                            <img src={editingDoc.file_url} alt="Document Preview" className="h-full w-full object-contain rounded-md" data-ai-hint="document"/>
-                                        ) : docFile || editingDoc ? (
-                                            <FileText className="h-10 w-10 text-muted-foreground" />
-                                        ) : (
-                                            <ImageIcon className="h-10 w-10 text-muted-foreground" />
-                                        )}
-                                    </div>
-                                    <div className="flex flex-col gap-2">
-                                      <Button type="button" variant="outline" onClick={() => docFileInputRef.current?.click()}>
-                                          <Upload className="mr-2 h-4 w-4"/>
-                                          {editingDoc ? 'Change File' : 'Upload File'}
-                                      </Button>
-                                      {docFile && <p className="text-xs text-muted-foreground truncate max-w-[150px]">{docFile.name}</p>}
-                                      {!docFile && editingDoc && <p className="text-xs text-muted-foreground truncate max-w-[150px]">{editingDoc.file_name}</p>}
-                                    </div>
-                                    <Input ref={docFileInputRef} type="file" className="hidden" accept="image/*,.pdf" onChange={handleFileChange} />
-                                </div>
-                            </div>
                           </div>
                            <DialogFooter>
                                 <DialogClose asChild><Button type="button" variant="outline" disabled={isPending}>Cancel</Button></DialogClose>
-                                <Button type="submit" disabled={isPending}>
-                                {isPending && <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />}
-                                Save Document
+                                <Button type="submit" disabled={isPending || stagedFiles.some(f => f.isGenerating)}>
+                                {isPending ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <PlusCircle className="mr-2 h-4 w-4" />}
+                                {editingDoc ? 'Save Changes' : `Save ${stagedFiles.length} Document(s)`}
                                 </Button>
                             </DialogFooter>
                         </form>
@@ -365,8 +446,6 @@ export function DocumentsTab() {
                     <Skeleton className="h-12 w-full" />
                     <Skeleton className="h-12 w-full" />
                 </div>
-            ) : allDocuments.length === 0 && tenantsWithDocs.length === 0 ? (
-                <div className="text-center py-10 text-muted-foreground">No documents uploaded yet.</div>
             ) : (
                 <Tabs defaultValue="all" className="w-full">
                   <TabsList className="w-full justify-start overflow-x-auto h-auto">
@@ -409,9 +488,6 @@ export function DocumentsTab() {
                                 <DialogContent className="max-w-3xl">
                                     <DialogHeader>
                                         <DialogTitle>Documents for {tenant.name}</DialogTitle>
-                                        <DialogDescription>
-                                            All documents associated with this tenant.
-                                        </DialogDescription>
                                     </DialogHeader>
                                     <div className="max-h-[60vh] overflow-y-auto pr-4 -mr-4">
                                       <DocumentTable docs={tenant.docs} />
