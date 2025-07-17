@@ -6,7 +6,7 @@ import React, { createContext, useContext, useState, ReactNode, useEffect, useCa
 import type { Tenant, Expense, RentEntry, PropertySettings, Deposit, ZakatTransaction, Notice, WorkDetail, ZakatBankDetail, ToastFn, Document } from '@/types';
 import { parseISO, getMonth, getYear, subMonths, format, subYears } from 'date-fns';
 import { supabase } from '@/lib/supabase';
-import { useAuth } from './auth-context';
+import { useAuth } from '@/context/auth-context';
 import { Button } from '@/components/ui/button';
 import { addWorkDetailsBatch as addWorkDetailsBatchAction } from '@/app/actions/work';
 
@@ -181,10 +181,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     const uploadFiles = async (tenantId: string, files: File[], toast: ToastFn): Promise<string[]> => {
         if (!supabase || files.length === 0) return [];
-
-        const uploadPromises = files.map(async (file) => {
+        const timestamp = new Date().getTime();
+        const uploadPromises = files.map(async (file, index) => {
             const fileExt = file.name.split('.').pop();
-            const fileName = `${tenantId}/${new Date().getTime()}.${fileExt}`;
+            const fileName = `${tenantId}/${timestamp}-${index}.${fileExt}`;
             const { error: uploadError, data: uploadData } = await supabase.storage
                 .from('tenant-documents')
                 .upload(fileName, file);
