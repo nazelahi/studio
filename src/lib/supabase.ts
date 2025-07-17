@@ -10,9 +10,9 @@ let supabase: any;
 if (supabaseUrl && supabaseAnonKey) {
   supabase = createClient(supabaseUrl, supabaseAnonKey, {
     auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-      detectSessionInUrl: false,
+      persistSession: true, // Allow session to persist in localStorage
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
     },
   });
 } else {
