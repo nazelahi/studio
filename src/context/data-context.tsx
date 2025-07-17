@@ -102,7 +102,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
             if (noticesRes.error) throw noticesRes.error;
             if (workDetailsRes.error) throw workDetailsRes.error;
             if (zakatBankDetailsRes.error) throw zakatBankDetailsRes.error;
-            if (documentsRes.error) throw documentsRes.error;
+            // Gracefully handle if 'documents' table doesn't exist yet
+            if (documentsRes.error && documentsRes.error.code !== '42P01') { // 42P01 is "undefined_table"
+                throw documentsRes.error;
+            }
             if (propertySettingsRes.error && propertySettingsRes.error.code !== 'PGRST116') {
                  throw propertySettingsRes.error;
             }
@@ -117,7 +120,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
                 notices: noticesRes.data as Notice[],
                 workDetails: workDetailsRes.data as WorkDetail[],
                 zakatBankDetails: zakatBankDetailsRes.data as ZakatBankDetail[],
-                documents: documentsRes.data as Document[],
+                documents: (documentsRes.data as Document[] | null) || [],
             });
         } catch (error: any) {
             console.error(`Error in fetching data:`, error.message, error);
@@ -655,7 +658,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         
         // Order of operations matters due to foreign key constraints if they existed.
         // For this app, it's simpler.
-        const tables = ['rent_entries', 'expenses', 'tenants', 'deposits', 'notices', 'work_details', 'zakat_transactions', 'zakat_bank_details'];
+        const tables = ['rent_entries', 'expenses', 'tenants', 'deposits', 'notices', 'work_details', 'zakat_transactions', 'zakat_bank_details', 'documents'];
         
         // Delete all existing data
         for (const table of tables) {
