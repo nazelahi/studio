@@ -17,7 +17,6 @@ import { PlusCircle, Edit, Trash2, LoaderCircle, Upload, Image as ImageIcon, Fil
 import { saveDocumentAction, deleteDocumentAction } from "@/app/actions/documents"
 import type { Document } from "@/types"
 import { Skeleton } from "./ui/skeleton"
-import { format } from "date-fns"
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel"
 import { saveAs } from "file-saver"
 
@@ -61,6 +60,11 @@ export function DocumentsTab() {
     if (docFile) {
         formData.append('documentFile', docFile);
     }
+    if (editingDoc) {
+      formData.set('file_url', editingDoc.file_url)
+      formData.set('file_type', editingDoc.file_type)
+      formData.set('file_name', editingDoc.file_name)
+    }
 
     startTransition(async () => {
       const result = await saveDocumentAction(formData);
@@ -73,9 +77,12 @@ export function DocumentsTab() {
     });
   };
 
-  const handleDelete = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleDelete = (e: React.MouseEvent, doc: Document) => {
     e.preventDefault();
-    const formData = new FormData(e.currentTarget);
+    const formData = new FormData();
+    formData.append('documentId', doc.id);
+    formData.append('fileUrl', doc.file_url);
+    
     withProtection(() => {
       startTransition(async () => {
         const result = await deleteDocumentAction(formData);
@@ -85,7 +92,7 @@ export function DocumentsTab() {
           toast({ title: 'Document Deleted', description: 'The document has been removed.' });
         }
       });
-    });
+    }, e);
   };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -115,7 +122,7 @@ export function DocumentsTab() {
     }, {} as Record<string, Document[]>);
   }, [documents]);
 
-  const allImages = React.useMemo(() => documents.filter(doc => doc.file_type.startsWith('image/')), [documents]);
+  const allImages = React.useMemo(() => documents.filter(doc => doc.file_type && doc.file_type.startsWith('image/')), [documents]);
 
   return (
     <div className="pt-4 space-y-6">
@@ -235,7 +242,7 @@ export function DocumentsTab() {
                         </Card>
                     )}
 
-                    {Object.entries(groupedDocuments).map(([category, docs]) => (
+                    {Object.keys(groupedDocuments).length > 0 ? Object.entries(groupedDocuments).map(([category, docs]) => (
                         <div key={category}>
                             <h3 className="text-lg font-semibold mb-2">{category}</h3>
                             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -255,8 +262,10 @@ export function DocumentsTab() {
                                             </div>
                                         </CardContent>
                                         <CardFooter className="p-2 bg-muted/50 flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => saveAs(doc.file_url, doc.file_name)}>
-                                                <Download className="h-4 w-4" />
+                                            <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+                                                <a href={doc.file_url} target="_blank" rel="noopener noreferrer" download={doc.file_name}>
+                                                    <Download className="h-4 w-4" />
+                                                </a>
                                             </Button>
                                             {isAdmin && (
                                                 <>
@@ -270,18 +279,14 @@ export function DocumentsTab() {
                                                         </Button>
                                                     </AlertDialogTrigger>
                                                     <AlertDialogContent>
-                                                        <form onSubmit={handleDelete}>
-                                                            <input type="hidden" name="documentId" value={doc.id} />
-                                                            <input type="hidden" name="fileUrl" value={doc.file_url} />
-                                                            <AlertDialogHeader>
-                                                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                                                <AlertDialogDescription>This action will permanently delete the document "{doc.file_name}". This cannot be undone.</AlertDialogDescription>
-                                                            </AlertDialogHeader>
-                                                            <AlertDialogFooter>
-                                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                                <AlertDialogAction type="submit" disabled={isPending}>Delete</AlertDialogAction>
-                                                            </AlertDialogFooter>
-                                                        </form>
+                                                        <AlertDialogHeader>
+                                                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                            <AlertDialogDescription>This action will permanently delete the document "{doc.file_name}". This cannot be undone.</AlertDialogDescription>
+                                                        </AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                            <AlertDialogAction onClick={(e) => handleDelete(e, doc)} disabled={isPending}>Delete</AlertDialogAction>
+                                                        </AlertDialogFooter>
                                                     </AlertDialogContent>
                                                 </AlertDialog>
                                                 </>
@@ -291,7 +296,7 @@ export function DocumentsTab() {
                                 ))}
                             </div>
                         </div>
-                    ))}
+                    )) : !loading && <div className="text-center py-10 text-muted-foreground">No documents found.</div>}
                 </div>
             )}
         </CardContent>
