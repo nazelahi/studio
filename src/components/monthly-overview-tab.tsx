@@ -1435,55 +1435,38 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                     <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">Available for Deposit</p><div className="flex items-center gap-2"><Landmark className="h-5 w-5 text-purple-500"/><p className="text-xl font-bold text-purple-600">{formatCurrency(amountForDeposit)}</p></div></CardContent></Card>
                 </div>
             </div>
-            <div className="grid gap-4 mt-6">
+            <div className="mt-6">
                  <Card>
-                    <CardHeader className="p-4 bg-primary text-primary-foreground rounded-t-lg">
-                        <CardTitle className="flex items-center gap-2 text-lg"><Landmark className="h-5 w-5"/>Bank Deposit Information</CardTitle>
+                    <CardHeader className="p-3 bg-primary/10 border-b">
+                        <CardTitle className="flex items-center gap-2 text-base text-primary"><Landmark className="h-5 w-5"/>Bank Deposit Information</CardTitle>
                     </CardHeader>
                     <CardContent className="p-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-                             <div className="p-4 bg-muted rounded-md h-full flex flex-col justify-between">
-                                 <div className="flex items-start justify-between">
-                                    <div className="space-y-2">
-                                        <p className="font-bold text-lg">{settings.bankName}</p>
-                                        <p className="text-sm text-muted-foreground">{settings.bankAccountNumber}</p>
-                                    </div>
-                                    <Avatar className="h-12 w-12 border bg-background">
-                                        <AvatarImage src={settings.bankLogoUrl} data-ai-hint="logo bank"/>
-                                        <AvatarFallback><Building /></AvatarFallback>
-                                    </Avatar>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                             <div className="flex items-center gap-3">
+                                <Avatar className="h-10 w-10 border bg-background">
+                                    <AvatarImage src={settings.bankLogoUrl} data-ai-hint="logo bank"/>
+                                    <AvatarFallback><Building className="h-5 w-5"/></AvatarFallback>
+                                </Avatar>
+                                <div>
+                                    <p className="font-semibold text-sm">{settings.bankName}</p>
+                                    <p className="text-xs text-muted-foreground">{settings.bankAccountNumber}</p>
                                 </div>
                             </div>
                             
-                            <div className="p-4 bg-muted rounded-md min-h-[140px]">
-                                <div className="flex items-start justify-between">
-                                    <div className="space-y-2">
-                                        {loggedDeposit ? (
-                                            <>
-                                                <div>
-                                                    <p className="text-sm text-muted-foreground">Amount Deposited</p>
-                                                    <p className="font-bold text-xl text-primary">{formatCurrency(loggedDeposit.amount)}</p>
-                                                </div>
-                                                <div>
-                                                    <p className="text-sm text-muted-foreground">Deposit Date</p>
-                                                    <p className="font-medium">{format(parseISO(loggedDeposit.deposit_date), "dd MMM, yyyy")}</p>
-                                                </div>
-                                            </>
-                                        ) : (
-                                            <p className="text-muted-foreground">No deposit logged for {month}, {year}.</p>
-                                        )}
-                                    </div>
-                                     <div className="flex flex-col items-end gap-2">
-                                        {loggedDeposit ? (
-                                             <Button variant="secondary" size="sm" onClick={() => setIsDepositDialogOpen(true)}>
-                                                <Edit className="mr-2 h-4 w-4" />
-                                                Edit / View Receipt
-                                            </Button>
-                                        ) : (
-                                        <Button onClick={() => setIsDepositDialogOpen(true)} disabled={!isAdmin}>Log Deposit</Button>
-                                        )}
-                                    </div>
+                            <div className="flex items-center justify-between">
+                                <div className="space-y-1">
+                                    {loggedDeposit ? (
+                                        <>
+                                            <p className="text-xs text-muted-foreground">Deposited on {format(parseISO(loggedDeposit.deposit_date), "dd MMM")}</p>
+                                            <p className="font-bold text-lg text-primary">{formatCurrency(loggedDeposit.amount)}</p>
+                                        </>
+                                    ) : (
+                                        <p className="text-sm text-muted-foreground">No deposit logged</p>
+                                    )}
                                 </div>
+                                 <Button size="sm" variant={loggedDeposit ? "secondary" : "default"} onClick={() => setIsDepositDialogOpen(true)} disabled={!isAdmin}>
+                                    {loggedDeposit ? <><Edit className="mr-2 h-4 w-4" />Edit</> : 'Log Deposit'}
+                                </Button>
                             </div>
                         </div>
                     </CardContent>
