@@ -147,26 +147,30 @@ export function DocumentsTab() {
         }
     }
   };
-
-  const allDocuments = React.useMemo(() => {
-    const tenantDocs: Document[] = [];
+  
+  const tenantDocs = React.useMemo(() => {
+    const tenantDocMap = new Map<string, Document[]>();
     tenants.forEach(tenant => {
         if (tenant.documents && tenant.documents.length > 0) {
-            tenant.documents.forEach(docUrl => {
-                tenantDocs.push({
-                    id: docUrl,
-                    file_url: docUrl,
-                    file_name: docUrl.split('/').pop() || 'Tenant Document',
-                    file_type: docUrl.toLowerCase().includes('.pdf') ? 'application/pdf' : 'image/jpeg', 
-                    category: `Tenant: ${tenant.name}`,
-                    description: `Document for ${tenant.name}`,
-                    isTenantDoc: true,
-                } as any);
-            });
+            const docs: Document[] = tenant.documents.map(docUrl => ({
+                id: `${tenant.id}-${docUrl}`, // Create a more unique ID
+                file_url: docUrl,
+                file_name: docUrl.split('/').pop() || 'Tenant Document',
+                file_type: docUrl.toLowerCase().includes('.pdf') ? 'application/pdf' : 'image/jpeg',
+                category: tenant.name,
+                description: `Document for ${tenant.name}`,
+                isTenantDoc: true,
+            } as any));
+            tenantDocMap.set(tenant.name, docs);
         }
     });
-    return [...documents, ...tenantDocs].sort((a,b) => (a.category || '').localeCompare(b.category || ''));
-  }, [documents, tenants]);
+    // Sort tenants by name
+    return new Map([...tenantDocMap.entries()].sort());
+  }, [tenants]);
+
+  const allDocuments = React.useMemo(() => {
+    return [...documents].sort((a,b) => (a.category || '').localeCompare(b.category || ''));
+  }, [documents]);
 
 
   const documentCategories = React.useMemo(() => {
@@ -178,9 +182,9 @@ export function DocumentsTab() {
   const DocumentItem = ({ doc }: { doc: Document }) => (
     <div className="flex items-center justify-between p-2 rounded-md hover:bg-muted/50 group">
         <a href={doc.file_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 flex-1 min-w-0">
-            <div className="flex-shrink-0">
+            <div className="flex-shrink-0 w-10 h-10 rounded-md bg-muted flex items-center justify-center overflow-hidden">
                 {doc.file_type.startsWith('image/') ? (
-                    <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                    <img src={doc.file_url} alt={doc.file_name} className="h-full w-full object-cover" data-ai-hint="document" />
                 ) : (
                     <FileText className="h-5 w-5 text-muted-foreground" />
                 )}
@@ -192,7 +196,7 @@ export function DocumentsTab() {
                 <p className="text-xs text-muted-foreground truncate">{doc.file_name}</p>
             </div>
         </a>
-        <div className={cn("flex items-center gap-1", !(doc as any).isTenantDoc && "opacity-0 group-hover:opacity-100 transition-opacity")}>
+        <div className={cn("flex items-center gap-1", (doc as any).isTenantDoc && "opacity-0 group-hover:opacity-100 transition-opacity")}>
             <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
                 <a href={doc.file_url} target="_blank" rel="noopener noreferrer" download={doc.file_name}>
                     <Download className="h-4 w-4" />
@@ -326,7 +330,7 @@ export function DocumentsTab() {
                     <Skeleton className="h-12 w-full" />
                     <Skeleton className="h-12 w-full" />
                 </div>
-            ) : allDocuments.length === 0 ? (
+            ) : allDocuments.length === 0 && tenantDocs.size === 0 ? (
                 <div className="text-center py-10 text-muted-foreground">No documents uploaded yet.</div>
             ) : (
                 <Tabs defaultValue="all" className="w-full">
@@ -335,6 +339,7 @@ export function DocumentsTab() {
                     {documentCategories.map(category => (
                         <TabsTrigger key={category} value={category}>{category}</TabsTrigger>
                     ))}
+                    {tenantDocs.size > 0 && <TabsTrigger value="tenants">Tenant Documents</TabsTrigger>}
                   </TabsList>
                   
                   <TabsContent value="all" className="mt-4 max-h-[500px] overflow-y-auto">
@@ -352,6 +357,21 @@ export function DocumentsTab() {
                         </div>
                     </TabsContent>
                   ))}
+
+                  <TabsContent value="tenants" className="mt-4 max-h-[500px] overflow-y-auto">
+                      <Accordion type="single" collapsible className="w-full">
+                          {Array.from(tenantDocs.entries()).map(([tenantName, docs]) => (
+                              <AccordionItem key={tenantName} value={tenantName}>
+                                  <AccordionTrigger>{tenantName} ({docs.length})</AccordionTrigger>
+                                  <AccordionContent>
+                                      <div className="space-y-1 pl-4">
+                                          {docs.map(doc => <DocumentItem key={doc.id} doc={doc} />)}
+                                      </div>
+                                  </AccordionContent>
+                              </AccordionItem>
+                          ))}
+                      </Accordion>
+                  </TabsContent>
                 </Tabs>
             )}
         </CardContent>
@@ -359,3 +379,4 @@ export function DocumentsTab() {
     </div>
   );
 }
+
