@@ -443,7 +443,7 @@ export function ContactsTab() {
                                 <input ref={scanFileInputRef} type="file" className="hidden" accept="image/*" onChange={handleScanDocument}/>
                                <Popover open={isFinderOpen} onOpenChange={setIsFinderOpen}>
                                   <PopoverTrigger asChild>
-                                    <Button type="button" size="sm" variant="outline" role="combobox" aria-expanded={isFinderOpen} className="justify-between w-full sm:w-auto">
+                                    <Button type="button" size="sm" variant="outline" role="combobox" aria-expanded={isFinderOpen} className="w-full justify-between sm:w-auto">
                                       <span className="flex items-center gap-2">
                                         <UserPlus className="h-4 w-4" />
                                         Copy info...
@@ -451,7 +451,7 @@ export function ContactsTab() {
                                       <ChevronDown className="h-4 w-4 shrink-0 opacity-50"/>
                                     </Button>
                                   </PopoverTrigger>
-                                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0" style={{width: "var(--radix-popover-trigger-width)"}}>
                                     <Command>
                                       <CommandInput placeholder="Search tenant..." />
                                       <CommandEmpty>No tenant found.</CommandEmpty>
@@ -490,10 +490,11 @@ export function ContactsTab() {
                       </DialogHeader>
 
                       <div className="p-6 max-h-[65vh] overflow-y-auto">
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                           {/* Left Column for Avatar and Notes */}
-                           <div className="lg:col-span-1 space-y-6">
-                               <div className="flex flex-col items-center gap-3">
+                        <div className="space-y-6">
+                            {/* Main Details */}
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+                                {/* Avatar */}
+                                <div className="flex flex-col items-center gap-3">
                                   <Avatar className="h-32 w-32 border-4 border-muted">
                                       <AvatarImage src={previewImage ?? undefined} alt="Tenant Avatar" data-ai-hint="person avatar"/>
                                       <AvatarFallback><ImageIcon className="text-muted-foreground h-12 w-12"/></AvatarFallback>
@@ -503,6 +504,101 @@ export function ContactsTab() {
                                   </Button>
                                   <Input ref={fileInputRef} name="avatar" type="file" className="hidden" accept="image/*" onChange={handleImageUpload}/>
                                </div>
+                               {/* Personal and Tenancy Details */}
+                               <div className="lg:col-span-2 space-y-6">
+                                   {/* Personal Information */}
+                                    <div className="space-y-4">
+                                        <div className="flex items-center gap-3">
+                                            <UserIcon className="h-5 w-5 text-primary"/>
+                                            <h3 className="text-lg font-semibold">Personal Information</h3>
+                                        </div>
+                                        <Separator />
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="name">Full Name</Label>
+                                                <Input id="name" name="name" defaultValue={editingTenant?.name} required />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="father_name">Father's Name</Label>
+                                                <Input id="father_name" name="father_name" defaultValue={editingTenant?.father_name} />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="date_of_birth">Date of Birth</Label>
+                                                <Input id="date_of_birth" name="date_of_birth" type="date" defaultValue={editingTenant?.date_of_birth} />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="nid_number">NID Number</Label>
+                                                <Input id="nid_number" name="nid_number" defaultValue={editingTenant?.nid_number} />
+                                            </div>
+                                            <div className="space-y-2 sm:col-span-2">
+                                                <Label htmlFor="address">Address</Label>
+                                                <Textarea id="address" name="address" rows={2} defaultValue={editingTenant?.address} placeholder="Full address..."/>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    {/* Tenancy Details */}
+                                    <div className="space-y-4">
+                                        <div className="flex items-center gap-3">
+                                            <Home className="h-5 w-5 text-primary"/>
+                                            <h3 className="text-lg font-semibold">Tenancy Details</h3>
+                                        </div>
+                                        <Separator />
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <Label htmlFor="property">Apartment / Unit</Label>
+                                                <Combobox options={predefinedApartments} value={propertyValue} onValueChange={setPropertyValue} placeholder="Select or type unit..." searchPlaceholder="Search unit..." />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="rent">Rent Amount</Label>
+                                                <Input id="rent" name="rent" type="number" defaultValue={editingTenant?.rent} required className="[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"/>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="advance_deposit">Advance Deposit</Label>
+                                                <Input id="advance_deposit" name="advance_deposit" type="number" defaultValue={editingTenant?.advance_deposit} className="[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"/>
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="join_date">Join Date</Label>
+                                                <Input id="join_date" name="join_date" type="date" defaultValue={editingTenant?.join_date} required />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="type">Tenant Type</Label>
+                                                <Combobox options={predefinedTenantTypes} value={typeValue} onValueChange={setTypeValue} placeholder="Select or type..." searchPlaceholder="Search type..." />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="status">Status</Label>
+                                                <Select name="status" defaultValue={editingTenant?.status || 'Active'}>
+                                                    <SelectTrigger id="status"><SelectValue placeholder="Select status" /></SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="Active">Active</SelectItem>
+                                                        <SelectItem value="Paid">Paid</SelectItem>
+                                                        <SelectItem value="Overdue">Overdue</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                            <div className="space-y-2 sm:col-span-2">
+                                                <Label htmlFor="email">Email Address</Label>
+                                                <Input id="email" name="email" type="email" defaultValue={editingTenant?.email} required />
+                                            </div>
+                                            <div className="space-y-2 sm:col-span-2">
+                                                <Label htmlFor="phone">Phone Number</Label>
+                                                <Input id="phone" name="phone" type="tel" defaultValue={editingTenant?.phone} placeholder="e.g. 880..." />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="gas_meter_number">Gas Meter Number</Label>
+                                                <Input id="gas_meter_number" name="gas_meter_number" defaultValue={editingTenant?.gas_meter_number} />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <Label htmlFor="electric_meter_number">Electric Meter Number</Label>
+                                                <Input id="electric_meter_number" name="electric_meter_number" defaultValue={editingTenant?.electric_meter_number} />
+                                            </div>
+                                        </div>
+                                    </div>
+                               </div>
+                            </div>
+
+                            {/* Notes and Documents at the bottom */}
+                            <div className="space-y-6 pt-6 border-t">
                                <div className="space-y-2">
                                   <Label htmlFor="notes">Notes</Label>
                                   <Textarea id="notes" name="notes" defaultValue={editingTenant?.notes} placeholder="Any relevant notes about the tenant..."/>
@@ -520,7 +616,7 @@ export function ContactsTab() {
                                         <Input ref={docFileInputRef} type="file" className="hidden" multiple accept="image/*,.pdf" onChange={handleDocumentUpload} />
                                     </div>
                                     {(existingDocuments.length > 0 || documentFiles.length > 0) && (
-                                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                                         {existingDocuments.map((docUrl) => (
                                           <div key={docUrl} className="relative group aspect-square">
                                               <a href={docUrl} target="_blank" rel="noopener noreferrer" className="block w-full h-full">
@@ -543,99 +639,7 @@ export function ContactsTab() {
                                     )}
                                   </div>
                                 </div>
-                           </div>
-
-                           {/* Right Column for Form Fields */}
-                           <div className="lg:col-span-2 space-y-6">
-                               {/* Personal Information Section */}
-                                <div className="space-y-4">
-                                    <div className="flex items-center gap-3">
-                                        <UserIcon className="h-5 w-5 text-primary"/>
-                                        <h3 className="text-lg font-semibold">Personal Information</h3>
-                                    </div>
-                                    <Separator />
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="name">Full Name</Label>
-                                            <Input id="name" name="name" defaultValue={editingTenant?.name} required />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="father_name">Father's Name</Label>
-                                            <Input id="father_name" name="father_name" defaultValue={editingTenant?.father_name} />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="date_of_birth">Date of Birth</Label>
-                                            <Input id="date_of_birth" name="date_of_birth" type="date" defaultValue={editingTenant?.date_of_birth} />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="nid_number">NID Number</Label>
-                                            <Input id="nid_number" name="nid_number" defaultValue={editingTenant?.nid_number} />
-                                        </div>
-                                         <div className="space-y-2 sm:col-span-2">
-                                            <Label htmlFor="address">Address</Label>
-                                            <Textarea id="address" name="address" rows={2} defaultValue={editingTenant?.address} placeholder="Full address..."/>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                 {/* Tenancy Details Section */}
-                                <div className="space-y-4">
-                                    <div className="flex items-center gap-3">
-                                        <Home className="h-5 w-5 text-primary"/>
-                                        <h3 className="text-lg font-semibold">Tenancy Details</h3>
-                                    </div>
-                                    <Separator />
-                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="property">Apartment / Unit</Label>
-                                            <Combobox options={predefinedApartments} value={propertyValue} onValueChange={setPropertyValue} placeholder="Select or type unit..." searchPlaceholder="Search unit..." />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="rent">Rent Amount</Label>
-                                            <Input id="rent" name="rent" type="number" defaultValue={editingTenant?.rent} required className="[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"/>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="advance_deposit">Advance Deposit</Label>
-                                            <Input id="advance_deposit" name="advance_deposit" type="number" defaultValue={editingTenant?.advance_deposit} className="[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"/>
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="join_date">Join Date</Label>
-                                            <Input id="join_date" name="join_date" type="date" defaultValue={editingTenant?.join_date} required />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="type">Tenant Type</Label>
-                                            <Combobox options={predefinedTenantTypes} value={typeValue} onValueChange={setTypeValue} placeholder="Select or type..." searchPlaceholder="Search type..." />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="status">Status</Label>
-                                            <Select name="status" defaultValue={editingTenant?.status || 'Active'}>
-                                                <SelectTrigger id="status"><SelectValue placeholder="Select status" /></SelectTrigger>
-                                                <SelectContent>
-                                                    <SelectItem value="Active">Active</SelectItem>
-                                                    <SelectItem value="Paid">Paid</SelectItem>
-                                                    <SelectItem value="Overdue">Overdue</SelectItem>
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                         <div className="space-y-2 sm:col-span-2">
-                                            <Label htmlFor="email">Email Address</Label>
-                                            <Input id="email" name="email" type="email" defaultValue={editingTenant?.email} required />
-                                        </div>
-                                        <div className="space-y-2 sm:col-span-2">
-                                            <Label htmlFor="phone">Phone Number</Label>
-                                            <Input id="phone" name="phone" type="tel" defaultValue={editingTenant?.phone} placeholder="e.g. 880..." />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="gas_meter_number">Gas Meter Number</Label>
-                                            <Input id="gas_meter_number" name="gas_meter_number" defaultValue={editingTenant?.gas_meter_number} />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="electric_meter_number">Electric Meter Number</Label>
-                                            <Input id="electric_meter_number" name="electric_meter_number" defaultValue={editingTenant?.electric_meter_number} />
-                                        </div>
-                                    </div>
-                                </div>
-                           </div>
+                            </div>
                         </div>
                       </div>
                       
