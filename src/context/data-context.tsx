@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
@@ -9,23 +8,9 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/auth-context';
 import { Button } from '@/components/ui/button';
 import { addWorkDetailsBatch as addWorkDetailsBatchAction } from '@/app/actions/work';
-
-
-interface AppData {
-  tenants: Tenant[];
-  expenses: Expense[];
-  rentData: RentEntry[];
-  propertySettings: PropertySettings | null;
-  deposits: Deposit[];
-  zakatTransactions: ZakatTransaction[];
-  zakatBankDetails: ZakatBankDetail[];
-  notices: Notice[];
-  workDetails: WorkDetail[];
-  documents: Document[];
-}
+import type { AppData } from '@/lib/data';
 
 type NewRentEntry = Omit<RentEntry, 'id' | 'avatar' | 'year' | 'month' | 'due_date' | 'created_at' | 'deleted_at'> & { avatar?: string, tenant_id?: string };
-
 
 interface DataContextType extends AppData {
   addTenant: (tenant: Omit<Tenant, 'id' | 'deleted_at' | 'created_at'>, toast: ToastFn, files?: File[]) => Promise<void>;
@@ -65,119 +50,25 @@ const handleError = (error: any, context: string, toast: ToastFn) => {
 };
 
 
-export function DataProvider({ children }: { children: ReactNode }) {
-    const [data, setData] = useState<AppData>({ tenants: [], expenses: [], rentData: [], propertySettings: null, deposits: [], zakatTransactions: [], notices: [], workDetails: [], zakatBankDetails: [], documents: [] });
-    const [loading, setLoading] = useState(true);
+export function DataProvider({ children, initialData }: { children: ReactNode, initialData: AppData }) {
+    const [data, setData] = useState<AppData>(initialData);
+    const [loading, setLoading] = useState(false);
     
     const { user, loading: authLoading } = useAuth();
     
-    const fetchData = useCallback(async () => {
+    const refreshData = useCallback(async () => {
         setLoading(true);
         try {
-            if (!supabase) {
-                console.log("Supabase not initialized, skipping data fetch.");
-                return;
-            }
-
-            const twoYearsAgo = format(subYears(new Date(), 2), 'yyyy-MM-dd');
-
-            const [tenantsRes, expensesRes, rentDataRes, propertySettingsRes, depositsRes, zakatRes, noticesRes, workDetailsRes, zakatBankDetailsRes, documentsRes] = await Promise.all([
-                supabase.from('tenants').select('id, name, email, phone, property, rent, join_date, notes, status, avatar, type, documents, father_name, address, date_of_birth, nid_number, advance_deposit, gas_meter_number, electric_meter_number, created_at').is('deleted_at', null).gte('created_at', twoYearsAgo).order('name', { ascending: true }),
-                supabase.from('expenses').select('id, date, category, amount, description, status').is('deleted_at', null).gte('date', twoYearsAgo).order('date', { ascending: false }),
-                supabase.from('rent_entries').select('id, tenant_id, name, property, rent, due_date, status, avatar, year, month, payment_date, collected_by').is('deleted_at', null).gte('due_date', twoYearsAgo).order('due_date', { ascending: false }),
-                supabase.from('property_settings').select('*').eq('id', 1).maybeSingle(),
-                supabase.from('deposits').select('id, year, month, amount, deposit_date, receipt_url').gte('deposit_date', twoYearsAgo).order('deposit_date', { ascending: false }),
-                supabase.from('zakat_transactions').select('id, transaction_date, type, amount, source_or_recipient, description, receipt_url').gte('transaction_date', twoYearsAgo).order('transaction_date', { ascending: false }),
-                supabase.from('notices').select('id, year, month, content').gte('created_at', twoYearsAgo).order('created_at', { ascending: false }),
-                supabase.from('work_details').select('id, title, description, category, status, product_cost, worker_cost, due_date, created_at').is('deleted_at', null).gte('created_at', twoYearsAgo).order('created_at', { ascending: false }),
-                supabase.from('zakat_bank_details').select('id, bank_name, account_number, account_holder, logo_url, location').order('bank_name', { ascending: true }),
-                supabase.from('documents').select('*').order('created_at', { ascending: false }),
-            ]);
-
-            if (tenantsRes.error) throw tenantsRes.error;
-            if (expensesRes.error) throw expensesRes.error;
-            if (rentDataRes.error) throw rentDataRes.error;
-            if (depositsRes.error) throw depositsRes.error;
-            if (zakatRes.error) throw zakatRes.error;
-            if (noticesRes.error) throw noticesRes.error;
-            if (workDetailsRes.error) throw workDetailsRes.error;
-            if (zakatBankDetailsRes.error) throw zakatBankDetailsRes.error;
-            // Gracefully handle if 'documents' table doesn't exist yet
-            if (documentsRes.error && documentsRes.error.code !== '42P01') { // 42P01 is "undefined_table"
-                throw documentsRes.error;
-            }
-            if (propertySettingsRes.error && propertySettingsRes.error.code !== 'PGRST116') {
-                 throw propertySettingsRes.error;
-            }
-            
-            setData({
-                tenants: tenantsRes.data as Tenant[],
-                expenses: expensesRes.data as Expense[],
-                rentData: rentDataRes.data as RentEntry[],
-                propertySettings: propertySettingsRes.data as PropertySettings,
-                deposits: depositsRes.data as Deposit[],
-                zakatTransactions: zakatRes.data as ZakatTransaction[],
-                notices: noticesRes.data as Notice[],
-                workDetails: workDetailsRes.data as WorkDetail[],
-                zakatBankDetails: zakatBankDetailsRes.data as ZakatBankDetail[],
-                documents: (documentsRes.data as Document[] | null) || [],
-            });
+            // This is a placeholder for a more specific refresh logic if needed.
+            // For now, we assume the page will be reloaded or re-navigated to get fresh server data.
+            // You could implement a client-side fetch here if you want to refresh without a full page load.
+            window.location.reload();
         } catch (error: any) {
-            console.error(`Error in fetching data:`, error.message, error);
+            console.error(`Error in refreshing data:`, error.message, error);
         } finally {
             setLoading(false);
         }
     }, []);
-
-    useEffect(() => {
-        if (!authLoading) {
-            fetchData();
-        }
-    }, [fetchData, authLoading]);
-    
-    // useEffect(() => {
-    //     if (!supabase) return;
-
-    //     const tables = [
-    //         'tenants', 'expenses', 'rent_entries', 'property_settings', 
-    //         'deposits', 'zakat_transactions', 'notices', 'work_details', 'zakat_bank_details', 'documents'
-    //     ];
-        
-    //     const subscriptions = tables.map(table => {
-    //         return supabase
-    //             .channel(`public:${table}`)
-    //             .on(
-    //                 'postgres_changes',
-    //                 { event: 'INSERT', schema: 'public', table: table },
-    //                 (payload) => { console.log(`New data in ${table}, refreshing...`); fetchData(); }
-    //             )
-    //             .on(
-    //                 'postgres_changes',
-    //                 { event: 'UPDATE', schema: 'public', table: table },
-    //                 (payload) => { console.log(`Data updated in ${table}, refreshing...`); fetchData(); }
-    //             )
-    //              .on(
-    //                 'postgres_changes',
-    //                 { event: 'DELETE', schema: 'public', table: table },
-    //                 (payload) => { console.log(`Data deleted in ${table}, refreshing...`); fetchData(); }
-    //             )
-    //             .subscribe((status, err) => {
-    //                 if (status === 'SUBSCRIBED') {
-    //                     console.log(`Successfully subscribed to real-time updates for ${table}!`);
-    //                 }
-    //                 if (err) {
-    //                     const dbError = err as any;
-    //                     console.error(`Realtime subscription error on ${table}:`, dbError);
-    //                 }
-    //             });
-    //     });
-
-    //     return () => {
-    //         subscriptions.forEach(subscription => {
-    //             supabase.removeChannel(subscription);
-    //         });
-    //     };
-    // }, [fetchData]);
 
     const uploadFiles = async (tenantId: string, files: File[], toast: ToastFn): Promise<string[]> => {
         if (!supabase || files.length === 0) return [];
@@ -217,14 +108,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
             handleError(error, `undoing delete on ${table}`, toast);
         } else {
             toast({ title: 'Restored', description: `The item(s) have been restored.` });
-            await fetchData();
+            await refreshData();
         }
     }
 
     const addTenant = async (tenantData: Omit<Tenant, 'id' | 'created_at' | 'deleted_at'>, toast: ToastFn, files: File[] = []) => {
         if (!supabase) return;
         
-        // Ensure optional fields are not undefined
         const cleanTenantData = { ...tenantData };
         if (cleanTenantData.date_of_birth === '') delete (cleanTenantData as any).date_of_birth;
         if (cleanTenantData.father_name === '') delete (cleanTenantData as any).father_name;
@@ -267,7 +157,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         };
         const { error: rentError } = await supabase.from('rent_entries').insert([newRentEntryData]);
         if (rentError) handleError(rentError, 'auto-creating rent entry', toast);
-        await fetchData();
+        await refreshData();
     };
 
     const updateTenant = async (updatedTenant: Tenant, toast: ToastFn, files: File[] = []) => {
@@ -306,7 +196,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         if (rentUpdateError) {
             handleError(rentUpdateError, 'syncing future rent entries', toast);
         }
-        await fetchData();
+        await refreshData();
     };
 
     const deleteTenant = async (tenantId: string, toast: ToastFn) => {
@@ -321,14 +211,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
                 action: <Button variant="secondary" onClick={() => undoDelete('tenants', [tenantId], toast)}>Undo</Button>
              });
         }
-        await fetchData();
+        await refreshData();
     };
 
     const addExpense = async (expense: Omit<Expense, 'id' | 'created_at' | 'deleted_at'>, toast: ToastFn) => {
         if (!supabase) return;
         const { error } = await supabase.from('expenses').insert([expense]);
         if (error) handleError(error, 'adding expense', toast);
-        await fetchData();
+        await refreshData();
     };
 
     const addExpensesBatch = async (expenses: Omit<Expense, 'id' | 'created_at' | 'deleted_at'>[], toast: ToastFn) => {
@@ -337,7 +227,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         if (error) {
             handleError(error, 'batch adding expenses', toast);
         }
-        await fetchData();
+        await refreshData();
     };
 
 
@@ -346,7 +236,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         const { id, ...expenseData } = updatedExpense;
         const { error } = await supabase.from('expenses').update(expenseData).eq('id', id);
         if (error) handleError(error, 'updating expense', toast);
-        await fetchData();
+        await refreshData();
     };
 
     const deleteExpense = async (expenseId: string, toast: ToastFn) => {
@@ -361,7 +251,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
                 action: <Button variant="secondary" onClick={() => undoDelete('expenses', [expenseId], toast)}>Undo</Button>
              });
         }
-        await fetchData();
+        await refreshData();
     };
 
     const deleteMultipleExpenses = async (expenseIds: string[], toast: ToastFn) => {
@@ -376,7 +266,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
                 action: <Button variant="secondary" onClick={() => undoDelete('expenses', expenseIds, toast)}>Undo</Button>
              });
         }
-        await fetchData();
+        await refreshData();
     }
 
     const addRentEntry = async (rentEntryData: NewRentEntry, year: number, month: number, toast: ToastFn) => {
@@ -431,7 +321,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         
         const { error } = await supabase.from('rent_entries').insert(newEntry);
         if (error) handleError(error, 'adding rent entry', toast);
-        await fetchData();
+        await refreshData();
     };
 
     const addRentEntriesBatch = async (rentEntriesData: Omit<NewRentEntry, 'tenant_id' | 'avatar'>[], year: number, month: number, toast: ToastFn) => {
@@ -489,7 +379,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
             const { error } = await supabase.from('rent_entries').insert(validNewEntries);
             if (error) handleError(error, 'batch adding rent entries', toast);
         }
-        await fetchData();
+        await refreshData();
     };
     
     const updateRentEntry = async (updatedRentEntry: RentEntry, toast: ToastFn) => {
@@ -497,7 +387,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         const { id, ...rentEntryData } = updatedRentEntry;
         const { error } = await supabase.from('rent_entries').update(rentEntryData).eq('id', id);
         if (error) handleError(error, 'updating rent entry', toast);
-        await fetchData();
+        await refreshData();
     };
     
     const deleteRentEntry = async (rentEntryId: string, toast: ToastFn) => {
@@ -512,7 +402,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
                 action: <Button variant="secondary" onClick={() => undoDelete('rent_entries', [rentEntryId], toast)}>Undo</Button>
             });
         }
-        await fetchData();
+        await refreshData();
     };
 
     const deleteMultipleRentEntries = async (rentEntryIds: string[], toast: ToastFn) => {
@@ -527,7 +417,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
                 action: <Button variant="secondary" onClick={() => undoDelete('rent_entries', rentEntryIds, toast)}>Undo</Button>
              });
         }
-        await fetchData();
+        await refreshData();
     };
     
     const syncTenantsForMonth = async (year: number, month: number, toast: ToastFn): Promise<number> => {
@@ -593,7 +483,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
             return 0;
         }
 
-        await fetchData();
+        await refreshData();
         return tenantsToSync.length;
     };
     
@@ -640,7 +530,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
             return 0;
         }
 
-        await fetchData();
+        await refreshData();
         return newExpenses.length;
     };
 
@@ -648,7 +538,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         if (!supabase) return;
         const { error } = await supabase.from('property_settings').update(settings).eq('id', 1);
         if (error) handleError(error, 'updating property settings', toast);
-        await fetchData();
+        await refreshData();
     }
 
     const getAllData = () => {
@@ -656,36 +546,25 @@ export function DataProvider({ children }: { children: ReactNode }) {
     };
 
     const restoreAllData = async (backupData: AppData, toast: ToastFn) => {
-      // This is a simplified restore. A real-world scenario would be much more complex,
-      // handling conflicts, new vs. old data, etc.
-      // For this app, we'll do a "delete all and insert" strategy.
-      // This is destructive and should be used with caution.
       if (!supabase) return;
 
       try {
         setLoading(true);
         
-        // Order of operations matters due to foreign key constraints if they existed.
-        // For this app, it's simpler.
         const tables = ['rent_entries', 'expenses', 'tenants', 'deposits', 'notices', 'work_details', 'zakat_transactions', 'zakat_bank_details', 'documents'];
         
-        // Delete all existing data
         for (const table of tables) {
-            const { error: deleteError } = await supabase.from(table).delete().neq('id', '00000000-0000-0000-0000-000000000000'); // A bit of a hack to delete all
+            const { error: deleteError } = await supabase.from(table).delete().neq('id', '00000000-0000-0000-0000-000000000000');
             if (deleteError) throw new Error(`Failed to clear ${table}: ${deleteError.message}`);
         }
         
-        // Insert new data
-        // We have to remove the `propertySettings` as it's not a list to be inserted.
         const { propertySettings, ...dataToInsert } = backupData;
 
         for (const [table, records] of Object.entries(dataToInsert)) {
-            const tableName = table === 'rentData' ? 'rent_entries' : table; // map state name to table name
+            const tableName = table === 'rentData' ? 'rent_entries' : table;
              if (records.length > 0) {
-                // Supabase insert doesn't like `id` field on some tables if it's auto-generated,
-                // and it doesn't like extra fields. Let's be careful.
                 const recordsToInsert = records.map((r: any) => {
-                    const { created_at, id, ...rest } = r; // Strip fields that should be auto-generated
+                    const { created_at, id, ...rest } = r;
                     return rest;
                 });
 
@@ -718,12 +597,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
         } else {
             toast({ title: "Import Successful", description: `${result.count} work items have been imported.` });
         }
-        await fetchData();
+        await refreshData();
     };
 
 
     return (
-        <DataContext.Provider value={{ ...data, addTenant, updateTenant, deleteTenant, addExpense, addExpensesBatch, updateExpense, deleteExpense, deleteMultipleExpenses, addRentEntry, addRentEntriesBatch, updateRentEntry, deleteRentEntry, deleteMultipleRentEntries, syncTenantsForMonth, syncExpensesFromPreviousMonth, updatePropertySettings, loading, getAllData, restoreAllData, refreshData: fetchData, getRentEntryById, addWorkDetailsBatch }}>
+        <DataContext.Provider value={{ ...data, addTenant, updateTenant, deleteTenant, addExpense, addExpensesBatch, updateExpense, deleteExpense, deleteMultipleExpenses, addRentEntry, addRentEntriesBatch, updateRentEntry, deleteRentEntry, deleteMultipleRentEntries, syncTenantsForMonth, syncExpensesFromPreviousMonth, updatePropertySettings, loading, getAllData, restoreAllData, refreshData, getRentEntryById, addWorkDetailsBatch }}>
             {children}
         </DataContext.Provider>
     );
