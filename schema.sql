@@ -1,60 +1,54 @@
--- Create the table to store document metadata
-CREATE TABLE public.documents (
-  id uuid NOT NULL DEFAULT gen_random_uuid(),
-  created_at timestamp with time zone NOT NULL DEFAULT now(),
-  file_name text NOT NULL,
-  file_url text NOT NULL,
-  file_type text NOT NULL,
-  category text NOT NULL,
-  description text NULL,
-  CONSTRAINT documents_pkey PRIMARY KEY (id)
+-- =================================================================
+-- SQL for Documents Feature
+-- =================================================================
+
+-- Step 1: Create the documents table
+-- This table will store metadata about your uploaded files.
+-- Run this query in the Supabase SQL Editor.
+-- -----------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS public.documents (
+    id uuid NOT NULL DEFAULT gen_random_uuid(),
+    created_at timestamp with time zone NOT NULL DEFAULT now(),
+    file_name text NOT NULL,
+    file_url text NOT NULL,
+    file_type text NOT NULL,
+    category text NOT NULL,
+    description text,
+    CONSTRAINT documents_pkey PRIMARY KEY (id)
 );
 
--- Enable Row Level Security (RLS) for the new table
+-- Step 2: Set up Row Level Security (RLS) for the table
+-- -----------------------------------------------------------------
+-- Enable Row Level Security
 ALTER TABLE public.documents ENABLE ROW LEVEL SECURITY;
 
--- Create policies for the documents table
--- Allow admin users to perform all actions
-CREATE POLICY "Allow admin all access"
-ON public.documents
-FOR ALL
-TO service_role
-USING (true)
-WITH CHECK (true);
-
--- Allow authenticated users to view all documents
-CREATE POLICY "Allow authenticated users to read documents"
+-- Allow public read access to all documents
+CREATE POLICY "Allow public read access to documents"
 ON public.documents
 FOR SELECT
-TO authenticated
 USING (true);
 
-
--- Create a new storage bucket for general documents if it doesn't exist
--- Note: You can run this part separately or check if the bucket exists first.
--- The UI will attempt to use a bucket named 'general-documents'.
--- Creating it here for completeness.
-INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-VALUES ('general-documents', 'general-documents', true, 5242880, ARRAY['image/jpeg', 'image/png', 'image/gif', 'application/pdf'])
-ON CONFLICT (id) DO NOTHING;
+-- Allow admin users (service_role) to perform all actions
+-- This is handled by the server-side actions using the service_role key,
+-- which bypasses RLS. No explicit policy is needed for the service role.
 
 
--- Create policies for the 'general-documents' storage bucket
--- Allow anyone to view files (public bucket)
-CREATE POLICY "Allow public read access to general documents"
-ON storage.objects
-FOR SELECT
+-- Step 3: Set up the Storage Bucket
+-- -----------------------------------------------------------------
+-- 1. Go to the "Storage" section in your Supabase dashboard.
+-- 2. Create a new **public** bucket named `general-documents`.
+-- 3. The following policies will be automatically created by Supabase
+--    when you make the bucket public, but you can run them if needed.
+
+-- Allow public read access to files in the `general-documents` bucket
+CREATE POLICY "Public read access for general-documents"
+ON storage.objects FOR SELECT
 TO public
-USING (bucket_id = 'general-documents');
+USING ( bucket_id = 'general-documents' );
 
--- Allow authenticated users to upload, update, and delete files
-CREATE POLICY "Allow authenticated users to manage general documents"
-ON storage.objects
-FOR ALL
+-- Allow authenticated users to upload files to the `general-documents` bucket.
+-- The app's server-side code will handle the uploads.
+CREATE POLICY "Allow authenticated uploads to general-documents"
+ON storage.objects FOR INSERT
 TO authenticated
-USING (bucket_id = 'general-documents');
-
--- Note: You might already have a 'deposit-receipts' bucket with similar policies.
--- If you prefer to use one bucket for all files, you can adjust the bucket name
--- in `src/app/actions/documents.ts` and ensure the policies are sufficient.
--- The current implementation creates and uses a new 'general-documents' bucket.
+WITH CHECK ( bucket_id = 'general-documents' );
