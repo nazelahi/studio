@@ -24,6 +24,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 type SettingsTab = 'property' | 'account' | 'application' | 'labels' | 'integrations' | 'data';
 
@@ -227,12 +228,10 @@ export default function SettingsPage() {
     setSettings(prev => ({...prev, whatsappRemindersEnabled: checked}));
    };
 
-  const handleSavePropertySettings = useCallback((field: string, value: string) => {
+  const handleSavePropertySettings = useCallback((field: string, value: string | string[]) => {
     startTransition(async () => {
         const formData = new FormData();
-        formData.append(field, value);
         
-        // Use keys that match the server action
         const keyMap: {[key: string]: string} = {
             houseName: 'house_name',
             houseAddress: 'house_address',
@@ -245,16 +244,19 @@ export default function SettingsPage() {
             contactAddress: 'contact_address',
             footerName: 'footer_name',
             metadataTitle: 'metadata_title',
+            dateFormat: 'date_format',
+            currencySymbol: 'currency_symbol',
         };
 
-        const renamedFormData = new FormData();
-        if (keyMap[field]) {
-             renamedFormData.set(keyMap[field], value);
+        const mappedKey = keyMap[field] || field;
+        
+        if (Array.isArray(value)) {
+            value.forEach(v => formData.append(mappedKey, v));
         } else {
-             renamedFormData.set(field, value);
+            formData.set(mappedKey, value);
         }
 
-        const result = await updatePropertySettingsAction(renamedFormData);
+        const result = await updatePropertySettingsAction(formData);
         if (result?.error) {
             toast({ title: 'Error Saving Settings', description: result.error, variant: 'destructive'});
         } else {
@@ -283,9 +285,10 @@ export default function SettingsPage() {
 
 
   const handleSaveAppSettings = () => {
+    // This function now only saves to local storage, as DB saving is handled by onSave handlers
     setSettings(prev => ({...prev, documentCategories: docCategories}));
     toast({
-        title: 'Application Settings Saved',
+        title: 'Local Settings Saved',
         description: 'Your changes have been saved to this browser.',
     });
   };
@@ -767,12 +770,40 @@ export default function SettingsPage() {
                 <div className="space-y-6">
                     <Card>
                       <CardHeader>
-                        <CardTitle>Theme Colors</CardTitle>
-                        <CardDescription>Customize the look and feel of the application.</CardDescription>
+                        <CardTitle>Localization & Theme</CardTitle>
+                        <CardDescription>Customize date formats, currency, and the look and feel of the application.</CardDescription>
                       </CardHeader>
                       <CardContent>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                              <div className="space-y-2">
+                                  <Label htmlFor="date-format">Date Format</Label>
+                                  <Select
+                                      value={settings.dateFormat}
+                                      onValueChange={(value) => handleSavePropertySettings('dateFormat', value)}
+                                  >
+                                      <SelectTrigger id="date-format">
+                                          <SelectValue placeholder="Select a format" />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                          <SelectItem value="dd MMM, yyyy">17 Jul, 2024</SelectItem>
+                                          <SelectItem value="MM/dd/yyyy">07/17/2024</SelectItem>
+                                          <SelectItem value="yyyy-MM-dd">2024-07-17</SelectItem>
+                                          <SelectItem value="MMMM dd, yyyy">July 17, 2024</SelectItem>
+                                      </SelectContent>
+                                  </Select>
+                              </div>
+                              <div className="space-y-2">
+                                <Label htmlFor="currency-symbol">Currency Symbol</Label>
+                                <Input 
+                                    id="currency-symbol" 
+                                    defaultValue={settings.currencySymbol}
+                                    onBlur={(e) => handleSavePropertySettings('currencySymbol', e.target.value)}
+                                />
+                              </div>
+                          </div>
+                          <Separator className="my-6" />
                           <div className="space-y-4">
-                              <Label className="font-medium">Theme Colors</Label>
+                              <Label className="font-medium">Theme Colors (Saved Locally)</Label>
                               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                                   <div className="space-y-2">
                                       <Label htmlFor="theme_primary">Primary</Label>
@@ -793,7 +824,7 @@ export default function SettingsPage() {
                               </div>
                           </div>
                           <div className="space-y-4 mt-6">
-                              <Label className="font-medium">Mobile Navigation Colors</Label>
+                              <Label className="font-medium">Mobile Navigation Colors (Saved Locally)</Label>
                               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                                    <div className="space-y-2">
                                       <Label htmlFor="theme_mobile_nav_background">Background</Label>

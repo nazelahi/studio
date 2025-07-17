@@ -106,6 +106,8 @@ export type PropertySettings = {
   favicon_url?: string;
   app_logo_url?: string;
   document_categories?: string[];
+  date_format?: string;
+  currency_symbol?: string;
 };
 
 export type ZakatBankDetail = {
