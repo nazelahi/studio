@@ -74,6 +74,7 @@ interface AppSettings {
   tenantViewStyle: 'grid' | 'list';
   metadataTitle?: string;
   faviconUrl?: string;
+  documentCategories: string[];
 }
 
 interface SettingsContextType {
@@ -105,6 +106,7 @@ const defaultSettings: AppSettings = {
     tenantViewStyle: 'grid',
     metadataTitle: "RentFlow",
     faviconUrl: "/favicon.ico",
+    documentCategories: ["Legal", "Agreements", "Receipts", "ID Cards", "Property Deeds", "Blueprints", "Miscellaneous"],
     tabNames: {
         overview: "Overview",
         tenants: "Tenants",
@@ -238,6 +240,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
                 combinedSettings.tenantViewStyle = propertySettings.tenant_view_style || defaultSettings.tenantViewStyle;
                 combinedSettings.metadataTitle = propertySettings.metadata_title || defaultSettings.metadataTitle;
                 combinedSettings.faviconUrl = propertySettings.favicon_url || defaultSettings.faviconUrl;
+                
+                // Load document categories from DB if they exist, otherwise use local/default
+                combinedSettings.documentCategories = propertySettings.document_categories || combinedSettings.documentCategories;
 
                 // Load theme from DB
                 combinedSettings.theme.colors.primary = propertySettings.theme_primary || defaultSettings.theme.colors.primary;
@@ -268,12 +273,14 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
             houseName, houseAddress, bankName, bankAccountNumber, bankLogoUrl, ownerName, ownerPhotoUrl, 
             zakatBankDetails, passcode, passcodeProtectionEnabled, aboutUs, contactPhone, contactEmail, contactAddress, footerName,
             theme, whatsappRemindersEnabled, whatsappReminderSchedule, whatsappReminderTemplate, tenantViewStyle,
-            metadataTitle, faviconUrl,
+            metadataTitle, faviconUrl, documentCategories,
             ...localSettingsToSave 
         } = newSettings;
         try {
             const currentLocal = JSON.parse(window.localStorage.getItem('appSettings') || '{}');
             const newLocal = deepMerge(currentLocal, localSettingsToSave);
+            // also save documentCategories to local storage now
+            newLocal.documentCategories = documentCategories;
             window.localStorage.setItem('appSettings', JSON.stringify(newLocal));
         } catch (error) {
             console.error("Failed to save settings to localStorage", error);

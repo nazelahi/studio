@@ -12,7 +12,7 @@ import { useSettings } from "@/context/settings-context"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/context/auth-context"
 import { Button } from "@/components/ui/button"
-import { User, LogOut, MapPin, Menu, Settings, LoaderCircle, LogIn, Building, KeyRound, Palette, Tag, Landmark, Upload, Banknote, UserCircle, MessageSquare, Info, Phone, Mail, Database, Share2, Edit, Check, X, Image as ImageIcon } from "lucide-react"
+import { User, LogOut, MapPin, Menu, Settings, LoaderCircle, LogIn, Building, KeyRound, Palette, Tag, Landmark, Upload, Banknote, UserCircle, MessageSquare, Info, Phone, Mail, Database, Share2, Edit, Check, X, Image as ImageIcon, GripVertical, PlusCircle, Trash2, Folder, File, BookImage } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { useToast } from "@/hooks/use-toast"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
@@ -120,6 +120,39 @@ export default function SettingsPage() {
   const logoInputRef = React.useRef<HTMLInputElement>(null);
   const ownerPhotoInputRef = React.useRef<HTMLInputElement>(null);
   const faviconInputRef = React.useRef<HTMLInputElement>(null);
+  
+  const [docCategories, setDocCategories] = useState(settings.documentCategories || []);
+  const [newCategory, setNewCategory] = useState('');
+
+  useEffect(() => {
+    setDocCategories(settings.documentCategories || []);
+  }, [settings.documentCategories]);
+
+  const handleDocCategoryChange = (index: number, value: string) => {
+    const newCategories = [...docCategories];
+    newCategories[index] = value;
+    setDocCategories(newCategories);
+  };
+  
+  const handleAddCategory = () => {
+    if (newCategory && !docCategories.includes(newCategory)) {
+        setDocCategories([...docCategories, newCategory]);
+        setNewCategory('');
+    }
+  };
+
+  const handleRemoveCategory = (index: number) => {
+    const newCategories = docCategories.filter((_, i) => i !== index);
+    setDocCategories(newCategories);
+  };
+
+  const handleSaveCategories = () => {
+    setSettings(prev => ({ ...prev, documentCategories: docCategories }));
+     toast({
+        title: 'Categories Saved',
+        description: 'Your document categories have been updated in this browser.',
+    });
+  };
 
   React.useEffect(() => {
     if (user?.email) {
@@ -243,7 +276,9 @@ export default function SettingsPage() {
 
 
   const handleSaveAppSettings = () => {
-    setSettings(settings); // This triggers the save-to-localStorage logic in the context
+    // This now saves categories from state into settings, which then get persisted to localStorage
+    handleSaveCategories();
+    setSettings(prev => ({...prev, documentCategories: docCategories}));
     toast({
         title: 'Application Settings Saved',
         description: 'Your changes have been saved to this browser.',
@@ -745,6 +780,40 @@ export default function SettingsPage() {
                          <Button onClick={handleSaveAppSettings}>Save Application Settings</Button>
                        </CardFooter>
                     </Card>
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Document Categories</CardTitle>
+                            <CardDescription>Manage the list of categories used for organizing documents.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            <div className="space-y-2">
+                                {docCategories.map((category, index) => (
+                                    <div key={index} className="flex items-center gap-2">
+                                        <GripVertical className="h-4 w-4 text-muted-foreground" />
+                                        <Input
+                                            value={category}
+                                            onChange={(e) => handleDocCategoryChange(index, e.target.value)}
+                                            className="flex-1"
+                                        />
+                                        <Button variant="ghost" size="icon" className="text-destructive h-8 w-8" onClick={() => handleRemoveCategory(index)}>
+                                            <Trash2 className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Input
+                                    placeholder="New category name..."
+                                    value={newCategory}
+                                    onChange={(e) => setNewCategory(e.target.value)}
+                                />
+                                <Button onClick={handleAddCategory}><PlusCircle className="mr-2" />Add</Button>
+                            </div>
+                        </CardContent>
+                        <CardFooter>
+                            <Button onClick={handleSaveCategories}>Save Categories</Button>
+                        </CardFooter>
+                    </Card>
                 </div>
               )}
               
@@ -791,6 +860,10 @@ export default function SettingsPage() {
                                 <div className="space-y-2">
                                     <Label htmlFor="tab_zakat">Zakat Tab</Label>
                                     <Input id="tab_zakat" name="tabNames.zakat" defaultValue={settings.tabNames.zakat} onChange={handleInputChange} />
+                                </div>
+                                 <div className="space-y-2">
+                                    <Label htmlFor="tab_documents">Documents Tab</Label>
+                                    <Input id="tab_documents" name="tabNames.documents" defaultValue={settings.tabNames.documents} onChange={handleInputChange} />
                                 </div>
                             </div>
                         </div>

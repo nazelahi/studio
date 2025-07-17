@@ -101,6 +101,7 @@ export type PropertySettings = {
   tenant_view_style?: 'grid' | 'list';
   metadata_title?: string;
   favicon_url?: string;
+  document_categories?: string[];
 };
 
 export type ZakatBankDetail = {

@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import * as React from "react"
@@ -18,15 +19,16 @@ import { saveDocumentAction, deleteDocumentAction } from "@/app/actions/document
 import type { Document } from "@/types"
 import { Skeleton } from "./ui/skeleton"
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel"
-import { saveAs } from "file-saver"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useSettings } from "@/context/settings-context"
 
-const documentCategories = ["Legal", "Agreements", "Receipts", "ID Cards", "Property Deeds", "Blueprints", "Miscellaneous"];
 
 export function DocumentsTab() {
   const { documents, loading } = useData();
   const { isAdmin } = useAuth();
   const { toast } = useToast();
   const { withProtection } = useProtection();
+  const { settings } = useSettings();
 
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [editingDoc, setEditingDoc] = React.useState<Document | null>(null);
@@ -35,12 +37,36 @@ export function DocumentsTab() {
   const [docPreview, setDocPreview] = React.useState<string | null>(null);
   const [docFile, setDocFile] = React.useState<File | null>(null);
   const docFileInputRef = React.useRef<HTMLInputElement>(null);
+  
+  const [category, setCategory] = React.useState('');
+  const [customCategory, setCustomCategory] = React.useState('');
+  
+  React.useEffect(() => {
+    if (editingDoc) {
+        const docCategory = editingDoc.category || '';
+        if (settings.documentCategories.includes(docCategory)) {
+            setCategory(docCategory);
+            setCustomCategory('');
+        } else if (docCategory) {
+            setCategory('Other');
+            setCustomCategory(docCategory);
+        } else {
+            setCategory('');
+            setCustomCategory('');
+        }
+    } else {
+        setCategory(settings.documentCategories[0] || 'Miscellaneous');
+    }
+  }, [editingDoc, settings.documentCategories]);
+
 
   const handleOpenChange = (isOpen: boolean) => {
     if (!isOpen) {
       setEditingDoc(null);
       setDocFile(null);
       setDocPreview(null);
+      setCategory(settings.documentCategories[0] || 'Miscellaneous');
+      setCustomCategory('');
     }
     setIsDialogOpen(isOpen);
   };
@@ -57,6 +83,14 @@ export function DocumentsTab() {
   const handleSave = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
+    
+    const finalCategory = category === 'Other' ? customCategory : category;
+    if (!finalCategory) {
+        toast({ title: "Category is required", description: "Please select or enter a category.", variant: "destructive" });
+        return;
+    }
+    formData.set('category', finalCategory);
+
     if (docFile) {
         formData.append('documentFile', docFile);
     }
@@ -112,7 +146,13 @@ export function DocumentsTab() {
   };
 
   const groupedDocuments = React.useMemo(() => {
-    return documents.reduce((acc, doc) => {
+    const orderedCategories = settings.documentCategories || [];
+    const categoryOrder = orderedCategories.reduce((acc, cat, index) => {
+        acc[cat] = index;
+        return acc;
+    }, {} as Record<string, number>);
+
+    const groups = documents.reduce((acc, doc) => {
       const category = doc.category || 'Miscellaneous';
       if (!acc[category]) {
         acc[category] = [];
@@ -120,7 +160,17 @@ export function DocumentsTab() {
       acc[category].push(doc);
       return acc;
     }, {} as Record<string, Document[]>);
-  }, [documents]);
+
+    return Object.entries(groups).sort(([catA], [catB]) => {
+        const orderA = categoryOrder[catA] ?? Infinity;
+        const orderB = categoryOrder[catB] ?? Infinity;
+        if (orderA !== Infinity || orderB !== Infinity) {
+             return orderA - orderB;
+        }
+        return catA.localeCompare(catB); // Fallback for uncategorized items
+    });
+
+  }, [documents, settings.documentCategories]);
 
   const allImages = React.useMemo(() => documents.filter(doc => doc.file_type && doc.file_type.startsWith('image/')), [documents]);
 
@@ -150,11 +200,30 @@ export function DocumentsTab() {
                           <div className="grid gap-4 py-4">
                             <div className="space-y-2">
                                 <Label htmlFor="category">Category</Label>
-                                <Input id="category" name="category" list="doc-categories" defaultValue={editingDoc?.category} required />
-                                <datalist id="doc-categories">
-                                    {documentCategories.map(cat => <option key={cat} value={cat} />)}
-                                </datalist>
+                                <Select value={category} onValueChange={setCategory}>
+                                    <SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger>
+                                    <SelectContent>
+                                        {settings.documentCategories.map(cat => (
+                                            <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                                        ))}
+                                        <SelectItem value="Other">Other (specify)</SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
+
+                            {category === 'Other' && (
+                                <div className="space-y-2">
+                                    <Label htmlFor="customCategory">Custom Category Name</Label>
+                                    <Input 
+                                        id="customCategory" 
+                                        value={customCategory}
+                                        onChange={e => setCustomCategory(e.target.value)}
+                                        placeholder="Enter custom category"
+                                        required
+                                    />
+                                </div>
+                            )}
+
                             <div className="space-y-2">
                                 <Label htmlFor="description">Description (Optional)</Label>
                                 <Textarea id="description" name="description" defaultValue={editingDoc?.description || ''} />
@@ -245,9 +314,9 @@ export function DocumentsTab() {
                         </Card>
                     )}
 
-                    {Object.keys(groupedDocuments).length > 0 ? Object.entries(groupedDocuments).map(([category, docs]) => (
+                    {groupedDocuments.length > 0 ? groupedDocuments.map(([category, docs]) => (
                         <div key={category}>
-                            <h3 className="text-lg font-semibold mb-2">{category}</h3>
+                            <h3 className="text-xl font-semibold mb-3 border-b pb-2">{category}</h3>
                             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                                 {docs.map(doc => (
                                     <Card key={doc.id} className="group">
