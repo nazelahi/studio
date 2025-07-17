@@ -38,7 +38,7 @@ export async function updatePropertySettingsAction(formData: FormData) {
         .eq('id', 1)
         .single();
 
-    if (fetchError) {
+    if (fetchError && fetchError.code !== 'PGRST116') { // Ignore "No rows found"
         console.error('Supabase fetch settings error:', fetchError);
         return { error: `Failed to fetch current settings: ${fetchError.message}` };
     }
@@ -47,7 +47,7 @@ export async function updatePropertySettingsAction(formData: FormData) {
 
     // Handle simple text fields from FormData
     for (const [key, value] of formData.entries()) {
-        if (key !== 'logoFile' && key !== 'ownerPhotoFile' && key !== 'faviconFile') {
+        if (key !== 'logoFile' && key !== 'ownerPhotoFile' && key !== 'faviconFile' && key !== 'document_categories[]') {
             if (key === 'whatsapp_reminders_enabled') {
                  settingsData[key] = value === 'on';
             } else if (key === 'whatsapp_reminder_schedule') {
@@ -60,6 +60,13 @@ export async function updatePropertySettingsAction(formData: FormData) {
         }
     }
     
+    // Handle array for document categories
+    const categories = formData.getAll('document_categories[]');
+    if (categories.length > 0) {
+        settingsData.document_categories = categories;
+    }
+
+
     const logoFile = formData.get('logoFile') as File | null;
     if (logoFile && logoFile.size > 0) {
         const fileExt = logoFile.name.split('.').pop();

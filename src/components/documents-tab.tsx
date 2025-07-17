@@ -14,13 +14,13 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { PlusCircle, Edit, Trash2, LoaderCircle, Upload, Image as ImageIcon, FileText, Download } from "lucide-react"
+import { PlusCircle, Edit, Trash2, LoaderCircle, Upload, Image as ImageIcon, FileText, Download, Folder } from "lucide-react"
 import { saveDocumentAction, deleteDocumentAction } from "@/app/actions/documents"
 import type { Document } from "@/types"
 import { Skeleton } from "./ui/skeleton"
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useSettings } from "@/context/settings-context"
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 
 
 export function DocumentsTab() {
@@ -56,7 +56,7 @@ export function DocumentsTab() {
             setCustomCategory('');
         }
     } else {
-        setCategory(categories[0] || 'Miscellaneous');
+        setCategory(categories[0] || '');
     }
   }, [editingDoc, settings.documentCategories]);
 
@@ -66,7 +66,7 @@ export function DocumentsTab() {
       setEditingDoc(null);
       setDocFile(null);
       setDocPreview(null);
-      setCategory((settings.documentCategories || [])[0] || 'Miscellaneous');
+      setCategory((settings.documentCategories || [])[0] || '');
       setCustomCategory('');
     }
     setIsDialogOpen(isOpen);
@@ -173,8 +173,6 @@ export function DocumentsTab() {
 
   }, [documents, settings.documentCategories]);
 
-  const allImages = React.useMemo(() => documents.filter(doc => doc.file_type && doc.file_type.startsWith('image/')), [documents]);
-
   return (
     <div className="pt-4 space-y-6">
       <Card>
@@ -270,107 +268,80 @@ export function DocumentsTab() {
         <CardContent>
             {loading ? (
                 <div className="space-y-4">
-                    <Skeleton className="h-8 w-1/4" />
-                    <Skeleton className="h-40 w-full" />
+                    <Skeleton className="h-12 w-full" />
+                    <Skeleton className="h-12 w-full" />
+                    <Skeleton className="h-12 w-full" />
                 </div>
             ) : documents.length === 0 ? (
                 <div className="text-center py-10 text-muted-foreground">No documents uploaded yet.</div>
             ) : (
-                <div className="space-y-8">
-                    {allImages.length > 0 && (
-                        <Card>
-                            <CardHeader><CardTitle>Image Gallery</CardTitle></CardHeader>
-                            <CardContent>
-                                <Carousel opts={{ align: "start", loop: true }} className="w-full">
-                                    <CarouselContent>
-                                        {allImages.map((doc) => (
-                                            <CarouselItem key={doc.id} className="md:basis-1/2 lg:basis-1/3">
-                                                <div className="p-1">
-                                                    <Dialog>
-                                                        <DialogTrigger asChild>
-                                                          <Card className="overflow-hidden cursor-pointer group">
-                                                              <div className="aspect-video bg-muted flex items-center justify-center">
-                                                                <img src={doc.file_url} alt={doc.description || doc.file_name} className="w-full h-full object-cover transition-transform group-hover:scale-105" data-ai-hint="document"/>
-                                                              </div>
-                                                              <CardFooter className="p-3 text-sm">
-                                                                <p className="font-semibold truncate">{doc.description || doc.file_name}</p>
-                                                              </CardFooter>
-                                                          </Card>
-                                                        </DialogTrigger>
-                                                        <DialogContent className="max-w-4xl p-0 border-0 bg-transparent shadow-none">
-                                                            <DialogHeader>
-                                                                <DialogTitle className="sr-only">{doc.description || doc.file_name}</DialogTitle>
-                                                            </DialogHeader>
-                                                            <img src={doc.file_url} alt={doc.description || doc.file_name} className="w-full h-auto rounded-lg" data-ai-hint="document"/>
-                                                        </DialogContent>
-                                                    </Dialog>
+                <Accordion type="multiple" defaultValue={groupedDocuments.map(([category]) => category)} className="w-full">
+                    {groupedDocuments.map(([category, docs]) => (
+                        <AccordionItem key={category} value={category}>
+                            <AccordionTrigger>
+                                <div className="flex items-center gap-2 text-lg font-semibold">
+                                    <Folder className="h-5 w-5 text-primary"/>
+                                    {category}
+                                    <span className="text-sm font-normal text-muted-foreground">({docs.length})</span>
+                                </div>
+                            </AccordionTrigger>
+                            <AccordionContent>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pt-2">
+                                    {docs.map(doc => (
+                                        <Card key={doc.id} className="group overflow-hidden">
+                                            <a href={doc.file_url} target="_blank" rel="noopener noreferrer" className="block">
+                                                <div className="aspect-video bg-muted flex items-center justify-center">
+                                                     {doc.file_type.startsWith('image/') ? (
+                                                        <img src={doc.file_url} alt={doc.file_name} className="w-full h-full object-cover transition-transform group-hover:scale-105" data-ai-hint="document"/>
+                                                    ) : (
+                                                        <FileText className="w-12 h-12 text-muted-foreground" />
+                                                    )}
                                                 </div>
-                                            </CarouselItem>
-                                        ))}
-                                    </CarouselContent>
-                                    <CarouselPrevious />
-                                    <CarouselNext />
-                                </Carousel>
-                            </CardContent>
-                        </Card>
-                    )}
-
-                    {groupedDocuments.length > 0 ? groupedDocuments.map(([category, docs]) => (
-                        <div key={category}>
-                            <h3 className="text-xl font-semibold mb-3 border-b pb-2">{category}</h3>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                                {docs.map(doc => (
-                                    <Card key={doc.id} className="group">
-                                        <CardContent className="p-4 flex items-center gap-4">
-                                            {doc.file_type.startsWith('image/') ? (
-                                                 <img src={doc.file_url} alt={doc.file_name} className="w-16 h-16 object-cover rounded-md" data-ai-hint="document"/>
-                                            ) : (
-                                                <div className="w-16 h-16 bg-muted rounded-md flex items-center justify-center">
-                                                    <FileText className="w-8 h-8 text-muted-foreground" />
-                                                </div>
-                                            )}
-                                            <div className="flex-1 overflow-hidden">
-                                                <p className="font-semibold truncate">{doc.file_name}</p>
-                                                <p className="text-xs text-muted-foreground truncate">{doc.description || "No description"}</p>
-                                            </div>
-                                        </CardContent>
-                                        <CardFooter className="p-2 bg-muted/50 flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
-                                                <a href={doc.file_url} target="_blank" rel="noopener noreferrer" download={doc.file_name}>
-                                                    <Download className="h-4 w-4" />
-                                                </a>
-                                            </Button>
-                                            {isAdmin && (
-                                                <>
-                                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => handleEdit(doc, e)}>
-                                                    <Edit className="h-4 w-4" />
+                                            </a>
+                                            <CardHeader className="p-3">
+                                                <CardTitle className="text-sm font-semibold truncate leading-tight" title={doc.description || doc.file_name}>
+                                                    {doc.description || doc.file_name}
+                                                </CardTitle>
+                                                <CardDescription className="text-xs truncate">{doc.file_name}</CardDescription>
+                                            </CardHeader>
+                                            <CardFooter className="p-2 bg-muted/50 flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+                                                    <a href={doc.file_url} target="_blank" rel="noopener noreferrer" download={doc.file_name}>
+                                                        <Download className="h-4 w-4" />
+                                                    </a>
                                                 </Button>
-                                                <AlertDialog>
-                                                    <AlertDialogTrigger asChild>
-                                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>
-                                                    </AlertDialogTrigger>
-                                                    <AlertDialogContent>
-                                                        <AlertDialogHeader>
-                                                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                                            <AlertDialogDescription>This action will permanently delete the document "{doc.file_name}". This cannot be undone.</AlertDialogDescription>
-                                                        </AlertDialogHeader>
-                                                        <AlertDialogFooter>
-                                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                            <AlertDialogAction onClick={(e) => handleDelete(e, doc)} disabled={isPending}>Delete</AlertDialogAction>
-                                                        </AlertDialogFooter>
-                                                    </AlertDialogContent>
-                                                </AlertDialog>
-                                                </>
-                                            )}
-                                        </CardFooter>
-                                    </Card>
-                                ))}
-                            </div>
-                        </div>
-                    )) : !loading && <div className="text-center py-10 text-muted-foreground">No documents found.</div>}
-                </div>
+                                                {isAdmin && (
+                                                    <>
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => handleEdit(doc, e)}>
+                                                        <Edit className="h-4 w-4" />
+                                                    </Button>
+                                                    <AlertDialog>
+                                                        <AlertDialogTrigger asChild>
+                                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={(e) => e.stopPropagation()}>
+                                                                <Trash2 className="h-4 w-4" />
+                                                            </Button>
+                                                        </AlertDialogTrigger>
+                                                        <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                                                            <AlertDialogHeader>
+                                                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                                <AlertDialogDescription>This action will permanently delete the document "{doc.file_name}". This cannot be undone.</AlertDialogDescription>
+                                                            </AlertDialogHeader>
+                                                            <AlertDialogFooter>
+                                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                                <AlertDialogAction onClick={(e) => handleDelete(e, doc)} disabled={isPending}>Delete</AlertDialogAction>
+                                                            </AlertDialogFooter>
+                                                        </AlertDialogContent>
+                                                    </AlertDialog>
+                                                    </>
+                                                )}
+                                            </CardFooter>
+                                        </Card>
+                                    ))}
+                                </div>
+                            </AccordionContent>
+                        </AccordionItem>
+                    ))}
+                </Accordion>
             )}
         </CardContent>
       </Card>

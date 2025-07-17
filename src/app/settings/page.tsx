@@ -121,7 +121,7 @@ export default function SettingsPage() {
   const ownerPhotoInputRef = React.useRef<HTMLInputElement>(null);
   const faviconInputRef = React.useRef<HTMLInputElement>(null);
   
-  const [docCategories, setDocCategories] = useState(settings.documentCategories || []);
+  const [docCategories, setDocCategories] = useState<string[]>([]);
   const [newCategory, setNewCategory] = useState('');
 
   useEffect(() => {
@@ -147,10 +147,16 @@ export default function SettingsPage() {
   };
 
   const handleSaveCategories = () => {
-    setSettings(prev => ({ ...prev, documentCategories: docCategories }));
-     toast({
-        title: 'Categories Saved',
-        description: 'Your document categories have been updated in this browser.',
+    startTransition(async () => {
+        const formData = new FormData();
+        docCategories.forEach(cat => formData.append('document_categories[]', cat));
+        const result = await updatePropertySettingsAction(formData);
+        if (result?.error) {
+            toast({ title: 'Error Saving Categories', description: result.error, variant: 'destructive'});
+        } else {
+            toast({ title: 'Categories Saved', description: 'Your document categories have been saved to the database.' });
+            refreshSettings();
+        }
     });
   };
 
@@ -276,8 +282,6 @@ export default function SettingsPage() {
 
 
   const handleSaveAppSettings = () => {
-    // This now saves categories from state into settings, which then get persisted to localStorage
-    handleSaveCategories();
     setSettings(prev => ({...prev, documentCategories: docCategories}));
     toast({
         title: 'Application Settings Saved',
@@ -526,8 +530,8 @@ export default function SettingsPage() {
                               <Separator className="my-2" />
                               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
                                   <div className="md:col-span-2 space-y-4">
-                                      <EditableField label="Bank Name" value={settings.bankName} onSave={(v) => handleSavePropertySettings('bankName', v)} />
-                                      <EditableField label="Bank Account Number" value={settings.bankAccountNumber} onSave={(v) => handleSavePropertySettings('bankAccountNumber', v)} />
+                                      <EditableField label="Bank Name" value={settings.bankName || ''} onSave={(v) => handleSavePropertySettings('bankName', v)} />
+                                      <EditableField label="Bank Account Number" value={settings.bankAccountNumber || ''} onSave={(v) => handleSavePropertySettings('bankAccountNumber', v)} />
                                       <EditableField label="Contact Email" value={settings.contactEmail || ''} onSave={(v) => handleSavePropertySettings('contactEmail', v)} />
                                       <EditableField label="Contact Phone" value={settings.contactPhone || ''} onSave={(v) => handleSavePropertySettings('contactPhone', v)} />
                                   </div>
@@ -581,7 +585,7 @@ export default function SettingsPage() {
                               <div className="mt-4 space-y-4">
                                    <EditableField label="About Us Section" value={settings.aboutUs || ''} onSave={(v) => handleSavePropertySettings('aboutUs', v)} isTextarea/>
                                    <EditableField label="Contact Address" value={settings.contactAddress || ''} onSave={(v) => handleSavePropertySettings('contactAddress', v)} />
-                                   <EditableField label="Footer Copyright Text" value={settings.footerName} onSave={(v) => handleSavePropertySettings('footerName', v)} />
+                                   <EditableField label="Footer Copyright Text" value={settings.footerName || ''} onSave={(v) => handleSavePropertySettings('footerName', v)} />
                               </div>
                           </div>
                       </CardContent>
@@ -777,17 +781,17 @@ export default function SettingsPage() {
                           </div>
                       </CardContent>
                        <CardFooter>
-                         <Button onClick={handleSaveAppSettings}>Save Application Settings</Button>
+                         <Button onClick={handleSaveAppSettings}>Save Local Settings</Button>
                        </CardFooter>
                     </Card>
                     <Card>
                         <CardHeader>
                             <CardTitle>Document Categories</CardTitle>
-                            <CardDescription>Manage the list of categories used for organizing documents.</CardDescription>
+                            <CardDescription>Manage the list of categories used for organizing documents. This is saved to the database.</CardDescription>
                         </CardHeader>
                         <CardContent className="space-y-4">
                             <div className="space-y-2">
-                                {docCategories.map((category, index) => (
+                                {(docCategories || []).map((category, index) => (
                                     <div key={index} className="flex items-center gap-2">
                                         <GripVertical className="h-4 w-4 text-muted-foreground" />
                                         <Input
@@ -807,11 +811,14 @@ export default function SettingsPage() {
                                     value={newCategory}
                                     onChange={(e) => setNewCategory(e.target.value)}
                                 />
-                                <Button onClick={handleAddCategory}><PlusCircle className="mr-2" />Add</Button>
+                                <Button type="button" onClick={handleAddCategory}><PlusCircle className="mr-2" />Add</Button>
                             </div>
                         </CardContent>
                         <CardFooter>
-                            <Button onClick={handleSaveCategories}>Save Categories</Button>
+                            <Button onClick={handleSaveCategories} disabled={isPending}>
+                                {isPending && <LoaderCircle className="animate-spin mr-2" />}
+                                Save Categories to Database
+                            </Button>
                         </CardFooter>
                     </Card>
                 </div>
