@@ -63,14 +63,6 @@ export default {
           '4': 'hsl(var(--chart-4))',
           '5': 'hsl(var(--chart-5))',
         },
-        'table-header': {
-            background: 'hsl(var(--table-header-background))',
-            foreground: 'hsl(var(--table-header-foreground))',
-        },
-        'table-footer': {
-            background: 'hsl(var(--table-footer-background))',
-            foreground: 'hsl(var(--table-footer-foreground))',
-        }
       },
       borderRadius: {
         lg: 'var(--radius)',
@@ -99,11 +91,20 @@ export default {
             transform: 'translateX(100%)',
           },
         },
+        spin: {
+          from: {
+            transform: 'rotate(0deg)',
+          },
+          to: {
+            transform: 'rotate(360deg)',
+          },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
         shimmer: 'shimmer 1.5s infinite',
+        spin: 'spin 1s linear infinite',
       },
     },
   },
