@@ -443,7 +443,7 @@ export function ContactsTab() {
                                 <input ref={scanFileInputRef} type="file" className="hidden" accept="image/*" onChange={handleScanDocument}/>
                                <Popover open={isFinderOpen} onOpenChange={setIsFinderOpen}>
                                   <PopoverTrigger asChild>
-                                    <Button type="button" size="sm" variant="outline" role="combobox" aria-expanded={isFinderOpen} className="justify-between">
+                                    <Button type="button" size="sm" variant="outline" role="combobox" aria-expanded={isFinderOpen} className="justify-between w-full sm:w-auto">
                                       <span className="flex items-center gap-2 text-muted-foreground">
                                         <UserPlus className="h-4 w-4" />
                                         Copy info...
@@ -451,7 +451,7 @@ export function ContactsTab() {
                                       <ChevronDown className="h-4 w-4 shrink-0 opacity-50"/>
                                     </Button>
                                   </PopoverTrigger>
-                                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0" style={{ minWidth: '300px' }}>
                                     <Command>
                                       <CommandInput placeholder="Search tenant..." />
                                       <CommandEmpty>No tenant found.</CommandEmpty>
