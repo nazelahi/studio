@@ -507,34 +507,40 @@ export function ContactsTab() {
                                   <Label htmlFor="notes">Notes</Label>
                                   <Textarea id="notes" name="notes" defaultValue={editingTenant?.notes} placeholder="Any relevant notes about the tenant..."/>
                                 </div>
-                                 <div className="space-y-2">
+                                <div className="space-y-2">
                                   <Label>Documents</Label>
-                                  <div className="border border-dashed rounded-lg p-4">
-                                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mb-4">
+                                  <div className="space-y-3">
+                                    <div 
+                                      className="border-2 border-dashed border-muted-foreground/30 rounded-lg p-4 text-center cursor-pointer hover:bg-muted/50 transition-colors"
+                                      onClick={() => docFileInputRef.current?.click()}
+                                    >
+                                        <Upload className="mx-auto h-8 w-8 text-muted-foreground/50"/>
+                                        <p className="mt-1 text-sm font-medium">Click to upload documents</p>
+                                        <p className="text-xs text-muted-foreground">You can select multiple files</p>
+                                        <Input ref={docFileInputRef} type="file" className="hidden" multiple accept="image/*,.pdf" onChange={handleDocumentUpload} />
+                                    </div>
+                                    {(existingDocuments.length > 0 || documentFiles.length > 0) && (
+                                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                                         {existingDocuments.map((docUrl) => (
-                                          <div key={docUrl} className="relative group">
-                                              <a href={docUrl} target="_blank" rel="noopener noreferrer">
-                                                  <img src={docUrl} alt="Document" className="w-full h-20 object-cover rounded-md" data-ai-hint="document id"/>
+                                          <div key={docUrl} className="relative group aspect-square">
+                                              <a href={docUrl} target="_blank" rel="noopener noreferrer" className="block w-full h-full">
+                                                  <img src={docUrl} alt="Document" className="w-full h-full object-cover rounded-md" data-ai-hint="document id"/>
                                               </a>
-                                              <Button type="button" variant="destructive" size="icon" className="absolute -top-2 -right-2 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100" onClick={() => handleRemoveExistingDocument(docUrl)}>
-                                                  <Trash2 className="h-4 w-4"/>
+                                              <Button type="button" variant="destructive" size="icon" className="absolute -top-1 -right-1 h-5 w-5 rounded-full opacity-0 group-hover:opacity-100" onClick={() => handleRemoveExistingDocument(docUrl)}>
+                                                  <X className="h-3 w-3"/>
                                               </Button>
                                           </div>
                                         ))}
                                         {documentFiles.map((file, index) => (
-                                          <div key={index} className="relative group">
-                                              <img src={URL.createObjectURL(file)} alt={file.name} className="w-full h-20 object-cover rounded-md" data-ai-hint="document id"/>
-                                              <Button type="button" variant="destructive" size="icon" className="absolute -top-2 -right-2 h-6 w-6 rounded-full opacity-0 group-hover:opacity-100" onClick={() => handleRemoveNewDocument(index)}>
-                                                  <Trash2 className="h-4 w-4"/>
+                                          <div key={index} className="relative group aspect-square">
+                                              <img src={URL.createObjectURL(file)} alt={file.name} className="w-full h-full object-cover rounded-md" data-ai-hint="document id"/>
+                                              <Button type="button" variant="destructive" size="icon" className="absolute -top-1 -right-1 h-5 w-5 rounded-full opacity-0 group-hover:opacity-100" onClick={() => handleRemoveNewDocument(index)}>
+                                                  <X className="h-3 w-3"/>
                                               </Button>
                                           </div>
                                         ))}
                                       </div>
-                                      <Button type="button" variant="outline" className="w-full" onClick={() => docFileInputRef.current?.click()}>
-                                          <Upload className="mr-2 h-4 w-4" />
-                                          Upload Documents
-                                      </Button>
-                                      <Input ref={docFileInputRef} type="file" className="hidden" multiple accept="image/*,.pdf" onChange={handleDocumentUpload} />
+                                    )}
                                   </div>
                                 </div>
                            </div>
