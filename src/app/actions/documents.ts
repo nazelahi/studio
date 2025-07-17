@@ -4,7 +4,6 @@
 import { createClient } from '@supabase/supabase-js'
 import 'dotenv/config'
 import { revalidatePath } from 'next/cache'
-import { supabase as supabaseClient } from '@/lib/supabase'
 
 const getSupabaseAdmin = () => {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -36,7 +35,7 @@ export async function saveDocumentAction(formData: FormData) {
         const fileExt = docFile.name.split('.').pop();
         const filePath = `general-documents/${Date.now()}.${fileExt}`;
 
-        const { error: uploadError } = await supabaseClient.storage
+        const { error: uploadError } = await supabaseAdmin.storage
             .from('general-documents')
             .upload(filePath, docFile);
         
@@ -45,7 +44,7 @@ export async function saveDocumentAction(formData: FormData) {
             return { error: `Failed to upload document: ${uploadError.message}` };
         }
 
-        const { data: publicUrlData } = supabaseClient.storage
+        const { data: publicUrlData } = supabaseAdmin.storage
             .from('general-documents')
             .getPublicUrl(filePath);
 
@@ -58,7 +57,7 @@ export async function saveDocumentAction(formData: FormData) {
         if (oldFileUrl) {
             try {
                 const oldFilePath = new URL(oldFileUrl).pathname.split('/general-documents/')[1];
-                await supabaseClient.storage.from('general-documents').remove([oldFilePath]);
+                await supabaseAdmin.storage.from('general-documents').remove([oldFilePath]);
             } catch (e) {
                  console.error("Could not parse or delete old document from storage:", e)
             }
@@ -114,7 +113,7 @@ export async function deleteDocumentAction(formData: FormData) {
         try {
             const filePath = new URL(fileUrl).pathname.split('/storage/v1/object/public/general-documents/')[1];
             if (filePath) {
-                const { error: storageError } = await supabaseClient.storage
+                const { error: storageError } = await supabaseAdmin.storage
                     .from('general-documents')
                     .remove([filePath]);
                 
