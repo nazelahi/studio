@@ -22,6 +22,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useSettings } from "@/context/settings-context"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 import { cn } from "@/lib/utils"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 
 export function DocumentsTab() {
@@ -147,34 +148,7 @@ export function DocumentsTab() {
     }
   };
 
-  const groupedDocuments = React.useMemo(() => {
-    const orderedCategories = settings.documentCategories || [];
-    const categoryOrder = orderedCategories.reduce((acc, cat, index) => {
-        acc[cat] = index;
-        return acc;
-    }, {} as Record<string, number>);
-
-    const groups = documents.reduce((acc, doc) => {
-      const category = doc.category || 'Miscellaneous';
-      if (!acc[category]) {
-        acc[category] = [];
-      }
-      acc[category].push(doc);
-      return acc;
-    }, {} as Record<string, Document[]>);
-
-    return Object.entries(groups).sort(([catA], [catB]) => {
-        const orderA = categoryOrder[catA] ?? Infinity;
-        const orderB = categoryOrder[catB] ?? Infinity;
-        if (orderA !== Infinity || orderB !== Infinity) {
-             return orderA - orderB;
-        }
-        return catA.localeCompare(catB); // Fallback for uncategorized items
-    });
-
-  }, [documents, settings.documentCategories]);
-
-  const tenantDocuments = React.useMemo(() => {
+  const allDocuments = React.useMemo(() => {
     const tenantDocs: Document[] = [];
     tenants.forEach(tenant => {
         if (tenant.documents && tenant.documents.length > 0) {
@@ -186,23 +160,22 @@ export function DocumentsTab() {
                     file_type: docUrl.toLowerCase().includes('.pdf') ? 'application/pdf' : 'image/jpeg', 
                     category: `Tenant: ${tenant.name}`,
                     description: `Document for ${tenant.name}`,
-                });
+                    isTenantDoc: true,
+                } as any);
             });
         }
     });
-    
-    return tenantDocs.reduce((acc, doc) => {
-        const tenantName = doc.category;
-        if (!acc[tenantName]) {
-            acc[tenantName] = [];
-        }
-        acc[tenantName].push(doc);
-        return acc;
-    }, {} as Record<string, Document[]>);
+    return [...documents, ...tenantDocs].sort((a,b) => (a.category || '').localeCompare(b.category || ''));
+  }, [documents, tenants]);
 
-  }, [tenants]);
-  
-  const DocumentItem = ({ doc, isTenantDoc = false }: { doc: Document, isTenantDoc?: boolean }) => (
+
+  const documentCategories = React.useMemo(() => {
+    const categories = new Set(allDocuments.map(d => d.category));
+    return Array.from(categories);
+  }, [allDocuments]);
+
+
+  const DocumentItem = ({ doc }: { doc: Document }) => (
     <div className="flex items-center justify-between p-2 rounded-md hover:bg-muted/50 group">
         <a href={doc.file_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 flex-1 min-w-0">
             <div className="flex-shrink-0">
@@ -219,13 +192,13 @@ export function DocumentsTab() {
                 <p className="text-xs text-muted-foreground truncate">{doc.file_name}</p>
             </div>
         </a>
-        <div className={cn("flex items-center gap-1", !isTenantDoc && "opacity-0 group-hover:opacity-100 transition-opacity")}>
+        <div className={cn("flex items-center gap-1", !(doc as any).isTenantDoc && "opacity-0 group-hover:opacity-100 transition-opacity")}>
             <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
                 <a href={doc.file_url} target="_blank" rel="noopener noreferrer" download={doc.file_name}>
                     <Download className="h-4 w-4" />
                 </a>
             </Button>
-            {isAdmin && !isTenantDoc && (
+            {isAdmin && !(doc as any).isTenantDoc && (
                 <>
                     <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => handleEdit(doc, e)}>
                         <Edit className="h-4 w-4" />
@@ -353,64 +326,33 @@ export function DocumentsTab() {
                     <Skeleton className="h-12 w-full" />
                     <Skeleton className="h-12 w-full" />
                 </div>
-            ) : documents.length === 0 && Object.keys(tenantDocuments).length === 0 ? (
+            ) : allDocuments.length === 0 ? (
                 <div className="text-center py-10 text-muted-foreground">No documents uploaded yet.</div>
             ) : (
-                <Accordion type="multiple" defaultValue={['general-documents', 'tenant-documents', ...groupedDocuments.map(([category]) => category)]} className="w-full">
-                    {/* General Documents */}
-                    {groupedDocuments.map(([category, docs]) => (
-                        <AccordionItem key={category} value={category}>
-                            <AccordionTrigger>
-                                <div className="flex items-center gap-2 text-lg font-semibold">
-                                    <Folder className="h-5 w-5 text-primary"/>
-                                    {category}
-                                    <span className="text-sm font-normal text-muted-foreground">({docs.length})</span>
-                                </div>
-                            </AccordionTrigger>
-                            <AccordionContent>
-                                <div className="space-y-1 pl-4 border-l ml-2">
-                                    {docs.map(doc => (
-                                        <DocumentItem key={doc.id} doc={doc} />
-                                    ))}
-                                </div>
-                            </AccordionContent>
-                        </AccordionItem>
+                <Tabs defaultValue="all" className="w-full">
+                  <TabsList className="w-full justify-start overflow-x-auto h-auto">
+                    <TabsTrigger value="all">All Documents</TabsTrigger>
+                    {documentCategories.map(category => (
+                        <TabsTrigger key={category} value={category}>{category}</TabsTrigger>
                     ))}
+                  </TabsList>
+                  
+                  <TabsContent value="all" className="mt-4 max-h-[500px] overflow-y-auto">
+                    <div className="space-y-1">
+                        {allDocuments.map(doc => <DocumentItem key={doc.id} doc={doc} />)}
+                    </div>
+                  </TabsContent>
 
-                    {/* Tenant-Specific Documents */}
-                    {Object.keys(tenantDocuments).length > 0 && (
-                        <AccordionItem value="tenant-documents">
-                            <AccordionTrigger>
-                                <div className="flex items-center gap-2 text-lg font-semibold">
-                                    <Briefcase className="h-5 w-5 text-primary"/>
-                                    Tenant Documents
-                                    <span className="text-sm font-normal text-muted-foreground">({Object.values(tenantDocuments).reduce((sum, docs) => sum + docs.length, 0)})</span>
-                                </div>
-                            </AccordionTrigger>
-                            <AccordionContent>
-                                <Accordion type="multiple" className="w-full pl-4 border-l ml-2">
-                                    {Object.entries(tenantDocuments).map(([tenantName, docs]) => (
-                                        <AccordionItem key={tenantName} value={tenantName}>
-                                            <AccordionTrigger>
-                                                <div className="flex items-center gap-2 text-base font-medium">
-                                                    {tenantName.replace('Tenant: ', '')}
-                                                    <span className="text-sm font-normal text-muted-foreground">({docs.length})</span>
-                                                </div>
-                                            </AccordionTrigger>
-                                            <AccordionContent>
-                                                <div className="space-y-1 pl-4 border-l ml-2">
-                                                    {docs.map(doc => (
-                                                        <DocumentItem key={doc.id} doc={doc} isTenantDoc={true} />
-                                                    ))}
-                                                </div>
-                                            </AccordionContent>
-                                        </AccordionItem>
-                                    ))}
-                                </Accordion>
-                            </AccordionContent>
-                        </AccordionItem>
-                    )}
-                </Accordion>
+                  {documentCategories.map(category => (
+                    <TabsContent key={category} value={category} className="mt-4 max-h-[500px] overflow-y-auto">
+                        <div className="space-y-1">
+                            {allDocuments.filter(d => d.category === category).map(doc => (
+                                <DocumentItem key={doc.id} doc={doc} />
+                            ))}
+                        </div>
+                    </TabsContent>
+                  ))}
+                </Tabs>
             )}
         </CardContent>
       </Card>
