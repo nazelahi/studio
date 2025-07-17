@@ -117,9 +117,10 @@ export default function SettingsPage() {
 
   const [activeTab, setActiveTab] = useState<SettingsTab>('property');
   
-  const logoInputRef = React.useRef<HTMLInputElement>(null);
+  const bankLogoInputRef = React.useRef<HTMLInputElement>(null);
   const ownerPhotoInputRef = React.useRef<HTMLInputElement>(null);
   const faviconInputRef = React.useRef<HTMLInputElement>(null);
+  const appLogoInputRef = React.useRef<HTMLInputElement>(null);
   
   const [docCategories, setDocCategories] = useState<string[]>([]);
   const [newCategory, setNewCategory] = useState('');
@@ -189,7 +190,7 @@ export default function SettingsPage() {
     });
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, fileType: 'logoFile' | 'ownerPhotoFile' | 'faviconFile') => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, fileType: 'bankLogoFile' | 'ownerPhotoFile' | 'faviconFile' | 'appLogoFile') => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -199,9 +200,9 @@ export default function SettingsPage() {
       
       const result = await updatePropertySettingsAction(formData);
       if (result?.error) {
-        toast({ title: `Error Saving ${fileType === 'logoFile' ? 'Logo' : 'Photo'}`, description: result.error, variant: 'destructive'});
+        toast({ title: `Error Saving Image`, description: result.error, variant: 'destructive'});
       } else {
-        toast({ title: 'Image Saved', description: `Your new ${fileType === 'logoFile' ? 'logo' : 'photo'} has been updated.` });
+        toast({ title: 'Image Saved', description: `Your new image has been updated.` });
         refreshSettings();
       }
     });
@@ -381,7 +382,11 @@ export default function SettingsPage() {
             href="/"
             className="flex items-center gap-2 text-lg font-semibold md:text-base"
           >
-            <Logo className="h-6 w-6 text-primary" />
+            {settings.appLogoUrl ? (
+                <img src={settings.appLogoUrl} alt={settings.houseName} className="h-6 w-auto" />
+            ) : (
+                <Logo className="h-6 w-6 text-primary" />
+            )}
             <span className="sr-only">{settings.houseName}</span>
           </Link>
           <Link
@@ -419,7 +424,11 @@ export default function SettingsPage() {
                 href="/"
                 className="flex items-center gap-2 text-lg font-semibold"
               >
-                <Logo className="h-6 w-6 text-primary" />
+                {settings.appLogoUrl ? (
+                    <img src={settings.appLogoUrl} alt={settings.houseName} className="h-6 w-auto" />
+                ) : (
+                    <Logo className="h-6 w-6 text-primary" />
+                )}
                 <span className="sr-only">{settings.houseName}</span>
               </Link>
               <Link href="/" className={`hover:text-foreground text-muted-foreground`}>
@@ -542,10 +551,10 @@ export default function SettingsPage() {
                                               <AvatarImage src={settings.bankLogoUrl} data-ai-hint="logo bank"/>
                                               <AvatarFallback className="rounded-md"><Banknote className="h-10 w-10"/></AvatarFallback>
                                           </Avatar>
-                                          <Button type="button" variant="ghost" size="icon" onClick={() => logoInputRef.current?.click()} className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8">
+                                          <Button type="button" variant="ghost" size="icon" onClick={() => bankLogoInputRef.current?.click()} className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8">
                                             <Edit className="h-4 w-4 text-muted-foreground"/>
                                           </Button>
-                                          <Input ref={logoInputRef} type="file" name="logoFile" className="hidden" accept="image/*" onChange={(e) => handleFileChange(e, 'logoFile')} />
+                                          <Input ref={bankLogoInputRef} type="file" name="bankLogoFile" className="hidden" accept="image/*" onChange={(e) => handleFileChange(e, 'bankLogoFile')} />
                                       </div>
                                   </div>
                               </div>
@@ -556,10 +565,27 @@ export default function SettingsPage() {
                               <h3 className="text-lg font-medium">Branding & Metadata</h3>
                               <Separator className="my-2" />
                               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
-                                <div className="md:col-span-2 space-y-4">
+                                <div className="md:col-span-1 space-y-2">
+                                    <Label>Application Logo</Label>
+                                    <div className="flex items-center gap-4 group">
+                                        <div className="h-24 w-24 rounded-md border flex items-center justify-center bg-muted p-2">
+                                            {settings.appLogoUrl ? (
+                                                <img src={settings.appLogoUrl} alt="App Logo" className="h-full w-auto object-contain"/>
+                                            ) : (
+                                                <Logo className="h-10 w-10 text-muted-foreground" />
+                                            )}
+                                        </div>
+                                        <Button type="button" variant="ghost" size="icon" onClick={() => appLogoInputRef.current?.click()} className="opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8">
+                                            <Edit className="h-4 w-4 text-muted-foreground"/>
+                                        </Button>
+                                        <Input ref={appLogoInputRef} type="file" name="appLogoFile" className="hidden" accept="image/png, image/svg+xml" onChange={(e) => handleFileChange(e, 'appLogoFile')} />
+                                    </div>
+                                    <p className="text-xs text-muted-foreground">Upload a .png or .svg file.</p>
+                                </div>
+                                <div className="md:col-span-1 space-y-2">
                                   <EditableField label="Browser Tab Title" value={settings.metadataTitle || ''} onSave={(v) => handleSavePropertySettings('metadataTitle', v)} />
                                 </div>
-                                <div className="space-y-2">
+                                <div className="md:col-span-1 space-y-2">
                                     <Label>Favicon</Label>
                                     <div className="flex items-center gap-4 group">
                                         <div className="h-24 w-24 rounded-md border flex items-center justify-center bg-muted">

@@ -115,7 +115,11 @@ export default function HomePage() {
             href="/"
             className="flex items-center gap-2 text-lg font-semibold md:text-base"
           >
-            <Logo className="h-6 w-6 text-primary" />
+            {settings.appLogoUrl ? (
+                <img src={settings.appLogoUrl} alt={settings.houseName} className="h-6 w-auto" />
+            ) : (
+                <Logo className="h-6 w-6 text-primary" />
+            )}
             <span className="sr-only">{settings.houseName}</span>
           </Link>
           {mainNavLinks}

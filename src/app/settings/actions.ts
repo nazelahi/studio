@@ -47,7 +47,7 @@ export async function updatePropertySettingsAction(formData: FormData) {
 
     // Handle simple text fields from FormData
     for (const [key, value] of formData.entries()) {
-        if (key !== 'logoFile' && key !== 'ownerPhotoFile' && key !== 'faviconFile' && key !== 'document_categories[]') {
+        if (key !== 'bankLogoFile' && key !== 'ownerPhotoFile' && key !== 'faviconFile' && key !== 'document_categories[]' && key !== 'appLogoFile') {
             if (key === 'whatsapp_reminders_enabled') {
                  settingsData[key] = value === 'on';
             } else if (key === 'whatsapp_reminder_schedule') {
@@ -67,18 +67,18 @@ export async function updatePropertySettingsAction(formData: FormData) {
     }
 
 
-    const logoFile = formData.get('logoFile') as File | null;
-    if (logoFile && logoFile.size > 0) {
-        const fileExt = logoFile.name.split('.').pop();
+    const bankLogoFile = formData.get('bankLogoFile') as File | null;
+    if (bankLogoFile && bankLogoFile.size > 0) {
+        const fileExt = bankLogoFile.name.split('.').pop();
         const filePath = `property-logos/${Date.now()}.${fileExt}`;
 
         const { error: uploadError } = await supabaseClient.storage
             .from('deposit-receipts') // Using an existing bucket
-            .upload(filePath, logoFile);
+            .upload(filePath, bankLogoFile);
 
         if (uploadError) {
-            console.error('Supabase storage logo upload error:', uploadError);
-            return { error: `Failed to upload logo: ${uploadError.message}` };
+            console.error('Supabase storage bank logo upload error:', uploadError);
+            return { error: `Failed to upload bank logo: ${uploadError.message}` };
         }
 
         const { data: publicUrlData } = supabaseClient.storage.from('deposit-receipts').getPublicUrl(filePath);
@@ -91,6 +91,33 @@ export async function updatePropertySettingsAction(formData: FormData) {
                 await supabaseClient.storage.from('deposit-receipts').remove([oldLogoPath]);
             } catch (e) {
                 console.error("Could not parse or delete old bank logo from storage:", e);
+            }
+        }
+    }
+
+    const appLogoFile = formData.get('appLogoFile') as File | null;
+    if (appLogoFile && appLogoFile.size > 0) {
+        const fileExt = appLogoFile.name.split('.').pop();
+        const filePath = `app-logos/${Date.now()}.${fileExt}`;
+
+        const { error: uploadError } = await supabaseClient.storage
+            .from('deposit-receipts') 
+            .upload(filePath, appLogoFile);
+
+        if (uploadError) {
+            console.error('Supabase storage app logo upload error:', uploadError);
+            return { error: `Failed to upload app logo: ${uploadError.message}` };
+        }
+
+        const { data: publicUrlData } = supabaseClient.storage.from('deposit-receipts').getPublicUrl(filePath);
+        settingsData.app_logo_url = publicUrlData.publicUrl;
+
+        if (currentSettings?.app_logo_url) {
+            try {
+                const oldLogoPath = new URL(currentSettings.app_logo_url).pathname.split('/deposit-receipts/')[1];
+                await supabaseClient.storage.from('deposit-receipts').remove([oldLogoPath]);
+            } catch (e) {
+                console.error("Could not parse or delete old app logo from storage:", e);
             }
         }
     }

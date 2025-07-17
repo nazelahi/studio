@@ -74,6 +74,7 @@ interface AppSettings {
   tenantViewStyle: 'grid' | 'list';
   metadataTitle?: string;
   faviconUrl?: string;
+  appLogoUrl?: string;
   documentCategories: string[];
 }
 
@@ -106,6 +107,7 @@ const defaultSettings: AppSettings = {
     tenantViewStyle: 'grid',
     metadataTitle: "RentFlow",
     faviconUrl: "/favicon.ico",
+    appLogoUrl: undefined,
     documentCategories: ["Legal", "Agreements", "Receipts", "ID Cards", "Property Deeds", "Blueprints", "Miscellaneous"],
     tabNames: {
         overview: "Overview",
@@ -240,6 +242,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
                 combinedSettings.tenantViewStyle = propertySettings.tenant_view_style || defaultSettings.tenantViewStyle;
                 combinedSettings.metadataTitle = propertySettings.metadata_title || defaultSettings.metadataTitle;
                 combinedSettings.faviconUrl = propertySettings.favicon_url || defaultSettings.faviconUrl;
+                combinedSettings.appLogoUrl = propertySettings.app_logo_url || defaultSettings.appLogoUrl;
                 
                 // Load document categories from DB if they exist, otherwise use local/default
                 combinedSettings.documentCategories = propertySettings.document_categories || combinedSettings.documentCategories;
@@ -273,7 +276,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
             houseName, houseAddress, bankName, bankAccountNumber, bankLogoUrl, ownerName, ownerPhotoUrl, 
             zakatBankDetails, passcode, passcodeProtectionEnabled, aboutUs, contactPhone, contactEmail, contactAddress, footerName,
             theme, whatsappRemindersEnabled, whatsappReminderSchedule, whatsappReminderTemplate, tenantViewStyle,
-            metadataTitle, faviconUrl, documentCategories,
+            metadataTitle, faviconUrl, appLogoUrl, documentCategories,
             ...localSettingsToSave 
         } = newSettings;
         try {

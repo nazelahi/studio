@@ -104,6 +104,7 @@ export type PropertySettings = {
   tenant_view_style?: 'grid' | 'list';
   metadata_title?: string;
   favicon_url?: string;
+  app_logo_url?: string;
   document_categories?: string[];
 };
 
