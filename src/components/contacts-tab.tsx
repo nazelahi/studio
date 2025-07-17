@@ -210,6 +210,8 @@ export function ContactsTab() {
       date_of_birth: formData.get('date_of_birth') as string,
       nid_number: formData.get('nid_number') as string,
       advance_deposit: Number(formData.get('advance_deposit')),
+      gas_meter_number: formData.get('gas_meter_number') as string,
+      electric_meter_number: formData.get('electric_meter_number') as string,
     };
 
     try {
@@ -622,6 +624,14 @@ export function ContactsTab() {
                                         <div className="space-y-2 sm:col-span-2">
                                             <Label htmlFor="phone">Phone Number</Label>
                                             <Input id="phone" name="phone" type="tel" defaultValue={editingTenant?.phone} placeholder="e.g. 880..." />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="gas_meter_number">Gas Meter Number</Label>
+                                            <Input id="gas_meter_number" name="gas_meter_number" defaultValue={editingTenant?.gas_meter_number} />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="electric_meter_number">Electric Meter Number</Label>
+                                            <Input id="electric_meter_number" name="electric_meter_number" defaultValue={editingTenant?.electric_meter_number} />
                                         </div>
                                     </div>
                                 </div>

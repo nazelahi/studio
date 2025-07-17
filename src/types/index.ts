@@ -21,6 +21,7 @@ export type Document = {
   file_type: string;
   category: string;
   description?: string;
+  isTenantDoc?: boolean;
 };
 
 export type Tenant = {
@@ -41,6 +42,8 @@ export type Tenant = {
   date_of_birth?: string;
   nid_number?: string;
   advance_deposit?: number;
+  gas_meter_number?: string;
+  electric_meter_number?: string;
   created_at?: string;
   deleted_at?: string | null;
 };

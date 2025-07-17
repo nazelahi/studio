@@ -82,7 +82,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
             const twoYearsAgo = format(subYears(new Date(), 2), 'yyyy-MM-dd');
 
             const [tenantsRes, expensesRes, rentDataRes, propertySettingsRes, depositsRes, zakatRes, noticesRes, workDetailsRes, zakatBankDetailsRes, documentsRes] = await Promise.all([
-                supabase.from('tenants').select('id, name, email, phone, property, rent, join_date, notes, status, avatar, type, documents, father_name, address, date_of_birth, nid_number, advance_deposit, created_at').is('deleted_at', null).gte('created_at', twoYearsAgo).order('name', { ascending: true }),
+                supabase.from('tenants').select('id, name, email, phone, property, rent, join_date, notes, status, avatar, type, documents, father_name, address, date_of_birth, nid_number, advance_deposit, gas_meter_number, electric_meter_number, created_at').is('deleted_at', null).gte('created_at', twoYearsAgo).order('name', { ascending: true }),
                 supabase.from('expenses').select('id, date, category, amount, description, status').is('deleted_at', null).gte('date', twoYearsAgo).order('date', { ascending: false }),
                 supabase.from('rent_entries').select('id, tenant_id, name, property, rent, due_date, status, avatar, year, month, payment_date, collected_by').is('deleted_at', null).gte('due_date', twoYearsAgo).order('due_date', { ascending: false }),
                 supabase.from('property_settings').select('*').eq('id', 1).maybeSingle(),
@@ -91,7 +91,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
                 supabase.from('notices').select('id, year, month, content').gte('created_at', twoYearsAgo).order('created_at', { ascending: false }),
                 supabase.from('work_details').select('id, title, description, category, status, product_cost, worker_cost, due_date, created_at').is('deleted_at', null).gte('created_at', twoYearsAgo).order('created_at', { ascending: false }),
                 supabase.from('zakat_bank_details').select('id, bank_name, account_number, account_holder, logo_url, location').order('bank_name', { ascending: true }),
-                supabase.from('documents').select('*').order('created_at', { ascending: false }),
+                supabase.from('documents').select('*').is('deleted_at', null).order('created_at', { ascending: false }),
             ]);
 
             if (tenantsRes.error) throw tenantsRes.error;
@@ -102,7 +102,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
             if (noticesRes.error) throw noticesRes.error;
             if (workDetailsRes.error) throw workDetailsRes.error;
             if (zakatBankDetailsRes.error) throw zakatBankDetailsRes.error;
-            if (documentsRes.error) throw documentsRes.error;
+            // Gracefully handle if 'documents' table doesn't exist yet
+            if (documentsRes.error && documentsRes.error.code !== '42P01') { // 42P01 is "undefined_table"
+                throw documentsRes.error;
+            }
             if (propertySettingsRes.error && propertySettingsRes.error.code !== 'PGRST116') {
                  throw propertySettingsRes.error;
             }
@@ -117,7 +120,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
                 notices: noticesRes.data as Notice[],
                 workDetails: workDetailsRes.data as WorkDetail[],
                 zakatBankDetails: zakatBankDetailsRes.data as ZakatBankDetail[],
-                documents: documentsRes.data as Document[],
+                documents: (documentsRes.data as Document[] | null) || [],
             });
         } catch (error: any) {
             console.error(`Error in fetching data:`, error.message, error);
@@ -222,6 +225,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
         if (cleanTenantData.father_name === '') delete (cleanTenantData as any).father_name;
         if (cleanTenantData.address === '') delete (cleanTenantData as any).address;
         if (cleanTenantData.nid_number === '') delete (cleanTenantData as any).nid_number;
+        if (cleanTenantData.gas_meter_number === '') delete (cleanTenantData as any).gas_meter_number;
+        if (cleanTenantData.electric_meter_number === '') delete (cleanTenantData as any).electric_meter_number;
 
         const { data: newTenant, error } = await supabase.from('tenants').insert([cleanTenantData]).select().single();
         if (error || !newTenant) {
@@ -272,6 +277,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
         if (cleanTenantData.father_name === '') delete (cleanTenantData as any).father_name;
         if (cleanTenantData.address === '') delete (cleanTenantData as any).address;
         if (cleanTenantData.nid_number === '') delete (cleanTenantData as any).nid_number;
+        if (cleanTenantData.gas_meter_number === '') delete (cleanTenantData as any).gas_meter_number;
+        if (cleanTenantData.electric_meter_number === '') delete (cleanTenantData as any).electric_meter_number;
 
         const { error } = await supabase.from('tenants').update(cleanTenantData).eq('id', id);
         if (error || !id) {

@@ -17,7 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import type { Tenant, RentEntry } from "@/types";
-import { Mail, Phone, Home, Calendar, DollarSign, FileText, Download, Printer, ImageIcon, File as FileIcon, User, MapPin, Cake, CreditCard, ShieldCheck, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { Mail, Phone, Home, Calendar, DollarSign, FileText, Download, Printer, ImageIcon, File as FileIcon, User, MapPin, Cake, CreditCard, ShieldCheck, ChevronLeft, ChevronRight, X, Flame, Zap } from "lucide-react";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 import { format, parseISO } from 'date-fns';
@@ -244,6 +244,18 @@ export function TenantDetailSheet({
                         <div className="flex items-center gap-3">
                             <ShieldCheck className="h-4 w-4 text-muted-foreground" />
                             <span>Advance Deposit: <strong>৳{tenant.advance_deposit.toFixed(2)}</strong></span>
+                        </div>
+                    )}
+                    {tenant.gas_meter_number && (
+                        <div className="flex items-center gap-3">
+                            <Flame className="h-4 w-4 text-muted-foreground" />
+                            <span>Gas Meter: <strong>{tenant.gas_meter_number}</strong></span>
+                        </div>
+                    )}
+                    {tenant.electric_meter_number && (
+                        <div className="flex items-center gap-3">
+                            <Zap className="h-4 w-4 text-muted-foreground" />
+                            <span>Electric Meter: <strong>{tenant.electric_meter_number}</strong></span>
                         </div>
                     )}
                     <div className="flex items-center gap-3">
