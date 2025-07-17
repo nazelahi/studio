@@ -10,6 +10,17 @@ export type TabNames = {
   work: string;
   reports: string;
   zakat: string;
+  documents: string;
+};
+
+export type Document = {
+  id: string;
+  created_at?: string;
+  file_name: string;
+  file_url: string;
+  file_type: string;
+  category: string;
+  description?: string;
 };
 
 export type Tenant = {

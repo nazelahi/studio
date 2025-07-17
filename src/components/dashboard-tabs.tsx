@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -11,6 +12,7 @@ import { useSettings } from "@/context/settings-context"
 import { WorkDetailsTab } from "./work-details-tab"
 import { useAuth } from "@/context/auth-context"
 import { cn } from "@/lib/utils"
+import { DocumentsTab } from "./documents-tab"
 
 interface DashboardTabsProps {
   year: number;
@@ -31,10 +33,11 @@ export default function DashboardTabs({ year, activeTab, onTabChange, selectedYe
     <div className="w-full">
       <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
         <div className="flex justify-between items-center mb-4">
-          <TabsList className="hidden md:grid w-full grid-cols-5">
+          <TabsList className="hidden md:grid w-full grid-cols-6">
             <TabsTrigger value="overview">{settings.tabNames.overview}</TabsTrigger>
             <TabsTrigger value="contacts">{settings.tabNames.tenants}</TabsTrigger>
             <TabsTrigger value="work">{settings.tabNames.work}</TabsTrigger>
+            <TabsTrigger value="documents">{settings.tabNames.documents}</TabsTrigger>
             <TabsTrigger value="reports">{settings.tabNames.reports}</TabsTrigger>
             <TabsTrigger value="zakat">{settings.tabNames.zakat}</TabsTrigger>
           </TabsList>
@@ -87,6 +90,9 @@ export default function DashboardTabs({ year, activeTab, onTabChange, selectedYe
         </TabsContent>
         <TabsContent value="work">
           <WorkDetailsTab year={year} />
+        </TabsContent>
+        <TabsContent value="documents">
+            <DocumentsTab />
         </TabsContent>
          <TabsContent value="reports">
             <ReportsTab year={year} />

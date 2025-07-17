@@ -655,7 +655,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         
         // Order of operations matters due to foreign key constraints if they existed.
         // For this app, it's simpler.
-        const tables = ['rent_entries', 'expenses', 'tenants', 'deposits', 'notices', 'work_details', 'zakat_transactions', 'zakat_bank_details'];
+        const tables = ['rent_entries', 'expenses', 'tenants', 'deposits', 'notices', 'work_details', 'zakat_transactions', 'zakat_bank_details', 'documents'];
         
         // Delete all existing data
         for (const table of tables) {

@@ -9,7 +9,7 @@ import { Logo } from "@/components/icons"
 import DashboardTabs from "@/components/dashboard-tabs"
 import { useAuth } from "@/context/auth-context"
 import { Button } from "@/components/ui/button"
-import { User, LogOut, MapPin, Menu, Settings, LogIn, UserCircle, LoaderCircle, Moon, Sun, Monitor } from "lucide-react"
+import { User, LogOut, MapPin, Menu, Settings, LogIn, UserCircle, LoaderCircle, Moon, Sun, Monitor, Archive } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent } from "@/components/ui/dropdown-menu"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
@@ -97,6 +97,7 @@ export default function HomePage() {
       <button onClick={() => handleTabChange('overview')} className={`w-full text-left hover:text-foreground ${activeTab === 'overview' ? 'text-foreground' : 'text-muted-foreground'}`}>{settings.tabNames.overview}</button>
       <button onClick={() => handleTabChange('contacts')} className={`w-full text-left hover:text-foreground ${activeTab === 'contacts' ? 'text-foreground' : 'text-muted-foreground'}`}>{settings.tabNames.tenants}</button>
       <button onClick={() => handleTabChange('work')} className={`w-full text-left hover:text-foreground ${activeTab === 'work' ? 'text-foreground' : 'text-muted-foreground'}`}>{settings.tabNames.work}</button>
+      <button onClick={() => handleTabChange('documents')} className={`w-full text-left hover:text-foreground ${activeTab === 'documents' ? 'text-foreground' : 'text-muted-foreground'}`}>{settings.tabNames.documents}</button>
       <button onClick={() => handleTabChange('reports')} className={`w-full text-left hover:text-foreground ${activeTab === 'reports' ? 'text-foreground' : 'text-muted-foreground'}`}>{settings.tabNames.reports}</button>
       <button onClick={() => handleTabChange('zakat')} className={`w-full text-left hover:text-foreground ${activeTab === 'zakat' ? 'text-foreground' : 'text-muted-foreground'}`}>{settings.tabNames.zakat}</button>
     </>

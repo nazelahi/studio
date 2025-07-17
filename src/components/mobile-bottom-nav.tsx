@@ -1,8 +1,9 @@
 
+
 "use client"
 
 import * as React from "react"
-import { Home, Users, Briefcase, FileText, HandCoins } from "lucide-react"
+import { Home, Users, Briefcase, FileText, HandCoins, Archive } from "lucide-react"
 import { useSettings } from "@/context/settings-context"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/context/auth-context"
@@ -20,13 +21,14 @@ export function MobileBottomNav({ activeTab, onTabChange }: MobileBottomNavProps
     { id: 'overview', icon: Home, label: settings.tabNames.overview },
     { id: 'contacts', icon: Users, label: settings.tabNames.tenants },
     { id: 'work', icon: Briefcase, label: settings.tabNames.work },
+    { id: 'documents', icon: Archive, label: settings.tabNames.documents },
     { id: 'reports', icon: FileText, label: settings.tabNames.reports },
     { id: 'zakat', icon: HandCoins, label: settings.tabNames.zakat },
   ];
 
   return (
     <div className="md:hidden fixed bottom-0 left-0 z-50 w-full h-16 border-t" style={{ backgroundColor: 'hsl(var(--mobile-nav-background))', color: 'hsl(var(--mobile-nav-foreground))' }}>
-      <div className="grid h-full max-w-lg grid-cols-5 mx-auto font-medium">
+      <div className="grid h-full max-w-lg grid-cols-6 mx-auto font-medium">
         {navItems.map((item) => {
             const isActive = activeTab === item.id;
             return (
@@ -34,7 +36,7 @@ export function MobileBottomNav({ activeTab, onTabChange }: MobileBottomNavProps
                     key={item.id}
                     type="button"
                     className={cn(
-                        "inline-flex flex-col items-center justify-center px-5 group transition-opacity",
+                        "inline-flex flex-col items-center justify-center px-2 group transition-opacity",
                         isActive ? "opacity-100" : "opacity-70 hover:opacity-100"
                     )}
                     onClick={() => onTabChange(item.id)}
