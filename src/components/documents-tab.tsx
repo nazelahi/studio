@@ -14,13 +14,14 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { PlusCircle, Edit, Trash2, LoaderCircle, Upload, Image as ImageIcon, FileText, Download, Folder } from "lucide-react"
+import { PlusCircle, Edit, Trash2, LoaderCircle, Upload, Image as ImageIcon, FileText, Download, Folder, File, Briefcase } from "lucide-react"
 import { saveDocumentAction, deleteDocumentAction } from "@/app/actions/documents"
 import type { Document } from "@/types"
 import { Skeleton } from "./ui/skeleton"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useSettings } from "@/context/settings-context"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
+import { cn } from "@/lib/utils"
 
 
 export function DocumentsTab() {
@@ -178,21 +179,18 @@ export function DocumentsTab() {
     tenants.forEach(tenant => {
         if (tenant.documents && tenant.documents.length > 0) {
             tenant.documents.forEach(docUrl => {
-                // Create a Document-like object from the tenant doc URL
                 tenantDocs.push({
-                    id: docUrl, // Use URL as a unique key for React
+                    id: docUrl,
                     file_url: docUrl,
                     file_name: docUrl.split('/').pop() || 'Tenant Document',
-                    // A simple assumption based on file extension
                     file_type: docUrl.toLowerCase().includes('.pdf') ? 'application/pdf' : 'image/jpeg', 
-                    category: `Tenant: ${tenant.name}`, // Dynamic category
+                    category: `Tenant: ${tenant.name}`,
                     description: `Document for ${tenant.name}`,
                 });
             });
         }
     });
     
-    // Group these documents by tenant name
     return tenantDocs.reduce((acc, doc) => {
         const tenantName = doc.category;
         if (!acc[tenantName]) {
@@ -203,6 +201,58 @@ export function DocumentsTab() {
     }, {} as Record<string, Document[]>);
 
   }, [tenants]);
+  
+  const DocumentItem = ({ doc, isTenantDoc = false }: { doc: Document, isTenantDoc?: boolean }) => (
+    <div className="flex items-center justify-between p-2 rounded-md hover:bg-muted/50 group">
+        <a href={doc.file_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 flex-1 min-w-0">
+            <div className="flex-shrink-0">
+                {doc.file_type.startsWith('image/') ? (
+                    <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                ) : (
+                    <FileText className="h-5 w-5 text-muted-foreground" />
+                )}
+            </div>
+            <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate" title={doc.description || doc.file_name}>
+                    {doc.description || doc.file_name}
+                </p>
+                <p className="text-xs text-muted-foreground truncate">{doc.file_name}</p>
+            </div>
+        </a>
+        <div className={cn("flex items-center gap-1", !isTenantDoc && "opacity-0 group-hover:opacity-100 transition-opacity")}>
+            <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+                <a href={doc.file_url} target="_blank" rel="noopener noreferrer" download={doc.file_name}>
+                    <Download className="h-4 w-4" />
+                </a>
+            </Button>
+            {isAdmin && !isTenantDoc && (
+                <>
+                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => handleEdit(doc, e)}>
+                        <Edit className="h-4 w-4" />
+                    </Button>
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={(e) => e.stopPropagation()}>
+                                <Trash2 className="h-4 w-4" />
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                <AlertDialogDescription>This action will permanently delete the document "{doc.file_name}". This cannot be undone.</AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={(e) => handleDelete(e, doc)} disabled={isPending}>Delete</AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                </>
+            )}
+        </div>
+    </div>
+  );
+
 
   return (
     <div className="pt-4 space-y-6">
@@ -318,56 +368,9 @@ export function DocumentsTab() {
                                 </div>
                             </AccordionTrigger>
                             <AccordionContent>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pt-2">
+                                <div className="space-y-1 pl-4 border-l ml-2">
                                     {docs.map(doc => (
-                                        <Card key={doc.id} className="group overflow-hidden">
-                                            <a href={doc.file_url} target="_blank" rel="noopener noreferrer" className="block">
-                                                <div className="aspect-video bg-muted flex items-center justify-center">
-                                                     {doc.file_type.startsWith('image/') ? (
-                                                        <img src={doc.file_url} alt={doc.file_name} className="w-full h-full object-cover transition-transform group-hover:scale-105" data-ai-hint="document"/>
-                                                    ) : (
-                                                        <FileText className="w-12 h-12 text-muted-foreground" />
-                                                    )}
-                                                </div>
-                                            </a>
-                                            <CardHeader className="p-3">
-                                                <CardTitle className="text-sm font-semibold truncate leading-tight" title={doc.description || doc.file_name}>
-                                                    {doc.description || doc.file_name}
-                                                </CardTitle>
-                                                <CardDescription className="text-xs truncate">{doc.file_name}</CardDescription>
-                                            </CardHeader>
-                                            <CardFooter className="p-2 bg-muted/50 flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
-                                                    <a href={doc.file_url} target="_blank" rel="noopener noreferrer" download={doc.file_name}>
-                                                        <Download className="h-4 w-4" />
-                                                    </a>
-                                                </Button>
-                                                {isAdmin && (
-                                                    <>
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => handleEdit(doc, e)}>
-                                                        <Edit className="h-4 w-4" />
-                                                    </Button>
-                                                    <AlertDialog>
-                                                        <AlertDialogTrigger asChild>
-                                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={(e) => e.stopPropagation()}>
-                                                                <Trash2 className="h-4 w-4" />
-                                                            </Button>
-                                                        </AlertDialogTrigger>
-                                                        <AlertDialogContent onClick={(e) => e.stopPropagation()}>
-                                                            <AlertDialogHeader>
-                                                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                                                <AlertDialogDescription>This action will permanently delete the document "{doc.file_name}". This cannot be undone.</AlertDialogDescription>
-                                                            </AlertDialogHeader>
-                                                            <AlertDialogFooter>
-                                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                                <AlertDialogAction onClick={(e) => handleDelete(e, doc)} disabled={isPending}>Delete</AlertDialogAction>
-                                                            </AlertDialogFooter>
-                                                        </AlertDialogContent>
-                                                    </AlertDialog>
-                                                    </>
-                                                )}
-                                            </CardFooter>
-                                        </Card>
+                                        <DocumentItem key={doc.id} doc={doc} />
                                     ))}
                                 </div>
                             </AccordionContent>
@@ -379,13 +382,13 @@ export function DocumentsTab() {
                         <AccordionItem value="tenant-documents">
                             <AccordionTrigger>
                                 <div className="flex items-center gap-2 text-lg font-semibold">
-                                    <Folder className="h-5 w-5 text-primary"/>
+                                    <Briefcase className="h-5 w-5 text-primary"/>
                                     Tenant Documents
                                     <span className="text-sm font-normal text-muted-foreground">({Object.values(tenantDocuments).reduce((sum, docs) => sum + docs.length, 0)})</span>
                                 </div>
                             </AccordionTrigger>
                             <AccordionContent>
-                                <Accordion type="multiple" className="w-full pl-4 border-l">
+                                <Accordion type="multiple" className="w-full pl-4 border-l ml-2">
                                     {Object.entries(tenantDocuments).map(([tenantName, docs]) => (
                                         <AccordionItem key={tenantName} value={tenantName}>
                                             <AccordionTrigger>
@@ -395,26 +398,9 @@ export function DocumentsTab() {
                                                 </div>
                                             </AccordionTrigger>
                                             <AccordionContent>
-                                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pt-2">
+                                                <div className="space-y-1 pl-4 border-l ml-2">
                                                     {docs.map(doc => (
-                                                        <Card key={doc.id} className="group overflow-hidden">
-                                                            <a href={doc.file_url} target="_blank" rel="noopener noreferrer" className="block">
-                                                                <div className="aspect-video bg-muted flex items-center justify-center">
-                                                                    {doc.file_type.startsWith('image/') ? (
-                                                                        <img src={doc.file_url} alt={doc.file_name} className="w-full h-full object-cover transition-transform group-hover:scale-105" data-ai-hint="document"/>
-                                                                    ) : (
-                                                                        <FileText className="w-12 h-12 text-muted-foreground" />
-                                                                    )}
-                                                                </div>
-                                                            </a>
-                                                            <CardFooter className="p-2 bg-muted/50 flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                                <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
-                                                                    <a href={doc.file_url} target="_blank" rel="noopener noreferrer" download={doc.file_name}>
-                                                                        <Download className="h-4 w-4" />
-                                                                    </a>
-                                                                </Button>
-                                                            </CardFooter>
-                                                        </Card>
+                                                        <DocumentItem key={doc.id} doc={doc} isTenantDoc={true} />
                                                     ))}
                                                 </div>
                                             </AccordionContent>
@@ -431,4 +417,3 @@ export function DocumentsTab() {
     </div>
   );
 }
-
