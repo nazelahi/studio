@@ -451,7 +451,7 @@ export function ContactsTab() {
                                       <ChevronDown className="h-4 w-4 shrink-0 opacity-50"/>
                                     </Button>
                                   </PopoverTrigger>
-                                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0" style={{ minWidth: '300px' }}>
+                                  <PopoverContent className="w-full p-0" style={{ minWidth: '300px' }}>
                                     <Command>
                                       <CommandInput placeholder="Search tenant..." />
                                       <CommandEmpty>No tenant found.</CommandEmpty>
@@ -633,7 +633,7 @@ export function ContactsTab() {
                         </div>
                       </div>
                       
-                      <DialogFooter className="p-6 bg-muted/50 border-t">
+                      <DialogFooter className="p-4 bg-muted/50 border-t">
                         <DialogClose asChild>
                           <Button variant="outline" disabled={isUploading}>Cancel</Button>
                         </DialogClose>
