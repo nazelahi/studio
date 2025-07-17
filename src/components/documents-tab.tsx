@@ -24,6 +24,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { cn } from "@/lib/utils"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table"
 
 
 export function DocumentsTab() {
@@ -178,55 +179,82 @@ export function DocumentsTab() {
   }, [allDocuments]);
 
 
-  const DocumentItem = ({ doc }: { doc: Document }) => (
-    <div className="flex items-center justify-between p-2 rounded-md hover:bg-muted/50 group">
-        <a href={doc.file_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 flex-1 min-w-0">
-            <div className="flex-shrink-0 w-10 h-10 rounded-md bg-muted flex items-center justify-center overflow-hidden">
-                {doc.file_type.startsWith('image/') ? (
-                    <img src={doc.file_url} alt={doc.file_name} className="h-full w-full object-cover" data-ai-hint="document" />
-                ) : (
-                    <FileText className="h-5 w-5 text-muted-foreground" />
+  const DocumentRow = ({ doc }: { doc: Document }) => (
+    <TableRow>
+        <TableCell>
+            <a href={doc.file_url} target="_blank" rel="noopener noreferrer">
+                 <div className="flex-shrink-0 w-10 h-10 rounded-md bg-muted flex items-center justify-center overflow-hidden">
+                    {doc.file_type.startsWith('image/') ? (
+                        <img src={doc.file_url} alt={doc.file_name} className="h-full w-full object-cover" data-ai-hint="document" />
+                    ) : (
+                        <FileText className="h-5 w-5 text-muted-foreground" />
+                    )}
+                </div>
+            </a>
+        </TableCell>
+        <TableCell>
+             <p className="text-sm font-medium" title={doc.description || doc.file_name}>
+                {doc.description || doc.file_name}
+            </p>
+            <p className="text-xs text-muted-foreground">{doc.file_name}</p>
+        </TableCell>
+        <TableCell className="hidden md:table-cell">
+           {(doc as any).isTenantDoc ? (
+            <Badge variant="secondary">Tenant Upload</Badge>
+           ) : (
+            <Badge variant="outline">{doc.category}</Badge>
+           )}
+        </TableCell>
+        <TableCell className="text-right">
+             <div className={cn("flex items-center justify-end gap-1", (doc as any).isTenantDoc && "opacity-0 group-hover:opacity-100 transition-opacity")}>
+                <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+                    <a href={doc.file_url} target="_blank" rel="noopener noreferrer" download={doc.file_name}>
+                        <Download className="h-4 w-4" />
+                    </a>
+                </Button>
+                {isAdmin && !(doc as any).isTenantDoc && (
+                    <>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => handleEdit(doc, e)}>
+                            <Edit className="h-4 w-4" />
+                        </Button>
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={(e) => e.stopPropagation()}>
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                    <AlertDialogDescription>This action will permanently delete the document "{doc.file_name}". This cannot be undone.</AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={(e) => handleDelete(e, doc)} disabled={isPending}>Delete</AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    </>
                 )}
             </div>
-            <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate" title={doc.description || doc.file_name}>
-                    {doc.description || doc.file_name}
-                </p>
-                <p className="text-xs text-muted-foreground truncate">{doc.file_name}</p>
-            </div>
-        </a>
-        <div className={cn("flex items-center gap-1", (doc as any).isTenantDoc && "opacity-0 group-hover:opacity-100 transition-opacity")}>
-            <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
-                <a href={doc.file_url} target="_blank" rel="noopener noreferrer" download={doc.file_name}>
-                    <Download className="h-4 w-4" />
-                </a>
-            </Button>
-            {isAdmin && !(doc as any).isTenantDoc && (
-                <>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => handleEdit(doc, e)}>
-                        <Edit className="h-4 w-4" />
-                    </Button>
-                    <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={(e) => e.stopPropagation()}>
-                                <Trash2 className="h-4 w-4" />
-                            </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent onClick={(e) => e.stopPropagation()}>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                <AlertDialogDescription>This action will permanently delete the document "{doc.file_name}". This cannot be undone.</AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={(e) => handleDelete(e, doc)} disabled={isPending}>Delete</AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
-                </>
-            )}
-        </div>
-    </div>
+        </TableCell>
+    </TableRow>
+  );
+
+  const DocumentTable = ({ docs }: { docs: Document[] }) => (
+    <Table>
+        <TableHeader>
+            <TableRow>
+                <TableHead className="w-16">Preview</TableHead>
+                <TableHead>File Description</TableHead>
+                <TableHead className="hidden md:table-cell">Category</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+        </TableHeader>
+        <TableBody>
+            {docs.map(doc => <DocumentRow key={doc.id} doc={doc} />)}
+        </TableBody>
+    </Table>
   );
 
 
@@ -345,18 +373,12 @@ export function DocumentsTab() {
                   </TabsList>
                   
                   <TabsContent value="all" className="mt-4 max-h-[500px] overflow-y-auto">
-                    <div className="space-y-1">
-                        {allDocuments.map(doc => <DocumentItem key={doc.id} doc={doc} />)}
-                    </div>
+                    <DocumentTable docs={allDocuments} />
                   </TabsContent>
 
                   {documentCategories.map(category => (
                     <TabsContent key={category} value={category} className="mt-4 max-h-[500px] overflow-y-auto">
-                        <div className="space-y-1">
-                            {allDocuments.filter(d => d.category === category).map(doc => (
-                                <DocumentItem key={doc.id} doc={doc} />
-                            ))}
-                        </div>
+                       <DocumentTable docs={allDocuments.filter(d => d.category === category)} />
                     </TabsContent>
                   ))}
 
@@ -379,7 +401,7 @@ export function DocumentsTab() {
                                         </CardContent>
                                     </Card>
                                 </DialogTrigger>
-                                <DialogContent className="max-w-2xl">
+                                <DialogContent className="max-w-3xl">
                                     <DialogHeader>
                                         <DialogTitle>Documents for {tenant.name}</DialogTitle>
                                         <DialogDescription>
@@ -387,9 +409,7 @@ export function DocumentsTab() {
                                         </DialogDescription>
                                     </DialogHeader>
                                     <div className="max-h-[60vh] overflow-y-auto pr-4 -mr-4">
-                                      <div className="space-y-1">
-                                          {tenant.docs.map(doc => <DocumentItem key={doc.id} doc={doc} />)}
-                                      </div>
+                                      <DocumentTable docs={tenant.docs} />
                                     </div>
                                     <DialogFooter>
                                         <DialogClose asChild>
