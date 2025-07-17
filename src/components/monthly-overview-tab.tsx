@@ -103,8 +103,7 @@ export function MonthlyOverviewTab() {
   const currentMonthIndex = new Date().getMonth();
   
   const [selectedYear, setSelectedYear] = React.useState(currentYear);
-  const [selectedMonth, setSelectedMonth] = React.useState(months[currentMonthIndex]);
-  const monthIndex = months.indexOf(selectedMonth);
+  const [selectedMonth, setSelectedMonth] = React.useState(currentMonthIndex);
 
   const years = Array.from({ length: 5 }, (_, i) => (currentYear - i));
 
@@ -155,7 +154,7 @@ export function MonthlyOverviewTab() {
 
 
   const filteredTenantsForMonth = React.useMemo(() => {
-    const tenantsForMonth = rentData.filter(entry => entry.year === selectedYear && entry.month === monthIndex);
+    const tenantsForMonth = rentData.filter(entry => entry.year === selectedYear && entry.month === selectedMonth);
     
     const extractNumber = (str: string) => {
         const match = str.match(/\d+/);
@@ -167,34 +166,34 @@ export function MonthlyOverviewTab() {
         const numB = extractNumber(b.property);
         return numA - numB;
     });
-  }, [rentData, monthIndex, selectedYear]);
+  }, [rentData, selectedMonth, selectedYear]);
 
   const filteredExpenses = React.useMemo(() => {
      return expenses.filter(expense => {
       if (!expense.date) return false;
       try {
         const expenseDate = new Date(expense.date);
-        return expenseDate.getFullYear() === selectedYear && expenseDate.getMonth() === monthIndex;
+        return expenseDate.getFullYear() === selectedYear && expenseDate.getMonth() === selectedMonth;
       } catch {
         return false;
       }
     });
-  }, [expenses, monthIndex, selectedYear]);
+  }, [expenses, selectedMonth, selectedYear]);
   
   const loggedDeposit = React.useMemo(() => {
-    return deposits.find(d => d.year === selectedYear && d.month === monthIndex);
-  }, [deposits, selectedYear, monthIndex]);
+    return deposits.find(d => d.year === selectedYear && d.month === selectedMonth);
+  }, [deposits, selectedYear, selectedMonth]);
 
   const monthlyNotice = React.useMemo(() => {
-    return notices.find(n => n.year === selectedYear && n.month === monthIndex);
-  }, [notices, selectedYear, monthIndex]);
+    return notices.find(n => n.year === selectedYear && n.month === selectedMonth);
+  }, [notices, selectedYear, selectedMonth]);
 
 
   // Clear selections when month or year changes
   React.useEffect(() => {
     setSelectedRentEntryIds([]);
     setSelectedExpenseIds([]);
-  }, [monthIndex, selectedYear]);
+  }, [selectedMonth, selectedYear]);
 
   const totalRentCollected = filteredTenantsForMonth
     .filter(t => t.status === 'Paid')
@@ -333,7 +332,7 @@ export function MonthlyOverviewTab() {
         await updateRentEntry({ ...editingRentEntry, ...rentEntryData }, toast);
         toast({ title: "Rent Entry Updated", description: "The entry has been successfully updated." });
     } else {
-        await addRentEntry(rentEntryData, selectedYear, monthIndex, toast);
+        await addRentEntry(rentEntryData, selectedYear, selectedMonth, toast);
         toast({ title: "Rent Entry Added", description: "The new entry has been successfully added." });
     }
 
@@ -344,11 +343,11 @@ export function MonthlyOverviewTab() {
 
     const handleSyncTenants = () => {
         startTenantSyncTransition(async () => {
-            const syncedCount = await syncTenantsForMonth(selectedYear, monthIndex, toast);
+            const syncedCount = await syncTenantsForMonth(selectedYear, selectedMonth, toast);
             if (syncedCount > 0) {
                 toast({
                     title: "Sync Complete",
-                    description: `${syncedCount} tenant(s) have been added to the rent roll for ${months[monthIndex]}.`,
+                    description: `${syncedCount} tenant(s) have been added to the rent roll for ${months[selectedMonth]}.`,
                 });
             } else {
                 toast({
@@ -535,9 +534,9 @@ export function MonthlyOverviewTab() {
           return;
         }
         
-        await addRentEntriesBatch(rentEntriesToCreate, selectedYear, monthIndex, toast);
+        await addRentEntriesBatch(rentEntriesToCreate, selectedYear, selectedMonth, toast);
 
-        toast({ title: "Import Successful", description: `${rentEntriesToCreate.length} entries have been added to ${selectedMonth}, ${selectedYear}.` });
+        toast({ title: "Import Successful", description: `${rentEntriesToCreate.length} entries have been added to ${months[selectedMonth]}, ${selectedYear}.` });
 
       } catch (error) {
         console.error("Error importing file:", error);
@@ -587,7 +586,7 @@ export function MonthlyOverviewTab() {
 
     if (receiptFile) {
         const fileExt = receiptFile.name.split('.').pop();
-        const filePath = `${selectedYear}-${monthIndex}/${Date.now()}.${fileExt}`;
+        const filePath = `${selectedYear}-${selectedMonth}/${Date.now()}.${fileExt}`;
         const { error: uploadError } = await supabase.storage
             .from('deposit-receipts')
             .upload(filePath, receiptFile);
@@ -662,7 +661,7 @@ export function MonthlyOverviewTab() {
   const handleSaveNotice = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
-    formData.set('month', monthIndex.toString());
+    formData.set('month', selectedMonth.toString());
 
     startNoticeTransition(async () => {
         const result = await saveNoticeAction(formData);
@@ -691,11 +690,11 @@ export function MonthlyOverviewTab() {
 
   const handleSyncExpenses = () => {
       startExpenseSyncTransition(async () => {
-        const syncedCount = await syncExpensesFromPreviousMonth(selectedYear, monthIndex, toast);
+        const syncedCount = await syncExpensesFromPreviousMonth(selectedYear, selectedMonth, toast);
         if (syncedCount > 0) {
             toast({
                 title: "Sync Complete",
-                description: `${syncedCount} expense(s) from the previous month have been copied to ${months[monthIndex]}.`,
+                description: `${syncedCount} expense(s) from the previous month have been copied to ${months[selectedMonth]}.`,
             });
         } else {
             toast({
@@ -766,7 +765,7 @@ export function MonthlyOverviewTab() {
                     }
                     else {
                         // Default to the first of the month if no date is provided or format is wrong
-                        date = formatDate(new Date(selectedYear, monthIndex, 1).toISOString(), 'yyyy-MM-dd');
+                        date = formatDate(new Date(selectedYear, selectedMonth, 1).toISOString(), 'yyyy-MM-dd');
                     }
                   
                     return {
@@ -783,7 +782,7 @@ export function MonthlyOverviewTab() {
                     return;
                 }
                 
-                await addRentEntriesBatch(expensesToCreate as any, selectedYear, monthIndex, toast);
+                await addRentEntriesBatch(expensesToCreate as any, selectedYear, selectedMonth, toast);
                 toast({ title: "Import Successful", description: `${expensesToCreate.length} expenses imported.` });
 
             } catch (error) {
@@ -797,12 +796,15 @@ export function MonthlyOverviewTab() {
     };
 
     const handleDesktopMonthChange = (monthName: string) => {
-        setSelectedMonth(monthName);
+        const monthIndex = months.indexOf(monthName);
+        if (monthIndex !== -1) {
+            setSelectedMonth(monthIndex);
+        }
     }
   
   return (
     <TooltipProvider>
-    <Tabs value={selectedMonth} onValueChange={handleDesktopMonthChange} className="w-full pt-4 md:pt-0">
+    <Tabs value={months[selectedMonth]} onValueChange={handleDesktopMonthChange} className="w-full pt-4 md:pt-0">
       
       {/* Desktop View: Tabs */}
       <div className="hidden md:flex gap-4 mb-4">
@@ -828,13 +830,13 @@ export function MonthlyOverviewTab() {
 
        {/* Mobile View: Selects */}
         <div className="md:hidden flex gap-2 mb-4">
-            <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+            <Select value={String(selectedMonth)} onValueChange={(v) => setSelectedMonth(Number(v))}>
               <SelectTrigger>
                 <SelectValue placeholder="Select Month" />
               </SelectTrigger>
               <SelectContent>
                 {months.map((m, i) => (
-                    <SelectItem key={i} value={m}>
+                    <SelectItem key={i} value={String(i)}>
                         {m}
                     </SelectItem>
                 ))}
@@ -852,7 +854,7 @@ export function MonthlyOverviewTab() {
               </Select>
         </div>
       
-      {months.map(month => (
+      {months.map((month, monthIndex) => (
         <TabsContent key={month} value={month}>
           <div className="mt-6">
             <Tabs defaultValue="rent-roll" className="w-full">
@@ -1490,12 +1492,12 @@ export function MonthlyOverviewTab() {
             <DialogHeader>
                 <DialogTitle>{loggedDeposit ? 'Edit Deposit' : 'Log New Deposit'}</DialogTitle>
                 <DialogDescription>
-                    Confirm the amount, date, and receipt for the deposit for {selectedMonth}, {selectedYear}.
+                    Confirm the amount, date, and receipt for the deposit for {months[selectedMonth]}, {selectedYear}.
                 </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSaveDeposit}>
                 <input type="hidden" name="year" value={selectedYear} />
-                <input type="hidden" name="month" value={monthIndex} />
+                <input type="hidden" name="month" value={selectedMonth} />
                 {loggedDeposit && <input type="hidden" name="depositId" value={loggedDeposit.id} />}
                 {loggedDeposit?.receipt_url && <input type="hidden" name="receipt_url" value={loggedDeposit.receipt_url} />}
                 <div className="grid gap-4 py-4">
@@ -1535,7 +1537,7 @@ export function MonthlyOverviewTab() {
                                     <AlertDialogHeader>
                                     <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                                     <AlertDialogDescription>
-                                        This will remove the deposit log and receipt for {selectedMonth}, {selectedYear}. This action cannot be undone.
+                                        This will remove the deposit log and receipt for {months[selectedMonth]}, {selectedYear}. This action cannot be undone.
                                     </AlertDialogDescription>
                                 </AlertDialogHeader>
                                     <AlertDialogFooter>

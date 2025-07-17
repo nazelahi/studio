@@ -27,6 +27,7 @@ const getSupabaseAdmin = () => {
 }
 
 export async function logDepositAction(formData: FormData) {
+  try {
     const supabaseAdmin = getSupabaseAdmin();
     
     const depositData = {
@@ -80,10 +81,14 @@ export async function logDepositAction(formData: FormData) {
     }
     
     return { success: true };
+  } catch (error: any) {
+    return { error: error.message };
+  }
 }
 
 
 export async function deleteDepositAction(formData: FormData) {
+  try {
     const supabaseAdmin = getSupabaseAdmin();
     const depositId = formData.get('depositId') as string;
 
@@ -119,4 +124,7 @@ export async function deleteDepositAction(formData: FormData) {
     }
     
     return { success: true };
+  } catch (error: any) {
+    return { error: error.message };
+  }
 }

@@ -26,6 +26,7 @@ const getSupabaseAdmin = () => {
 }
 
 export async function saveNoticeAction(formData: FormData) {
+  try {
     const supabaseAdmin = getSupabaseAdmin();
     
     const noticeData = {
@@ -59,10 +60,14 @@ export async function saveNoticeAction(formData: FormData) {
     }
     
     return { success: true };
+  } catch (error: any) {
+    return { error: error.message };
+  }
 }
 
 
 export async function deleteNoticeAction(formData: FormData) {
+  try {
     const supabaseAdmin = getSupabaseAdmin();
     const noticeId = formData.get('noticeId') as string;
 
@@ -81,4 +86,7 @@ export async function deleteNoticeAction(formData: FormData) {
     }
     
     return { success: true };
+  } catch(error: any) {
+    return { error: error.message };
+  }
 }

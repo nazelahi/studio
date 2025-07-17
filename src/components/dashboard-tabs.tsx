@@ -50,6 +50,7 @@ const ZakatTab = dynamic(() => import('@/components/zakat-tab').then(mod => mod.
 export default function DashboardTabs({ activeTab, onTabChange }: DashboardTabsProps) {
   const { settings } = useSettings();
   const { isAdmin } = useAuth();
+  const [currentYear] = React.useState(new Date().getFullYear());
 
   return (
     <div className="w-full">
@@ -72,13 +73,13 @@ export default function DashboardTabs({ activeTab, onTabChange }: DashboardTabsP
           {activeTab === 'contacts' && <ContactsTab />}
         </TabsContent>
         <TabsContent value="work">
-          {activeTab === 'work' && <WorkDetailsTab year={new Date().getFullYear()} />}
+          {activeTab === 'work' && <WorkDetailsTab year={currentYear} />}
         </TabsContent>
         <TabsContent value="documents">
             {activeTab === 'documents' && <DocumentsTab />}
         </TabsContent>
          <TabsContent value="reports">
-            {activeTab === 'reports' && <ReportsTab year={new Date().getFullYear()} />}
+            {activeTab === 'reports' && <ReportsTab year={currentYear} />}
         </TabsContent>
          <TabsContent value="zakat">
             {activeTab === 'zakat' && <ZakatTab />}
