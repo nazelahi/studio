@@ -40,13 +40,9 @@ export default function DashboardPageClient() {
   const { withProtection } = useProtection();
   const { setTheme } = useTheme();
 
-  const currentYear = new Date().getFullYear();
-  const [selectedYear, setSelectedYear] = React.useState(currentYear.toString());
   const [activeTab, setActiveTab] = React.useState("overview");
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
   const [isOwnerDialogOpen, setIsOwnerDialogOpen] = React.useState(false);
-
-  const years = Array.from({ length: 5 }, (_, i) => (currentYear - i).toString());
 
   const handleSignOut = async () => {
     await signOut();
@@ -260,12 +256,8 @@ export default function DashboardPageClient() {
       </header>
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8 pb-20 md:pb-8">
         <DashboardTabs
-          year={parseInt(selectedYear)}
           activeTab={activeTab}
           onTabChange={handleTabChange}
-          selectedYear={selectedYear}
-          onYearChange={setSelectedYear}
-          years={years}
         />
         <AppFooter />
       </main>

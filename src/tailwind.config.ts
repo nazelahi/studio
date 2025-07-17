@@ -87,8 +87,11 @@ export default {
           },
         },
         shimmer: {
-          '100%': {
-            transform: 'translateX(100%)',
+          "0%, 100%": {
+            "background-position": "-200% 0",
+          },
+          "50%": {
+            "background-position": "200% 0",
           },
         },
         spin: {
@@ -103,9 +106,15 @@ export default {
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
-        shimmer: 'shimmer 1.5s infinite',
+        shimmer: 'shimmer 2s ease-in-out infinite',
         spin: 'spin 1s linear infinite',
       },
+      backgroundImage: {
+         shimmer: "linear-gradient(110deg, hsl(var(--muted)) 8%, hsl(var(--secondary)) 18%, hsl(var(--muted)) 33%)",
+      },
+      backgroundSize: {
+        "200%": "200% 100%",
+      }
     },
   },
   plugins: [require('tailwindcss-animate')],

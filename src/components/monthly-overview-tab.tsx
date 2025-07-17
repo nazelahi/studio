@@ -98,17 +98,15 @@ const getExpenseStatusBadge = (status: Expense["status"]) => {
       : "bg-warning text-warning-foreground hover:bg-warning/80";
 };
 
-interface MonthlyOverviewTabProps {
-  year: number;
-  onYearChange: (year: string) => void;
-  years: string[];
-}
-
-
-export function MonthlyOverviewTab({ year, onYearChange, years }: MonthlyOverviewTabProps) {
-  const currentMonthIndex = year === new Date().getFullYear() ? new Date().getMonth() : 0;
+export function MonthlyOverviewTab() {
+  const currentYear = new Date().getFullYear();
+  const currentMonthIndex = new Date().getMonth();
+  
+  const [selectedYear, setSelectedYear] = React.useState(currentYear);
   const [selectedMonth, setSelectedMonth] = React.useState(months[currentMonthIndex]);
   const monthIndex = months.indexOf(selectedMonth);
+
+  const years = Array.from({ length: 5 }, (_, i) => (currentYear - i));
 
   const router = useRouter();
   const { isAdmin } = useAuth();
@@ -157,7 +155,7 @@ export function MonthlyOverviewTab({ year, onYearChange, years }: MonthlyOvervie
 
 
   const filteredTenantsForMonth = React.useMemo(() => {
-    const tenantsForMonth = rentData.filter(entry => entry.year === year && entry.month === monthIndex);
+    const tenantsForMonth = rentData.filter(entry => entry.year === selectedYear && entry.month === monthIndex);
     
     const extractNumber = (str: string) => {
         const match = str.match(/\d+/);
@@ -169,34 +167,34 @@ export function MonthlyOverviewTab({ year, onYearChange, years }: MonthlyOvervie
         const numB = extractNumber(b.property);
         return numA - numB;
     });
-  }, [rentData, monthIndex, year]);
+  }, [rentData, monthIndex, selectedYear]);
 
   const filteredExpenses = React.useMemo(() => {
      return expenses.filter(expense => {
       if (!expense.date) return false;
       try {
         const expenseDate = new Date(expense.date);
-        return expenseDate.getFullYear() === year && expenseDate.getMonth() === monthIndex;
+        return expenseDate.getFullYear() === selectedYear && expenseDate.getMonth() === monthIndex;
       } catch {
         return false;
       }
     });
-  }, [expenses, monthIndex, year]);
+  }, [expenses, monthIndex, selectedYear]);
   
   const loggedDeposit = React.useMemo(() => {
-    return deposits.find(d => d.year === year && d.month === monthIndex);
-  }, [deposits, year, monthIndex]);
+    return deposits.find(d => d.year === selectedYear && d.month === monthIndex);
+  }, [deposits, selectedYear, monthIndex]);
 
   const monthlyNotice = React.useMemo(() => {
-    return notices.find(n => n.year === year && n.month === monthIndex);
-  }, [notices, year, monthIndex]);
+    return notices.find(n => n.year === selectedYear && n.month === monthIndex);
+  }, [notices, selectedYear, monthIndex]);
 
 
   // Clear selections when month or year changes
   React.useEffect(() => {
     setSelectedRentEntryIds([]);
     setSelectedExpenseIds([]);
-  }, [monthIndex, year]);
+  }, [monthIndex, selectedYear]);
 
   const totalRentCollected = filteredTenantsForMonth
     .filter(t => t.status === 'Paid')
@@ -335,7 +333,7 @@ export function MonthlyOverviewTab({ year, onYearChange, years }: MonthlyOvervie
         await updateRentEntry({ ...editingRentEntry, ...rentEntryData }, toast);
         toast({ title: "Rent Entry Updated", description: "The entry has been successfully updated." });
     } else {
-        await addRentEntry(rentEntryData, year, monthIndex, toast);
+        await addRentEntry(rentEntryData, selectedYear, monthIndex, toast);
         toast({ title: "Rent Entry Added", description: "The new entry has been successfully added." });
     }
 
@@ -346,7 +344,7 @@ export function MonthlyOverviewTab({ year, onYearChange, years }: MonthlyOvervie
 
     const handleSyncTenants = () => {
         startTenantSyncTransition(async () => {
-            const syncedCount = await syncTenantsForMonth(year, monthIndex, toast);
+            const syncedCount = await syncTenantsForMonth(selectedYear, monthIndex, toast);
             if (syncedCount > 0) {
                 toast({
                     title: "Sync Complete",
@@ -537,9 +535,9 @@ export function MonthlyOverviewTab({ year, onYearChange, years }: MonthlyOvervie
           return;
         }
         
-        await addRentEntriesBatch(rentEntriesToCreate, year, monthIndex, toast);
+        await addRentEntriesBatch(rentEntriesToCreate, selectedYear, monthIndex, toast);
 
-        toast({ title: "Import Successful", description: `${rentEntriesToCreate.length} entries have been added to ${selectedMonth}, ${year}.` });
+        toast({ title: "Import Successful", description: `${rentEntriesToCreate.length} entries have been added to ${selectedMonth}, ${selectedYear}.` });
 
       } catch (error) {
         console.error("Error importing file:", error);
@@ -589,7 +587,7 @@ export function MonthlyOverviewTab({ year, onYearChange, years }: MonthlyOvervie
 
     if (receiptFile) {
         const fileExt = receiptFile.name.split('.').pop();
-        const filePath = `${year}-${monthIndex}/${Date.now()}.${fileExt}`;
+        const filePath = `${selectedYear}-${monthIndex}/${Date.now()}.${fileExt}`;
         const { error: uploadError } = await supabase.storage
             .from('deposit-receipts')
             .upload(filePath, receiptFile);
@@ -693,7 +691,7 @@ export function MonthlyOverviewTab({ year, onYearChange, years }: MonthlyOvervie
 
   const handleSyncExpenses = () => {
       startExpenseSyncTransition(async () => {
-        const syncedCount = await syncExpensesFromPreviousMonth(year, monthIndex, toast);
+        const syncedCount = await syncExpensesFromPreviousMonth(selectedYear, monthIndex, toast);
         if (syncedCount > 0) {
             toast({
                 title: "Sync Complete",
@@ -768,7 +766,7 @@ export function MonthlyOverviewTab({ year, onYearChange, years }: MonthlyOvervie
                     }
                     else {
                         // Default to the first of the month if no date is provided or format is wrong
-                        date = formatDate(new Date(year, monthIndex, 1).toISOString(), 'yyyy-MM-dd');
+                        date = formatDate(new Date(selectedYear, monthIndex, 1).toISOString(), 'yyyy-MM-dd');
                     }
                   
                     return {
@@ -785,7 +783,7 @@ export function MonthlyOverviewTab({ year, onYearChange, years }: MonthlyOvervie
                     return;
                 }
                 
-                await addRentEntriesBatch(expensesToCreate as any, year, monthIndex, toast);
+                await addRentEntriesBatch(expensesToCreate as any, selectedYear, monthIndex, toast);
                 toast({ title: "Import Successful", description: `${expensesToCreate.length} expenses imported.` });
 
             } catch (error) {
@@ -807,12 +805,25 @@ export function MonthlyOverviewTab({ year, onYearChange, years }: MonthlyOvervie
     <Tabs value={selectedMonth} onValueChange={handleDesktopMonthChange} className="w-full pt-4 md:pt-0">
       
       {/* Desktop View: Tabs */}
-      <div className="hidden md:block">
+      <div className="hidden md:flex gap-4 mb-4">
         <TabsList className="grid w-full grid-cols-12">
             {months.map(month => (
             <TabsTrigger key={month} value={month}>{month}</TabsTrigger>
             ))}
         </TabsList>
+         <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-muted-foreground">Year:</span>
+            <Select value={String(selectedYear)} onValueChange={(v) => setSelectedYear(Number(v))}>
+                <SelectTrigger className="w-[120px]">
+                  <SelectValue placeholder="Select Year" />
+                </SelectTrigger>
+                <SelectContent>
+                  {years.map(y => (
+                    <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+          </div>
       </div>
 
        {/* Mobile View: Selects */}
@@ -829,13 +840,13 @@ export function MonthlyOverviewTab({ year, onYearChange, years }: MonthlyOvervie
                 ))}
               </SelectContent>
             </Select>
-            <Select value={String(year)} onValueChange={onYearChange}>
+            <Select value={String(selectedYear)} onValueChange={(v) => setSelectedYear(Number(v))}>
                 <SelectTrigger className="w-[120px]">
                   <SelectValue placeholder="Select Year" />
                 </SelectTrigger>
                 <SelectContent>
                   {years.map(y => (
-                    <SelectItem key={y} value={y}>{y}</SelectItem>
+                    <SelectItem key={y} value={String(y)}>{y}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -853,8 +864,8 @@ export function MonthlyOverviewTab({ year, onYearChange, years }: MonthlyOvervie
                  <Card className="mt-4">
                   <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                      <div>
-                        <CardTitle>Rent Roll - {month} {year}</CardTitle>
-                        <CardDescription>Rent payment status for {month} {year}.</CardDescription>
+                        <CardTitle>Rent Roll - {month} {selectedYear}</CardTitle>
+                        <CardDescription>Rent payment status for {month} {selectedYear}.</CardDescription>
                     </div>
                      {isAdmin && (
                         <div className="flex flex-col sm:flex-row items-center gap-2">
@@ -891,11 +902,11 @@ export function MonthlyOverviewTab({ year, onYearChange, years }: MonthlyOvervie
                                     <DialogContent className="sm:max-w-xl">
                                         <DialogHeader>
                                             <DialogTitle>{editingRentEntry ? 'Edit Rent Entry' : 'Add New Rent Entry'}</DialogTitle>
-                                            <DialogDescription>Fill in the form to {editingRentEntry ? 'update the' : 'add a new'} rent entry for {month}, {year}.</DialogDescription>
+                                            <DialogDescription>Fill in the form to {editingRentEntry ? 'update the' : 'add a new'} rent entry for {month}, {selectedYear}.</DialogDescription>
                                         </DialogHeader>
                                         <form ref={formRef} onSubmit={handleSaveRentEntry} className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto pr-2">
                                             <input type="hidden" name="month" value={monthIndex} />
-                                            <input type="hidden" name="year" value={year} />
+                                            <input type="hidden" name="year" value={selectedYear} />
                                             {editingRentEntry && <input type="hidden" name="id" value={editingRentEntry.id} />}
                                             {!editingRentEntry && (
                                                 <div className="space-y-2">
@@ -1116,7 +1127,7 @@ export function MonthlyOverviewTab({ year, onYearChange, years }: MonthlyOvervie
                             ))
                           ) : (
                             <TableRow>
-                              <TableCell colSpan={isAdmin ? 7 : 6} className="text-center text-muted-foreground p-10">No rent collection data for {month} {year}.</TableCell>
+                              <TableCell colSpan={isAdmin ? 7 : 6} className="text-center text-muted-foreground p-10">No rent collection data for {month} {selectedYear}.</TableCell>
                             </TableRow>
                           )}
                         </TableBody>
@@ -1141,8 +1152,8 @@ export function MonthlyOverviewTab({ year, onYearChange, years }: MonthlyOvervie
                 <Card className="mt-4">
                   <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                     <div>
-                      <CardTitle>Expenses - {month} {year}</CardTitle>
-                      <CardDescription>Property-related expenses for {month} {year}.</CardDescription>
+                      <CardTitle>Expenses - {month} {selectedYear}</CardTitle>
+                      <CardDescription>Property-related expenses for {month} {selectedYear}.</CardDescription>
                     </div>
                     {isAdmin && 
                       <div className="flex flex-col sm:flex-row items-center gap-2">
@@ -1321,7 +1332,7 @@ export function MonthlyOverviewTab({ year, onYearChange, years }: MonthlyOvervie
                             <TableRow>
                                 <TableCell colSpan={isAdmin ? 6 : 5} className="h-24 text-center">
                                 <div className="flex flex-col items-center justify-center gap-2 text-muted-foreground">
-                                    <span>No expense data for {month} {year}.</span>
+                                    <span>No expense data for {month} {selectedYear}.</span>
                                 </div>
                                 </TableCell>
                             </TableRow>
@@ -1367,10 +1378,10 @@ export function MonthlyOverviewTab({ year, onYearChange, years }: MonthlyOvervie
                                     </DialogTrigger>
                                     <DialogContent>
                                         <DialogHeader>
-                                            <DialogTitle>{monthlyNotice ? "Edit" : "Add"} Notice for {month} {year}</DialogTitle>
+                                            <DialogTitle>{monthlyNotice ? "Edit" : "Add"} Notice for {month} {selectedYear}</DialogTitle>
                                         </DialogHeader>
                                         <form onSubmit={handleSaveNotice}>
-                                            <input type="hidden" name="year" value={year} />
+                                            <input type="hidden" name="year" value={selectedYear} />
                                             <input type="hidden" name="month" value={monthIndex} />
                                             {monthlyNotice && <input type="hidden" name="noticeId" value={monthlyNotice.id} />}
                                             <Textarea name="content" defaultValue={monthlyNotice?.content} rows={5} placeholder="Enter your notice here..."/>
@@ -1479,11 +1490,11 @@ export function MonthlyOverviewTab({ year, onYearChange, years }: MonthlyOvervie
             <DialogHeader>
                 <DialogTitle>{loggedDeposit ? 'Edit Deposit' : 'Log New Deposit'}</DialogTitle>
                 <DialogDescription>
-                    Confirm the amount, date, and receipt for the deposit for {selectedMonth}, {year}.
+                    Confirm the amount, date, and receipt for the deposit for {selectedMonth}, {selectedYear}.
                 </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleSaveDeposit}>
-                <input type="hidden" name="year" value={year} />
+                <input type="hidden" name="year" value={selectedYear} />
                 <input type="hidden" name="month" value={monthIndex} />
                 {loggedDeposit && <input type="hidden" name="depositId" value={loggedDeposit.id} />}
                 {loggedDeposit?.receipt_url && <input type="hidden" name="receipt_url" value={loggedDeposit.receipt_url} />}
@@ -1524,7 +1535,7 @@ export function MonthlyOverviewTab({ year, onYearChange, years }: MonthlyOvervie
                                     <AlertDialogHeader>
                                     <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                                     <AlertDialogDescription>
-                                        This will remove the deposit log and receipt for {selectedMonth}, {year}. This action cannot be undone.
+                                        This will remove the deposit log and receipt for {selectedMonth}, {selectedYear}. This action cannot be undone.
                                     </AlertDialogDescription>
                                 </AlertDialogHeader>
                                     <AlertDialogFooter>
