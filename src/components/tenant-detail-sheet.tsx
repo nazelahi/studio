@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import * as React from "react";
@@ -192,7 +191,7 @@ export function TenantDetailSheet({
           <div ref={sheetContentRef} className="p-6">
            <div className="relative -mx-6 -mt-6 bg-muted">
                 <a href={tenant.avatar} target="_blank" rel="noopener noreferrer" className="block">
-                  <img src={tenant.avatar} alt={tenant.name} className="w-full h-48 object-cover" data-ai-hint="person avatar" />
+                  <img src={tenant.avatar} alt={tenant.name} className="w-full h-48 object-contain" data-ai-hint="person avatar" />
                 </a>
                 <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent pointer-events-none" />
                 <div className="absolute bottom-0 left-0 p-6 pointer-events-none">
@@ -405,3 +404,5 @@ export function TenantDetailSheet({
     </>
   );
 }
+
+    
