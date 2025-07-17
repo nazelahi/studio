@@ -55,7 +55,6 @@ const ZakatTab = dynamic(() => import('@/components/zakat-tab').then(mod => mod.
 export default function DashboardTabs({ year, activeTab, onTabChange, selectedYear, onYearChange, years }: DashboardTabsProps) {
   const { settings } = useSettings();
   const { isAdmin } = useAuth();
-  const [selectedMonth, setSelectedMonth] = React.useState(new Date().getMonth());
 
   return (
     <div className="w-full">
@@ -69,49 +68,25 @@ export default function DashboardTabs({ year, activeTab, onTabChange, selectedYe
             <TabsTrigger value="reports">{settings.tabNames.reports}</TabsTrigger>
             <TabsTrigger value="zakat">{settings.tabNames.zakat}</TabsTrigger>
           </TabsList>
-          <div className="hidden md:flex items-center gap-2 ml-4">
-            <span className="text-sm font-medium text-muted-foreground">Year:</span>
-            <Select value={selectedYear} onValueChange={onYearChange}>
-                <SelectTrigger className="w-[120px]">
-                  <SelectValue placeholder="Select Year" />
-                </SelectTrigger>
-                <SelectContent>
-                  {years.map(y => (
-                    <SelectItem key={y} value={y}>{y}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-          </div>
+          {activeTab === 'overview' && (
+             <div className="hidden md:flex items-center gap-2 ml-4">
+                <span className="text-sm font-medium text-muted-foreground">Year:</span>
+                <Select value={selectedYear} onValueChange={onYearChange}>
+                    <SelectTrigger className="w-[120px]">
+                      <SelectValue placeholder="Select Year" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {years.map(y => (
+                        <SelectItem key={y} value={y}>{y}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+              </div>
+          )}
         </div>
-
-        <div className="md:hidden flex gap-2 mb-4">
-            <Select value={selectedMonth.toString()} onValueChange={(val) => setSelectedMonth(parseInt(val))}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select Month" />
-              </SelectTrigger>
-              <SelectContent>
-                {Array.from({ length: 12 }, (_, i) => (
-                    <SelectItem key={i} value={i.toString()}>
-                        {new Date(0, i).toLocaleString('default', { month: 'long' })}
-                    </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={selectedYear} onValueChange={onYearChange}>
-                <SelectTrigger className="w-[120px]">
-                  <SelectValue placeholder="Select Year" />
-                </SelectTrigger>
-                <SelectContent>
-                  {years.map(y => (
-                    <SelectItem key={y} value={y}>{y}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-        </div>
-
 
         <TabsContent value="overview">
-          {activeTab === 'overview' && <MonthlyOverviewTab year={year} mobileSelectedMonth={selectedMonth} />}
+          {activeTab === 'overview' && <MonthlyOverviewTab year={year} onYearChange={onYearChange} years={years} />}
         </TabsContent>
         <TabsContent value="contacts">
           {activeTab === 'contacts' && <ContactsTab />}

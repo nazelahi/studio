@@ -1,5 +1,4 @@
 
-
 "use client"
 
 import * as React from "react"
@@ -101,26 +100,17 @@ const getExpenseStatusBadge = (status: Expense["status"]) => {
 
 interface MonthlyOverviewTabProps {
   year: number;
-  mobileSelectedMonth: number;
+  onYearChange: (year: string) => void;
+  years: string[];
 }
 
 
-export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOverviewTabProps) {
+export function MonthlyOverviewTab({ year, onYearChange, years }: MonthlyOverviewTabProps) {
   const currentMonthIndex = year === new Date().getFullYear() ? new Date().getMonth() : 0;
-  const [desktopSelectedMonth, setDesktopSelectedMonth] = React.useState(months[currentMonthIndex]);
-  const [isMobile, setIsMobile] = React.useState(false);
-  const router = useRouter();
-
-  React.useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  const selectedMonth = isMobile ? months[mobileSelectedMonth] : desktopSelectedMonth;
+  const [selectedMonth, setSelectedMonth] = React.useState(months[currentMonthIndex]);
   const monthIndex = months.indexOf(selectedMonth);
 
+  const router = useRouter();
   const { isAdmin } = useAuth();
   const { settings } = useSettings();
   const { toast } = useToast();
@@ -808,9 +798,13 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
         reader.readAsArrayBuffer(file);
     };
 
+    const handleDesktopMonthChange = (monthName: string) => {
+        setSelectedMonth(monthName);
+    }
+  
   return (
     <TooltipProvider>
-    <Tabs value={desktopSelectedMonth} onValueChange={setDesktopSelectedMonth} className="w-full pt-4 md:pt-0">
+    <Tabs value={selectedMonth} onValueChange={handleDesktopMonthChange} className="w-full pt-4 md:pt-0">
       
       {/* Desktop View: Tabs */}
       <div className="hidden md:block">
@@ -820,6 +814,32 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
             ))}
         </TabsList>
       </div>
+
+       {/* Mobile View: Selects */}
+        <div className="md:hidden flex gap-2 mb-4">
+            <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select Month" />
+              </SelectTrigger>
+              <SelectContent>
+                {months.map((m, i) => (
+                    <SelectItem key={i} value={m}>
+                        {m}
+                    </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={String(year)} onValueChange={onYearChange}>
+                <SelectTrigger className="w-[120px]">
+                  <SelectValue placeholder="Select Year" />
+                </SelectTrigger>
+                <SelectContent>
+                  {years.map(y => (
+                    <SelectItem key={y} value={y}>{y}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+        </div>
       
       {months.map(month => (
         <TabsContent key={month} value={month}>
