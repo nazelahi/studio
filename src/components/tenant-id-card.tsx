@@ -3,12 +3,12 @@
 
 import React from 'react';
 import type { Tenant } from '@/types';
-import { format, parseISO } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Logo } from './icons';
 import { useSettings } from '@/context/settings-context';
 import { Building, Cake, DollarSign, Home, User, UserCircle, MapPin, Calendar, CreditCard, Flame, Zap } from 'lucide-react';
 import { Separator } from './ui/separator';
+import { formatDate } from '@/lib/utils';
 
 interface TenantIdCardProps {
   tenant: Tenant;
@@ -64,8 +64,8 @@ export const TenantIdCard: React.FC<TenantIdCardProps> = ({ tenant, innerRef }) 
         <div className="grid grid-cols-2 gap-x-4 gap-y-3">
             <InfoRow icon={User} label="Father's Name" value={tenant.father_name} />
             <InfoRow icon={Home} label="Apartment/Unit" value={tenant.property} />
-            <InfoRow icon={DollarSign} label="Monthly Rent" value={`৳${tenant.rent.toFixed(2)}`} />
-            <InfoRow icon={Calendar} label="Join Date" value={tenant.join_date ? format(parseISO(tenant.join_date), 'dd MMM, yyyy') : undefined} />
+            <InfoRow icon={DollarSign} label="Monthly Rent" value={`${settings.currencySymbol}${tenant.rent.toFixed(2)}`} />
+            <InfoRow icon={Calendar} label="Join Date" value={formatDate(tenant.join_date, settings.dateFormat)} />
             <InfoRow icon={Zap} label="Electric Meter #" value={tenant.electric_meter_number} />
             <InfoRow icon={Flame} label="Gas Meter #" value={tenant.gas_meter_number} />
             <div className="col-span-2">

@@ -13,15 +13,10 @@ import jsPDF from "jspdf"
 import html2canvas from "html2canvas"
 import { useToast } from "@/hooks/use-toast"
 import { type RentEntry, type Tenant } from "@/types"
-import { format, parseISO } from "date-fns"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
 import { Logo } from "@/components/icons"
-
-const formatCurrency = (amount?: number) => {
-    if (amount === undefined || amount === null) return '-';
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'BDT' }).format(amount).replace('BDT', '৳');
-};
+import { formatCurrency, formatDate } from "@/lib/utils"
 
 function ReceiptPageContent() {
     const { getRentEntryById, tenants } = useData()
@@ -193,16 +188,16 @@ function ReceiptPageContent() {
                             <TableBody>
                                 <TableRow>
                                     <TableCell>
-                                        <div className="font-medium">Rent for {format(parseISO(rentEntry.due_date), 'MMMM yyyy')}</div>
+                                        <div className="font-medium">Rent for {formatDate(rentEntry.due_date, 'MMMM yyyy')}</div>
                                         <div className="text-sm text-muted-foreground">Apartment/Unit: {rentEntry.property}</div>
                                     </TableCell>
-                                    <TableCell className="text-right font-medium">{formatCurrency(rentEntry.rent)}</TableCell>
+                                    <TableCell className="text-right font-medium">{formatCurrency(rentEntry.rent, settings.currencySymbol)}</TableCell>
                                 </TableRow>
                             </TableBody>
                             <TableFooter>
                                 <TableRow className="font-bold bg-muted/50">
                                     <TableCell>Total Amount</TableCell>
-                                    <TableCell className="text-right">{formatCurrency(rentEntry.rent)}</TableCell>
+                                    <TableCell className="text-right">{formatCurrency(rentEntry.rent, settings.currencySymbol)}</TableCell>
                                 </TableRow>
                             </TableFooter>
                         </Table>
@@ -213,7 +208,7 @@ function ReceiptPageContent() {
                             <CardContent className="p-4 grid grid-cols-2 gap-4">
                                 <div className="space-y-1">
                                     <p className="text-sm text-muted-foreground">Payment Date</p>
-                                    <p className="font-semibold">{rentEntry.payment_date ? format(parseISO(rentEntry.payment_date), 'MMMM dd, yyyy') : 'N/A'}</p>
+                                    <p className="font-semibold">{formatDate(rentEntry.payment_date, settings.dateFormat)}</p>
                                 </div>
                                 <div className="space-y-1">
                                     <p className="text-sm text-muted-foreground">Payment Method</p>

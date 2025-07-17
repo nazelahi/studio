@@ -21,7 +21,6 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { TenantDetailSheet } from "./tenant-detail-sheet"
 import { useAuth } from "@/context/auth-context"
 import { useSettings } from "@/context/settings-context"
-import { format, parseISO } from "date-fns"
 import { Badge } from "./ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
 import { useProtection } from "@/context/protection-context"
@@ -31,12 +30,7 @@ import { Separator } from "./ui/separator"
 import { updatePropertySettingsAction } from "@/app/settings/actions"
 import { Table, TableBody, TableCell, TableRow, TableHeader, TableHead } from "./ui/table"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
-
-
-const formatCurrency = (amount?: number) => {
-  if (amount === undefined || amount === null) return '-';
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'BDT' }).format(amount).replace('BDT', '৳');
-};
+import { formatCurrency } from "@/lib/utils"
 
 const predefinedApartments = [
   'Flat-1A', 'Flat-1B', 'Flat-2A', 'Flat-2B', 'Flat-3A', 'Flat-3B',
@@ -477,7 +471,7 @@ export function ContactsTab() {
                                                 </Avatar>
                                                 <div className="flex-1">
                                                   <div className="font-medium">{tenant.name}</div>
-                                                  <div className="text-xs text-muted-foreground">{tenant.property} &middot; ৳{tenant.rent}</div>
+                                                  <div className="text-xs text-muted-foreground">{tenant.property} &middot; {formatCurrency(tenant.rent, settings.currencySymbol)}</div>
                                                 </div>
                                               </div>
                                               <div className="flex items-center gap-1 text-xs text-muted-foreground ml-4 pointer-events-none">
@@ -718,7 +712,7 @@ export function ContactsTab() {
                             </div>
                             <div className="flex items-center gap-3">
                                 <Wallet className="h-4 w-4 text-muted-foreground" />
-                                <span className="font-medium">{formatCurrency(tenant.rent)} <span className="text-muted-foreground">/ month</span></span>
+                                <span className="font-medium">{formatCurrency(tenant.rent, settings.currencySymbol)} <span className="text-muted-foreground">/ month</span></span>
                             </div>
                              <div className="flex items-center gap-3">
                                 <Badge variant="secondary" className={cn("mt-2", getStatusBadge(tenant.status))}>{tenant.status}</Badge>
@@ -756,7 +750,7 @@ export function ContactsTab() {
                                     </TableCell>
                                     <TableCell className="p-2">
                                         <div className="font-medium">{tenant.property}</div>
-                                        <div className="text-xs text-muted-foreground">{formatCurrency(tenant.rent)}</div>
+                                        <div className="text-xs text-muted-foreground">{formatCurrency(tenant.rent, settings.currencySymbol)}</div>
                                     </TableCell>
                                      <TableCell className="p-2">
                                         <Badge variant="secondary" className={getStatusBadge(tenant.status)}>{tenant.status}</Badge>

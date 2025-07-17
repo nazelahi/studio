@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton"
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, TooltipProps } from 'recharts';
 import { Badge } from "./ui/badge"
-import { format, parseISO } from "date-fns"
+import { format as formatDateLib, parseISO } from "date-fns"
 import type { Tenant, RentEntry, Expense } from "@/types"
 import { Button } from "./ui/button"
 import { Download, Printer, FileText, DollarSign, TrendingDown, Calculator, Landmark } from "lucide-react"
@@ -19,6 +19,8 @@ import jsPDF from "jspdf"
 import html2canvas from "html2canvas"
 import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
+import { useSettings } from "@/context/settings-context"
+import { formatCurrency, formatDate } from "@/lib/utils"
 
 const months = [
     "January", "February", "March", "April", "May", "June", 
@@ -37,16 +39,11 @@ const getStatusBadge = (status: RentEntry["status"]) => {
     }
 };
 
-const formatCurrency = (amount?: number) => {
-  if (amount === undefined || amount === null) return '-';
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'BDT' }).format(amount).replace('BDT', '৳');
-}
-
-const CustomTooltip = ({ active, payload }: TooltipProps<number, string>) => {
+const CustomTooltip = ({ active, payload, label, settings }: TooltipProps<number, string> & { settings: any }) => {
     if (active && payload && payload.length) {
       return (
         <div className="p-2 text-sm bg-background/80 backdrop-blur-sm border rounded-md shadow-lg">
-          <p className="font-bold">{`${payload[0].name}: ${formatCurrency(payload[0].value)}`}</p>
+          <p className="font-bold">{`${payload[0].name}: ${formatCurrency(payload[0].value, settings.currencySymbol)}`}</p>
         </div>
       );
     }
@@ -55,6 +52,7 @@ const CustomTooltip = ({ active, payload }: TooltipProps<number, string>) => {
 
 export function ReportsTab({ year }: { year: number }) {
   const { rentData, expenses, tenants, loading } = useData();
+  const { settings } = useSettings();
   const [reportType, setReportType] = React.useState("monthly");
   const [selectedTenant, setSelectedTenant] = React.useState<string | null>(null);
   const [selectedMonth, setSelectedMonth] = React.useState<number>(new Date().getMonth());
@@ -169,19 +167,19 @@ export function ReportsTab({ year }: { year: number }) {
                         <Card className="bg-green-50 border-green-200 dark:bg-green-900/20 dark:border-green-800/50">
                             <CardContent className="p-4 flex justify-between items-center">
                                 <span className="font-medium text-green-600 dark:text-green-400">Total Income</span>
-                                <span className="font-bold text-xl text-green-700 dark:text-green-300">{formatCurrency(yearlySummary.income)}</span>
+                                <span className="font-bold text-xl text-green-700 dark:text-green-300">{formatCurrency(yearlySummary.income, settings.currencySymbol)}</span>
                             </CardContent>
                         </Card>
                          <Card className="bg-red-50 border-red-200 dark:bg-red-900/20 dark:border-red-800/50">
                             <CardContent className="p-4 flex justify-between items-center">
                                 <span className="font-medium text-red-600 dark:text-red-400">Total Expenses</span>
-                                <span className="font-bold text-xl text-red-700 dark:text-red-300">{formatCurrency(yearlySummary.expenses)}</span>
+                                <span className="font-bold text-xl text-red-700 dark:text-red-300">{formatCurrency(yearlySummary.expenses, settings.currencySymbol)}</span>
                             </CardContent>
                         </Card>
                         <Card>
                             <CardContent className="p-4 flex justify-between items-center">
                                 <span className="font-medium">Net Profit</span>
-                                <span className={`font-bold text-xl ${yearlySummary.net >= 0 ? 'text-primary' : 'text-destructive'}`}>{formatCurrency(yearlySummary.net)}</span>
+                                <span className={`font-bold text-xl ${yearlySummary.net >= 0 ? 'text-primary' : 'text-destructive'}`}>{formatCurrency(yearlySummary.net, settings.currencySymbol)}</span>
                             </CardContent>
                         </Card>
                      </div>
@@ -192,7 +190,7 @@ export function ReportsTab({ year }: { year: number }) {
                                     <Cell fill="hsl(var(--chart-1))" />
                                     <Cell fill="hsl(var(--destructive))" />
                                 </Pie>
-                                <Tooltip content={<CustomTooltip />} />
+                                <Tooltip content={<CustomTooltip settings={settings} />} />
                             </PieChart>
                         </ResponsiveContainer>
                     </div>
@@ -207,10 +205,10 @@ export function ReportsTab({ year }: { year: number }) {
                         <h2 className="text-xl font-bold">Financial Report - {months[selectedMonth]} {year}</h2>
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">Total Rent Collected</p><div className="flex items-center gap-2"><DollarSign className="h-5 w-5 text-green-500"/><p className="text-xl font-bold text-green-600">{formatCurrency(monthlySummary.income)}</p></div></CardContent></Card>
-                        <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">Total Expenses</p><div className="flex items-center gap-2"><TrendingDown className="h-5 w-5 text-red-500"/><p className="text-xl font-bold text-red-600">{formatCurrency(monthlySummary.expenses)}</p></div></CardContent></Card>
-                        <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">Net Amount</p><div className="flex items-center gap-2"><Calculator className="h-5 w-5 text-blue-500"/><p className={`text-xl font-bold ${monthlySummary.net >=0 ? 'text-blue-600':'text-red-600'}`}>{monthlySummary.net >= 0 ? '+' : ''}{formatCurrency(monthlySummary.net)}</p></div></CardContent></Card>
-                        <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">Available for Deposit</p><div className="flex items-center gap-2"><Landmark className="h-5 w-5 text-purple-500"/><p className="text-xl font-bold text-purple-600">{formatCurrency(monthlySummary.deposit)}</p></div></CardContent></Card>
+                        <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">Total Rent Collected</p><div className="flex items-center gap-2"><DollarSign className="h-5 w-5 text-green-500"/><p className="text-xl font-bold text-green-600">{formatCurrency(monthlySummary.income, settings.currencySymbol)}</p></div></CardContent></Card>
+                        <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">Total Expenses</p><div className="flex items-center gap-2"><TrendingDown className="h-5 w-5 text-red-500"/><p className="text-xl font-bold text-red-600">{formatCurrency(monthlySummary.expenses, settings.currencySymbol)}</p></div></CardContent></Card>
+                        <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">Net Amount</p><div className="flex items-center gap-2"><Calculator className="h-5 w-5 text-blue-500"/><p className={`text-xl font-bold ${monthlySummary.net >=0 ? 'text-blue-600':'text-red-600'}`}>{monthlySummary.net >= 0 ? '+' : ''}{formatCurrency(monthlySummary.net, settings.currencySymbol)}</p></div></CardContent></Card>
+                        <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">Available for Deposit</p><div className="flex items-center gap-2"><Landmark className="h-5 w-5 text-purple-500"/><p className="text-xl font-bold text-purple-600">{formatCurrency(monthlySummary.deposit, settings.currencySymbol)}</p></div></CardContent></Card>
                     </div>
                     <div className="grid md:grid-cols-2 gap-6">
                         <Card>
@@ -219,9 +217,9 @@ export function ReportsTab({ year }: { year: number }) {
                                 <Table>
                                     <TableHeader><TableRow><TableHead>Tenant</TableHead><TableHead>Flat</TableHead><TableHead className="text-right">Amount</TableHead></TableRow></TableHeader>
                                     <TableBody>
-                                        {monthlyRentCollections.map(r => <TableRow key={r.id}><TableCell>{r.name}</TableCell><TableCell><Badge variant="outline">{r.property}</Badge></TableCell><TableCell className="text-right font-medium">{r.status === "Paid" ? formatCurrency(r.rent) : "-"}</TableCell></TableRow>)}
+                                        {monthlyRentCollections.map(r => <TableRow key={r.id}><TableCell>{r.name}</TableCell><TableCell><Badge variant="outline">{r.property}</Badge></TableCell><TableCell className="text-right font-medium">{r.status === "Paid" ? formatCurrency(r.rent, settings.currencySymbol) : "-"}</TableCell></TableRow>)}
                                     </TableBody>
-                                    <TableFooter><TableRow><TableCell colSpan={2} className="font-bold">Total Collected:</TableCell><TableCell className="text-right font-bold">{formatCurrency(monthlySummary.income)}</TableCell></TableRow></TableFooter>
+                                    <TableFooter><TableRow><TableCell colSpan={2} className="font-bold">Total Collected:</TableCell><TableCell className="text-right font-bold">{formatCurrency(monthlySummary.income, settings.currencySymbol)}</TableCell></TableRow></TableFooter>
                                 </Table>
                             </CardContent>
                         </Card>
@@ -231,9 +229,9 @@ export function ReportsTab({ year }: { year: number }) {
                                  <Table>
                                     <TableHeader><TableRow><TableHead>Description</TableHead><TableHead className="text-right">Amount</TableHead></TableRow></TableHeader>
                                     <TableBody>
-                                        {monthlyExpenses.map(e => <TableRow key={e.id}><TableCell>{e.description || e.category}</TableCell><TableCell className="text-right font-medium text-red-600">{formatCurrency(e.amount)}</TableCell></TableRow>)}
+                                        {monthlyExpenses.map(e => <TableRow key={e.id}><TableCell>{e.description || e.category}</TableCell><TableCell className="text-right font-medium text-red-600">{formatCurrency(e.amount, settings.currencySymbol)}</TableCell></TableRow>)}
                                     </TableBody>
-                                    <TableFooter><TableRow><TableCell className="font-bold">Total Expenses:</TableCell><TableCell className="text-right font-bold text-red-600">{formatCurrency(monthlySummary.expenses)}</TableCell></TableRow></TableFooter>
+                                    <TableFooter><TableRow><TableCell className="font-bold">Total Expenses:</TableCell><TableCell className="text-right font-bold text-red-600">{formatCurrency(monthlySummary.expenses, settings.currencySymbol)}</TableCell></TableRow></TableFooter>
                                 </Table>
                                 {monthlyExpenseChartData.length > 0 && (
                                     <div className="h-48 mt-4">
@@ -242,7 +240,7 @@ export function ReportsTab({ year }: { year: number }) {
                                                 <Pie data={monthlyExpenseChartData} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={40} outerRadius={70} paddingAngle={5}>
                                                     {monthlyExpenseChartData.map((entry, index) => <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />)}
                                                 </Pie>
-                                                 <Tooltip content={<CustomTooltip />} />
+                                                 <Tooltip content={<CustomTooltip settings={settings} />} />
                                             </PieChart>
                                         </ResponsiveContainer>
                                     </div>
@@ -275,10 +273,10 @@ export function ReportsTab({ year }: { year: number }) {
                               {tenantReportData.length > 0 ? tenantReportData.map(entry => (
                                 <TableRow key={entry.id}>
                                   <TableCell className="font-medium">{months[entry.month]} {entry.year}</TableCell>
-                                  <TableCell className="hidden sm:table-cell">{format(parseISO(entry.due_date), "dd MMM yyyy")}</TableCell>
-                                  <TableCell className="hidden md:table-cell">{entry.payment_date ? format(parseISO(entry.payment_date), "dd MMM yyyy") : 'N/A'}</TableCell>
+                                  <TableCell className="hidden sm:table-cell">{formatDate(entry.due_date, settings.dateFormat)}</TableCell>
+                                  <TableCell className="hidden md:table-cell">{formatDate(entry.payment_date, settings.dateFormat)}</TableCell>
                                   <TableCell><Badge className={getStatusBadge(entry.status)}>{entry.status}</Badge></TableCell>
-                                  <TableCell className="text-right">{formatCurrency(entry.rent)}</TableCell>
+                                  <TableCell className="text-right">{formatCurrency(entry.rent, settings.currencySymbol)}</TableCell>
                                 </TableRow>
                               )) : (
                                 <TableRow>

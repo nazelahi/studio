@@ -14,14 +14,12 @@ import html2canvas from "html2canvas"
 import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
-
-const formatCurrency = (amount?: number) => {
-    if (amount === undefined || amount === null) return '-';
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'BDT' }).format(amount).replace('BDT', '৳');
-};
+import { useSettings } from "@/context/settings-context"
+import { formatCurrency } from "@/lib/utils"
 
 export default function WorkReportPage() {
     const { workDetails, loading } = useData()
+    const { settings } = useSettings();
     const router = useRouter()
     const reportContentRef = React.useRef<HTMLDivElement>(null);
     const { toast } = useToast();
@@ -102,14 +100,14 @@ export default function WorkReportPage() {
                                         return (
                                         <TableRow key={work.id}>
                                             <TableCell className="font-medium">{work.title}</TableCell>
-                                            <TableCell className="hidden sm:table-cell">{formatCurrency(work.product_cost)}</TableCell>
-                                            <TableCell className="hidden sm:table-cell">{formatCurrency(work.worker_cost)}</TableCell>
+                                            <TableCell className="hidden sm:table-cell">{formatCurrency(work.product_cost, settings.currencySymbol)}</TableCell>
+                                            <TableCell className="hidden sm:table-cell">{formatCurrency(work.worker_cost, settings.currencySymbol)}</TableCell>
                                             <TableCell>
                                                 <div className={cn("p-2 rounded-md text-center", isCompleted ? 'bg-green-200' : 'bg-transparent')}>
                                                 {isCompleted ? 'Paid' : work.status}
                                                 </div>
                                             </TableCell>
-                                            <TableCell className="text-right font-bold">{formatCurrency(totalCost)}</TableCell>
+                                            <TableCell className="text-right font-bold">{formatCurrency(totalCost, settings.currencySymbol)}</TableCell>
                                         </TableRow>
                                         )
                                     })
@@ -128,7 +126,7 @@ export default function WorkReportPage() {
                                               <div className="flex flex-col sm:flex-row items-center justify-between px-2">
                                                 <div className="sm:hidden text-center text-inherit font-bold">Grand Total</div>
                                                 <div className="hidden sm:block text-left text-inherit font-bold">Grand Total</div>
-                                                <div className="text-inherit font-bold">{formatCurrency(grandTotal)}</div>
+                                                <div className="text-inherit font-bold">{formatCurrency(grandTotal, settings.currencySymbol)}</div>
                                                </div>
                                             </TableCell>
                                         </TableRow>

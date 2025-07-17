@@ -9,7 +9,6 @@ import { Button } from "@/components/ui/button"
 import { PlusCircle, Edit, Trash2, ArrowUpCircle, ArrowDownCircle, Banknote, LoaderCircle, Settings, Landmark, Eye, Upload, ImageIcon, MapPin } from "lucide-react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter as UiTableFooter } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { format, parseISO, getYear } from "date-fns"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/context/auth-context"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog"
@@ -24,10 +23,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs"
 import { useSettings } from "@/context/settings-context"
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarImage, AvatarFallback } from "./ui/avatar"
-
-const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'BDT' }).format(amount).replace('BDT', '৳');
-};
+import { formatCurrency, formatDate } from "@/lib/utils"
 
 export function ZakatTab() {
   const { zakatTransactions, loading } = useData();
@@ -181,8 +177,8 @@ export function ZakatTab() {
   const totalOutflow = zakatTransactions.filter(t => t.type === 'outflow').reduce((acc, curr) => acc + curr.amount, 0);
   const availableZakat = totalInflow - totalOutflow;
   
-  const inflowTransactions = zakatTransactions.filter(t => t.type === 'inflow').sort((a,b) => parseISO(b.transaction_date).getTime() - parseISO(a.transaction_date).getTime());
-  const outflowTransactions = zakatTransactions.filter(t => t.type === 'outflow').sort((a,b) => parseISO(b.transaction_date).getTime() - parseISO(a.transaction_date).getTime());
+  const inflowTransactions = zakatTransactions.filter(t => t.type === 'inflow').sort((a,b) => new Date(b.transaction_date).getTime() - new Date(a.transaction_date).getTime());
+  const outflowTransactions = zakatTransactions.filter(t => t.type === 'outflow').sort((a,b) => new Date(b.transaction_date).getTime() - new Date(a.transaction_date).getTime());
 
 
   if (loading) {
@@ -212,11 +208,11 @@ export function ZakatTab() {
           {transactions.length > 0 ? (
             transactions.map(tx => (
               <TableRow key={tx.id} className={cn(type === 'inflow' ? 'bg-green-50/50' : 'bg-red-50/50')}>
-                <TableCell>{format(parseISO(tx.transaction_date), "dd MMM, yyyy")}</TableCell>
+                <TableCell>{formatDate(tx.transaction_date, settings.dateFormat)}</TableCell>
                 <TableCell className="font-medium">{tx.source_or_recipient}</TableCell>
                 <TableCell className="text-muted-foreground hidden sm:table-cell">{tx.description || '-'}</TableCell>
                 <TableCell className={`text-right font-bold ${tx.type === 'inflow' ? 'text-green-600' : 'text-red-600'}`}>
-                  {formatCurrency(tx.amount)}
+                  {formatCurrency(tx.amount, settings.currencySymbol)}
                 </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-1">
@@ -274,7 +270,7 @@ export function ZakatTab() {
                         <div className="flex flex-col sm:flex-row items-center justify-between px-2">
                           <div className="sm:hidden text-center text-inherit font-bold">Total</div>
                           <div className="hidden sm:block text-left text-inherit font-bold">Total</div>
-                          <div className="text-inherit font-bold">{formatCurrency(totalAmount)}</div>
+                          <div className="text-inherit font-bold">{formatCurrency(totalAmount, settings.currencySymbol)}</div>
                         </div>
                     </TableCell>
                 </TableRow>
@@ -297,21 +293,21 @@ export function ZakatTab() {
                     <ArrowUpCircle className="h-5 w-5"/>
                     <h4 className="font-semibold">Total Inflow</h4>
                 </div>
-                <p className="text-2xl font-bold text-green-800 mt-2">{formatCurrency(totalInflow)}</p>
+                <p className="text-2xl font-bold text-green-800 mt-2">{formatCurrency(totalInflow, settings.currencySymbol)}</p>
             </div>
              <div className="p-4 bg-red-50 rounded-lg border border-red-200">
                 <div className="flex items-center gap-2 text-red-700">
                     <ArrowDownCircle className="h-5 w-5"/>
                     <h4 className="font-semibold">Total Outflow</h4>
                 </div>
-                <p className="text-2xl font-bold text-red-800 mt-2">{formatCurrency(totalOutflow)}</p>
+                <p className="text-2xl font-bold text-red-800 mt-2">{formatCurrency(totalOutflow, settings.currencySymbol)}</p>
             </div>
             <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
                 <div className="flex items-center gap-2 text-blue-700">
                     <Banknote className="h-5 w-5"/>
                     <h4 className="font-semibold">Available Zakat</h4>
                 </div>
-                <p className="text-2xl font-bold text-blue-800 mt-2">{formatCurrency(availableZakat)}</p>
+                <p className="text-2xl font-bold text-blue-800 mt-2">{formatCurrency(availableZakat, settings.currencySymbol)}</p>
             </div>
         </CardContent>
       </Card>
@@ -441,7 +437,7 @@ export function ZakatTab() {
                         <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto pr-2">
                             <div className="space-y-2">
                                 <Label htmlFor="transaction_date">Date</Label>
-                                <Input id="transaction_date" name="transaction_date" type="date" defaultValue={editingTransaction?.transaction_date ? format(parseISO(editingTransaction.transaction_date), 'yyyy-MM-dd') : new Date().toISOString().split('T')[0]} required />
+                                <Input id="transaction_date" name="transaction_date" type="date" defaultValue={editingTransaction?.transaction_date ? formatDate(editingTransaction.transaction_date, 'yyyy-MM-dd') : formatDate(new Date().toISOString(), 'yyyy-MM-dd')} required />
                             </div>
                              <div className="space-y-2">
                                 <Label htmlFor="amount">Amount</Label>

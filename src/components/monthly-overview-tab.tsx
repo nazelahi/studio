@@ -16,7 +16,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
-import { format, parseISO } from "date-fns"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "./ui/alert-dialog"
 import { useData } from "@/context/data-context"
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover"
@@ -36,7 +35,7 @@ import { cn } from "@/lib/utils"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip"
 import { useProtection } from "@/context/protection-context"
 import { Separator } from "./ui/separator"
-
+import { formatCurrency, formatDate } from "@/lib/utils"
 
 type HistoricalTenant = {
     id: string;
@@ -54,11 +53,6 @@ const months = [
 ];
 
 const expenseCategories = ["Maintenance", "Repairs", "Utilities", "Insurance", "Taxes", "Management Fee", "Other"];
-
-const formatCurrency = (amount?: number) => {
-  if (amount === undefined || amount === null) return '-';
-  return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'BDT' }).format(amount).replace('BDT', '৳');
-};
 
 const getStatusBadge = (status: RentEntry["status"]) => {
     switch (status) {
@@ -189,10 +183,8 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
      return expenses.filter(expense => {
       if (!expense.date) return false;
       try {
-        // Correctly parse 'YYYY-MM-DD' as UTC
-        const dateParts = expense.date.split('-').map(Number);
-        const expenseDate = new Date(Date.UTC(dateParts[0], dateParts[1] - 1, dateParts[2]));
-        return expenseDate.getUTCFullYear() === year && expenseDate.getUTCMonth() === monthIndex;
+        const expenseDate = new Date(expense.date);
+        return expenseDate.getFullYear() === year && expenseDate.getMonth() === monthIndex;
       } catch {
         return false;
       }
@@ -244,14 +236,14 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
         const uniqueId = `${entry.name.toLowerCase()}-${entry.property.toLowerCase()}`;
         const existing = allTenantsMap.get(uniqueId);
 
-        let entryDate, entryMonth, entryYear;
+        let entryMonth, entryYear;
 
         if(type === 'rent' && 'year' in entry && 'month' in entry) {
             entryYear = entry.year;
             entryMonth = entry.month;
         } else if ('join_date' in entry && entry.join_date) {
             try {
-                const parsedDate = parseISO(entry.join_date);
+                const parsedDate = new Date(entry.join_date);
                 entryYear = parsedDate.getFullYear();
                 entryMonth = parsedDate.getMonth();
             } catch (e) {
@@ -527,12 +519,12 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
               // Handle Excel date serial number
               const excelEpoch = new Date(1899, 11, 30);
               const excelDate = new Date(excelEpoch.getTime() + dateInput * 86400000);
-              paymentDate = format(excelDate, 'yyyy-MM-dd');
+              paymentDate = formatDate(excelDate.toISOString(), 'yyyy-MM-dd');
             } else {
               // Handle string date
               const parsed = new Date(dateInput);
               if (!isNaN(parsed.getTime())) {
-                paymentDate = format(parsed, 'yyyy-MM-dd');
+                paymentDate = formatDate(parsed.toISOString(), 'yyyy-MM-dd');
               }
             }
           }
@@ -776,13 +768,13 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                     if (typeof dateInput === 'number') {
                         // Handle Excel date serial number.
                         const excelDate = new Date(Date.UTC(1900, 0, dateInput - 1));
-                        date = format(excelDate, 'yyyy-MM-dd');
+                        date = formatDate(excelDate.toISOString(), 'yyyy-MM-dd');
                     } else if (typeof dateInput === 'string' && dateInput.match(/^\d{4}-\d{2}-\d{2}$/)) {
                         date = dateInput;
                     }
                     else {
                         // Default to the first of the month if no date is provided or format is wrong
-                        date = format(new Date(year, monthIndex, 1), 'yyyy-MM-dd');
+                        date = formatDate(new Date(year, monthIndex, 1).toISOString(), 'yyyy-MM-dd');
                     }
                   
                     return {
@@ -957,7 +949,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                                                                                         <Avatar className="h-8 w-8"><AvatarImage src={tenant.avatar} /><AvatarFallback>{tenant.name.charAt(0)}</AvatarFallback></Avatar>
                                                                                         <div>
                                                                                             <div className="font-medium">{tenant.name}</div>
-                                                                                            <div className="text-xs text-muted-foreground">{tenant.property} &middot; ৳{tenant.rent}</div>
+                                                                                            <div className="text-xs text-muted-foreground">{tenant.property} &middot; {formatCurrency(tenant.rent, settings.currencySymbol)}</div>
                                                                                         </div>
                                                                                     </div>
                                                                                 </CommandItem>
@@ -1045,11 +1037,11 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                                     <p className="text-sm text-muted-foreground">
                                       {entry.property}
                                     </p>
-                                    <p className="sm:hidden text-sm text-primary font-semibold">৳{entry.rent.toFixed(2)}</p>
+                                    <p className="sm:hidden text-sm text-primary font-semibold">{formatCurrency(entry.rent, settings.currencySymbol)}</p>
                                   </div>
                                 </TableCell>
                                 <TableCell className="hidden md:table-cell">{entry.collected_by || '-'}</TableCell>
-                                <TableCell className="hidden sm:table-cell">{entry.payment_date ? format(parseISO(entry.payment_date), "dd MMM yyyy") : '-'}</TableCell>
+                                <TableCell className="hidden sm:table-cell">{formatDate(entry.payment_date, settings.dateFormat)}</TableCell>
                                 <TableCell>
                                     {isAdmin && entry.status !== 'Paid' ? (
                                         <Select
@@ -1075,7 +1067,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                                         </Badge>
                                     )}
                                 </TableCell>
-                                <TableCell className="hidden sm:table-cell">৳{entry.rent.toFixed(2)}</TableCell>
+                                <TableCell className="hidden sm:table-cell">{formatCurrency(entry.rent, settings.currencySymbol)}</TableCell>
                                 <TableCell>
                                   <div className="flex items-center gap-1">
                                     {entry.status === 'Paid' && (
@@ -1145,7 +1137,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                                   <div className="flex flex-col sm:flex-row items-center justify-between px-2">
                                     <div className="sm:hidden text-center text-inherit font-bold">Total Rent Collected</div>
                                     <div className="hidden sm:block text-left text-inherit font-bold">Total Rent Collected</div>
-                                    <div className="text-inherit font-bold">৳{totalRentCollected.toFixed(2)}</div>
+                                    <div className="text-inherit font-bold">{formatCurrency(totalRentCollected, settings.currencySymbol)}</div>
                                   </div>
                                 </TableCell>
                             </TableRow>
@@ -1202,10 +1194,10 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                                         <DialogDescription>Fill in the form below to {editingExpense ? 'update the' : 'add a new'} expense.</DialogDescription>
                                     </DialogHeader>
                                     <form onSubmit={handleSaveExpense} className="grid gap-4 py-4">
-                                        <div className="space-y-2"><Label htmlFor="date">Date</Label><Input id="date" name="date" type="date" defaultValue={editingExpense?.date || new Date().toISOString().split('T')[0]} required /></div>
+                                        <div className="space-y-2"><Label htmlFor="date">Date</Label><Input id="date" name="date" type="date" defaultValue={editingExpense?.date ? formatDate(editingExpense.date, 'yyyy-MM-dd') : formatDate(new Date().toISOString(), 'yyyy-MM-dd')} required /></div>
                                         <div className="space-y-2">
                                             <Label htmlFor="category">Category</Label>
-                                            <Select value={expenseCategory} onValueChange={setExpenseCategory}><SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger><SelectContent>{expenseCategories.map(cat => (<SelectItem key={cat} value={cat}>{cat}</SelectItem>))}</SelectContent></Select>
+                                            <Select value={expenseCategory} onValueChange={setExpenseCategory}><SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger><SelectContent>{expenseCategories.map(cat => (<SelectItem key={cat} value={cat}>{cat}</SelectItem>))}<SelectItem value="Other">Other</SelectItem></SelectContent></Select>
                                         </div>
                                         {expenseCategory === 'Other' && (<div className="space-y-2"><Label htmlFor="customCategory">Custom Category</Label><Input id="customCategory" name="customCategory" value={customCategory} onChange={(e) => setCustomCategory(e.target.value)} placeholder="Enter custom category" required/></div>)}
                                         <div className="space-y-2"><Label htmlFor="amount">Amount</Label><Input id="amount" name="amount" type="number" step="0.01" defaultValue={String(editingExpense?.amount ?? '')} placeholder="0.00" required /></div>
@@ -1265,17 +1257,17 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                               <TableCell>
                                 <div className="font-medium">{expense.description || expense.category}</div>
                                 <div className="text-xs text-muted-foreground md:hidden">
-                                  {format(parseISO(expense.date), "dd MMM, yy")}
+                                  {formatDate(expense.date, 'dd MMM, yy')}
                                 </div>
                                 <div className="text-sm text-muted-foreground hidden md:block">
-                                    {format(parseISO(expense.date), "dd MMM, yyyy")}
+                                    {formatDate(expense.date, settings.dateFormat)}
                                 </div>
-                                <p className="sm:hidden text-sm text-destructive font-semibold">{formatCurrency(expense.amount)}</p>
+                                <p className="sm:hidden text-sm text-destructive font-semibold">{formatCurrency(expense.amount, settings.currencySymbol)}</p>
                               </TableCell>
                               <TableCell className="text-sm text-muted-foreground hidden sm:table-cell">
                                 {expense.category}
                               </TableCell>
-                              <TableCell className="hidden sm:table-cell">{formatCurrency(expense.amount)}</TableCell>
+                              <TableCell className="hidden sm:table-cell">{formatCurrency(expense.amount, settings.currencySymbol)}</TableCell>
                               <TableCell>
                                  {isAdmin && expense.status === 'Due' ? (
                                     <Select
@@ -1347,7 +1339,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                                <div className="flex flex-col sm:flex-row items-center justify-between px-2">
                                 <div className="sm:hidden text-center text-inherit font-bold">Total Paid</div>
                                 <div className="hidden sm:block text-left text-inherit font-bold">Total Paid</div>
-                                <div className="text-inherit font-bold">{formatCurrency(totalExpensesPaid)}</div>
+                                <div className="text-inherit font-bold">{formatCurrency(totalExpensesPaid, settings.currencySymbol)}</div>
                                </div>
                             </TableCell>
                           </TableRow>
@@ -1429,10 +1421,10 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                     <p className="text-muted-foreground">{settings.page_overview.financial_overview_description}</p>
                 </div>
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                    <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">Total Rent Collected</p><div className="flex items-center gap-2"><DollarSign className="h-5 w-5 text-green-500"/><p className="text-xl font-bold text-green-600">{formatCurrency(totalRentCollected)}</p></div></CardContent></Card>
-                    <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">Total Expenses</p><div className="flex items-center gap-2"><TrendingDown className="h-5 w-5 text-red-500"/><p className="text-xl font-bold text-red-600">{formatCurrency(totalExpensesPaid)}</p></div></CardContent></Card>
-                    <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">Net Amount</p><div className="flex items-center gap-2"><Calculator className="h-5 w-5 text-blue-500"/><p className={`text-xl font-bold ${netResult >=0 ? 'text-blue-600':'text-red-600'}`}>{netResult >= 0 ? '+' : ''}{formatCurrency(netResult)}</p></div></CardContent></Card>
-                    <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">Available for Deposit</p><div className="flex items-center gap-2"><Landmark className="h-5 w-5 text-purple-500"/><p className="text-xl font-bold text-purple-600">{formatCurrency(amountForDeposit)}</p></div></CardContent></Card>
+                    <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">Total Rent Collected</p><div className="flex items-center gap-2"><DollarSign className="h-5 w-5 text-green-500"/><p className="text-xl font-bold text-green-600">{formatCurrency(totalRentCollected, settings.currencySymbol)}</p></div></CardContent></Card>
+                    <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">Total Expenses</p><div className="flex items-center gap-2"><TrendingDown className="h-5 w-5 text-red-500"/><p className="text-xl font-bold text-red-600">{formatCurrency(totalExpensesPaid, settings.currencySymbol)}</p></div></CardContent></Card>
+                    <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">Net Amount</p><div className="flex items-center gap-2"><Calculator className="h-5 w-5 text-blue-500"/><p className={`text-xl font-bold ${netResult >=0 ? 'text-blue-600':'text-red-600'}`}>{netResult >= 0 ? '+' : ''}{formatCurrency(netResult, settings.currencySymbol)}</p></div></CardContent></Card>
+                    <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">Available for Deposit</p><div className="flex items-center gap-2"><Landmark className="h-5 w-5 text-purple-500"/><p className="text-xl font-bold text-purple-600">{formatCurrency(amountForDeposit, settings.currencySymbol)}</p></div></CardContent></Card>
                 </div>
             </div>
             <div className="mt-6">
@@ -1457,8 +1449,8 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                                 <div className="space-y-1">
                                     {loggedDeposit ? (
                                         <>
-                                            <p className="text-xs text-muted-foreground">Deposited on {format(parseISO(loggedDeposit.deposit_date), "dd MMM")}</p>
-                                            <p className="font-bold text-lg text-primary">{formatCurrency(loggedDeposit.amount)}</p>
+                                            <p className="text-xs text-muted-foreground">Deposited on {formatDate(loggedDeposit.deposit_date, 'dd MMM')}</p>
+                                            <p className="font-bold text-lg text-primary">{formatCurrency(loggedDeposit.amount, settings.currencySymbol)}</p>
                                         </>
                                     ) : (
                                         <p className="text-sm text-muted-foreground">No deposit logged</p>
@@ -1507,7 +1499,7 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="deposit-date">Deposit Date</Label>
-                        <Input id="deposit-date" name="deposit_date" type="date" defaultValue={loggedDeposit?.deposit_date || new Date().toISOString().split('T')[0]} required />
+                        <Input id="deposit-date" name="deposit_date" type="date" defaultValue={loggedDeposit?.deposit_date ? formatDate(loggedDeposit.deposit_date, 'yyyy-MM-dd') : formatDate(new Date().toISOString(), 'yyyy-MM-dd')} required />
                     </div>
                     <div className="space-y-2">
                         <Label>Bank Receipt</Label>

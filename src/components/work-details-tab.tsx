@@ -19,17 +19,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { PlusCircle, Edit, Trash2, LoaderCircle, ExternalLink, Download, Upload } from "lucide-react"
 import type { WorkDetail, Tenant } from "@/types"
 import { saveWorkDetailAction, deleteWorkDetailAction } from "@/app/actions/work"
-import { format, parseISO, getYear } from "date-fns"
+import { getYear } from "date-fns"
 import { cn } from "@/lib/utils"
 import { useRouter } from "next/navigation"
 import { useProtection } from "@/context/protection-context"
 import * as XLSX from 'xlsx';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip"
-
-const formatCurrency = (amount?: number) => {
-    if (amount === undefined || amount === null) return '-';
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'BDT' }).format(amount).replace('BDT', '৳');
-};
+import { useSettings } from "@/context/settings-context"
+import { formatCurrency, formatDate } from "@/lib/utils"
 
 const workCategories = ["Plumbing", "Electrical", "Painting", "Cleaning", "Appliance Repair", "General Maintenance", "Other"];
 
@@ -37,6 +34,7 @@ const workCategories = ["Plumbing", "Electrical", "Painting", "Cleaning", "Appli
 export function WorkDetailsTab({ year }: { year: number }) {
   const { workDetails, loading, addWorkDetailsBatch } = useData();
   const { isAdmin } = useAuth();
+  const { settings } = useSettings();
   const { toast } = useToast();
   const router = useRouter();
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
@@ -52,7 +50,7 @@ export function WorkDetailsTab({ year }: { year: number }) {
   
   const filteredWorkDetails = React.useMemo(() => {
     return workDetails.filter(work => {
-      const workDate = work.due_date ? parseISO(work.due_date) : work.created_at ? parseISO(work.created_at) : null;
+      const workDate = work.due_date ? new Date(work.due_date) : work.created_at ? new Date(work.created_at) : null;
       if (!workDate) {
         // Decide if items without a date should be shown for the current year or not at all.
         // Here, we include them if we are viewing the current year.
@@ -138,8 +136,8 @@ export function WorkDetailsTab({ year }: { year: number }) {
   const handleDownloadTemplate = () => {
     const headers = ["title", "description", "category", "status", "product_cost", "worker_cost", "due_date"];
     const sampleData = [
-        ["Repair kitchen sink", "Leaking faucet in Apt 2B", "Plumbing", "To Do", 500, 1500, format(new Date(), 'yyyy-MM-dd')],
-        ["Paint hallway", "Repaint the 3rd floor hallway", "Painting", "In Progress", 3000, 5000, format(new Date(), 'yyyy-MM-dd')]
+        ["Repair kitchen sink", "Leaking faucet in Apt 2B", "Plumbing", "To Do", 500, 1500, formatDate(new Date().toISOString(), 'yyyy-MM-dd')],
+        ["Paint hallway", "Repaint the 3rd floor hallway", "Painting", "In Progress", 3000, 5000, formatDate(new Date().toISOString(), 'yyyy-MM-dd')]
     ];
     const worksheet = XLSX.utils.aoa_to_sheet([headers, ...sampleData]);
     const workbook = XLSX.utils.book_new();
@@ -195,11 +193,11 @@ export function WorkDetailsTab({ year }: { year: number }) {
                  if (dateInput) {
                     if (typeof dateInput === 'number') {
                         const excelDate = new Date(Date.UTC(1900, 0, dateInput - 1));
-                        dueDate = format(excelDate, 'yyyy-MM-dd');
+                        dueDate = formatDate(excelDate.toISOString(), 'yyyy-MM-dd');
                     } else {
                         const parsed = new Date(dateInput);
                         if (!isNaN(parsed.getTime())) {
-                            dueDate = format(parsed, 'yyyy-MM-dd');
+                            dueDate = formatDate(parsed.toISOString(), 'yyyy-MM-dd');
                         }
                     }
                 }
@@ -288,12 +286,13 @@ export function WorkDetailsTab({ year }: { year: number }) {
                                                   {workCategories.map(cat => (
                                                       <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                                                   ))}
+                                                  <SelectItem value="Other">Other</SelectItem>
                                               </SelectContent>
                                           </Select>
                                       </div>
                                       <div className="space-y-2">
                                           <Label htmlFor="due_date">Due Date</Label>
-                                          <Input id="due_date" name="due_date" type="date" defaultValue={editingWork?.due_date ? format(parseISO(editingWork.due_date), 'yyyy-MM-dd') : new Date(year, new Date().getMonth()).toISOString().split('T')[0]} />
+                                          <Input id="due_date" name="due_date" type="date" defaultValue={editingWork?.due_date ? formatDate(editingWork.due_date, 'yyyy-MM-dd') : formatDate(new Date(year, new Date().getMonth()).toISOString(), 'yyyy-MM-dd')} />
                                       </div>
                                   </div>
                                   
@@ -389,16 +388,16 @@ export function WorkDetailsTab({ year }: { year: number }) {
                   <TableRow key={work.id}>
                     <TableCell>
                       <div className="font-medium">{work.title}</div>
-                      <div className="text-sm text-primary font-bold sm:hidden">{formatCurrency(totalCost)}</div>
+                      <div className="text-sm text-primary font-bold sm:hidden">{formatCurrency(totalCost, settings.currencySymbol)}</div>
                     </TableCell>
-                    <TableCell className="hidden sm:table-cell">{formatCurrency(work.product_cost)}</TableCell>
-                    <TableCell className="hidden sm:table-cell">{formatCurrency(work.worker_cost)}</TableCell>
+                    <TableCell className="hidden sm:table-cell">{formatCurrency(work.product_cost, settings.currencySymbol)}</TableCell>
+                    <TableCell className="hidden sm:table-cell">{formatCurrency(work.worker_cost, settings.currencySymbol)}</TableCell>
                     <TableCell>
                         <Badge variant={isCompleted ? 'default': 'secondary'} className={cn(isCompleted && 'bg-success hover:bg-success/80')}>
                             {work.status}
                         </Badge>
                     </TableCell>
-                    <TableCell className="text-right font-bold hidden sm:table-cell">{formatCurrency(totalCost)}</TableCell>
+                    <TableCell className="text-right font-bold hidden sm:table-cell">{formatCurrency(totalCost, settings.currencySymbol)}</TableCell>
                     {isAdmin && (
                       <TableCell>
                          <div className="flex items-center justify-end gap-1">
@@ -446,7 +445,7 @@ export function WorkDetailsTab({ year }: { year: number }) {
                            <div className="flex flex-col sm:flex-row items-center justify-between px-2">
                                 <div className="sm:hidden text-center text-inherit font-bold">Total for {year}</div>
                                 <div className="hidden sm:block text-left text-inherit font-bold">Total for {year}</div>
-                                <div className="text-inherit font-bold">{formatCurrency(yearlyTotal)}</div>
+                                <div className="text-inherit font-bold">{formatCurrency(yearlyTotal, settings.currencySymbol)}</div>
                             </div>
                         </TableCell>
                     </TableRow>

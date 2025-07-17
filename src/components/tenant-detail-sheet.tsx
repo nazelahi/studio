@@ -19,7 +19,7 @@ import type { Tenant, RentEntry } from "@/types";
 import { Mail, Phone, Home, Calendar, DollarSign, FileText, Download, Printer, ImageIcon, File as FileIcon, User, MapPin, Cake, CreditCard, ShieldCheck, ChevronLeft, ChevronRight, X, Flame, Zap, UserSquare2 } from "lucide-react";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
-import { format, parseISO } from 'date-fns';
+import { format as formatDateLib, parseISO } from 'date-fns';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
@@ -28,7 +28,8 @@ import { useData } from "@/context/data-context";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 import { TenantIdCard } from "./tenant-id-card";
 import { saveAs } from "file-saver";
-
+import { useSettings } from "@/context/settings-context"
+import { formatCurrency, formatDate } from "@/lib/utils"
 
 interface TenantDetailSheetProps {
   tenant: Tenant | null;
@@ -43,6 +44,7 @@ export function TenantDetailSheet({
 }: TenantDetailSheetProps) {
   const { toast } = useToast();
   const { rentData } = useData();
+  const { settings } = useSettings();
   const sheetContentRef = React.useRef<HTMLDivElement>(null);
   const idCardRef = React.useRef<HTMLDivElement>(null);
   
@@ -216,7 +218,7 @@ export function TenantDetailSheet({
                      {tenant.date_of_birth && (
                         <div className="flex items-center gap-3">
                             <Cake className="h-4 w-4 text-muted-foreground" />
-                            <span>Date of Birth: <strong>{format(parseISO(tenant.date_of_birth), "MMMM dd, yyyy")}</strong></span>
+                            <span>Date of Birth: <strong>{formatDate(tenant.date_of_birth, settings.dateFormat)}</strong></span>
                         </div>
                     )}
                     {tenant.nid_number && (
@@ -266,12 +268,12 @@ export function TenantDetailSheet({
                     </div>
                      <div className="flex items-center gap-3">
                         <DollarSign className="h-4 w-4 text-muted-foreground" />
-                        <span>Monthly Rent: <strong>৳{tenant.rent.toFixed(2)}</strong></span>
+                        <span>Monthly Rent: <strong>{formatCurrency(tenant.rent, settings.currencySymbol)}</strong></span>
                     </div>
                     {tenant.advance_deposit && (
                         <div className="flex items-center gap-3">
                             <ShieldCheck className="h-4 w-4 text-muted-foreground" />
-                            <span>Advance Deposit: <strong>৳{tenant.advance_deposit.toFixed(2)}</strong></span>
+                            <span>Advance Deposit: <strong>{formatCurrency(tenant.advance_deposit, settings.currencySymbol)}</strong></span>
                         </div>
                     )}
                     {tenant.gas_meter_number && (
@@ -288,7 +290,7 @@ export function TenantDetailSheet({
                     )}
                     <div className="flex items-center gap-3">
                         <Calendar className="h-4 w-4 text-muted-foreground" />
-                        <span>Joined on: <strong>{format(parseISO(tenant.join_date), "MMMM dd, yyyy")}</strong></span>
+                        <span>Joined on: <strong>{formatDate(tenant.join_date, settings.dateFormat)}</strong></span>
                     </div>
                 </CardContent>
             </Card>
@@ -311,11 +313,11 @@ export function TenantDetailSheet({
                                 <TableBody>
                                     {tenantPaymentHistory.map(entry => (
                                         <TableRow key={entry.id}>
-                                            <TableCell className="font-medium">{format(new Date(entry.year, entry.month), 'MMMM yyyy')}</TableCell>
+                                            <TableCell className="font-medium">{formatDateLib(new Date(entry.year, entry.month), 'MMMM yyyy')}</TableCell>
                                             <TableCell>
                                                 <Badge variant="outline" className={cn("text-xs", getPaymentStatusBadge(entry.status))}>{entry.status}</Badge>
                                             </TableCell>
-                                            <TableCell className="text-right font-mono">৳{entry.rent.toFixed(2)}</TableCell>
+                                            <TableCell className="text-right font-mono">{formatCurrency(entry.rent, settings.currencySymbol)}</TableCell>
                                         </TableRow>
                                     ))}
                                 </TableBody>
