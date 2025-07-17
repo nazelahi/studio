@@ -298,7 +298,7 @@ export function ReportsTab({ year }: { year: number }) {
     <div className="pt-4 space-y-6">
       <Card className="no-print">
           <CardContent className="p-4 flex flex-col sm:flex-row items-center gap-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1">
+            <div className="grid grid-cols-2 gap-4 flex-1 w-full">
                 <div>
                     <Label>Report Type</Label>
                     <Select value={reportType} onValueChange={setReportType}>
@@ -322,7 +322,7 @@ export function ReportsTab({ year }: { year: number }) {
                     </div>
                 )}
                 {reportType === 'tenant' && (
-                    <div>
+                    <div className="col-span-2 sm:col-span-1">
                         <Label>Tenant</Label>
                         <Select onValueChange={setSelectedTenant}>
                           <SelectTrigger><SelectValue placeholder="Select a tenant..." /></SelectTrigger>
