@@ -91,7 +91,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
                 supabase.from('notices').select('id, year, month, content').gte('created_at', twoYearsAgo).order('created_at', { ascending: false }),
                 supabase.from('work_details').select('id, title, description, category, status, product_cost, worker_cost, due_date, created_at').is('deleted_at', null).gte('created_at', twoYearsAgo).order('created_at', { ascending: false }),
                 supabase.from('zakat_bank_details').select('id, bank_name, account_number, account_holder, logo_url, location').order('bank_name', { ascending: true }),
-                supabase.from('documents').select('*').is('deleted_at', null).order('created_at', { ascending: false }),
+                supabase.from('documents').select('*').order('created_at', { ascending: false }),
             ]);
 
             if (tenantsRes.error) throw tenantsRes.error;
@@ -135,51 +135,49 @@ export function DataProvider({ children }: { children: ReactNode }) {
         }
     }, [fetchData, authLoading]);
     
-    /*
-    useEffect(() => {
-        if (!supabase) return;
+    // useEffect(() => {
+    //     if (!supabase) return;
 
-        const tables = [
-            'tenants', 'expenses', 'rent_entries', 'property_settings', 
-            'deposits', 'zakat_transactions', 'notices', 'work_details', 'zakat_bank_details', 'documents'
-        ];
+    //     const tables = [
+    //         'tenants', 'expenses', 'rent_entries', 'property_settings', 
+    //         'deposits', 'zakat_transactions', 'notices', 'work_details', 'zakat_bank_details', 'documents'
+    //     ];
         
-        const subscriptions = tables.map(table => {
-            return supabase
-                .channel(`public:${table}`)
-                .on(
-                    'postgres_changes',
-                    { event: 'INSERT', schema: 'public', table: table },
-                    (payload) => { console.log(`New data in ${table}, refreshing...`); fetchData(); }
-                )
-                .on(
-                    'postgres_changes',
-                    { event: 'UPDATE', schema: 'public', table: table },
-                    (payload) => { console.log(`Data updated in ${table}, refreshing...`); fetchData(); }
-                )
-                 .on(
-                    'postgres_changes',
-                    { event: 'DELETE', schema: 'public', table: table },
-                    (payload) => { console.log(`Data deleted in ${table}, refreshing...`); fetchData(); }
-                )
-                .subscribe((status, err) => {
-                    if (status === 'SUBSCRIBED') {
-                        console.log(`Successfully subscribed to real-time updates for ${table}!`);
-                    }
-                    if (err) {
-                        const dbError = err as any;
-                        console.error(`Realtime subscription error on ${table}:`, dbError);
-                    }
-                });
-        });
+    //     const subscriptions = tables.map(table => {
+    //         return supabase
+    //             .channel(`public:${table}`)
+    //             .on(
+    //                 'postgres_changes',
+    //                 { event: 'INSERT', schema: 'public', table: table },
+    //                 (payload) => { console.log(`New data in ${table}, refreshing...`); fetchData(); }
+    //             )
+    //             .on(
+    //                 'postgres_changes',
+    //                 { event: 'UPDATE', schema: 'public', table: table },
+    //                 (payload) => { console.log(`Data updated in ${table}, refreshing...`); fetchData(); }
+    //             )
+    //              .on(
+    //                 'postgres_changes',
+    //                 { event: 'DELETE', schema: 'public', table: table },
+    //                 (payload) => { console.log(`Data deleted in ${table}, refreshing...`); fetchData(); }
+    //             )
+    //             .subscribe((status, err) => {
+    //                 if (status === 'SUBSCRIBED') {
+    //                     console.log(`Successfully subscribed to real-time updates for ${table}!`);
+    //                 }
+    //                 if (err) {
+    //                     const dbError = err as any;
+    //                     console.error(`Realtime subscription error on ${table}:`, dbError);
+    //                 }
+    //             });
+    //     });
 
-        return () => {
-            subscriptions.forEach(subscription => {
-                supabase.removeChannel(subscription);
-            });
-        };
-    }, [fetchData]);
-    */
+    //     return () => {
+    //         subscriptions.forEach(subscription => {
+    //             supabase.removeChannel(subscription);
+    //         });
+    //     };
+    // }, [fetchData]);
 
     const uploadFiles = async (tenantId: string, files: File[], toast: ToastFn): Promise<string[]> => {
         if (!supabase || files.length === 0) return [];
