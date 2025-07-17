@@ -1,5 +1,4 @@
 
-
 "use client"
 
 import * as React from "react"
@@ -204,7 +203,7 @@ export function DocumentsTab() {
         .filter(tenant => tenant.documents && tenant.documents.length > 0)
         .map(tenant => {
             const docs: DocType[] = (tenant.documents || []).map(docUrl => ({
-                id: `${tenant.id}-${docUrl}`, // This key is for temporary client-side rendering
+                id: tenant.id, // The tenant ID is sufficient here for a temporary ID
                 file_url: docUrl,
                 file_name: docUrl.split('/').pop() || 'Tenant Document',
                 file_type: docUrl.toLowerCase().includes('.pdf') ? 'application/pdf' : 'image/jpeg',
@@ -251,20 +250,20 @@ export function DocumentsTab() {
             <p className="text-sm text-muted-foreground">{doc.created_at ? format(parseISO(doc.created_at), 'dd MMM, yyyy') : '-'}</p>
         </TableCell>
         <TableCell className="hidden md:table-cell">
-           {(doc as any).isTenantDoc ? (
+           {doc.isTenantDoc ? (
             <Badge variant="secondary">Tenant Upload</Badge>
            ) : (
             <Badge variant="outline">{doc.category}</Badge>
            )}
         </TableCell>
         <TableCell className="text-right">
-             <div className={cn("flex items-center justify-end gap-1", (doc as any).isTenantDoc && "opacity-0 group-hover:opacity-100 transition-opacity")}>
+             <div className={cn("flex items-center justify-end gap-1", doc.isTenantDoc && "opacity-0 group-hover:opacity-100 transition-opacity")}>
                 <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
                     <a href={doc.file_url} target="_blank" rel="noopener noreferrer" download={doc.file_name}>
                         <Download className="h-4 w-4" />
                     </a>
                 </Button>
-                {isAdmin && !(doc as any).isTenantDoc && (
+                {isAdmin && !doc.isTenantDoc && (
                     <>
                         <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => handleEdit(doc, e)}>
                             <Edit className="h-4 w-4" />
@@ -515,3 +514,5 @@ export function DocumentsTab() {
     </div>
   );
 }
+
+    
