@@ -1464,9 +1464,21 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                                         <p className="text-sm text-muted-foreground">No deposit logged</p>
                                     )}
                                 </div>
-                                 <Button size="sm" variant={loggedDeposit ? "secondary" : "default"} onClick={() => setIsDepositDialogOpen(true)} disabled={!isAdmin}>
-                                    {loggedDeposit ? <><Edit className="mr-2 h-4 w-4" />Edit</> : 'Log Deposit'}
-                                </Button>
+                                 <div className="flex items-center gap-1">
+                                    {loggedDeposit?.receipt_url && (
+                                        <Button asChild size="sm" variant="outline">
+                                            <a href={loggedDeposit.receipt_url} target="_blank" rel="noopener noreferrer">
+                                                <Eye className="mr-2 h-4 w-4" />
+                                                View
+                                            </a>
+                                        </Button>
+                                    )}
+                                    {isAdmin && (
+                                        <Button size="sm" variant={loggedDeposit ? "secondary" : "default"} onClick={() => setIsDepositDialogOpen(true)}>
+                                            {loggedDeposit ? <><Edit className="mr-2 h-4 w-4" />Edit</> : 'Log Deposit'}
+                                        </Button>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </CardContent>
