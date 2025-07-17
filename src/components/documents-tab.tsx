@@ -204,7 +204,7 @@ export function DocumentsTab() {
         .filter(tenant => tenant.documents && tenant.documents.length > 0)
         .map(tenant => {
             const docs: DocType[] = (tenant.documents || []).map(docUrl => ({
-                id: `${tenant.id}-${docUrl}`,
+                id: `${tenant.id}-${docUrl}`, // This key is for temporary client-side rendering
                 file_url: docUrl,
                 file_name: docUrl.split('/').pop() || 'Tenant Document',
                 file_type: docUrl.toLowerCase().includes('.pdf') ? 'application/pdf' : 'image/jpeg',
@@ -306,7 +306,7 @@ export function DocumentsTab() {
         </TableHeader>
         <TableBody>
             {docs.length > 0 ? (
-                docs.map(doc => <DocumentRow key={doc.id} doc={doc} />)
+                docs.map(doc => <DocumentRow key={`${doc.id}-${doc.file_url}`} doc={doc} />)
             ) : (
                 <TableRow>
                     <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">No documents found.</TableCell>
