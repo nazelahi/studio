@@ -101,6 +101,23 @@ const EditableField: React.FC<EditableFieldProps> = ({ label, value, onSave, isT
     );
 };
 
+const currencyOptions = [
+    { value: "৳", label: "BDT (Bangladesh)" },
+    { value: "$", label: "USD (United States)" },
+    { value: "€", label: "EUR (Eurozone)" },
+    { value: "£", label: "GBP (United Kingdom)" },
+    { value: "₹", label: "INR (India)" },
+    { value: "¥", label: "JPY (Japan)" },
+    { value: "¥", label: "CNY (China)" },
+    { value: "C$", label: "CAD (Canada)" },
+    { value: "A$", label: "AUD (Australia)" },
+    { value: "CHF", label: "CHF (Switzerland)" },
+    { value: "RM", label: "MYR (Malaysia)" },
+    { value: "S$", label: "SGD (Singapore)" },
+    { value: "AED", label: "AED (UAE)" },
+    { value: "SAR", label: "SAR (Saudi Arabia)" },
+];
+
 
 export default function SettingsPage() {
   const { settings, setSettings, refreshSettings } = useSettings();
@@ -794,11 +811,21 @@ export default function SettingsPage() {
                               </div>
                               <div className="space-y-2">
                                 <Label htmlFor="currency-symbol">Currency Symbol</Label>
-                                <Input 
-                                    id="currency-symbol" 
-                                    defaultValue={settings.currencySymbol}
-                                    onBlur={(e) => handleSavePropertySettings('currencySymbol', e.target.value)}
-                                />
+                                <Select
+                                  value={settings.currencySymbol}
+                                  onValueChange={(value) => handleSavePropertySettings('currencySymbol', value)}
+                                >
+                                  <SelectTrigger id="currency-symbol">
+                                    <SelectValue placeholder="Select a currency" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {currencyOptions.map((option) => (
+                                      <SelectItem key={option.label} value={option.value}>
+                                        {option.label} ({option.value})
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
                               </div>
                           </div>
                           <Separator className="my-6" />
