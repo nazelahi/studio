@@ -432,7 +432,7 @@ export function ContactsTab() {
                   </DialogTrigger>
                   <DialogContent className="max-w-4xl p-0">
                     <form ref={formRef} onSubmit={handleSaveTenant}>
-                      <DialogHeader className="p-6 bg-muted/50">
+                       <DialogHeader className="p-6 bg-muted">
                         <DialogTitle className="text-2xl text-primary">{editingTenant ? 'Edit Tenant Profile' : 'Add New Tenant'}</DialogTitle>
                          {!editingTenant && (
                             <div className="flex items-center gap-2 pt-4">
@@ -443,7 +443,7 @@ export function ContactsTab() {
                                 <input ref={scanFileInputRef} type="file" className="hidden" accept="image/*" onChange={handleScanDocument}/>
                                <Popover open={isFinderOpen} onOpenChange={setIsFinderOpen}>
                                   <PopoverTrigger asChild>
-                                    <Button type="button" size="sm" variant="outline" role="combobox" aria-expanded={isFinderOpen} className="w-full justify-between sm:w-auto">
+                                    <Button type="button" size="sm" variant="outline" role="combobox" aria-expanded={isFinderOpen} className="justify-between sm:w-auto">
                                       <span className="flex items-center gap-2">
                                         <UserPlus className="h-4 w-4" />
                                         Copy info...
@@ -451,7 +451,7 @@ export function ContactsTab() {
                                       <ChevronDown className="h-4 w-4 shrink-0 opacity-50"/>
                                     </Button>
                                   </PopoverTrigger>
-                                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0" style={{width: "var(--radix-popover-trigger-width)"}}>
+                                  <PopoverContent className="w-full p-0" style={{width: "var(--radix-popover-trigger-width)"}}>
                                     <Command>
                                       <CommandInput placeholder="Search tenant..." />
                                       <CommandEmpty>No tenant found.</CommandEmpty>
@@ -611,14 +611,14 @@ export function ContactsTab() {
                                       onClick={() => docFileInputRef.current?.click()}
                                     >
                                         <Upload className="mx-auto h-8 w-8 text-muted-foreground/50"/>
-                                        <p className="mt-1 text-sm font-medium">Click to upload documents</p>
+                                        <p className="mt-1 text-sm font-medium">Click to upload or drag & drop documents</p>
                                         <p className="text-xs text-muted-foreground">You can select multiple files</p>
                                         <Input ref={docFileInputRef} type="file" className="hidden" multiple accept="image/*,.pdf" onChange={handleDocumentUpload} />
                                     </div>
                                     {(existingDocuments.length > 0 || documentFiles.length > 0) && (
                                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                                        {existingDocuments.map((docUrl) => (
-                                          <div key={docUrl} className="relative group aspect-square">
+                                        {existingDocuments.map((docUrl, index) => (
+                                          <div key={`${docUrl}-${index}`} className="relative group aspect-square">
                                               <a href={docUrl} target="_blank" rel="noopener noreferrer" className="block w-full h-full">
                                                   <img src={docUrl} alt="Document" className="w-full h-full object-cover rounded-md" data-ai-hint="document id"/>
                                               </a>
@@ -643,7 +643,7 @@ export function ContactsTab() {
                         </div>
                       </div>
                       
-                      <DialogFooter className="p-4 bg-muted/50 border-t">
+                      <DialogFooter className="p-4 border-t">
                         <DialogClose asChild>
                           <Button variant="outline" disabled={isUploading}>Cancel</Button>
                         </DialogClose>
