@@ -132,10 +132,12 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
   const [editingExpense, setEditingExpense] = React.useState<Expense | null>(null);
   const [expenseCategory, setExpenseCategory] = React.useState('');
   const [customCategory, setCustomCategory] = React.useState('');
+  const [isSyncingExpenses, startExpenseSyncTransition] = React.useTransition();
 
 
   const [isRentDialogOpen, setIsRentDialogOpen] = React.useState(false);
   const [editingRentEntry, setEditingRentEntry] = React.useState<RentEntry | null>(null);
+  const [isSyncingTenants, startTenantSyncTransition] = React.useTransition();
   
   const [isTenantFinderOpen, setIsTenantFinderOpen] = React.useState(false);
   const [selectedHistoricalTenant, setSelectedHistoricalTenant] = React.useState<HistoricalTenant | null>(null);
@@ -352,20 +354,21 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
     setSelectedHistoricalTenant(null);
   };
 
-    const handleSyncTenants = async () => {
-        const syncedCount = await syncTenantsForMonth(year, monthIndex, toast);
-
-        if (syncedCount > 0) {
-            toast({
-                title: "Sync Complete",
-                description: `${syncedCount} tenant(s) have been added to the rent roll for ${months[monthIndex]}.`,
-            });
-        } else {
-             toast({
-                title: "Already up to date",
-                description: "All active tenants are already in the rent roll for this month.",
-            });
-        }
+    const handleSyncTenants = () => {
+        startTenantSyncTransition(async () => {
+            const syncedCount = await syncTenantsForMonth(year, monthIndex, toast);
+            if (syncedCount > 0) {
+                toast({
+                    title: "Sync Complete",
+                    description: `${syncedCount} tenant(s) have been added to the rent roll for ${months[monthIndex]}.`,
+                });
+            } else {
+                toast({
+                    title: "Already up to date",
+                    description: "All active tenants are already in the rent roll for this month.",
+                });
+            }
+        });
     };
     
   const handleMassDeleteRentEntries = () => {
@@ -698,20 +701,21 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
     });
   }
 
-  const handleSyncExpenses = async () => {
-    const syncedCount = await syncExpensesFromPreviousMonth(year, monthIndex, toast);
-
-    if (syncedCount > 0) {
-        toast({
-            title: "Sync Complete",
-            description: `${syncedCount} expense(s) from the previous month have been copied to ${months[monthIndex]}.`,
-        });
-    } else {
-         toast({
-            title: "No Expenses to Sync",
-            description: "There were no expenses recorded in the previous month to copy over.",
-        });
-    }
+  const handleSyncExpenses = () => {
+      startExpenseSyncTransition(async () => {
+        const syncedCount = await syncExpensesFromPreviousMonth(year, monthIndex, toast);
+        if (syncedCount > 0) {
+            toast({
+                title: "Sync Complete",
+                description: `${syncedCount} expense(s) from the previous month have been copied to ${months[monthIndex]}.`,
+            });
+        } else {
+            toast({
+                title: "No Expenses to Sync",
+                description: "There were no expenses recorded in the previous month to copy over.",
+            });
+        }
+    });
   };
 
     const handleDownloadExpenseTemplate = () => {
@@ -972,7 +976,12 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                                         </form>
                                     </DialogContent>
                                 </Dialog>
-                                <Tooltip><TooltipTrigger asChild><Button size="icon" variant="outline" onClick={handleSyncTenants} className="flex-1 sm:flex-initial"><RefreshCw className="h-4 w-4" /><span className="sr-only">Sync tenants</span></Button></TooltipTrigger><TooltipContent>Sync</TooltipContent></Tooltip>
+                                <Tooltip><TooltipTrigger asChild>
+                                    <Button size="icon" variant="outline" onClick={handleSyncTenants} className="flex-1 sm:flex-initial" disabled={isSyncingTenants}>
+                                        {isSyncingTenants ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                                        <span className="sr-only">Sync tenants</span>
+                                    </Button>
+                                </TooltipTrigger><TooltipContent>Sync</TooltipContent></Tooltip>
                             </div>
                             <div className="hidden sm:flex items-center gap-2">
                                 <Tooltip><TooltipTrigger asChild><Button size="icon" variant="outline" onClick={handleDownloadTemplate}><Download className="h-4 w-4" /><span className="sr-only">Download Template</span></Button></TooltipTrigger><TooltipContent>Download Template</TooltipContent></Tooltip>
@@ -1208,7 +1217,12 @@ export function MonthlyOverviewTab({ year, mobileSelectedMonth }: MonthlyOvervie
                                 </DialogContent>
                             </Dialog>
                              <Tooltip>
-                                <TooltipTrigger asChild><Button size="icon" variant="outline" onClick={handleSyncExpenses} className="flex-1 sm:flex-initial"><RefreshCw className="h-4 w-4" /><span className="sr-only">Sync expenses</span></Button></TooltipTrigger><TooltipContent>Sync from Previous Month</TooltipContent></Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button size="icon" variant="outline" onClick={handleSyncExpenses} className="flex-1 sm:flex-initial" disabled={isSyncingExpenses}>
+                                        {isSyncingExpenses ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                                        <span className="sr-only">Sync expenses</span>
+                                    </Button>
+                                </TooltipTrigger><TooltipContent>Sync from Previous Month</TooltipContent></Tooltip>
                         </div>
                          <div className="hidden sm:flex items-center gap-2">
                             <Tooltip><TooltipTrigger asChild><Button size="icon" variant="outline" onClick={handleDownloadExpenseTemplate}><Download className="h-4 w-4" /><span className="sr-only">Download Template</span></Button></TooltipTrigger><TooltipContent>Download Template</TooltipContent></Tooltip>
