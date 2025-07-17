@@ -3,8 +3,8 @@
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useMemo } from 'react';
-import { useData } from './data-context';
 import type { ZakatBankDetail, PropertySettings as DbPropertySettings, TabNames } from '@/types';
+import { useData } from './data-context';
 
 interface PageDashboard {
     nav_dashboard: string;
@@ -74,7 +74,10 @@ interface AppSettings {
   tenantViewStyle: 'grid' | 'list';
   metadataTitle?: string;
   faviconUrl?: string;
+  appLogoUrl?: string;
   documentCategories: string[];
+  dateFormat: string;
+  currencySymbol: string;
 }
 
 interface SettingsContextType {
@@ -106,7 +109,10 @@ const defaultSettings: AppSettings = {
     tenantViewStyle: 'grid',
     metadataTitle: "RentFlow",
     faviconUrl: "/favicon.ico",
+    appLogoUrl: undefined,
     documentCategories: ["Legal", "Agreements", "Receipts", "ID Cards", "Property Deeds", "Blueprints", "Miscellaneous"],
+    dateFormat: "dd MMM, yyyy",
+    currencySymbol: "৳",
     tabNames: {
         overview: "Overview",
         tenants: "Tenants",
@@ -209,7 +215,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     }, []);
 
     useEffect(() => {
-        if (isMounted) {
+        if (isMounted && !dataLoading) {
             let localSettings = {};
             try {
                 const item = window.localStorage.getItem('appSettings');
@@ -240,6 +246,9 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
                 combinedSettings.tenantViewStyle = propertySettings.tenant_view_style || defaultSettings.tenantViewStyle;
                 combinedSettings.metadataTitle = propertySettings.metadata_title || defaultSettings.metadataTitle;
                 combinedSettings.faviconUrl = propertySettings.favicon_url || defaultSettings.faviconUrl;
+                combinedSettings.appLogoUrl = propertySettings.app_logo_url || defaultSettings.appLogoUrl;
+                combinedSettings.dateFormat = propertySettings.date_format || defaultSettings.dateFormat;
+                combinedSettings.currencySymbol = propertySettings.currency_symbol || defaultSettings.currencySymbol;
                 
                 // Load document categories from DB if they exist, otherwise use local/default
                 combinedSettings.documentCategories = propertySettings.document_categories || combinedSettings.documentCategories;
@@ -263,7 +272,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
 
             setSettings(combinedSettings);
         }
-    }, [isMounted, propertySettings, zakatBankDetails]);
+    }, [isMounted, propertySettings, zakatBankDetails, dataLoading]);
 
 
     const handleSetSettings = (newSettingsOrFn: AppSettings | ((prev: AppSettings) => AppSettings)) => {
@@ -273,14 +282,12 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
             houseName, houseAddress, bankName, bankAccountNumber, bankLogoUrl, ownerName, ownerPhotoUrl, 
             zakatBankDetails, passcode, passcodeProtectionEnabled, aboutUs, contactPhone, contactEmail, contactAddress, footerName,
             theme, whatsappRemindersEnabled, whatsappReminderSchedule, whatsappReminderTemplate, tenantViewStyle,
-            metadataTitle, faviconUrl, documentCategories,
+            metadataTitle, faviconUrl, appLogoUrl, documentCategories, dateFormat, currencySymbol,
             ...localSettingsToSave 
         } = newSettings;
         try {
             const currentLocal = JSON.parse(window.localStorage.getItem('appSettings') || '{}');
             const newLocal = deepMerge(currentLocal, localSettingsToSave);
-            // also save documentCategories to local storage now
-            newLocal.documentCategories = documentCategories;
             window.localStorage.setItem('appSettings', JSON.stringify(newLocal));
         } catch (error) {
             console.error("Failed to save settings to localStorage", error);
