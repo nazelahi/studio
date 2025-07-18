@@ -91,6 +91,73 @@ const getExpenseStatusBadge = (status: Expense["status"]) => {
       : "bg-warning text-warning-foreground hover:bg-warning/80";
 };
 
+interface EditableAmountProps {
+    initialAmount: number;
+    onSave: (newAmount: number) => void;
+    currencySymbol: string;
+    isAdmin: boolean;
+    withProtection: (action: () => void, event?: React.MouseEvent) => void;
+}
+
+const EditableAmount: React.FC<EditableAmountProps> = ({ initialAmount, onSave, currencySymbol, isAdmin, withProtection }) => {
+    const [isEditing, setIsEditing] = React.useState(false);
+    const [amount, setAmount] = React.useState(initialAmount);
+    const inputRef = React.useRef<HTMLInputElement>(null);
+
+    React.useEffect(() => {
+        if (isEditing) {
+            inputRef.current?.focus();
+            inputRef.current?.select();
+        }
+    }, [isEditing]);
+
+    const handleSave = () => {
+        setIsEditing(false);
+        const newAmount = Number(amount);
+        if (newAmount !== initialAmount) {
+            onSave(newAmount);
+        }
+    };
+
+    const handleClick = (e: React.MouseEvent) => {
+        if (isAdmin) {
+            withProtection(() => {
+                setIsEditing(true);
+            }, e);
+        }
+    };
+    
+    if (isEditing) {
+        return (
+            <Input
+                ref={inputRef}
+                type="number"
+                value={amount}
+                onChange={(e) => setAmount(Number(e.target.value))}
+                onBlur={handleSave}
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleSave();
+                    if (e.key === 'Escape') {
+                        setAmount(initialAmount);
+                        setIsEditing(false);
+                    }
+                }}
+                className="h-8 w-24 text-right"
+            />
+        );
+    }
+
+    return (
+        <button 
+            onClick={handleClick}
+            disabled={!isAdmin}
+            className={cn("w-full text-right", isAdmin && "hover:bg-muted rounded-md px-2 py-1 transition-colors")}>
+                {formatCurrency(amount, currencySymbol)}
+        </button>
+    );
+};
+
+
 export function MonthlyOverviewTab() {
   const currentYear = new Date().getFullYear();
   const currentMonthIndex = new Date().getMonth();
@@ -1001,7 +1068,7 @@ export function MonthlyOverviewTab() {
                             <TableHead className="hidden md:table-cell text-inherit">Collected By</TableHead>
                             <TableHead className="hidden sm:table-cell text-inherit">Payment Date</TableHead>
                             <TableHead className="text-inherit">Status</TableHead>
-                            <TableHead className="hidden sm:table-cell text-inherit">Amount</TableHead>
+                            <TableHead className="hidden sm:table-cell text-inherit text-right">Amount</TableHead>
                             <TableHead className="text-inherit">Actions</TableHead>
                           </TableRow>
                         </TableHeader>
@@ -1033,7 +1100,15 @@ export function MonthlyOverviewTab() {
                                     <p className="text-sm text-muted-foreground">
                                       {entry.property}
                                     </p>
-                                    <p className="sm:hidden text-sm text-primary font-semibold">{formatCurrency(entry.rent, settings.currencySymbol)}</p>
+                                    <p className="sm:hidden text-sm text-primary font-semibold">
+                                       <EditableAmount
+                                            initialAmount={entry.rent}
+                                            onSave={(newAmount) => updateRentEntry({ ...entry, rent: newAmount }, toast)}
+                                            currencySymbol={settings.currencySymbol}
+                                            isAdmin={isAdmin}
+                                            withProtection={withProtection}
+                                        />
+                                    </p>
                                   </div>
                                 </TableCell>
                                 <TableCell className="hidden md:table-cell">{entry.collected_by || '-'}</TableCell>
@@ -1063,7 +1138,15 @@ export function MonthlyOverviewTab() {
                                         </Badge>
                                     )}
                                 </TableCell>
-                                <TableCell className="hidden sm:table-cell">{formatCurrency(entry.rent, settings.currencySymbol)}</TableCell>
+                                <TableCell className="hidden sm:table-cell text-right">
+                                    <EditableAmount
+                                        initialAmount={entry.rent}
+                                        onSave={(newAmount) => updateRentEntry({ ...entry, rent: newAmount }, toast)}
+                                        currencySymbol={settings.currencySymbol}
+                                        isAdmin={isAdmin}
+                                        withProtection={withProtection}
+                                    />
+                                </TableCell>
                                 <TableCell>
                                   <div className="flex items-center gap-1">
                                     {entry.status === 'Paid' && (
@@ -1237,7 +1320,7 @@ export function MonthlyOverviewTab() {
                           </TableHead>}
                           <TableHead className="text-inherit">Details</TableHead>
                           <TableHead className="text-inherit hidden sm:table-cell">Category</TableHead>
-                          <TableHead className="text-inherit hidden sm:table-cell">Amount</TableHead>
+                          <TableHead className="text-inherit hidden sm:table-cell text-right">Amount</TableHead>
                           <TableHead className="text-inherit">Status</TableHead>
                           <TableHead className="text-inherit">Actions</TableHead>
                         </TableRow>
@@ -1263,12 +1346,28 @@ export function MonthlyOverviewTab() {
                                 <div className="text-sm text-muted-foreground hidden md:block">
                                     {formatDate(expense.date, settings.dateFormat)}
                                 </div>
-                                <p className="sm:hidden text-sm text-destructive font-semibold">{formatCurrency(expense.amount, settings.currencySymbol)}</p>
+                                <p className="sm:hidden text-sm text-destructive font-semibold">
+                                    <EditableAmount
+                                        initialAmount={expense.amount}
+                                        onSave={(newAmount) => updateExpense({ ...expense, amount: newAmount }, toast)}
+                                        currencySymbol={settings.currencySymbol}
+                                        isAdmin={isAdmin}
+                                        withProtection={withProtection}
+                                    />
+                                </p>
                               </TableCell>
                               <TableCell className="text-sm text-muted-foreground hidden sm:table-cell">
                                 {expense.category}
                               </TableCell>
-                              <TableCell className="hidden sm:table-cell">{formatCurrency(expense.amount, settings.currencySymbol)}</TableCell>
+                              <TableCell className="hidden sm:table-cell text-right">
+                                <EditableAmount
+                                    initialAmount={expense.amount}
+                                    onSave={(newAmount) => updateExpense({ ...expense, amount: newAmount }, toast)}
+                                    currencySymbol={settings.currencySymbol}
+                                    isAdmin={isAdmin}
+                                    withProtection={withProtection}
+                                />
+                              </TableCell>
                               <TableCell>
                                  {isAdmin && expense.status === 'Due' ? (
                                     <Select
