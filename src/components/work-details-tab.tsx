@@ -30,9 +30,75 @@ import { formatCurrency, formatDate } from "@/lib/utils"
 
 const workCategories = ["Plumbing", "Electrical", "Painting", "Cleaning", "Appliance Repair", "General Maintenance", "Other"];
 
+interface EditableAmountProps {
+    initialAmount: number;
+    onSave: (newAmount: number) => void;
+    currencySymbol: string;
+    isAdmin: boolean;
+    withProtection: (action: () => void, event?: React.MouseEvent) => void;
+}
+
+const EditableAmount: React.FC<EditableAmountProps> = ({ initialAmount, onSave, currencySymbol, isAdmin, withProtection }) => {
+    const [isEditing, setIsEditing] = React.useState(false);
+    const [amount, setAmount] = React.useState(initialAmount);
+    const inputRef = React.useRef<HTMLInputElement>(null);
+
+    React.useEffect(() => {
+        if (isEditing) {
+            inputRef.current?.focus();
+            inputRef.current?.select();
+        }
+    }, [isEditing]);
+
+    const handleSave = () => {
+        setIsEditing(false);
+        const newAmount = Number(amount);
+        if (newAmount !== initialAmount) {
+            onSave(newAmount);
+        }
+    };
+
+    const handleClick = (e: React.MouseEvent) => {
+        if (isAdmin) {
+            withProtection(() => {
+                setIsEditing(true);
+            }, e);
+        }
+    };
+    
+    if (isEditing) {
+        return (
+            <Input
+                ref={inputRef}
+                type="number"
+                value={amount}
+                onChange={(e) => setAmount(Number(e.target.value))}
+                onBlur={handleSave}
+                onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleSave();
+                    if (e.key === 'Escape') {
+                        setAmount(initialAmount);
+                        setIsEditing(false);
+                    }
+                }}
+                className="h-8 w-24 text-right"
+            />
+        );
+    }
+
+    return (
+        <button 
+            onClick={handleClick}
+            disabled={!isAdmin}
+            className={cn("text-right", isAdmin && "hover:bg-muted rounded-md px-2 py-1 transition-colors")}>
+                {formatCurrency(amount, currencySymbol)}
+        </button>
+    );
+};
+
 
 export function WorkDetailsTab({ year }: { year: number }) {
-  const { workDetails, loading, addWorkDetailsBatch } = useData();
+  const { workDetails, loading, addWorkDetailsBatch, refreshData } = useData();
   const { isAdmin } = useAuth();
   const { settings } = useSettings();
   const { toast } = useToast();
@@ -236,6 +302,26 @@ export function WorkDetailsTab({ year }: { year: number }) {
     });
   };
 
+  const handleCostUpdate = async (work: WorkDetail, field: 'product_cost' | 'worker_cost', value: number) => {
+    const formData = new FormData();
+    formData.set('workId', work.id);
+    formData.set('title', work.title);
+    formData.set('description', work.description || '');
+    formData.set('category', work.category || '');
+    formData.set('status', work.status);
+    formData.set('due_date', work.due_date || '');
+    formData.set('product_cost', String(field === 'product_cost' ? value : work.product_cost || 0));
+    formData.set('worker_cost', String(field === 'worker_cost' ? value : work.worker_cost || 0));
+
+    const result = await saveWorkDetailAction(formData);
+    if (result.error) {
+      toast({ title: 'Error Updating Cost', description: result.error, variant: 'destructive' });
+    } else {
+      toast({ title: 'Cost Updated', description: `The cost for "${work.title}" has been updated.` });
+      refreshData();
+    }
+  };
+
 
   return (
     <TooltipProvider>
@@ -392,8 +478,24 @@ export function WorkDetailsTab({ year }: { year: number }) {
                       <div className="font-medium">{work.title}</div>
                       <div className="text-sm text-muted-foreground sm:hidden">{work.description}</div>
                     </TableCell>
-                    <TableCell className="hidden sm:table-cell">{formatCurrency(work.product_cost, settings.currencySymbol)}</TableCell>
-                    <TableCell className="hidden sm:table-cell">{formatCurrency(work.worker_cost, settings.currencySymbol)}</TableCell>
+                    <TableCell className="hidden sm:table-cell">
+                        <EditableAmount 
+                            initialAmount={work.product_cost || 0}
+                            onSave={(newAmount) => handleCostUpdate(work, 'product_cost', newAmount)}
+                            currencySymbol={settings.currencySymbol}
+                            isAdmin={isAdmin}
+                            withProtection={withProtection}
+                        />
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell">
+                        <EditableAmount 
+                            initialAmount={work.worker_cost || 0}
+                            onSave={(newAmount) => handleCostUpdate(work, 'worker_cost', newAmount)}
+                            currencySymbol={settings.currencySymbol}
+                            isAdmin={isAdmin}
+                            withProtection={withProtection}
+                        />
+                    </TableCell>
                     <TableCell className="font-bold">{formatCurrency(totalCost, settings.currencySymbol)}</TableCell>
                     <TableCell>
                         <Badge variant={isCompleted ? 'default': 'secondary'} className={cn(isCompleted && 'bg-success hover:bg-success/80')}>
