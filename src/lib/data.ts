@@ -62,9 +62,13 @@ export async function getDashboardData(): Promise<AppData> {
         ]);
 
         const checkError = (res: any, name: string) => {
-            if (res.error && res.error.code !== 'PGRST116' && res.error.code !== '42P01') {
-                console.error(`Error fetching ${name}:`, res.error);
-                throw res.error;
+            if (res.error) {
+                 const errorCode = res.error.code;
+                 // Ignore "No rows found" for single-item fetches and "undefined table" for optional tables.
+                 if (errorCode !== 'PGRST116' && errorCode !== '42P01') {
+                    console.error(`Error fetching ${name}:`, res.error);
+                    throw res.error;
+                 }
             }
         };
 
@@ -114,9 +118,12 @@ export async function getSettingsData(): Promise<{
         ]);
 
         const checkError = (res: any, name: string) => {
-            if (res.error && res.error.code !== 'PGRST116' && res.error.code !== '42P01') {
-                console.error(`Error fetching ${name}:`, res.error);
-                throw res.error;
+            if (res.error) {
+                 const errorCode = res.error.code;
+                 if (errorCode !== 'PGRST116' && errorCode !== '42P01') {
+                    console.error(`Error fetching ${name}:`, res.error);
+                    throw res.error;
+                 }
             }
         };
 
