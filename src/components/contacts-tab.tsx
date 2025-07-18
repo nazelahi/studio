@@ -397,12 +397,12 @@ export function ContactsTab() {
     <>
       <Card>
         <CardHeader>
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 w-full">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div>
               <CardTitle>Tenants</CardTitle>
               <CardDescription>Manage your tenants and their information.</CardDescription>
             </div>
-            <div className="flex items-center gap-2 flex-1 w-full justify-end">
+            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
               <div className="relative flex-1 sm:max-w-xs">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input 
@@ -712,11 +712,11 @@ export function ContactsTab() {
                 <div className="overflow-x-auto">
                     <Table>
                         <TableHeader>
-                            <TableRow className="hover:bg-muted/50">
-                                <TableHead className="w-[300px] p-2">Tenant</TableHead>
-                                <TableHead className="p-2">Details</TableHead>
-                                <TableHead className="p-2">Status</TableHead>
-                                <TableHead className="text-right p-2">Actions</TableHead>
+                            <TableRow style={{ backgroundColor: 'hsl(var(--table-header-background))', color: 'hsl(var(--table-header-foreground))' }} className="hover:bg-[hsl(var(--table-header-background)/0.9)]">
+                                <TableHead className="w-[300px] p-2 text-inherit">Tenant</TableHead>
+                                <TableHead className="p-2 text-inherit">Details</TableHead>
+                                <TableHead className="p-2 text-inherit">Status</TableHead>
+                                <TableHead className="text-right p-2 text-inherit">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
