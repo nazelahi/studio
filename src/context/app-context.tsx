@@ -10,7 +10,6 @@ import { Button } from '@/components/ui/button';
 import { addWorkDetailsBatch as addWorkDetailsBatchAction } from '@/app/actions/work';
 import type { AppData } from '@/lib/data';
 import { getDashboardDataAction } from '@/app/actions/data';
-import { getSettingsData } from '@/lib/data';
 
 // --- START: Settings-related types moved here ---
 interface PageDashboard {
@@ -226,36 +225,6 @@ const deepMerge = (target: any, source: any) => {
     return output;
 }
 
-const hexToHsl = (hex: string): string => {
-    if (!hex || typeof hex !== 'string' || !/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(hex)) {
-        return '0 0% 0%'; // Return a default for invalid hex
-    }
-    hex = hex.replace(/^#/, '');
-    if (hex.length === 3) {
-        hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
-    }
-    const r = parseInt(hex.substring(0, 2), 16) / 255;
-    const g = parseInt(hex.substring(2, 4), 16) / 255;
-    const b = parseInt(hex.substring(4, 6), 16) / 255;
-
-    const max = Math.max(r, g, b);
-    const min = Math.min(r, g, b);
-    let h = 0, s = 0, l = (max + min) / 2;
-
-    if (max !== min) {
-        const d = max - min;
-        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
-        switch (max) {
-            case r: h = (g - b) / d + (g < b ? 6 : 0); break;
-            case g: h = (b - r) / d + 2; break;
-            case b: h = (r - g) / d + 4; break;
-        }
-        h /= 6;
-    }
-    
-    return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
-};
-
 // --- END: Settings-related logic ---
 
 type InitialSettings = {
@@ -327,7 +296,6 @@ export function AppContextProvider({ children, initialSettings }: { children: Re
     const [data, setData] = useState(initialAppData);
     const [settings, setSettings] = useState<AppSettings>(() => getInitialSettings(initialSettings.propertySettings, initialSettings.zakatBankDetails));
     const [loading, setLoading] = useState(true);
-    const [isMounted, setIsMounted] = useState(false);
     
     const refreshData = useCallback(async (showLoading = true) => {
         if (showLoading) {
@@ -361,7 +329,6 @@ export function AppContextProvider({ children, initialSettings }: { children: Re
     }, []);
 
     useEffect(() => {
-        setIsMounted(true);
         refreshData();
     }, [refreshData]);
 
@@ -386,20 +353,6 @@ export function AppContextProvider({ children, initialSettings }: { children: Re
 
         setSettings(newSettings);
     };
-
-    useEffect(() => {
-        if (isMounted) {
-            const root = document.documentElement;
-            root.style.setProperty('--primary', hexToHsl(settings.theme.colors.primary));
-            root.style.setProperty('--table-header-background', hexToHsl(settings.theme.colors.table_header_background));
-            root.style.setProperty('--table-header-foreground', hexToHsl(settings.theme.colors.table_header_foreground));
-            root.style.setProperty('--table-footer-background', hexToHsl(settings.theme.colors.table_footer_background));
-            root.style.setProperty('--table-footer-foreground', hexToHsl('#ffffff')); // Assuming white text on footer
-            root.style.setProperty('--mobile-nav-background', hexToHsl(settings.theme.colors.mobile_nav_background));
-            root.style.setProperty('--mobile-nav-foreground', hexToHsl(settings.theme.colors.mobile_nav_foreground));
-        }
-    }, [settings.theme, isMounted]);
-
 
     const uploadFiles = async (tenantId: string, files: File[], toast: ToastFn): Promise<string[]> => {
       try {
