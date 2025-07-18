@@ -357,7 +357,6 @@ export function DocumentsTab() {
                                             {(settings.documentCategories || []).map(cat => (
                                                 <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                                             ))}
-                                            <SelectItem value="Other">Other (specify)</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
