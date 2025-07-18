@@ -1066,7 +1066,7 @@ export function MonthlyOverviewTab() {
                               <TableHead className="hidden sm:table-cell text-inherit">Payment Date</TableHead>
                               <TableHead className="hidden sm:table-cell text-inherit">Status</TableHead>
                               <TableHead className="text-inherit">Amount</TableHead>
-                              <TableCell className="w-[50px] text-right"></TableCell>
+                              <TableHead className="w-[50px] text-right text-inherit"></TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -1267,7 +1267,7 @@ export function MonthlyOverviewTab() {
                                         <div className="space-y-2"><Label htmlFor="date">Date</Label><Input id="date" name="date" type="date" defaultValue={editingExpense?.date ? formatDate(editingExpense.date, 'yyyy-MM-dd') : formatDate(new Date().toISOString(), 'yyyy-MM-dd')} required /></div>
                                         <div className="space-y-2">
                                             <Label htmlFor="category">Category</Label>
-                                            <Select value={expenseCategory} onValueChange={setExpenseCategory}><SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger><SelectContent>{expenseCategories.map(cat => (<SelectItem key={cat} value={cat}>{cat}</SelectItem>))}<SelectItem value="Other">Other</SelectItem></SelectContent></Select>
+                                            <Select value={expenseCategory} onValueChange={setExpenseCategory}><SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger><SelectContent>{expenseCategories.map(cat => (<SelectItem key={cat} value={cat}>{cat}</SelectItem>))}</SelectContent></Select>
                                         </div>
                                         {expenseCategory === 'Other' && (<div className="space-y-2"><Label htmlFor="customCategory">Custom Category</Label><Input id="customCategory" name="customCategory" value={customCategory} onChange={(e) => setCustomCategory(e.target.value)} placeholder="Enter custom category" required/></div>)}
                                         <div className="space-y-2"><Label htmlFor="amount">Amount</Label><Input id="amount" name="amount" type="number" step="0.01" defaultValue={String(editingExpense?.amount ?? '')} placeholder="0.00" required /></div>
@@ -1314,7 +1314,7 @@ export function MonthlyOverviewTab() {
                           <TableHead className="text-inherit hidden sm:table-cell">Category</TableHead>
                           <TableHead className="text-inherit">Amount</TableHead>
                           <TableHead className="text-inherit hidden sm:table-cell">Status</TableHead>
-                          <TableCell className="w-[50px] text-right"></TableCell>
+                          <TableHead className="w-[50px] text-right text-inherit"></TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
