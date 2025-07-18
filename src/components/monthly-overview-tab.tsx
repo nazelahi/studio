@@ -77,9 +77,9 @@ const getStatusNameColor = (status: RentEntry["status"]) => {
 
 const getStatusIcon = (status: RentEntry["status"]) => {
     switch(status) {
-        case "Paid": return <CheckCircle className="h-4 w-4 mr-1"/>;
-        case "Overdue": return <XCircle className="h-4 w-4 mr-1"/>;
-        case "Pending": return <AlertCircle className="h-4 w-4 mr-1"/>
+        case "Paid": return <CheckCircle className="h-4 w-4 text-green-500"/>;
+        case "Overdue": return <XCircle className="h-4 w-4 text-red-500"/>;
+        case "Pending": return <AlertCircle className="h-4 w-4 text-yellow-500"/>
         default: return null;
     }
 }
@@ -96,9 +96,10 @@ interface EditableAmountProps {
     currencySymbol: string;
     isAdmin: boolean;
     withProtection: (action: () => void, event?: React.MouseEvent) => void;
+    className?: string;
 }
 
-const EditableAmount: React.FC<EditableAmountProps> = ({ initialAmount, onSave, currencySymbol, isAdmin, withProtection }) => {
+const EditableAmount: React.FC<EditableAmountProps> = ({ initialAmount, onSave, currencySymbol, isAdmin, withProtection, className }) => {
     const [isEditing, setIsEditing] = React.useState(false);
     const [amount, setAmount] = React.useState(initialAmount);
     const inputRef = React.useRef<HTMLInputElement>(null);
@@ -141,7 +142,7 @@ const EditableAmount: React.FC<EditableAmountProps> = ({ initialAmount, onSave, 
                         setIsEditing(false);
                     }
                 }}
-                className="h-8 w-24 text-left"
+                className={cn("h-8 w-24 text-left", className)}
             />
         );
     }
@@ -150,7 +151,7 @@ const EditableAmount: React.FC<EditableAmountProps> = ({ initialAmount, onSave, 
         <button 
             onClick={handleClick}
             disabled={!isAdmin}
-            className={cn("text-left", isAdmin && "hover:bg-muted rounded-md px-2 py-1 transition-colors")}>
+            className={cn("text-left", isAdmin && "hover:bg-muted rounded-md px-2 py-1 transition-colors", className)}>
                 {formatCurrency(amount, currencySymbol)}
         </button>
     );
@@ -1054,7 +1055,7 @@ export function MonthlyOverviewTab() {
                               <TableHead className="text-inherit">Tenant</TableHead>
                               <TableHead className="hidden md:table-cell text-inherit">Collected By</TableHead>
                               <TableHead className="hidden sm:table-cell text-inherit">Payment Date</TableHead>
-                              <TableHead className="text-inherit">Status</TableHead>
+                              <TableHead className="hidden sm:table-cell text-inherit">Status</TableHead>
                               <TableHead className="text-inherit">Amount</TableHead>
                               <TableHead className="text-right text-inherit">Actions</TableHead>
                             </TableRow>
@@ -1075,15 +1076,18 @@ export function MonthlyOverviewTab() {
                                   </TableCell>}
                                   <TableCell>
                                     <div className="grid gap-1">
-                                      <button
-                                          onClick={() => handleViewDetails(entry)}
-                                          className={cn(
-                                              "text-sm font-medium leading-none text-left hover:underline",
-                                              getStatusNameColor(entry.status)
-                                          )}
-                                      >
-                                          {entry.name}
-                                      </button>
+                                      <div className="flex items-center gap-2">
+                                        <button
+                                            onClick={() => handleViewDetails(entry)}
+                                            className={cn(
+                                                "text-sm font-medium leading-none text-left hover:underline",
+                                                getStatusNameColor(entry.status)
+                                            )}
+                                        >
+                                            {entry.name}
+                                        </button>
+                                        <div className="sm:hidden">{getStatusIcon(entry.status)}</div>
+                                      </div>
                                       <p className="text-sm text-muted-foreground">
                                         {entry.property}
                                       </p>
@@ -1091,7 +1095,7 @@ export function MonthlyOverviewTab() {
                                   </TableCell>
                                   <TableCell className="hidden md:table-cell">{entry.collected_by || '-'}</TableCell>
                                   <TableCell className="hidden sm:table-cell">{formatDate(entry.payment_date, settings.dateFormat)}</TableCell>
-                                  <TableCell>
+                                  <TableCell className="hidden sm:table-cell">
                                       {isAdmin && entry.status !== 'Paid' ? (
                                           <Select
                                               value={entry.status}
@@ -1099,7 +1103,7 @@ export function MonthlyOverviewTab() {
                                           >
                                               <SelectTrigger className={cn("h-auto py-1 px-2 border", getStatusBadge(entry.status))}>
                                                   <div className="flex items-center">
-                                                      {getStatusIcon(entry.status)}
+                                                      <span className="mr-1">{getStatusIcon(entry.status)}</span>
                                                       <SelectValue />
                                                   </div>
                                               </SelectTrigger>
