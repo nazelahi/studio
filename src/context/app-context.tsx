@@ -337,6 +337,46 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
         }
     }, []);
 
+    useEffect(() => {
+        if (!supabase) return;
+
+        const handleDbChange = (payload: any) => {
+            console.log('Database change detected, refreshing data...', payload);
+            refreshData(false); 
+        };
+
+        const tables = [
+            'tenants', 'expenses', 'rent_entries', 'property_settings', 
+            'deposits', 'zakat_transactions', 'notices', 'work_details', 'zakat_bank_details', 'documents'
+        ];
+        
+        const subscriptions = tables.map(table => {
+            return supabase
+                .channel(`public:${table}`)
+                .on(
+                    'postgres_changes',
+                    { event: '*', schema: 'public', table: table },
+                    handleDbChange
+                )
+                .subscribe((status, err) => {
+                    if (status === 'SUBSCRIBED') {
+                        console.log(`Successfully subscribed to real-time updates for ${table}!`);
+                    }
+                    if (err) {
+                        const dbError = err as any;
+                        console.error(`Realtime subscription error on ${table}:`, dbError);
+                    }
+                });
+        });
+
+        return () => {
+            subscriptions.forEach(subscription => {
+                supabase.removeChannel(subscription);
+            });
+        };
+    }, [refreshData]);
+
+
      const handleSetSettings = (newSettingsOrFn: AppSettings | ((prev: AppSettings) => AppSettings)) => {
         const newSettings = typeof newSettingsOrFn === 'function' ? newSettingsOrFn(settings) : newSettingsOrFn;
         setSettings(newSettings);
