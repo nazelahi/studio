@@ -486,7 +486,6 @@ export function ContactsTab() {
                           </div>
                       )}
                     </DialogHeader>
-
                     <div className="p-6 max-h-[65vh] overflow-y-auto">
                       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
                           {/* Avatar */}
@@ -632,7 +631,10 @@ export function ContactsTab() {
             </div>
           </div>
         </CardHeader>
-        <CardContent className={cn(settings.tenantViewStyle === 'list' ? "p-0" : "p-6 pt-0")}>
+        <CardContent className={cn(
+          "pt-0", 
+          settings.tenantViewStyle === 'list' ? "p-0" : "p-4 sm:p-6"
+        )}>
           <div className="">
             {loading ? (
                 <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
