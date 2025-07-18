@@ -222,6 +222,7 @@ export function MonthlyOverviewTab() {
   const formRef = React.useRef<HTMLFormElement>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   const receiptInputRef = React.useRef<HTMLInputElement>(null);
+  const expenseFileInputRef = React.useRef<HTMLInputElement>(null);
 
 
   const filteredTenantsForMonth = React.useMemo(() => {
@@ -779,6 +780,97 @@ export function MonthlyOverviewTab() {
             setSelectedMonth(monthIndex);
         }
     }
+    
+  const handleDownloadExpenseTemplate = () => {
+    const headers = ["date", "category", "amount", "description", "status"];
+    const sampleData = [
+        [formatDate(new Date().toISOString(), 'yyyy-MM-dd'), "Maintenance", 1500, "Fix leaking pipe in Apt 3A", "Paid"],
+        [formatDate(new Date().toISOString(), 'yyyy-MM-dd'), "Utilities", 5000, "Monthly electricity bill", "Due"]
+    ];
+    const worksheet = XLSX.utils.aoa_to_sheet([headers, ...sampleData]);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Expenses Template");
+    XLSX.writeFile(workbook, "Expenses_Template.xlsx");
+    toast({ title: "Template Downloaded", description: "Expenses_Template.xlsx has been downloaded." });
+  };
+  
+  const handleImportExpenseClick = () => {
+    expenseFileInputRef.current?.click();
+  };
+  
+  const handleExpenseFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    toast({ title: "Processing expenses...", description: "Please wait while we read your spreadsheet." });
+    
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        try {
+            const data = e.target?.result;
+            const workbook = XLSX.read(data, { type: 'array' });
+            const sheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[sheetName];
+
+            const json: any[] = XLSX.utils.sheet_to_json(worksheet, {
+                header: 1, 
+                blankrows: false,
+                defval: '',
+            });
+
+            if (json.length < 2) {
+                toast({ title: "Empty or invalid sheet", description: "The sheet must have a header row and at least one data row.", variant: "destructive" });
+                return;
+            }
+
+            const header: string[] = json[0].map((h: any) => String(h).toLowerCase().trim().replace(/ /g, '_'));
+            const rows = json.slice(1);
+            
+            const expensesToCreate = rows.map(rowArray => {
+                const row: { [key: string]: any } = {};
+                header.forEach((h, i) => { row[h] = rowArray[i]; });
+                
+                let expenseDate: string | undefined = undefined;
+                const dateInput = row.date;
+                if (dateInput) {
+                    if (typeof dateInput === 'number') {
+                        const excelDate = new Date(Date.UTC(1900, 0, dateInput - 1));
+                        expenseDate = formatDate(excelDate.toISOString(), 'yyyy-MM-dd');
+                    } else {
+                        const parsed = new Date(dateInput);
+                        if (!isNaN(parsed.getTime())) {
+                            expenseDate = formatDate(parsed.toISOString(), 'yyyy-MM-dd');
+                        }
+                    }
+                }
+
+                return {
+                    date: expenseDate || formatDate(new Date().toISOString(), 'yyyy-MM-dd'),
+                    category: String(row.category || 'Other'),
+                    amount: Number(row.amount || 0),
+                    description: String(row.description || ''),
+                    status: String(row.status || 'Due').charAt(0).toUpperCase() + String(row.status || 'Due').slice(1).toLowerCase() as "Paid" | "Due",
+                };
+            }).filter(expense => expense.category && expense.amount > 0);
+
+            if (expensesToCreate.length === 0) {
+                toast({ title: "No Valid Data Found", description: "Ensure your file has at least 'category' and 'amount' columns.", variant: "destructive" });
+                return;
+            }
+            
+            await addExpensesBatch(expensesToCreate);
+
+            toast({ title: "Import Successful", description: `${expensesToCreate.length} expenses have been added.` });
+
+        } catch (error) {
+            console.error("Error importing expenses:", error);
+            toast({ title: "Import Failed", description: "There was an error processing your file.", variant: "destructive" });
+        } finally {
+            if (event.target) event.target.value = '';
+        }
+    };
+    reader.readAsArrayBuffer(file);
+  };
   
   return (
     <TooltipProvider>
@@ -1368,9 +1460,9 @@ export function MonthlyOverviewTab() {
                       </TableBody>
                       {filteredExpenses.length > 0 && (
                         <TableFooter>
-                          <TableRow style={{ backgroundColor: 'hsl(var(--table-footer-background))', color: 'hsl(var(--table-footer-foreground))' }} className="font-bold hover:bg-[hsl(var(--table-footer-background)/0.9)]">
+                          <TableRow style={{ backgroundColor: 'hsl(var(--table-footer-background))', color: '#ffffff' }} className="font-bold hover:bg-[hsl(var(--table-footer-background)/0.9)]">
                             <TableCell colSpan={isAdmin ? 6 : 5} className="p-2 text-inherit">
-                               <div className="flex flex-col sm:flex-row items-center justify-between px-2 text-destructive py-2">
+                               <div className="flex flex-col sm:flex-row items-center justify-between px-2 py-2">
                                 <div className="sm:hidden text-center">Total Paid</div>
                                 <div className="hidden sm:block text-left">Total Paid</div>
                                 <div>{formatCurrency(totalExpensesPaid, settings.currencySymbol)}</div>
