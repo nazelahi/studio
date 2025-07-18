@@ -380,17 +380,14 @@ export function ContactsTab() {
   const handleSetViewStyle = async (style: 'grid' | 'list') => {
     if (settings.tenantViewStyle === style) return;
 
-    // Optimistically update the UI
     setSettings(prev => ({...prev, tenantViewStyle: style}));
     
-    // Persist the change in the background
     const formData = new FormData();
     formData.append('tenant_view_style', style);
     const result = await updatePropertySettingsAction(formData);
 
     if (result?.error) {
       toast({ title: 'Error Saving View Preference', description: result.error, variant: 'destructive'});
-      // Revert if the save fails
       setSettings(prev => ({...prev, tenantViewStyle: style === 'grid' ? 'list' : 'grid'}));
     }
   }
@@ -398,12 +395,12 @@ export function ContactsTab() {
 
   return (
     <>
-      <div className="mt-4">
-        <div className="px-6 pb-4">
-          <h2 className="text-2xl font-semibold tracking-tight">Tenants</h2>
-          <p className="text-muted-foreground">Manage your tenants and their information.</p>
-        </div>
-        <div className="px-6 pb-4">
+      <Card className="mt-4">
+        <CardHeader>
+          <CardTitle>Tenants</CardTitle>
+          <CardDescription>Manage your tenants and their information.</CardDescription>
+        </CardHeader>
+        <CardContent>
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6 w-full">
               <div className="flex items-center gap-2 flex-1 w-full">
                 <div className="relative flex-1 sm:max-w-xs">
@@ -635,9 +632,7 @@ export function ContactsTab() {
                 </Dialog>
               }
           </div>
-        </div>
-          
-        <div className="px-6">
+        
             {loading ? (
                 <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {[...Array(4)].map((_, i) => <TenantCardSkeleton key={i} />)}
@@ -786,8 +781,8 @@ export function ContactsTab() {
                     </Table>
                 </div>
             )}
-      </div>
-      </div>
+        </CardContent>
+      </Card>
       {selectedTenantForSheet && (
         <TenantDetailSheet 
             tenant={selectedTenantForSheet}
