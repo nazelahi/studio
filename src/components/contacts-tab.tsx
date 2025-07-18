@@ -723,7 +723,7 @@ export function ContactsTab() {
                 <div className="overflow-x-auto">
                     <Table>
                         <TableHeader>
-                            <TableRow>
+                            <TableRow style={{ backgroundColor: 'hsl(var(--table-header-background))', color: 'hsl(var(--table-header-foreground))' }} className="hover:bg-[hsl(var(--table-header-background)/0.9)]">
                                 <TableHead className="w-[300px] p-2 text-inherit">Tenant</TableHead>
                                 <TableHead className="p-2 text-inherit">Details</TableHead>
                                 <TableHead className="p-2 text-inherit">Status</TableHead>

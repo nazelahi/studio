@@ -308,7 +308,7 @@ export function DocumentsTab() {
     <>
       <Table>
           <TableHeader>
-              <TableRow>
+              <TableRow style={{ backgroundColor: 'hsl(var(--table-header-background))', color: 'hsl(var(--table-header-foreground))' }} className="hover:bg-[hsl(var(--table-header-background)/0.9)]">
                   <TableHead className="w-16 p-2 text-inherit">Preview</TableHead>
                   <TableHead className="text-inherit">Description</TableHead>
                   <TableHead className="hidden md:table-cell text-inherit">Date</TableHead>
