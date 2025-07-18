@@ -99,6 +99,19 @@ export default function ApplicationSettingsTab() {
         }
     });
   }
+  
+  const handleColorChange = (field: keyof typeof settings.theme.colors, value: string) => {
+    setSettings(prev => ({
+      ...prev,
+      theme: {
+        ...prev.theme,
+        colors: {
+          ...prev.theme.colors,
+          [field]: value,
+        },
+      },
+    }));
+  };
 
   return (
     <div className="space-y-6">
@@ -151,19 +164,31 @@ export default function ApplicationSettingsTab() {
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                       <div className="space-y-2">
                           <Label htmlFor="theme_primary">Primary</Label>
-                          <Input id="theme_primary" name="theme_primary" type="color" defaultValue={settings.theme.colors.primary} onBlur={(e) => handleSavePropertySettings('themePrimary', e.target.value)} className="p-1 h-10"/>
+                          <Input id="theme_primary" name="theme_primary" type="color" 
+                            value={settings.theme.colors.primary}
+                            onChange={(e) => handleColorChange('primary', e.target.value)}
+                            onBlur={(e) => handleSavePropertySettings('themePrimary', e.target.value)} className="p-1 h-10"/>
                       </div>
                       <div className="space-y-2">
                           <Label htmlFor="theme_table_header_background">Table Header</Label>
-                          <Input id="theme_table_header_background" name="theme_table_header_background" type="color" defaultValue={settings.theme.colors.table_header_background} onBlur={(e) => handleSavePropertySettings('themeTableHeaderBackground', e.target.value)} className="p-1 h-10"/>
+                          <Input id="theme_table_header_background" name="theme_table_header_background" type="color" 
+                            value={settings.theme.colors.table_header_background}
+                            onChange={(e) => handleColorChange('table_header_background', e.target.value)}
+                            onBlur={(e) => handleSavePropertySettings('themeTableHeaderBackground', e.target.value)} className="p-1 h-10"/>
                       </div>
                       <div className="space-y-2">
                           <Label htmlFor="theme_table_header_foreground">Table Header Text</Label>
-                          <Input id="theme_table_header_foreground" name="theme_table_header_foreground" type="color" defaultValue={settings.theme.colors.table_header_foreground} onBlur={(e) => handleSavePropertySettings('themeTableHeaderForeground', e.target.value)} className="p-1 h-10"/>
+                          <Input id="theme_table_header_foreground" name="theme_table_header_foreground" type="color" 
+                            value={settings.theme.colors.table_header_foreground}
+                            onChange={(e) => handleColorChange('table_header_foreground', e.target.value)}
+                            onBlur={(e) => handleSavePropertySettings('themeTableHeaderForeground', e.target.value)} className="p-1 h-10"/>
                       </div>
                       <div className="space-y-2">
                           <Label htmlFor="theme_table_footer_background">Table Footer</Label>
-                          <Input id="theme_table_footer_background" name="theme_table_footer_background" type="color" defaultValue={settings.theme.colors.table_footer_background} onBlur={(e) => handleSavePropertySettings('themeTableFooterBackground', e.target.value)} className="p-1 h-10"/>
+                          <Input id="theme_table_footer_background" name="theme_table_footer_background" type="color" 
+                            value={settings.theme.colors.table_footer_background}
+                            onChange={(e) => handleColorChange('table_footer_background', e.target.value)}
+                            onBlur={(e) => handleSavePropertySettings('themeTableFooterBackground', e.target.value)} className="p-1 h-10"/>
                       </div>
                   </div>
               </div>
@@ -172,11 +197,17 @@ export default function ApplicationSettingsTab() {
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                        <div className="space-y-2">
                           <Label htmlFor="theme_mobile_nav_background">Background</Label>
-                          <Input id="theme_mobile_nav_background" name="theme_mobile_nav_background" type="color" defaultValue={settings.theme.colors.mobile_nav_background} onBlur={(e) => handleSavePropertySettings('themeMobileNavBackground', e.target.value)} className="p-1 h-10"/>
+                          <Input id="theme_mobile_nav_background" name="theme_mobile_nav_background" type="color" 
+                            value={settings.theme.colors.mobile_nav_background}
+                            onChange={(e) => handleColorChange('mobile_nav_background', e.target.value)}
+                            onBlur={(e) => handleSavePropertySettings('themeMobileNavBackground', e.target.value)} className="p-1 h-10"/>
                       </div>
                        <div className="space-y-2">
                           <Label htmlFor="theme_mobile_nav_foreground">Text/Icon</Label>
-                          <Input id="theme_mobile_nav_foreground" name="theme_mobile_nav_foreground" type="color" defaultValue={settings.theme.colors.mobile_nav_foreground} onBlur={(e) => handleSavePropertySettings('themeMobileNavForeground', e.target.value)} className="p-1 h-10"/>
+                          <Input id="theme_mobile_nav_foreground" name="theme_mobile_nav_foreground" type="color" 
+                            value={settings.theme.colors.mobile_nav_foreground}
+                            onChange={(e) => handleColorChange('mobile_nav_foreground', e.target.value)}
+                            onBlur={(e) => handleSavePropertySettings('themeMobileNavForeground', e.target.value)} className="p-1 h-10"/>
                       </div>
                   </div>
               </div>
