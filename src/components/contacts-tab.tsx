@@ -110,7 +110,7 @@ const Combobox: React.FC<ComboboxProps> = ({ options, value, onValueChange, plac
 export function ContactsTab() {
   const { tenants, addTenant, updateTenant, deleteTenant, loading } = useData();
   const { isAdmin } = useAuth();
-  const { settings, refreshSettings } = useSettings();
+  const { settings, setSettings, refreshSettings } = useSettings();
   const [open, setOpen] = React.useState(false);
   const [editingTenant, setEditingTenant] = React.useState<Tenant | null>(null);
   const { toast } = useToast();
@@ -379,15 +379,19 @@ export function ContactsTab() {
 
   const handleSetViewStyle = async (style: 'grid' | 'list') => {
     if (settings.tenantViewStyle === style) return;
+
+    // Optimistically update the UI
+    setSettings(prev => ({...prev, tenantViewStyle: style}));
     
+    // Persist the change in the background
     const formData = new FormData();
     formData.append('tenant_view_style', style);
     const result = await updatePropertySettingsAction(formData);
 
     if (result?.error) {
       toast({ title: 'Error Saving View Preference', description: result.error, variant: 'destructive'});
-    } else {
-      refreshSettings(); // This will trigger a re-fetch of settings in the context
+      // Revert if the save fails
+      setSettings(prev => ({...prev, tenantViewStyle: style === 'grid' ? 'list' : 'grid'}));
     }
   }
 
@@ -402,7 +406,7 @@ export function ContactsTab() {
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6 px-4">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6 px-4 w-full">
               <div className="flex items-center gap-2 flex-1 w-full">
                 <div className="relative flex-1 sm:max-w-xs">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
