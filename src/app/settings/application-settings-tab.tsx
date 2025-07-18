@@ -74,30 +74,18 @@ export default function ApplicationSettingsTab() {
     });
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    const keys = name.split('.');
-    
-    setSettings((prev: any) => {
-        let newState = { ...prev };
-        let currentLevel: any = newState;
-        
-        for (let i = 0; i < keys.length - 1; i++) {
-            currentLevel[keys[i]] = { ...currentLevel[keys[i]] };
-            currentLevel = currentLevel[keys[i]];
-        }
-        
-        currentLevel[keys[keys.length - 1]] = value;
-        return newState;
-    });
-  };
-
-  const handleSavePropertySettings = (field: string, value: string) => {
+  const handleSavePropertySettings = (field: string, value: any) => {
     startTransition(async () => {
         const formData = new FormData();
         const keyMap: {[key: string]: string} = {
             dateFormat: 'date_format',
             currencySymbol: 'currency_symbol',
+            themePrimary: 'theme_primary',
+            themeTableHeaderBackground: 'theme_table_header_background',
+            themeTableHeaderForeground: 'theme_table_header_foreground',
+            themeTableFooterBackground: 'theme_table_footer_background',
+            themeMobileNavBackground: 'theme_mobile_nav_background',
+            themeMobileNavForeground: 'theme_mobile_nav_foreground',
         };
         const mappedKey = keyMap[field] || field;
         formData.set(mappedKey, value);
@@ -111,15 +99,6 @@ export default function ApplicationSettingsTab() {
         }
     });
   }
-
-  const handleSaveAppSettings = () => {
-    // This function now only saves to local storage, as DB saving is handled by onSave handlers
-    setSettings(prev => ({...prev, documentCategories: docCategories}));
-    toast({
-        title: 'Local Settings Saved',
-        description: 'Your changes have been saved to this browser.',
-    });
-  };
 
   return (
     <div className="space-y-6">
@@ -168,43 +147,40 @@ export default function ApplicationSettingsTab() {
               </div>
               <Separator className="my-6" />
               <div className="space-y-4">
-                  <Label className="font-medium">Theme Colors (Saved Locally)</Label>
+                  <Label className="font-medium">Theme Colors</Label>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                       <div className="space-y-2">
                           <Label htmlFor="theme_primary">Primary</Label>
-                          <Input id="theme_primary" name="theme_primary" type="color" defaultValue={settings.theme.colors.primary} onChange={(e) => handleInputChange({ target: { name: 'theme.colors.primary', value: e.target.value } } as any)} className="p-1 h-10"/>
+                          <Input id="theme_primary" name="theme_primary" type="color" defaultValue={settings.theme.colors.primary} onBlur={(e) => handleSavePropertySettings('themePrimary', e.target.value)} className="p-1 h-10"/>
                       </div>
                       <div className="space-y-2">
                           <Label htmlFor="theme_table_header_background">Table Header</Label>
-                          <Input id="theme_table_header_background" name="theme_table_header_background" type="color" defaultValue={settings.theme.colors.table_header_background} onChange={(e) => handleInputChange({ target: { name: 'theme.colors.table_header_background', value: e.target.value } } as any)} className="p-1 h-10"/>
+                          <Input id="theme_table_header_background" name="theme_table_header_background" type="color" defaultValue={settings.theme.colors.table_header_background} onBlur={(e) => handleSavePropertySettings('themeTableHeaderBackground', e.target.value)} className="p-1 h-10"/>
                       </div>
                       <div className="space-y-2">
                           <Label htmlFor="theme_table_header_foreground">Table Header Text</Label>
-                          <Input id="theme_table_header_foreground" name="theme_table_header_foreground" type="color" defaultValue={settings.theme.colors.table_header_foreground} onChange={(e) => handleInputChange({ target: { name: 'theme.colors.table_header_foreground', value: e.target.value } } as any)} className="p-1 h-10"/>
+                          <Input id="theme_table_header_foreground" name="theme_table_header_foreground" type="color" defaultValue={settings.theme.colors.table_header_foreground} onBlur={(e) => handleSavePropertySettings('themeTableHeaderForeground', e.target.value)} className="p-1 h-10"/>
                       </div>
                       <div className="space-y-2">
                           <Label htmlFor="theme_table_footer_background">Table Footer</Label>
-                          <Input id="theme_table_footer_background" name="theme_table_footer_background" type="color" defaultValue={settings.theme.colors.table_footer_background} onChange={(e) => handleInputChange({ target: { name: 'theme.colors.table_footer_background', value: e.target.value } } as any)} className="p-1 h-10"/>
+                          <Input id="theme_table_footer_background" name="theme_table_footer_background" type="color" defaultValue={settings.theme.colors.table_footer_background} onBlur={(e) => handleSavePropertySettings('themeTableFooterBackground', e.target.value)} className="p-1 h-10"/>
                       </div>
                   </div>
               </div>
               <div className="space-y-4 mt-6">
-                  <Label className="font-medium">Mobile Navigation Colors (Saved Locally)</Label>
+                  <Label className="font-medium">Mobile Navigation Colors</Label>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                        <div className="space-y-2">
                           <Label htmlFor="theme_mobile_nav_background">Background</Label>
-                          <Input id="theme_mobile_nav_background" name="theme_mobile_nav_background" type="color" defaultValue={settings.theme.colors.mobile_nav_background} onChange={(e) => handleInputChange({ target: { name: 'theme.colors.mobile_nav_background', value: e.target.value } } as any)} className="p-1 h-10"/>
+                          <Input id="theme_mobile_nav_background" name="theme_mobile_nav_background" type="color" defaultValue={settings.theme.colors.mobile_nav_background} onBlur={(e) => handleSavePropertySettings('themeMobileNavBackground', e.target.value)} className="p-1 h-10"/>
                       </div>
                        <div className="space-y-2">
                           <Label htmlFor="theme_mobile_nav_foreground">Text/Icon</Label>
-                          <Input id="theme_mobile_nav_foreground" name="theme_mobile_nav_foreground" type="color" defaultValue={settings.theme.colors.mobile_nav_foreground} onChange={(e) => handleInputChange({ target: { name: 'theme.colors.mobile_nav_foreground', value: e.target.value } } as any)} className="p-1 h-10"/>
+                          <Input id="theme_mobile_nav_foreground" name="theme_mobile_nav_foreground" type="color" defaultValue={settings.theme.colors.mobile_nav_foreground} onBlur={(e) => handleSavePropertySettings('themeMobileNavForeground', e.target.value)} className="p-1 h-10"/>
                       </div>
                   </div>
               </div>
           </CardContent>
-           <CardFooter>
-             <Button onClick={handleSaveAppSettings}>Save Local Settings</Button>
-           </CardFooter>
         </Card>
         <Card>
             <CardHeader>
