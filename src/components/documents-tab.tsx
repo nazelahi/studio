@@ -14,7 +14,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { PlusCircle, Edit, Trash2, LoaderCircle, Upload, Image as ImageIcon, FileText, Download, Briefcase, X } from "lucide-react"
+import { PlusCircle, Edit, Trash2, LoaderCircle, Upload, Image as ImageIcon, FileText, Download, Briefcase, X, MoreHorizontal } from "lucide-react"
 import { saveDocumentAction, deleteDocumentAction } from "@/app/actions/documents"
 import type { Document as DocType, Tenant } from "@/types"
 import { Skeleton } from "./ui/skeleton"
@@ -27,6 +27,7 @@ import { Badge } from "@/components/ui/badge"
 import { format, parseISO } from "date-fns"
 import { generateDocumentDescription } from "@/ai/flows/generate-document-description-flow"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "./ui/accordion"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu"
 
 type StagedFile = {
   id: string;
@@ -256,37 +257,47 @@ export function DocumentsTab() {
           )}
         </TableCell>
         <TableCell className="text-right">
-            <div className="flex items-center justify-end gap-1">
-                <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
-                    <a href={doc.file_url} target="_blank" rel="noopener noreferrer" download={doc.file_name}>
-                        <Download className="h-4 w-4" />
-                    </a>
-                </Button>
-                {isAdmin && !doc.isTenantDoc && (
-                    <>
-                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => handleEdit(doc, e)}>
-                            <Edit className="h-4 w-4" />
-                        </Button>
-                        <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={(e) => e.stopPropagation()}>
-                                    <Trash2 className="h-4 w-4" />
-                                </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent onClick={(e) => e.stopPropagation()}>
-                                <AlertDialogHeader>
-                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                    <AlertDialogDescription>This action will permanently delete this document. This cannot be undone.</AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction onClick={(e) => handleDelete(e, doc)} disabled={isPending}>Delete</AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
-                    </>
-                )}
-            </div>
+             <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8">
+                        <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    <DropdownMenuItem asChild>
+                        <a href={doc.file_url} target="_blank" rel="noopener noreferrer" download={doc.file_name}>
+                            <Download className="mr-2 h-4 w-4" />
+                            Download
+                        </a>
+                    </DropdownMenuItem>
+                    {isAdmin && !doc.isTenantDoc && (
+                        <>
+                            <DropdownMenuItem onClick={(e) => handleEdit(doc, e)}>
+                                <Edit className="mr-2 h-4 w-4" />
+                                Edit
+                            </DropdownMenuItem>
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive">
+                                        <Trash2 className="mr-2 h-4 w-4" />
+                                        Delete
+                                    </DropdownMenuItem>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                        <AlertDialogDescription>This action will permanently delete this document. This cannot be undone.</AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction onClick={(e) => handleDelete(e, doc)} disabled={isPending}>Delete</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        </>
+                    )}
+                </DropdownMenuContent>
+            </DropdownMenu>
         </TableCell>
     </TableRow>
   );
@@ -299,7 +310,7 @@ export function DocumentsTab() {
                 <TableHead className="text-inherit">Description</TableHead>
                 <TableHead className="hidden md:table-cell text-inherit">Date</TableHead>
                 <TableHead className="text-inherit">Category</TableHead>
-                <TableHead className="text-right text-inherit">Actions</TableHead>
+                <TableHead className="text-right text-inherit w-12"></TableHead>
             </TableRow>
         </TableHeader>
         <TableBody>

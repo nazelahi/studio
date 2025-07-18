@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { PlusCircle, Edit, Trash2, LoaderCircle, ExternalLink, Download, Upload, CheckCircle, AlertCircle } from "lucide-react"
+import { PlusCircle, Edit, Trash2, LoaderCircle, ExternalLink, Download, Upload, CheckCircle, AlertCircle, MoreHorizontal } from "lucide-react"
 import type { WorkDetail, Tenant } from "@/types"
 import { saveWorkDetailAction, deleteWorkDetailAction } from "@/app/actions/work"
 import { getYear } from "date-fns"
@@ -26,8 +26,9 @@ import { useProtection } from "@/context/protection-context"
 import * as XLSX from 'xlsx';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip"
 import { formatCurrency, formatDate } from "@/lib/utils"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu"
 
-const workCategories = ["Plumbing", "Electrical", "Painting", "Cleaning", "Appliance Repair", "General Maintenance", "Other"];
+const workCategories = ["Plumbing", "Electrical", "Painting", "Cleaning", "Appliance Repair", "General Maintenance"];
 
 const getWorkStatusIcon = (status: WorkDetail['status']) => {
     switch(status) {
@@ -463,7 +464,7 @@ export function WorkDetailsTab({ year }: { year: number }) {
               <TableHead className="text-inherit hidden sm:table-cell">Worker Cost</TableHead>
               <TableHead className="text-inherit">Total Cost</TableHead>
               <TableHead className="text-inherit hidden sm:table-cell">Status</TableHead>
-              <TableHead className="text-right text-inherit">Actions</TableHead>
+              <TableHead className="text-right text-inherit w-12"></TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -512,31 +513,40 @@ export function WorkDetailsTab({ year }: { year: number }) {
                     </TableCell>
                     <TableCell className="text-right">
                       {isAdmin && (
-                          <div className="flex items-center justify-end gap-1">
-                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => handleEdit(work, e)}>
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
-                                    <Trash2 className="h-4 w-4" />
+                          <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8">
+                                      <MoreHorizontal className="h-4 w-4" />
                                   </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                  <AlertDialogHeader>
-                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                    <AlertDialogDescription>This will permanently delete this work item. This action cannot be undone.</AlertDialogDescription>
-                                  </AlertDialogHeader>
-                                  <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <form onSubmit={handleDelete}>
-                                      <input type="hidden" name="workId" value={work.id} />
-                                      <AlertDialogAction type="submit" disabled={isPending}>Delete</AlertDialogAction>
-                                    </form>
-                                  </AlertDialogFooter>
-                                </AlertDialogContent>
-                              </AlertDialog>
-                          </div>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={(e) => handleEdit(work, e)}>
+                                      <Edit className="mr-2 h-4 w-4" />
+                                      Edit
+                                  </DropdownMenuItem>
+                                  <AlertDialog>
+                                      <AlertDialogTrigger asChild>
+                                          <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive">
+                                              <Trash2 className="mr-2 h-4 w-4" />
+                                              Delete
+                                          </DropdownMenuItem>
+                                      </AlertDialogTrigger>
+                                      <AlertDialogContent>
+                                          <AlertDialogHeader>
+                                              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                              <AlertDialogDescription>This will permanently delete this work item. This action cannot be undone.</AlertDialogDescription>
+                                          </AlertDialogHeader>
+                                          <AlertDialogFooter>
+                                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                              <form onSubmit={handleDelete}>
+                                                  <input type="hidden" name="workId" value={work.id} />
+                                                  <AlertDialogAction type="submit" disabled={isPending}>Delete</AlertDialogAction>
+                                              </form>
+                                          </AlertDialogFooter>
+                                      </AlertDialogContent>
+                                  </AlertDialog>
+                              </DropdownMenuContent>
+                          </DropdownMenu>
                       )}
                     </TableCell>
                   </TableRow>
@@ -553,7 +563,7 @@ export function WorkDetailsTab({ year }: { year: number }) {
             {filteredWorkDetails.length > 0 && (
                 <TableFooter>
                     <TableRow style={{ backgroundColor: 'hsl(var(--table-footer-background))', color: 'hsl(var(--table-footer-foreground))' }} className="font-bold hover:bg-[hsl(var(--table-footer-background)/0.9)]">
-                        <TableCell colSpan={isAdmin ? 6 : 5} className="text-inherit p-2">
+                        <TableCell colSpan={6} className="text-inherit p-2">
                            <div className="flex flex-col sm:flex-row items-center justify-between px-2">
                                 <div className="sm:hidden text-center text-inherit font-bold">Total for {year}</div>
                                 <div className="hidden sm:block text-left text-inherit font-bold">Total for {year}</div>

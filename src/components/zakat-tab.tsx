@@ -6,7 +6,7 @@ import * as React from "react"
 import { useAppContext } from "@/context/app-context"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { PlusCircle, Edit, Trash2, ArrowUpCircle, ArrowDownCircle, Banknote, LoaderCircle, Settings, Landmark, Eye, Upload, ImageIcon, MapPin } from "lucide-react"
+import { PlusCircle, Edit, Trash2, ArrowUpCircle, ArrowDownCircle, Banknote, LoaderCircle, Settings, Landmark, Eye, Upload, ImageIcon, MapPin, MoreHorizontal } from "lucide-react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter as UiTableFooter } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/hooks/use-toast"
@@ -23,6 +23,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs"
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarImage, AvatarFallback } from "./ui/avatar"
 import { formatCurrency, formatDate } from "@/lib/utils"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu"
 
 export function ZakatTab() {
   const { zakatTransactions, loading, settings } = useAppContext();
@@ -199,7 +200,7 @@ export function ZakatTab() {
             <TableHead className="text-inherit">{type === 'inflow' ? 'Source' : 'Recipient'}</TableHead>
             <TableHead className="hidden sm:table-cell text-inherit">Description</TableHead>
             <TableHead className="text-right text-inherit">Amount</TableHead>
-            <TableHead className="text-right text-inherit">Actions</TableHead>
+            <TableHead className="text-right text-inherit w-12"></TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -213,43 +214,51 @@ export function ZakatTab() {
                   {formatCurrency(tx.amount, settings.currencySymbol)}
                 </TableCell>
                 <TableCell className="text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      {tx.receipt_url && (
-                        <Button asChild variant="ghost" size="icon" className="h-8 w-8">
-                           <a href={tx.receipt_url} target="_blank" rel="noopener noreferrer">
-                                <Eye className="h-4 w-4" />
-                            </a>
-                        </Button>
-                      )}
-                      {isAdmin && (
-                        <>
-                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEditTx(tx)}>
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                           <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
-                                    <Trash2 className="h-4 w-4" />
-                                </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                                <AlertDialogHeader>
-                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                    <AlertDialogDescription>This will permanently delete this Zakat transaction. This action cannot be undone.</AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <form onSubmit={(e) => { e.preventDefault(); handleDeleteTx(new FormData(e.currentTarget)); }}>
-                                        <input type="hidden" name="transactionId" value={tx.id} />
-                                        {tx.receipt_url && <input type="hidden" name="receiptUrl" value={tx.receipt_url} />}
-                                        <AlertDialogAction type="submit" disabled={isTxPending}>Delete</AlertDialogAction>
-                                    </form>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                           </AlertDialog>
-                        </>
-                      )}
-                    </div>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                                <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            {tx.receipt_url && (
+                                <DropdownMenuItem asChild>
+                                <a href={tx.receipt_url} target="_blank" rel="noopener noreferrer">
+                                        <Eye className="mr-2 h-4 w-4" />
+                                        View Receipt
+                                    </a>
+                                </DropdownMenuItem>
+                            )}
+                            {isAdmin && (
+                                <>
+                                <DropdownMenuItem onClick={() => handleEditTx(tx)}>
+                                    <Edit className="mr-2 h-4 w-4" />
+                                    Edit
+                                </DropdownMenuItem>
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive">
+                                            <Trash2 className="mr-2 h-4 w-4" />
+                                            Delete
+                                        </DropdownMenuItem>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                            <AlertDialogDescription>This will permanently delete this Zakat transaction. This action cannot be undone.</AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                            <form onSubmit={(e) => { e.preventDefault(); const fd = new FormData(); fd.append('transactionId', tx.id); if(tx.receipt_url) fd.append('receiptUrl', tx.receipt_url); handleDeleteTx(fd); }}>
+                                                <AlertDialogAction type="submit" disabled={isTxPending}>Delete</AlertDialogAction>
+                                            </form>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                                </>
+                            )}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </TableCell>
               </TableRow>
             ))
@@ -364,7 +373,7 @@ export function ZakatTab() {
                             <TableHead>Bank Name</TableHead>
                             <TableHead>Account Number</TableHead>
                             <TableHead>Location</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
+                            <TableHead className="text-right w-12"></TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -381,30 +390,39 @@ export function ZakatTab() {
                                 <TableCell>{detail.location || '-'}</TableCell>
                                 <TableCell className="text-right">
                                     {isAdmin && (
-                                        <div className="flex items-center justify-end gap-1">
-                                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEditBankDetail(detail)}>
-                                                <Edit className="h-4 w-4" />
-                                            </Button>
-                                            <AlertDialog>
-                                                <AlertDialogTrigger asChild>
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
-                                                </AlertDialogTrigger>
-                                                <AlertDialogContent>
-                                                    <AlertDialogHeader>
-                                                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                                        <AlertDialogDescription>This will permanently delete this Zakat bank detail. This action cannot be undone.</AlertDialogDescription>
-                                                    </AlertDialogHeader>
-                                                    <AlertDialogFooter>
-                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                        <form onSubmit={(e) => { e.preventDefault(); const fd = new FormData(); fd.set('detailId', detail.id); fd.set('logoUrl', detail.logo_url || ''); handleDeleteBankDetail(fd); }}>
-                                                            <AlertDialogAction type="submit" disabled={isBankDetailPending}>Delete</AlertDialogAction>
-                                                        </form>
-                                                    </AlertDialogFooter>
-                                                </AlertDialogContent>
-                                            </AlertDialog>
-                                        </div>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                                    <MoreHorizontal className="h-4 w-4" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuItem onClick={() => handleEditBankDetail(detail)}>
+                                                    <Edit className="mr-2 h-4 w-4" />
+                                                    Edit
+                                                </DropdownMenuItem>
+                                                <AlertDialog>
+                                                    <AlertDialogTrigger asChild>
+                                                        <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive">
+                                                            <Trash2 className="mr-2 h-4 w-4" />
+                                                            Delete
+                                                        </DropdownMenuItem>
+                                                    </AlertDialogTrigger>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader>
+                                                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                            <AlertDialogDescription>This will permanently delete this Zakat bank detail. This action cannot be undone.</AlertDialogDescription>
+                                                        </AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                            <form onSubmit={(e) => { e.preventDefault(); const fd = new FormData(); fd.set('detailId', detail.id); fd.set('logoUrl', detail.logo_url || ''); handleDeleteBankDetail(fd); }}>
+                                                                <AlertDialogAction type="submit" disabled={isBankDetailPending}>Delete</AlertDialogAction>
+                                                            </form>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
                                     )}
                                 </TableCell>
                             </TableRow>

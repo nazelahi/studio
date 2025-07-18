@@ -1066,7 +1066,7 @@ export function MonthlyOverviewTab() {
                               <TableHead className="hidden sm:table-cell text-inherit">Payment Date</TableHead>
                               <TableHead className="hidden sm:table-cell text-inherit">Status</TableHead>
                               <TableHead className="text-inherit">Amount</TableHead>
-                              <TableHead className="w-[50px] text-right text-inherit"></TableHead>
+                              <TableCell className="w-[50px] text-right"></TableCell>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -1314,7 +1314,7 @@ export function MonthlyOverviewTab() {
                           <TableHead className="text-inherit hidden sm:table-cell">Category</TableHead>
                           <TableHead className="text-inherit">Amount</TableHead>
                           <TableHead className="text-inherit hidden sm:table-cell">Status</TableHead>
-                          <TableHead className="w-[50px] text-right text-inherit"></TableHead>
+                          <TableCell className="w-[50px] text-right"></TableCell>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
