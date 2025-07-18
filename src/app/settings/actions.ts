@@ -43,26 +43,31 @@ export async function updatePropertySettingsAction(formData: FormData) {
     }
 
     const settingsData: { [key: string]: any } = {};
+    const fileKeys = ['bankLogoFile', 'ownerPhotoFile', 'faviconFile', 'appLogoFile'];
+    const arrayKeys = ['document_categories[]', 'whatsapp_reminder_schedule'];
 
-    // Handle simple text fields from FormData
+    // Handle simple text/value fields from FormData
     for (const [key, value] of formData.entries()) {
-        if (key !== 'bankLogoFile' && key !== 'ownerPhotoFile' && key !== 'faviconFile' && key !== 'document_categories[]' && key !== 'appLogoFile') {
-            if (key === 'whatsapp_reminders_enabled') {
-                 settingsData[key] = value === 'on';
-            } else if (key === 'whatsapp_reminder_schedule') {
-                if (!settingsData[key]) settingsData[key] = [];
-                settingsData[key].push(value);
-            }
-             else {
-                settingsData[key] = value;
-            }
+        if (!fileKeys.includes(key) && !arrayKeys.includes(key) && key !== 'whatsapp_reminders_enabled') {
+            settingsData[key] = value;
         }
     }
     
+    // Handle boolean for whatsapp reminders
+    if (formData.has('whatsapp_reminders_enabled')) {
+      settingsData.whatsapp_reminders_enabled = formData.get('whatsapp_reminders_enabled') === 'on';
+    }
+
     // Handle array for document categories
     const categories = formData.getAll('document_categories[]');
     if (categories.length > 0) {
         settingsData.document_categories = categories;
+    }
+    
+     // Handle array for whatsapp schedule
+    const schedule = formData.getAll('whatsapp_reminder_schedule');
+    if (schedule.length > 0) {
+        settingsData.whatsapp_reminder_schedule = schedule;
     }
 
 
