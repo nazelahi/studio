@@ -9,6 +9,7 @@ import { useAuth } from '@/context/auth-context';
 import { Button } from '@/components/ui/button';
 import { addWorkDetailsBatch as addWorkDetailsBatchAction } from '@/app/actions/work';
 import type { AppData } from '@/lib/data';
+import { getDashboardDataAction } from '@/app/actions/data';
 
 // --- START: Settings-related types moved here ---
 interface PageDashboard {
@@ -137,7 +138,6 @@ const defaultSettings: AppSettings = {
     ownerPhotoUrl: undefined,
     passcode: "",
     passcodeProtectionEnabled: true,
-    zakatBankDetails: [],
     footerName: "© 2024 RentFlow. All Rights Reserved.",
     aboutUs: "Your trusted partner in property management. Providing seamless rental experiences.",
     contactPhone: "+1 (555) 123-4567",
@@ -244,11 +244,23 @@ const hexToHsl = (hex: string): string => {
 };
 // --- END: Settings-related logic ---
 
+const initialAppData: AppData = {
+    tenants: [],
+    expenses: [],
+    rentData: [],
+    propertySettings: null,
+    deposits: [],
+    zakatTransactions: [],
+    zakatBankDetails: [],
+    notices: [],
+    workDetails: [],
+    documents: [],
+}
 
-export function AppContextProvider({ children, initialData }: { children: ReactNode, initialData: AppData }) {
-    const [data, setData] = useState<AppData>(initialData);
+export function AppContextProvider({ children }: { children: ReactNode }) {
+    const [data, setData] = useState<AppData>(initialAppData);
     const [settings, setSettings] = useState<AppSettings>(defaultSettings);
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
     const [isMounted, setIsMounted] = useState(false);
     
     const { user, loading: authLoading } = useAuth();
@@ -256,32 +268,24 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
     const refreshData = useCallback(async () => {
         setLoading(true);
         try {
-            window.location.reload();
-        } catch (error: any) {
-            console.error(`Error in refreshing data:`, error.message, error);
-            handleError(error, "refreshing data", () => {});
-            setLoading(false);
-        }
-    }, []);
+            const initialData = await getDashboardDataAction();
+            setData(initialData);
 
-    // Effect to initialize settings
-     useEffect(() => {
-        setIsMounted(true);
-        let localSettings = {};
-        try {
-            const item = window.localStorage.getItem('appSettings');
-            if (item) {
-                localSettings = JSON.parse(item);
+            let localSettings = {};
+            try {
+                const item = window.localStorage.getItem('appSettings');
+                if (item) {
+                    localSettings = JSON.parse(item);
+                }
+            } catch (error) {
+                console.error("Failed to parse settings from localStorage", error);
             }
-        } catch (error) {
-            console.error("Failed to parse settings from localStorage", error);
-        }
 
-        const combinedSettings = deepMerge(defaultSettings, localSettings);
-        const serverSettings = initialData.propertySettings;
+            const combinedSettings = deepMerge(defaultSettings, localSettings);
+            const serverSettings = initialData.propertySettings;
 
-        if (serverSettings) {
-             combinedSettings.houseName = serverSettings.house_name || defaultSettings.houseName;
+            if (serverSettings) {
+                combinedSettings.houseName = serverSettings.house_name || defaultSettings.houseName;
                 combinedSettings.houseAddress = serverSettings.house_address || defaultSettings.houseAddress;
                 combinedSettings.bankName = serverSettings.bank_name || defaultSettings.bankName;
                 combinedSettings.bankAccountNumber = serverSettings.bank_account_number || defaultSettings.bankAccountNumber;
@@ -314,17 +318,30 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
                 combinedSettings.whatsappRemindersEnabled = serverSettings.whatsapp_reminders_enabled ?? defaultSettings.whatsappRemindersEnabled;
                 combinedSettings.whatsappReminderSchedule = serverSettings.whatsapp_reminder_schedule || defaultSettings.whatsappReminderSchedule;
                 combinedSettings.whatsappReminderTemplate = serverSettings.whatsapp_reminder_template || defaultSettings.whatsappReminderTemplate;
-        }
+            }
 
-        setSettings(combinedSettings);
-    }, [initialData.propertySettings]);
+            setSettings(combinedSettings);
+            
+        } catch (error: any) {
+            console.error(`Error in refreshing data:`, error.message, error);
+            handleError(error, "refreshing data", () => {});
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        setIsMounted(true);
+        refreshData();
+    }, [refreshData]);
+
 
      const handleSetSettings = (newSettingsOrFn: AppSettings | ((prev: AppSettings) => AppSettings)) => {
         const newSettings = typeof newSettingsOrFn === 'function' ? newSettingsOrFn(settings) : newSettingsOrFn;
         
         const { 
             houseName, houseAddress, bankName, bankAccountNumber, bankLogoUrl, ownerName, ownerPhotoUrl, 
-            zakatBankDetails, passcode, passcodeProtectionEnabled, aboutUs, contactPhone, contactEmail, contactAddress, footerName,
+            passcode, passcodeProtectionEnabled, aboutUs, contactPhone, contactEmail, contactAddress, footerName,
             theme, whatsappRemindersEnabled, whatsappReminderSchedule, whatsappReminderTemplate, tenantViewStyle,
             metadataTitle, faviconUrl, appLogoUrl, documentCategories, dateFormat, currencySymbol,
             ...localSettingsToSave 

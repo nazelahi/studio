@@ -6,7 +6,6 @@ import { AuthProvider } from '@/context/auth-context';
 import { ThemeProvider } from '@/components/theme-provider';
 import { createClient } from '@supabase/supabase-js';
 import { AppContextProvider } from '@/context/app-context';
-import { getDashboardData } from '@/lib/data';
 import { ProtectionProvider } from '@/context/protection-context';
 
 // It's safe to use service role key here as this runs on the server.
@@ -66,7 +65,6 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const initialData = await getDashboardData();
   
   return (
     <html lang="en" suppressHydrationWarning>
@@ -83,7 +81,7 @@ export default async function RootLayout({
           disableTransitionOnChange
         >
           <AuthProvider>
-            <AppContextProvider initialData={initialData}>
+            <AppContextProvider>
               <ProtectionProvider>
                   {children}
               </ProtectionProvider>

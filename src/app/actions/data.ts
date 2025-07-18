@@ -3,6 +3,15 @@
 
 import { createClient } from '@supabase/supabase-js'
 import 'dotenv/config'
+import type { AppData } from '@/lib/data'
+import { getDashboardData } from '@/lib/data'
+
+
+// This function is called from the client to fetch all initial data.
+export async function getDashboardDataAction(): Promise<AppData> {
+    return await getDashboardData();
+}
+
 
 const getSupabaseAdmin = () => {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
