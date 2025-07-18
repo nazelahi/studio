@@ -1417,10 +1417,6 @@ export function MonthlyOverviewTab() {
                     </div>
                 </div>
             <div className="mt-6">
-                 <div className="mb-4">
-                    <h3 className="text-xl font-bold">{settings.page_overview.financial_overview_title}</h3>
-                    <p className="text-muted-foreground">{settings.page_overview.financial_overview_description}</p>
-                </div>
                 <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                     <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">Total Rent Collected</p><div className="flex items-center gap-2"><DollarSign className="h-5 w-5 text-green-500"/><p className="text-xl font-bold text-green-600">{formatCurrency(totalRentCollected, settings.currencySymbol)}</p></div></CardContent></Card>
                     <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">Total Expenses</p><div className="flex items-center gap-2"><TrendingDown className="h-5 w-5 text-red-500"/><p className="text-xl font-bold text-red-600">{formatCurrency(totalExpensesPaid, settings.currencySymbol)}</p></div></CardContent></Card>
