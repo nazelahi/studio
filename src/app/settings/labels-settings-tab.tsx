@@ -41,7 +41,6 @@ export default function LabelsSettingsTab() {
         const labelsToSave = {
             page_dashboard: settings.page_dashboard,
             tabNames: settings.tabNames,
-            page_overview: settings.page_overview,
         };
         formData.append('page_labels', JSON.stringify(labelsToSave));
         
@@ -102,20 +101,6 @@ export default function LabelsSettingsTab() {
                      <div className="space-y-2">
                         <Label htmlFor="tab_documents">Documents Tab</Label>
                         <Input id="tab_documents" name="tabNames.documents" value={settings.tabNames.documents} onChange={handleInputChange} />
-                    </div>
-                </div>
-            </div>
-
-            <div className="space-y-4">
-                <h3 className="font-medium">Overview Page Sections</h3>
-                <div className="grid md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="overview-financial-title">{settings.page_settings.overview_settings.financial_title_label}</Label>
-                        <Input id="overview-financial-title" name="page_overview.financial_overview_title" value={settings.page_overview.financial_overview_title} onChange={handleInputChange} />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="overview-financial-desc">{settings.page_settings.overview_settings.financial_description_label}</Label>
-                        <Input id="overview-financial-desc" name="page_overview.financial_overview_description" value={settings.page_overview.financial_overview_description} onChange={handleInputChange} />
                     </div>
                 </div>
             </div>

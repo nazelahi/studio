@@ -82,11 +82,7 @@ export type PageLabels = {
     nav_settings: string;
   };
   tabNames: TabNames;
-  page_overview: {
-    financial_overview_title: string;
-    financial_overview_description: string;
-  };
-}
+};
 
 export type PropertySettings = {
   id: number;

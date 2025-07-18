@@ -316,9 +316,9 @@ const getInitialSettings = (serverSettings: DbPropertySettings | null, zakatDeta
             // Merge page_labels from database
             ...deepMerge({ 
               page_dashboard: defaultSettings.page_dashboard, 
-              tabNames: defaultSettings.tabNames, 
-              page_overview: defaultSettings.page_overview 
+              tabNames: defaultSettings.tabNames,
             }, serverSettings.page_labels || {}),
+            page_overview: defaultSettings.page_overview,
             page_settings: defaultSettings.page_settings,
          }
     }
