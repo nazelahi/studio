@@ -403,7 +403,7 @@ export function ContactsTab() {
         </CardHeader>
         <CardContent className="p-0">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6 px-4">
-              <div className="flex items-center gap-2 w-full">
+              <div className="flex items-center gap-2 flex-1 w-full">
                 <div className="relative flex-1 sm:max-w-xs">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input 
