@@ -197,9 +197,8 @@ export default function DashboardPageClient() {
                       </div>
                   </DialogContent>
                 </Dialog>
-                <Button variant="ghost" size="icon" className="w-full justify-start mt-2" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
-                    {isSidebarOpen ? <PanelLeftClose className="h-4 w-4 mr-3"/> : <PanelLeftOpen className="h-4 w-4"/> }
-                    {isSidebarOpen && "Collapse"}
+                <Button variant="ghost" size="icon" className="w-full justify-center mt-2" onClick={() => setIsSidebarOpen(!isSidebarOpen)}>
+                    {isSidebarOpen ? <PanelLeftClose className="h-4 w-4"/> : <PanelLeftOpen className="h-4 w-4"/> }
                 </Button>
             </div>
         </div>
