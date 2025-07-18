@@ -72,6 +72,7 @@ export type RentEntry = {
     month: number; // "Month" as an index
     payment_date?: string; // "Date" of collection
     collected_by?: string;
+    payment_for_month?: number;
     created_at?: string;
     deleted_at?: string | null;
 }

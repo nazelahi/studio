@@ -519,10 +519,10 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
       }
     };
 
-    const addExpensesBatch = async (expenses: Omit<Expense, 'id' | 'created_at' | 'deleted_at'>[], toast: ToastFn) => {
+    const addExpensesBatch = async (expenses: Omit<Expense, 'id' | 'created_at' | 'deleted_at'>[]) => {
         const result = await addExpensesBatchAction(expenses);
         if (result.error) {
-            handleError(new Error(result.error), 'batch adding expenses', toast);
+            handleError(new Error(result.error), 'batch adding expenses', () => {});
         }
         await refreshData(false);
         return result;
@@ -628,6 +628,7 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
             due_date: new Date(year, month, 1).toISOString().split('T')[0],
             year,
             month,
+            payment_for_month: rentEntryData.payment_for_month,
         };
         
         const { error } = await supabase.from('rent_entries').insert(newEntry);

@@ -397,7 +397,8 @@ export function MonthlyOverviewTab() {
         collected_by: formData.get('collected_by') as string,
         status: formData.get('status') as RentEntry['status'],
         avatar: selectedHistoricalTenant?.avatar || editingRentEntry?.avatar || 'https://placehold.co/80x80.png',
-        tenant_id: selectedHistoricalTenant?.id || editingRentEntry?.tenant_id
+        tenant_id: selectedHistoricalTenant?.id || editingRentEntry?.tenant_id,
+        payment_for_month: formData.get('payment_for_month') ? Number(formData.get('payment_for_month')) : selectedMonth,
     };
 
     if(editingRentEntry) {
@@ -727,7 +728,7 @@ export function MonthlyOverviewTab() {
                 return;
             }
 
-            const result = await addExpensesBatch(expensesToCreate, toast);
+            const result = await addExpensesBatch(expensesToCreate);
              if (result?.error) {
                 toast({ title: "Import Failed", description: result.error, variant: "destructive" });
              } else {
@@ -1049,7 +1050,18 @@ export function MonthlyOverviewTab() {
                                             )}
                                             <div className="space-y-2"><Label htmlFor="name">Tenant Name</Label><Input id="name" name="name" defaultValue={editingRentEntry?.name || ''} required disabled={!!selectedHistoricalTenant} /></div>
                                             <div className="space-y-2"><Label htmlFor="property">Property/Unit</Label><Input id="property" name="property" defaultValue={editingRentEntry?.property || ''} required disabled={!!selectedHistoricalTenant}/></div>
-                                            <div className="space-y-2"><Label htmlFor="amount">Rent Amount</Label><Input id="amount" name="amount" type="number" step="0.01" defaultValue={editingRentEntry?.rent || ''} required /></div>
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="space-y-2"><Label htmlFor="amount">Rent Amount</Label><Input id="amount" name="amount" type="number" step="0.01" defaultValue={editingRentEntry?.rent || ''} required /></div>
+                                                <div className="space-y-2">
+                                                    <Label htmlFor="payment_for_month">Payment For Month</Label>
+                                                    <Select name="payment_for_month" defaultValue={String(editingRentEntry?.payment_for_month ?? selectedMonth)}>
+                                                        <SelectTrigger><SelectValue/></SelectTrigger>
+                                                        <SelectContent>
+                                                            {months.map((m, i) => <SelectItem key={i} value={String(i)}>{m}</SelectItem>)}
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                            </div>
                                             <div className="space-y-2"><Label htmlFor="status">Status</Label><Select name="status" defaultValue={editingRentEntry?.status || 'Pending'}><SelectTrigger><SelectValue placeholder="Select status" /></SelectTrigger><SelectContent><SelectItem value="Pending">Pending</SelectItem><SelectItem value="Paid">Paid</SelectItem><SelectItem value="Overdue">Overdue</SelectItem></SelectContent></Select></div>
                                             <div className="space-y-2"><Label htmlFor="payment_date">Payment Date</Label><Input id="payment_date" name="payment_date" type="date" defaultValue={editingRentEntry?.payment_date || ''} /></div>
                                             <div className="space-y-2"><Label htmlFor="collected_by">Collected By</Label><Input id="collected_by" name="collected_by" defaultValue={editingRentEntry?.collected_by || ''} /></div>
@@ -1093,6 +1105,7 @@ export function MonthlyOverviewTab() {
                                   </div>
                               </TableHead>}
                               <TableHead className="text-inherit">Tenant</TableHead>
+                              <TableHead className="hidden md:table-cell text-inherit">Payment For</TableHead>
                               <TableHead className="hidden md:table-cell text-inherit">Collected By</TableHead>
                               <TableHead className="hidden sm:table-cell text-inherit">Payment Date</TableHead>
                               <TableHead className="hidden sm:table-cell text-inherit">Status</TableHead>
@@ -1133,6 +1146,7 @@ export function MonthlyOverviewTab() {
                                       </p>
                                     </div>
                                   </TableCell>
+                                  <TableCell className="hidden md:table-cell">{months[entry.payment_for_month ?? entry.month]}</TableCell>
                                   <TableCell className="hidden md:table-cell">{entry.collected_by || '-'}</TableCell>
                                   <TableCell className="hidden sm:table-cell">{formatDate(entry.payment_date, settings.dateFormat)}</TableCell>
                                   <TableCell className="hidden sm:table-cell">
@@ -1226,14 +1240,14 @@ export function MonthlyOverviewTab() {
                               ))
                             ) : (
                               <TableRow>
-                                <TableCell colSpan={isAdmin ? 7 : 6} className="text-center text-muted-foreground p-10">No rent collection data for {month} {selectedYear}.</TableCell>
+                                <TableCell colSpan={isAdmin ? 8 : 7} className="text-center text-muted-foreground p-10">No rent collection data for {month} {selectedYear}.</TableCell>
                               </TableRow>
                             )}
                           </TableBody>
                           {filteredTenantsForMonth.length > 0 && (
                             <TableFooter>
                               <TableRow style={{ backgroundColor: 'hsl(var(--table-footer-background))', color: 'hsl(var(--table-footer-foreground))' }} className="font-bold hover:bg-[hsl(var(--table-footer-background)/0.9)]">
-                                  <TableCell colSpan={isAdmin ? 7 : 6} className="text-inherit p-2">
+                                  <TableCell colSpan={isAdmin ? 8 : 7} className="text-inherit p-2">
                                     <div className="flex flex-col sm:flex-row items-center justify-between px-2">
                                       <div className="sm:hidden text-center text-inherit font-bold">Total Rent Collected</div>
                                       <div className="hidden sm:block text-left text-inherit font-bold">Total Rent Collected</div>
