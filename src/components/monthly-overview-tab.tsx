@@ -858,9 +858,12 @@ export function MonthlyOverviewTab() {
                 return;
             }
             
-            await addExpensesBatch(expensesToCreate);
-
-            toast({ title: "Import Successful", description: `${expensesToCreate.length} expenses have been added.` });
+            const result = await addExpensesBatch(expensesToCreate);
+            if (result.error) {
+              toast({ title: "Import Failed", description: result.error, variant: 'destructive'});
+            } else {
+              toast({ title: "Import Successful", description: `${expensesToCreate.length} expenses have been added.` });
+            }
 
         } catch (error) {
             console.error("Error importing expenses:", error);
@@ -1118,9 +1121,10 @@ export function MonthlyOverviewTab() {
                                         </button>
                                         <div className="sm:hidden">{getStatusIcon(entry.status)}</div>
                                       </div>
-                                      <p className="text-sm text-muted-foreground">
-                                        {entry.property}
-                                      </p>
+                                      <div className="text-sm text-muted-foreground">
+                                        <p>{entry.property}</p>
+                                        <p className="md:hidden text-xs">For: <span className="font-medium">{months[entry.payment_for_month ?? entry.month]}</span></p>
+                                      </div>
                                     </div>
                                   </TableCell>
                                   <TableCell className="hidden md:table-cell">{months[entry.payment_for_month ?? entry.month]}</TableCell>
@@ -1460,7 +1464,7 @@ export function MonthlyOverviewTab() {
                       </TableBody>
                       {filteredExpenses.length > 0 && (
                         <TableFooter>
-                          <TableRow style={{ backgroundColor: 'hsl(var(--table-footer-background))', color: '#ffffff' }} className="font-bold hover:bg-[hsl(var(--table-footer-background)/0.9)]">
+                          <TableRow style={{ backgroundColor: 'hsl(var(--table-footer-background))', color: 'hsl(var(--table-footer-foreground))' }} className="font-bold hover:bg-[hsl(var(--table-footer-background)/0.9)]">
                             <TableCell colSpan={isAdmin ? 6 : 5} className="p-2 text-inherit">
                                <div className="flex flex-col sm:flex-row items-center justify-between px-2 py-2">
                                 <div className="sm:hidden text-center">Total Paid</div>
