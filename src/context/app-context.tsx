@@ -10,7 +10,6 @@ import { Button } from '@/components/ui/button';
 import { addWorkDetailsBatch as addWorkDetailsBatchAction } from '@/app/actions/work';
 import type { AppData } from '@/lib/data';
 import { getDashboardDataAction } from '@/app/actions/data';
-import { getSettingsData } from '@/lib/data';
 
 // --- START: Settings-related types moved here ---
 interface PageDashboard {
@@ -342,8 +341,25 @@ export function AppContextProvider({ children, initialSettings }: { children: Re
                 console.error("Failed to parse settings from localStorage", error);
             }
             
-            const newServerSettings = getInitialSettings(propertySettings, zakatBankDetails);
-            setSettings(prev => deepMerge(newServerSettings, localSettings));
+            const serverDefaults = getInitialSettings(propertySettings, zakatBankDetails);
+            const localAndServer = deepMerge(serverDefaults, localSettings)
+
+            // Final merge to ensure DB values for theme are not overwritten by local defaults
+            const finalSettings = {
+                ...localAndServer,
+                theme: {
+                    colors: {
+                        ...localAndServer.theme.colors,
+                        ...serverDefaults.theme.colors,
+                    },
+                    darkColors: {
+                        ...localAndServer.theme.darkColors,
+                        ...serverDefaults.theme.darkColors,
+                    }
+                }
+            };
+            
+            setSettings(finalSettings);
 
         } catch (error: any) {
             console.error(`Error in refreshing data:`, error.message, error);
