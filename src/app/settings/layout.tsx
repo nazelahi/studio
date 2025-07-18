@@ -39,7 +39,7 @@ export default async function SettingsLayout({
         <SettingsProvider serverSettings={initialData.propertySettings}>
           <ProtectionProvider>
             {children}
-          </Protection-Provider>
+          </ProtectionProvider>
         </SettingsProvider>
       </DataProvider>
     </AuthProvider>
