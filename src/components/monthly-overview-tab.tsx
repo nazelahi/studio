@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
-import { DollarSign, Banknote, ArrowUpCircle, ArrowDownCircle, PlusCircle, Trash2, Pencil, CheckCircle, XCircle, AlertCircle, RefreshCw, ChevronDown, Copy, X, FileText, Upload, Building, Landmark, CalendarCheck, Edit, Eye, Image as ImageIcon, Megaphone, Download, Percent, Receipt, TrendingDown, Calculator, LoaderCircle } from "lucide-react"
+import { DollarSign, Banknote, ArrowUpCircle, ArrowDownCircle, PlusCircle, Trash2, Pencil, CheckCircle, XCircle, AlertCircle, RefreshCw, ChevronDown, Copy, X, FileText, Upload, Building, Landmark, CalendarCheck, Edit, Eye, Image as ImageIcon, Megaphone, Download, Percent, Receipt, TrendingDown, Calculator, LoaderCircle, MoreHorizontal } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog"
@@ -35,6 +35,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/t
 import { useProtection } from "@/context/protection-context"
 import { Separator } from "./ui/separator"
 import { formatCurrency, formatDate } from "@/lib/utils"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "./ui/dropdown-menu"
 
 type HistoricalTenant = {
     id: string;
@@ -1140,7 +1141,7 @@ export function MonthlyOverviewTab() {
                                     </div>
                                   </TableCell>
                                   <TableCell className="text-right">
-                                      <div className="flex items-center justify-end gap-1">
+                                      <div className="hidden md:flex items-center justify-end gap-1">
                                           {entry.status === 'Paid' && (
                                              <Button
                                                 size="icon"
@@ -1191,6 +1192,57 @@ export function MonthlyOverviewTab() {
                                                 </AlertDialog>
                                             </>
                                           }
+                                      </div>
+                                      <div className="flex md:hidden">
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                                    <MoreHorizontal className="h-4 w-4" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                {entry.status === 'Paid' && (
+                                                    <DropdownMenuItem
+                                                        onClick={() => {
+                                                            setNavigatingToReceiptId(entry.id);
+                                                            startNavigation(() => { router.push(`/receipt/${entry.id}`); });
+                                                        }}
+                                                        disabled={isNavigating && navigatingToReceiptId === entry.id}
+                                                    >
+                                                        {isNavigating && navigatingToReceiptId === entry.id ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Receipt className="mr-2 h-4 w-4" />}
+                                                        View Receipt
+                                                    </DropdownMenuItem>
+                                                )}
+                                                {isAdmin && (
+                                                    <>
+                                                        <DropdownMenuItem onClick={(e) => handleEditRentEntry(entry, e as any)}>
+                                                            <Pencil className="mr-2 h-4 w-4" />
+                                                            Edit
+                                                        </DropdownMenuItem>
+                                                        <AlertDialog>
+                                                            <AlertDialogTrigger asChild>
+                                                                <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive">
+                                                                    <Trash2 className="mr-2 h-4 w-4" />
+                                                                    Delete
+                                                                </DropdownMenuItem>
+                                                            </AlertDialogTrigger>
+                                                            <AlertDialogContent>
+                                                                <form onSubmit={(e) => { e.preventDefault(); withProtection(() => handleDeleteRentEntry(entry), e as any); }}>
+                                                                    <AlertDialogHeader>
+                                                                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                                        <AlertDialogDescription>This will mark the rent entry for {entry.name} as deleted. You can undo this action.</AlertDialogDescription>
+                                                                    </AlertDialogHeader>
+                                                                    <AlertDialogFooter>
+                                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                                        <AlertDialogAction type="submit">Delete</AlertDialogAction>
+                                                                    </AlertDialogFooter>
+                                                                </form>
+                                                            </AlertDialogContent>
+                                                        </AlertDialog>
+                                                    </>
+                                                )}
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
                                       </div>
                                   </TableCell>
                                 </TableRow>
