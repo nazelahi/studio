@@ -8,7 +8,7 @@ import { AppContextProvider } from '@/context/app-context';
 import { ProtectionProvider } from '@/context/protection-context';
 import type { PropertySettings, ZakatBankDetail } from '@/types';
 import { getSettingsData } from '@/lib/data';
-import { hexToHsl } from '@/lib/utils';
+import { hexToHsl, adjustColorForDarkMode } from '@/lib/utils';
 
 export async function generateMetadata(
   parent: ResolvingMetadata
@@ -67,6 +67,13 @@ export default async function RootLayout({
       --table-footer-foreground: ${hexToHsl('#ffffff')};
       --mobile-nav-background: ${hexToHsl(themeColors.mobile_nav_background)};
       --mobile-nav-foreground: ${hexToHsl(themeColors.mobile_nav_foreground)};
+    }
+    .dark {
+      --primary: ${hexToHsl(adjustColorForDarkMode(themeColors.primary, 20))};
+      --table-header-background: ${hexToHsl(adjustColorForDarkMode(themeColors.table_header_background, 20))};
+      --table-header-foreground: ${hexToHsl(themeColors.table_header_foreground)};
+      --table-footer-background: ${hexToHsl(adjustColorForDarkMode(themeColors.table_footer_background, 20))};
+      --table-footer-foreground: ${hexToHsl('#ffffff')};
     }
   `;
 

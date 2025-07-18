@@ -50,3 +50,26 @@ export const hexToHsl = (hex: string): string => {
     
     return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
 };
+
+// New function to adjust hex color for dark mode by increasing lightness
+export const adjustColorForDarkMode = (hex: string, percent: number): string => {
+    if (!hex || typeof hex !== 'string' || !/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(hex)) {
+        return '#ffffff'; // Return a default for invalid hex
+    }
+    hex = hex.replace(/^#/, '');
+    if (hex.length === 3) {
+        hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+    }
+
+    let r = parseInt(hex.substring(0, 2), 16);
+    let g = parseInt(hex.substring(2, 4), 16);
+    let b = parseInt(hex.substring(4, 6), 16);
+    
+    r = Math.min(255, r + (255 * (percent / 100)));
+    g = Math.min(255, g + (255 * (percent / 100)));
+    b = Math.min(255, b + (255 * (percent / 100)));
+
+    const toHex = (c: number) => `0${Math.round(c).toString(16)}`.slice(-2);
+
+    return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+}
