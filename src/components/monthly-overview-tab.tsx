@@ -151,7 +151,7 @@ const EditableAmount: React.FC<EditableAmountProps> = ({ initialAmount, onSave, 
         <button 
             onClick={handleClick}
             disabled={!isAdmin}
-            className={cn("w-full text-right", isAdmin && "hover:bg-muted rounded-md px-2 py-1 transition-colors")}>
+            className={cn("text-right", isAdmin && "hover:bg-muted rounded-md px-2 py-1 transition-colors")}>
                 {formatCurrency(amount, currencySymbol)}
         </button>
     );
@@ -1046,174 +1046,178 @@ export function MonthlyOverviewTab() {
                     )}
                   </CardHeader>
                   <CardContent className="p-0">
-                      <Table>
-                        <TableHeader>
-                          <TableRow style={{ backgroundColor: 'hsl(var(--table-header-background))', color: 'hsl(var(--table-header-foreground))' }} className="hover:bg-[hsl(var(--table-header-background)/0.9)]">
-                            {isAdmin && <TableHead className="w-10 text-inherit">
-                                <div className="text-white">
-                                    <Checkbox
-                                        className="border-primary data-[state=checked]:bg-primary-foreground data-[state=checked]:text-primary"
-                                        checked={selectedRentEntryIds.length > 0 && selectedRentEntryIds.length === filteredTenantsForMonth.length}
-                                        onCheckedChange={(checked) => {
-                                            if (checked) {
-                                                setSelectedRentEntryIds(filteredTenantsForMonth.map(t => t.id));
-                                            } else {
-                                                setSelectedRentEntryIds([]);
-                                            }
-                                        }}
-                                    />
-                                </div>
-                            </TableHead>}
-                            <TableHead className="text-inherit">Tenant</TableHead>
-                            <TableHead className="hidden md:table-cell text-inherit">Collected By</TableHead>
-                            <TableHead className="hidden sm:table-cell text-inherit">Payment Date</TableHead>
-                            <TableHead className="text-inherit">Status</TableHead>
-                            <TableHead className="text-inherit">Amount</TableHead>
-                            <TableHead className="text-right text-inherit">Actions</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {filteredTenantsForMonth.length > 0 ? (
-                            filteredTenantsForMonth.map((entry) => (
-                              <TableRow key={entry.id} data-state={isAdmin && selectedRentEntryIds.includes(entry.id) ? "selected" : undefined}>
-                                {isAdmin && <TableCell>
-                                    <Checkbox
-                                        checked={selectedRentEntryIds.includes(entry.id)}
-                                        onCheckedChange={(checked) => {
-                                            setSelectedRentEntryIds(prev => 
-                                                checked ? [...prev, entry.id] : prev.filter(id => id !== entry.id)
-                                            );
-                                        }}
-                                    />
-                                </TableCell>}
-                                <TableCell>
-                                  <div className="grid gap-1">
-                                    <button
-                                        onClick={() => handleViewDetails(entry)}
-                                        className={cn(
-                                            "text-sm font-medium leading-none text-left hover:underline",
-                                            getStatusNameColor(entry.status)
-                                        )}
-                                    >
-                                        {entry.name}
-                                    </button>
-                                    <p className="text-sm text-muted-foreground">
-                                      {entry.property}
-                                    </p>
+                      <div className="relative overflow-x-auto">
+                        <Table>
+                          <TableHeader>
+                            <TableRow style={{ backgroundColor: 'hsl(var(--table-header-background))', color: 'hsl(var(--table-header-foreground))' }} className="hover:bg-[hsl(var(--table-header-background)/0.9)]">
+                              {isAdmin && <TableHead className="w-10 text-inherit">
+                                  <div className="text-white">
+                                      <Checkbox
+                                          className="border-primary data-[state=checked]:bg-primary-foreground data-[state=checked]:text-primary"
+                                          checked={selectedRentEntryIds.length > 0 && selectedRentEntryIds.length === filteredTenantsForMonth.length}
+                                          onCheckedChange={(checked) => {
+                                              if (checked) {
+                                                  setSelectedRentEntryIds(filteredTenantsForMonth.map(t => t.id));
+                                              } else {
+                                                  setSelectedRentEntryIds([]);
+                                              }
+                                          }}
+                                      />
                                   </div>
-                                </TableCell>
-                                <TableCell className="hidden md:table-cell">{entry.collected_by || '-'}</TableCell>
-                                <TableCell className="hidden sm:table-cell">{formatDate(entry.payment_date, settings.dateFormat)}</TableCell>
-                                <TableCell>
-                                    {isAdmin && entry.status !== 'Paid' ? (
-                                        <Select
-                                            value={entry.status}
-                                            onValueChange={(newStatus) => handleStatusChange(entry, newStatus as RentEntry['status'])}
-                                        >
-                                            <SelectTrigger className={cn("w-[120px] h-auto py-1 px-2 border", getStatusBadge(entry.status))}>
-                                                <div className="flex items-center">
-                                                    {getStatusIcon(entry.status)}
-                                                    <SelectValue />
-                                                </div>
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="Pending">Pending</SelectItem>
-                                                <SelectItem value="Paid">Paid</SelectItem>
-                                                <SelectItem value="Overdue">Overdue</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    ) : (
-                                        <Badge className={getStatusBadge(entry.status)} variant="outline">
-                                            {getStatusIcon(entry.status)}
-                                            {entry.status}
-                                        </Badge>
-                                    )}
-                                </TableCell>
-                                <TableCell>
-                                  <EditableAmount
-                                    initialAmount={entry.rent}
-                                    onSave={(newAmount) => updateRentEntry({ ...entry, rent: newAmount }, toast)}
-                                    currencySymbol={settings.currencySymbol}
-                                    isAdmin={isAdmin}
-                                    withProtection={withProtection}
-                                  />
-                                </TableCell>
-                                <TableCell className="text-right">
-                                    <div className="flex items-center justify-end gap-1">
-                                        {entry.status === 'Paid' && (
-                                           <Button
-                                              size="icon"
-                                              variant="ghost"
-                                              className="h-8 w-8"
-                                              onClick={() => {
-                                                setNavigatingToReceiptId(entry.id);
-                                                startNavigation(() => {
-                                                    router.push(`/receipt/${entry.id}`);
-                                                });
-                                              }}
-                                              disabled={isNavigating && navigatingToReceiptId === entry.id}
-                                            >
-                                              {isNavigating && navigatingToReceiptId === entry.id ? (
-                                                <LoaderCircle className="h-4 w-4 animate-spin" />
-                                              ) : (
-                                                <Receipt className="h-4 w-4" />
-                                              )}
-                                              <span className="sr-only">View Receipt</span>
-                                          </Button>
-                                        )}
-                                        {isAdmin && <>
-                                            <Button size="icon" variant="ghost" className="h-8 w-8" onClick={(e) => handleEditRentEntry(entry, e)}>
-                                              <Pencil className="h-4 w-4" />
-                                              <span className="sr-only">Edit</span>
-                                            </Button>
-                                             <AlertDialog>
-                                                <AlertDialogTrigger asChild>
-                                                  <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive">
-                                                    <Trash2 className="h-4 w-4" />
-                                                    <span className="sr-only">Delete</span>
-                                                  </Button>
-                                                </AlertDialogTrigger>
-                                                <AlertDialogContent>
-                                                    <form onSubmit={(e) => { e.preventDefault(); withProtection(() => handleDeleteRentEntry(entry), e as any); }}>
-                                                      <AlertDialogHeader>
-                                                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                                        <AlertDialogDescription>
-                                                          This will mark the rent entry for {entry.name} as deleted. You can undo this action.
-                                                        </AlertDialogDescription>
-                                                      </AlertDialogHeader>
-                                                      <AlertDialogFooter>
-                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                        <AlertDialogAction type="submit">Delete</AlertDialogAction>
-                                                      </AlertDialogFooter>
-                                                    </form>
-                                                </AlertDialogContent>
-                                              </AlertDialog>
-                                          </>
-                                        }
+                              </TableHead>}
+                              <TableHead className="text-inherit">Tenant</TableHead>
+                              <TableHead className="hidden md:table-cell text-inherit">Collected By</TableHead>
+                              <TableHead className="hidden sm:table-cell text-inherit">Payment Date</TableHead>
+                              <TableHead className="text-inherit">Status</TableHead>
+                              <TableHead className="text-inherit">Amount</TableHead>
+                              <TableHead className="text-right text-inherit">Actions</TableHead>
+                            </TableRow>
+                          </TableHeader>
+                          <TableBody>
+                            {filteredTenantsForMonth.length > 0 ? (
+                              filteredTenantsForMonth.map((entry) => (
+                                <TableRow key={entry.id} data-state={isAdmin && selectedRentEntryIds.includes(entry.id) ? "selected" : undefined}>
+                                  {isAdmin && <TableCell>
+                                      <Checkbox
+                                          checked={selectedRentEntryIds.includes(entry.id)}
+                                          onCheckedChange={(checked) => {
+                                              setSelectedRentEntryIds(prev => 
+                                                  checked ? [...prev, entry.id] : prev.filter(id => id !== entry.id)
+                                              );
+                                          }}
+                                      />
+                                  </TableCell>}
+                                  <TableCell>
+                                    <div className="grid gap-1">
+                                      <button
+                                          onClick={() => handleViewDetails(entry)}
+                                          className={cn(
+                                              "text-sm font-medium leading-none text-left hover:underline",
+                                              getStatusNameColor(entry.status)
+                                          )}
+                                      >
+                                          {entry.name}
+                                      </button>
+                                      <p className="text-sm text-muted-foreground">
+                                        {entry.property}
+                                      </p>
                                     </div>
-                                </TableCell>
+                                  </TableCell>
+                                  <TableCell className="hidden md:table-cell">{entry.collected_by || '-'}</TableCell>
+                                  <TableCell className="hidden sm:table-cell">{formatDate(entry.payment_date, settings.dateFormat)}</TableCell>
+                                  <TableCell>
+                                      {isAdmin && entry.status !== 'Paid' ? (
+                                          <Select
+                                              value={entry.status}
+                                              onValueChange={(newStatus) => handleStatusChange(entry, newStatus as RentEntry['status'])}
+                                          >
+                                              <SelectTrigger className={cn("w-[120px] h-auto py-1 px-2 border", getStatusBadge(entry.status))}>
+                                                  <div className="flex items-center">
+                                                      {getStatusIcon(entry.status)}
+                                                      <SelectValue />
+                                                  </div>
+                                              </SelectTrigger>
+                                              <SelectContent>
+                                                  <SelectItem value="Pending">Pending</SelectItem>
+                                                  <SelectItem value="Paid">Paid</SelectItem>
+                                                  <SelectItem value="Overdue">Overdue</SelectItem>
+                                              </SelectContent>
+                                          </Select>
+                                      ) : (
+                                          <Badge className={getStatusBadge(entry.status)} variant="outline">
+                                              {getStatusIcon(entry.status)}
+                                              {entry.status}
+                                          </Badge>
+                                      )}
+                                  </TableCell>
+                                  <TableCell>
+                                    <div className="text-right w-full">
+                                        <EditableAmount
+                                            initialAmount={entry.rent}
+                                            onSave={(newAmount) => updateRentEntry({ ...entry, rent: newAmount }, toast)}
+                                            currencySymbol={settings.currencySymbol}
+                                            isAdmin={isAdmin}
+                                            withProtection={withProtection}
+                                        />
+                                    </div>
+                                  </TableCell>
+                                  <TableCell className="text-right">
+                                      <div className="flex items-center justify-end gap-1">
+                                          {entry.status === 'Paid' && (
+                                             <Button
+                                                size="icon"
+                                                variant="ghost"
+                                                className="h-8 w-8"
+                                                onClick={() => {
+                                                  setNavigatingToReceiptId(entry.id);
+                                                  startNavigation(() => {
+                                                      router.push(`/receipt/${entry.id}`);
+                                                  });
+                                                }}
+                                                disabled={isNavigating && navigatingToReceiptId === entry.id}
+                                              >
+                                                {isNavigating && navigatingToReceiptId === entry.id ? (
+                                                  <LoaderCircle className="h-4 w-4 animate-spin" />
+                                                ) : (
+                                                  <Receipt className="h-4 w-4" />
+                                                )}
+                                                <span className="sr-only">View Receipt</span>
+                                            </Button>
+                                          )}
+                                          {isAdmin && <>
+                                              <Button size="icon" variant="ghost" className="h-8 w-8" onClick={(e) => handleEditRentEntry(entry, e)}>
+                                                <Pencil className="h-4 w-4" />
+                                                <span className="sr-only">Edit</span>
+                                              </Button>
+                                               <AlertDialog>
+                                                  <AlertDialogTrigger asChild>
+                                                    <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive">
+                                                      <Trash2 className="h-4 w-4" />
+                                                      <span className="sr-only">Delete</span>
+                                                    </Button>
+                                                  </AlertDialogTrigger>
+                                                  <AlertDialogContent>
+                                                      <form onSubmit={(e) => { e.preventDefault(); withProtection(() => handleDeleteRentEntry(entry), e as any); }}>
+                                                        <AlertDialogHeader>
+                                                          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                          <AlertDialogDescription>
+                                                            This will mark the rent entry for {entry.name} as deleted. You can undo this action.
+                                                          </AlertDialogDescription>
+                                                        </AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                          <AlertDialogAction type="submit">Delete</AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                      </form>
+                                                  </AlertDialogContent>
+                                                </AlertDialog>
+                                            </>
+                                          }
+                                      </div>
+                                  </TableCell>
+                                </TableRow>
+                              ))
+                            ) : (
+                              <TableRow>
+                                <TableCell colSpan={isAdmin ? 7 : 6} className="text-center text-muted-foreground p-10">No rent collection data for {month} {selectedYear}.</TableCell>
                               </TableRow>
-                            ))
-                          ) : (
-                            <TableRow>
-                              <TableCell colSpan={isAdmin ? 7 : 6} className="text-center text-muted-foreground p-10">No rent collection data for {month} {selectedYear}.</TableCell>
-                            </TableRow>
+                            )}
+                          </TableBody>
+                          {filteredTenantsForMonth.length > 0 && (
+                            <TableFooter>
+                              <TableRow style={{ backgroundColor: 'hsl(var(--table-footer-background))', color: 'hsl(var(--table-footer-foreground))' }} className="font-bold hover:bg-[hsl(var(--table-footer-background)/0.9)]">
+                                  <TableCell colSpan={isAdmin ? 7 : 6} className="text-inherit p-2">
+                                    <div className="flex flex-col sm:flex-row items-center justify-between px-2">
+                                      <div className="sm:hidden text-center text-inherit font-bold">Total Rent Collected</div>
+                                      <div className="hidden sm:block text-left text-inherit font-bold">Total Rent Collected</div>
+                                      <div className="text-inherit font-bold">{formatCurrency(totalRentCollected, settings.currencySymbol)}</div>
+                                    </div>
+                                  </TableCell>
+                              </TableRow>
+                            </TableFooter>
                           )}
-                        </TableBody>
-                        {filteredTenantsForMonth.length > 0 && (
-                          <TableFooter>
-                            <TableRow style={{ backgroundColor: 'hsl(var(--table-footer-background))', color: 'hsl(var(--table-footer-foreground))' }} className="font-bold hover:bg-[hsl(var(--table-footer-background)/0.9)]">
-                                <TableCell colSpan={isAdmin ? 7 : 6} className="text-inherit p-2">
-                                  <div className="flex flex-col sm:flex-row items-center justify-between px-2">
-                                    <div className="sm:hidden text-center text-inherit font-bold">Total Rent Collected</div>
-                                    <div className="hidden sm:block text-left text-inherit font-bold">Total Rent Collected</div>
-                                    <div className="text-inherit font-bold">{formatCurrency(totalRentCollected, settings.currencySymbol)}</div>
-                                  </div>
-                                </TableCell>
-                            </TableRow>
-                          </TableFooter>
-                        )}
-                      </Table>
+                        </Table>
+                      </div>
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -1294,6 +1298,7 @@ export function MonthlyOverviewTab() {
                     }
                   </CardHeader>
                   <CardContent className="p-0">
+                    <div className="relative overflow-x-auto">
                     <Table>
                       <TableHeader>
                         <TableRow style={{ backgroundColor: 'hsl(var(--table-header-background))', color: 'hsl(var(--table-header-foreground))' }} className="hover:bg-[hsl(var(--table-header-background)/0.9)]">
@@ -1342,13 +1347,15 @@ export function MonthlyOverviewTab() {
                                 {expense.category}
                               </TableCell>
                               <TableCell>
-                                <EditableAmount
-                                    initialAmount={expense.amount}
-                                    onSave={(newAmount) => updateExpense({ ...expense, amount: newAmount }, toast)}
-                                    currencySymbol={settings.currencySymbol}
-                                    isAdmin={isAdmin}
-                                    withProtection={withProtection}
-                                />
+                                <div className="w-full text-right">
+                                    <EditableAmount
+                                        initialAmount={expense.amount}
+                                        onSave={(newAmount) => updateExpense({ ...expense, amount: newAmount }, toast)}
+                                        currencySymbol={settings.currencySymbol}
+                                        isAdmin={isAdmin}
+                                        withProtection={withProtection}
+                                    />
+                                </div>
                               </TableCell>
                               <TableCell>
                                  {isAdmin && expense.status === 'Due' ? (
@@ -1428,6 +1435,7 @@ export function MonthlyOverviewTab() {
                         </TableFooter>
                       )}
                     </Table>
+                    </div>
                   </CardContent>
                 </Card>
               </TabsContent>
