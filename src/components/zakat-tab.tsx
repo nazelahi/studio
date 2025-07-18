@@ -201,22 +201,22 @@ export function ZakatTab() {
             <TableHead className="text-inherit">{type === 'inflow' ? 'Source' : 'Recipient'}</TableHead>
             <TableHead className="hidden sm:table-cell text-inherit">Description</TableHead>
             <TableHead className="text-right text-inherit">Amount</TableHead>
-            <TableHead className="text-inherit w-28">Actions</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
           {transactions.length > 0 ? (
             transactions.map(tx => (
-              <TableRow key={tx.id} className="odd:bg-muted/50">
+              <TableRow key={tx.id} className="group relative odd:bg-muted/50">
                 <TableCell>{formatDate(tx.transaction_date, settings.dateFormat)}</TableCell>
                 <TableCell className="font-medium">{tx.source_or_recipient}</TableCell>
                 <TableCell className="text-muted-foreground hidden sm:table-cell">{tx.description || '-'}</TableCell>
                 <TableCell className={`text-right font-bold ${tx.type === 'inflow' ? 'text-green-600' : 'text-red-600'}`}>
                   {formatCurrency(tx.amount, settings.currencySymbol)}
-                </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1">
-                      {tx.receipt_url && (
+                  <div className={cn(
+                    "absolute right-4 top-1/2 -translate-y-1/2 hidden h-full items-center border-l bg-background/50 pl-2 backdrop-blur-sm lg:flex",
+                    "opacity-0 group-hover:opacity-100 transition-opacity"
+                  )}>
+                    {tx.receipt_url && (
                         <Button asChild variant="ghost" size="icon" className="h-8 w-8">
                            <a href={tx.receipt_url} target="_blank" rel="noopener noreferrer">
                                 <Eye className="h-4 w-4" />
@@ -251,8 +251,8 @@ export function ZakatTab() {
                            </AlertDialog>
                         </>
                       )}
-                    </div>
-                  </TableCell>
+                  </div>
+                </TableCell>
               </TableRow>
             ))
           ) : (
@@ -366,12 +366,11 @@ export function ZakatTab() {
                             <TableHead>Bank Name</TableHead>
                             <TableHead>Account Number</TableHead>
                             <TableHead>Location</TableHead>
-                            {isAdmin && <TableHead className="w-24 text-right">Actions</TableHead>}
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {settings.zakatBankDetails.map(detail => (
-                            <TableRow key={detail.id} className="odd:bg-muted/50">
+                            <TableRow key={detail.id} className="group relative odd:bg-muted/50">
                                 <TableCell>
                                     <Avatar>
                                         <AvatarImage src={detail.logo_url} alt={detail.bank_name} data-ai-hint="logo bank"/>
@@ -380,35 +379,42 @@ export function ZakatTab() {
                                 </TableCell>
                                 <TableCell>{detail.bank_name}</TableCell>
                                 <TableCell>{detail.account_number}</TableCell>
-                                <TableCell>{detail.location || '-'}</TableCell>
-                                {isAdmin && (
-                                    <TableCell className="text-right">
-                                        <div className="flex items-center justify-end gap-1">
-                                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEditBankDetail(detail)}>
-                                                <Edit className="h-4 w-4" />
-                                            </Button>
-                                            <AlertDialog>
-                                                <AlertDialogTrigger asChild>
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
-                                                        <Trash2 className="h-4 w-4" />
+                                <TableCell>
+                                    <div className="flex items-center justify-between">
+                                        <span>{detail.location || '-'}</span>
+                                        <div className={cn(
+                                            "absolute right-4 top-1/2 -translate-y-1/2 hidden h-full items-center border-l bg-background/50 pl-2 backdrop-blur-sm lg:flex",
+                                            "opacity-0 group-hover:opacity-100 transition-opacity"
+                                        )}>
+                                            {isAdmin && (
+                                                <>
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleEditBankDetail(detail)}>
+                                                        <Edit className="h-4 w-4" />
                                                     </Button>
-                                                </AlertDialogTrigger>
-                                                <AlertDialogContent>
-                                                    <AlertDialogHeader>
-                                                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                                        <AlertDialogDescription>This will permanently delete this Zakat bank detail. This action cannot be undone.</AlertDialogDescription>
-                                                    </AlertDialogHeader>
-                                                    <AlertDialogFooter>
-                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                        <form onSubmit={(e) => { e.preventDefault(); const fd = new FormData(); fd.set('detailId', detail.id); fd.set('logoUrl', detail.logo_url || ''); handleDeleteBankDetail(fd); }}>
-                                                            <AlertDialogAction type="submit" disabled={isBankDetailPending}>Delete</AlertDialogAction>
-                                                        </form>
-                                                    </AlertDialogFooter>
-                                                </AlertDialogContent>
-                                            </AlertDialog>
+                                                    <AlertDialog>
+                                                        <AlertDialogTrigger asChild>
+                                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
+                                                                <Trash2 className="h-4 w-4" />
+                                                            </Button>
+                                                        </AlertDialogTrigger>
+                                                        <AlertDialogContent>
+                                                            <AlertDialogHeader>
+                                                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                                <AlertDialogDescription>This will permanently delete this Zakat bank detail. This action cannot be undone.</AlertDialogDescription>
+                                                            </AlertDialogHeader>
+                                                            <AlertDialogFooter>
+                                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                                <form onSubmit={(e) => { e.preventDefault(); const fd = new FormData(); fd.set('detailId', detail.id); fd.set('logoUrl', detail.logo_url || ''); handleDeleteBankDetail(fd); }}>
+                                                                    <AlertDialogAction type="submit" disabled={isBankDetailPending}>Delete</AlertDialogAction>
+                                                                </form>
+                                                            </AlertDialogFooter>
+                                                        </AlertDialogContent>
+                                                    </AlertDialog>
+                                                </>
+                                            )}
                                         </div>
-                                    </TableCell>
-                                )}
+                                    </div>
+                                </TableCell>
                             </TableRow>
                         ))}
                     </TableBody>
