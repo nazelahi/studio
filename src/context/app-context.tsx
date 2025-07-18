@@ -314,7 +314,7 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
     const { propertySettings, zakatBankDetails, ...dashboardData } = initialData;
     const [data, setData] = useState(dashboardData);
     const [settings, setSettings] = useState<AppSettings>(() => getInitialSettings(propertySettings, zakatBankDetails));
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] = useState(true);
     
     const refreshData = useCallback(async (showLoading = true) => {
         if (showLoading) {
@@ -336,6 +336,16 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
             }
         }
     }, []);
+
+    useEffect(() => {
+        setLoading(false);
+        // If the initial data from the server is empty (e.g., due to a temporary server-side fetch error),
+        // trigger a client-side fetch to ensure the user gets the data.
+        if (!initialData.propertySettings) {
+            console.log("Initial server data is incomplete. Triggering client-side refresh.");
+            refreshData();
+        }
+    }, [initialData, refreshData]);
 
     useEffect(() => {
         if (!supabase) return;
