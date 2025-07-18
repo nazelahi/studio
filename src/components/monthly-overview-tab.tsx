@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import * as React from "react"
@@ -63,14 +64,6 @@ const getStatusBadge = (status: RentEntry["status"]) => {
         return "bg-red-100 text-red-800 border-red-200";
       default:
         return "bg-gray-100 text-gray-800 border-gray-200";
-    }
-};
-
-const getStatusRowClass = (status: RentEntry["status"]) => {
-    switch(status) {
-        case "Paid": return "bg-green-50/50";
-        case "Overdue": return "bg-red-50/50";
-        default: return "";
     }
 };
 
@@ -1015,7 +1008,7 @@ export function MonthlyOverviewTab() {
                         <TableBody>
                           {filteredTenantsForMonth.length > 0 ? (
                             filteredTenantsForMonth.map((entry) => (
-                              <TableRow key={entry.id} className={getStatusRowClass(entry.status)} data-state={isAdmin && selectedRentEntryIds.includes(entry.id) ? "selected" : undefined}>
+                              <TableRow key={entry.id} className="odd:bg-muted/50" data-state={isAdmin && selectedRentEntryIds.includes(entry.id) ? "selected" : undefined}>
                                 {isAdmin && <TableCell>
                                     <Checkbox
                                         checked={selectedRentEntryIds.includes(entry.id)}
@@ -1251,7 +1244,7 @@ export function MonthlyOverviewTab() {
                       </TableHeader>
                       <TableBody>
                         {filteredExpenses.map((expense) => (
-                            <TableRow key={expense.id} className={expense.status === 'Paid' ? 'bg-green-50/50' : ''} data-state={isAdmin && selectedExpenseIds.includes(expense.id) ? "selected" : undefined}>
+                            <TableRow key={expense.id} className="odd:bg-muted/50" data-state={isAdmin && selectedExpenseIds.includes(expense.id) ? "selected" : undefined}>
                               {isAdmin && <TableCell>
                                 <Checkbox
                                   checked={selectedExpenseIds.includes(expense.id)}

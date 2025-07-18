@@ -721,7 +721,7 @@ export function ContactsTab() {
                         </TableHeader>
                         <TableBody>
                             {filteredTenants.map(tenant => (
-                                <TableRow key={tenant.id}>
+                                <TableRow key={tenant.id} className="odd:bg-muted/50">
                                     <TableCell className="p-2">
                                         <div className="flex items-center gap-3">
                                             <Avatar className="h-10 w-10">

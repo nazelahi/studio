@@ -387,7 +387,7 @@ export function WorkDetailsTab({ year }: { year: number }) {
                 const totalCost = (work.product_cost || 0) + (work.worker_cost || 0);
                 const isCompleted = work.status === 'Completed';
                 return (
-                  <TableRow key={work.id}>
+                  <TableRow key={work.id} className="odd:bg-muted/50">
                     <TableCell>
                       <div className="font-medium">{work.title}</div>
                       <div className="text-sm text-primary font-bold sm:hidden">{formatCurrency(totalCost, settings.currencySymbol)}</div>

@@ -217,7 +217,7 @@ export function ReportsTab({ year }: { year: number }) {
                                 <Table>
                                     <TableHeader><TableRow><TableHead>Tenant</TableHead><TableHead>Flat</TableHead><TableHead className="text-right">Amount</TableHead></TableRow></TableHeader>
                                     <TableBody>
-                                        {monthlyRentCollections.map(r => <TableRow key={r.id}><TableCell>{r.name}</TableCell><TableCell><Badge variant="outline">{r.property}</Badge></TableCell><TableCell className="text-right font-medium">{r.status === "Paid" ? formatCurrency(r.rent, settings.currencySymbol) : "-"}</TableCell></TableRow>)}
+                                        {monthlyRentCollections.map(r => <TableRow key={r.id} className="odd:bg-muted/50"><TableCell>{r.name}</TableCell><TableCell><Badge variant="outline">{r.property}</Badge></TableCell><TableCell className="text-right font-medium">{r.status === "Paid" ? formatCurrency(r.rent, settings.currencySymbol) : "-"}</TableCell></TableRow>)}
                                     </TableBody>
                                     <TableFooter><TableRow><TableCell colSpan={2} className="font-bold">Total Collected:</TableCell><TableCell className="text-right font-bold">{formatCurrency(monthlySummary.income, settings.currencySymbol)}</TableCell></TableRow></TableFooter>
                                 </Table>
@@ -229,7 +229,7 @@ export function ReportsTab({ year }: { year: number }) {
                                  <Table>
                                     <TableHeader><TableRow><TableHead>Description</TableHead><TableHead className="text-right">Amount</TableHead></TableRow></TableHeader>
                                     <TableBody>
-                                        {monthlyExpenses.map(e => <TableRow key={e.id}><TableCell>{e.description || e.category}</TableCell><TableCell className="text-right font-medium text-red-600">{formatCurrency(e.amount, settings.currencySymbol)}</TableCell></TableRow>)}
+                                        {monthlyExpenses.map(e => <TableRow key={e.id} className="odd:bg-muted/50"><TableCell>{e.description || e.category}</TableCell><TableCell className="text-right font-medium text-red-600">{formatCurrency(e.amount, settings.currencySymbol)}</TableCell></TableRow>)}
                                     </TableBody>
                                     <TableFooter><TableRow><TableCell className="font-bold">Total Expenses:</TableCell><TableCell className="text-right font-bold text-red-600">{formatCurrency(monthlySummary.expenses, settings.currencySymbol)}</TableCell></TableRow></TableFooter>
                                 </Table>
@@ -271,7 +271,7 @@ export function ReportsTab({ year }: { year: number }) {
                             </TableHeader>
                             <TableBody>
                               {tenantReportData.length > 0 ? tenantReportData.map(entry => (
-                                <TableRow key={entry.id}>
+                                <TableRow key={entry.id} className="odd:bg-muted/50">
                                   <TableCell className="font-medium">{months[entry.month]} {entry.year}</TableCell>
                                   <TableCell className="hidden sm:table-cell">{formatDate(entry.due_date, settings.dateFormat)}</TableCell>
                                   <TableCell className="hidden md:table-cell">{formatDate(entry.payment_date, settings.dateFormat)}</TableCell>
@@ -347,5 +347,3 @@ export function ReportsTab({ year }: { year: number }) {
     </div>
   )
 }
-
-    

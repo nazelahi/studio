@@ -312,7 +312,7 @@ export function TenantDetailSheet({
                                 </TableHeader>
                                 <TableBody>
                                     {tenantPaymentHistory.map(entry => (
-                                        <TableRow key={entry.id}>
+                                        <TableRow key={entry.id} className="odd:bg-muted/50">
                                             <TableCell className="font-medium">{formatDateLib(new Date(entry.year, entry.month), 'MMMM yyyy')}</TableCell>
                                             <TableCell>
                                                 <Badge variant="outline" className={cn("text-xs", getPaymentStatusBadge(entry.status))}>{entry.status}</Badge>
@@ -406,5 +406,3 @@ export function TenantDetailSheet({
     </>
   );
 }
-
-    

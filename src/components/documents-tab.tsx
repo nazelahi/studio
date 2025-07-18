@@ -230,7 +230,7 @@ export function DocumentsTab() {
 
 
   const DocumentRow = ({ doc }: { doc: DocType }) => (
-    <TableRow>
+    <TableRow className="odd:bg-muted/50">
         <TableCell className="w-16 p-2">
             <a href={doc.file_url} target="_blank" rel="noopener noreferrer" className="block">
                  <div className="flex-shrink-0 w-12 h-12 rounded-md bg-muted flex items-center justify-center overflow-hidden">
@@ -515,5 +515,3 @@ export function DocumentsTab() {
     </div>
   );
 }
-
-    
