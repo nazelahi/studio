@@ -1066,7 +1066,7 @@ export function MonthlyOverviewTab() {
                               <TableHead className="hidden sm:table-cell text-inherit">Payment Date</TableHead>
                               <TableHead className="hidden sm:table-cell text-inherit">Status</TableHead>
                               <TableHead className="text-inherit">Amount</TableHead>
-                              <TableHead className="text-right text-inherit">Actions</TableHead>
+                              <TableHead className="w-[50px] text-right text-inherit"></TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -1141,109 +1141,55 @@ export function MonthlyOverviewTab() {
                                     </div>
                                   </TableCell>
                                   <TableCell className="text-right">
-                                      <div className="hidden md:flex items-center justify-end gap-1">
-                                          {entry.status === 'Paid' && (
-                                             <Button
-                                                size="icon"
-                                                variant="ghost"
-                                                className="h-8 w-8"
-                                                onClick={() => {
-                                                  setNavigatingToReceiptId(entry.id);
-                                                  startNavigation(() => {
-                                                      router.push(`/receipt/${entry.id}`);
-                                                  });
-                                                }}
-                                                disabled={isNavigating && navigatingToReceiptId === entry.id}
-                                              >
-                                                {isNavigating && navigatingToReceiptId === entry.id ? (
-                                                  <LoaderCircle className="h-4 w-4 animate-spin" />
-                                                ) : (
-                                                  <Receipt className="h-4 w-4" />
-                                                )}
-                                                <span className="sr-only">View Receipt</span>
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                                                <MoreHorizontal className="h-4 w-4" />
                                             </Button>
-                                          )}
-                                          {isAdmin && <>
-                                              <Button size="icon" variant="ghost" className="h-8 w-8" onClick={(e) => handleEditRentEntry(entry, e)}>
-                                                <Pencil className="h-4 w-4" />
-                                                <span className="sr-only">Edit</span>
-                                              </Button>
-                                               <AlertDialog>
-                                                  <AlertDialogTrigger asChild>
-                                                    <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive">
-                                                      <Trash2 className="h-4 w-4" />
-                                                      <span className="sr-only">Delete</span>
-                                                    </Button>
-                                                  </AlertDialogTrigger>
-                                                  <AlertDialogContent>
-                                                      <form onSubmit={(e) => { e.preventDefault(); withProtection(() => handleDeleteRentEntry(entry), e as any); }}>
-                                                        <AlertDialogHeader>
-                                                          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                                          <AlertDialogDescription>
-                                                            This will mark the rent entry for {entry.name} as deleted. You can undo this action.
-                                                          </AlertDialogDescription>
-                                                        </AlertDialogHeader>
-                                                        <AlertDialogFooter>
-                                                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                          <AlertDialogAction type="submit">Delete</AlertDialogAction>
-                                                        </AlertDialogFooter>
-                                                      </form>
-                                                  </AlertDialogContent>
-                                                </AlertDialog>
-                                            </>
-                                          }
-                                      </div>
-                                      <div className="flex md:hidden">
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" size="icon" className="h-8 w-8">
-                                                    <MoreHorizontal className="h-4 w-4" />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                {entry.status === 'Paid' && (
-                                                    <DropdownMenuItem
-                                                        onClick={() => {
-                                                            setNavigatingToReceiptId(entry.id);
-                                                            startNavigation(() => { router.push(`/receipt/${entry.id}`); });
-                                                        }}
-                                                        disabled={isNavigating && navigatingToReceiptId === entry.id}
-                                                    >
-                                                        {isNavigating && navigatingToReceiptId === entry.id ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Receipt className="mr-2 h-4 w-4" />}
-                                                        View Receipt
+                                        </DropdownMenuTrigger>
+                                        <DropdownMenuContent align="end">
+                                            {entry.status === 'Paid' && (
+                                                <DropdownMenuItem
+                                                    onClick={() => {
+                                                        setNavigatingToReceiptId(entry.id);
+                                                        startNavigation(() => { router.push(`/receipt/${entry.id}`); });
+                                                    }}
+                                                    disabled={isNavigating && navigatingToReceiptId === entry.id}
+                                                >
+                                                    {isNavigating && navigatingToReceiptId === entry.id ? <LoaderCircle className="mr-2 h-4 w-4 animate-spin" /> : <Receipt className="mr-2 h-4 w-4" />}
+                                                    View Receipt
+                                                </DropdownMenuItem>
+                                            )}
+                                            {isAdmin && (
+                                                <>
+                                                    <DropdownMenuItem onClick={(e) => handleEditRentEntry(entry, e as any)}>
+                                                        <Pencil className="mr-2 h-4 w-4" />
+                                                        Edit
                                                     </DropdownMenuItem>
-                                                )}
-                                                {isAdmin && (
-                                                    <>
-                                                        <DropdownMenuItem onClick={(e) => handleEditRentEntry(entry, e as any)}>
-                                                            <Pencil className="mr-2 h-4 w-4" />
-                                                            Edit
-                                                        </DropdownMenuItem>
-                                                        <AlertDialog>
-                                                            <AlertDialogTrigger asChild>
-                                                                <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive">
-                                                                    <Trash2 className="mr-2 h-4 w-4" />
-                                                                    Delete
-                                                                </DropdownMenuItem>
-                                                            </AlertDialogTrigger>
-                                                            <AlertDialogContent>
-                                                                <form onSubmit={(e) => { e.preventDefault(); withProtection(() => handleDeleteRentEntry(entry), e as any); }}>
-                                                                    <AlertDialogHeader>
-                                                                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                                                        <AlertDialogDescription>This will mark the rent entry for {entry.name} as deleted. You can undo this action.</AlertDialogDescription>
-                                                                    </AlertDialogHeader>
-                                                                    <AlertDialogFooter>
-                                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                                        <AlertDialogAction type="submit">Delete</AlertDialogAction>
-                                                                    </AlertDialogFooter>
-                                                                </form>
-                                                            </AlertDialogContent>
-                                                        </AlertDialog>
-                                                    </>
-                                                )}
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                      </div>
+                                                    <AlertDialog>
+                                                        <AlertDialogTrigger asChild>
+                                                            <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive">
+                                                                <Trash2 className="mr-2 h-4 w-4" />
+                                                                Delete
+                                                            </DropdownMenuItem>
+                                                        </AlertDialogTrigger>
+                                                        <AlertDialogContent>
+                                                            <form onSubmit={(e) => { e.preventDefault(); withProtection(() => handleDeleteRentEntry(entry), e as any); }}>
+                                                                <AlertDialogHeader>
+                                                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                                    <AlertDialogDescription>This will mark the rent entry for {entry.name} as deleted. You can undo this action.</AlertDialogDescription>
+                                                                </AlertDialogHeader>
+                                                                <AlertDialogFooter>
+                                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                                    <AlertDialogAction type="submit">Delete</AlertDialogAction>
+                                                                </AlertDialogFooter>
+                                                            </form>
+                                                        </AlertDialogContent>
+                                                    </AlertDialog>
+                                                </>
+                                            )}
+                                        </DropdownMenuContent>
+                                    </DropdownMenu>
                                   </TableCell>
                                 </TableRow>
                               ))
@@ -1368,7 +1314,7 @@ export function MonthlyOverviewTab() {
                           <TableHead className="text-inherit hidden sm:table-cell">Category</TableHead>
                           <TableHead className="text-inherit">Amount</TableHead>
                           <TableHead className="text-inherit hidden sm:table-cell">Status</TableHead>
-                          <TableHead className="text-right text-inherit">Actions</TableHead>
+                          <TableHead className="w-[50px] text-right text-inherit"></TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -1431,38 +1377,7 @@ export function MonthlyOverviewTab() {
                               )}
                               </TableCell>
                               <TableCell className="text-right">
-                                <div className="hidden md:flex items-center justify-end gap-1">
-                                   {isAdmin && <>
-                                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={(e) => handleEditExpense(expense, e)}>
-                                          <Pencil className="h-4 w-4" />
-                                          <span className="sr-only">Edit</span>
-                                        </Button>
-                                        <AlertDialog>
-                                          <AlertDialogTrigger asChild>
-                                            <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive">
-                                              <Trash2 className="h-4 w-4" />
-                                              <span className="sr-only">Delete</span>
-                                            </Button>
-                                          </AlertDialogTrigger>
-                                          <AlertDialogContent>
-                                            <form onSubmit={(e) => { e.preventDefault(); withProtection(() => handleDeleteExpense(expense), e as any); }}>
-                                              <AlertDialogHeader>
-                                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                                <AlertDialogDescription>
-                                                  This will mark the expense as deleted. You can undo this action.
-                                                </AlertDialogDescription>
-                                              </AlertDialogHeader>
-                                              <AlertDialogFooter>
-                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                <AlertDialogAction type="submit">Delete</AlertDialogAction>
-                                              </AlertDialogFooter>
-                                            </form>
-                                          </AlertDialogContent>
-                                        </AlertDialog>
-                                      </>}
-                                </div>
-                                <div className="flex md:hidden">
-                                  <DropdownMenu>
+                                <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
                                         <Button variant="ghost" size="icon" className="h-8 w-8">
                                             <MoreHorizontal className="h-4 w-4" />
@@ -1498,8 +1413,7 @@ export function MonthlyOverviewTab() {
                                           </>
                                       )}
                                     </DropdownMenuContent>
-                                  </DropdownMenu>
-                                </div>
+                                </DropdownMenu>
                               </TableCell>
                             </TableRow>
                           ))}
