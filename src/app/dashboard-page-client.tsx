@@ -148,7 +148,7 @@ export default function DashboardPageClient() {
   }
 
   return (
-    <div className={cn("grid min-h-screen w-full transition-all duration-300", isSidebarOpen ? "md:grid-cols-[280px_1fr]" : "md:grid-cols-[72px_1fr]")}>
+    <div className={cn("min-h-screen w-full md:grid", isSidebarOpen ? "md:grid-cols-[280px_1fr]" : "md:grid-cols-[72px_1fr]")}>
       <div className="hidden border-r bg-muted/40 md:block sticky top-0 h-screen">
         <div className="flex h-full max-h-screen flex-col gap-2">
             <div className="flex h-16 items-center border-b px-6">
@@ -355,4 +355,5 @@ export default function DashboardPageClient() {
     </div>
   )
 }
+
 
