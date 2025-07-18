@@ -16,7 +16,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { PlusCircle, Edit, Trash2, LoaderCircle, ExternalLink, Download, Upload } from "lucide-react"
+import { PlusCircle, Edit, Trash2, LoaderCircle, ExternalLink, Download, Upload, CheckCircle, AlertCircle } from "lucide-react"
 import type { WorkDetail, Tenant } from "@/types"
 import { saveWorkDetailAction, deleteWorkDetailAction } from "@/app/actions/work"
 import { getYear } from "date-fns"
@@ -28,6 +28,15 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/t
 import { formatCurrency, formatDate } from "@/lib/utils"
 
 const workCategories = ["Plumbing", "Electrical", "Painting", "Cleaning", "Appliance Repair", "General Maintenance", "Other"];
+
+const getWorkStatusIcon = (status: WorkDetail['status']) => {
+    switch(status) {
+        case "Completed": return <CheckCircle className="h-4 w-4 text-green-500"/>;
+        case "In Progress": return <LoaderCircle className="h-4 w-4 text-blue-500 animate-spin"/>;
+        case "To Do": return <AlertCircle className="h-4 w-4 text-yellow-500"/>;
+        default: return null;
+    }
+}
 
 interface EditableAmountProps {
     initialAmount: number;
@@ -453,7 +462,7 @@ export function WorkDetailsTab({ year }: { year: number }) {
               <TableHead className="text-inherit hidden sm:table-cell">Product Cost</TableHead>
               <TableHead className="text-inherit hidden sm:table-cell">Worker Cost</TableHead>
               <TableHead className="text-inherit">Total Cost</TableHead>
-              <TableHead className="text-inherit">Status</TableHead>
+              <TableHead className="text-inherit hidden sm:table-cell">Status</TableHead>
               <TableHead className="text-right text-inherit">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -471,7 +480,10 @@ export function WorkDetailsTab({ year }: { year: number }) {
                 return (
                   <TableRow key={work.id} className="odd:bg-muted/50">
                     <TableCell>
-                      <div className="font-medium">{work.title}</div>
+                      <div className="font-medium flex items-center gap-2">
+                        {work.title}
+                        <div className="sm:hidden">{getWorkStatusIcon(work.status)}</div>
+                      </div>
                       <div className="text-sm text-muted-foreground sm:hidden">{work.description}</div>
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">
@@ -493,7 +505,7 @@ export function WorkDetailsTab({ year }: { year: number }) {
                         />
                     </TableCell>
                     <TableCell className="font-bold">{formatCurrency(totalCost, settings.currencySymbol)}</TableCell>
-                    <TableCell>
+                    <TableCell className="hidden sm:table-cell">
                         <Badge variant={isCompleted ? 'default': 'secondary'} className={cn(isCompleted && 'bg-success hover:bg-success/80')}>
                             {work.status}
                         </Badge>
