@@ -205,7 +205,7 @@ export function ZakatTab() {
         <TableBody>
           {transactions.length > 0 ? (
             transactions.map(tx => (
-              <TableRow key={tx.id}>
+              <TableRow key={tx.id} className="odd:bg-muted/50">
                 <TableCell>{formatDate(tx.transaction_date, settings.dateFormat)}</TableCell>
                 <TableCell className="font-medium">{tx.source_or_recipient}</TableCell>
                 <TableCell className="text-muted-foreground hidden sm:table-cell">{tx.description || '-'}</TableCell>
@@ -369,7 +369,7 @@ export function ZakatTab() {
                     </TableHeader>
                     <TableBody>
                         {settings.zakatBankDetails.map(detail => (
-                            <TableRow key={detail.id}>
+                            <TableRow key={detail.id} className="odd:bg-muted/50">
                                 <TableCell>
                                     <Avatar>
                                         <AvatarImage src={detail.logo_url} alt={detail.bank_name} data-ai-hint="logo bank"/>
