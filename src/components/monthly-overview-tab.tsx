@@ -863,7 +863,7 @@ export function MonthlyOverviewTab() {
          <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-muted-foreground">Year:</span>
             <Select value={String(selectedYear)} onValueChange={(v) => setSelectedYear(Number(v))}>
-                <SelectTrigger className="w-[120px]">
+                <SelectTrigger>
                   <SelectValue placeholder="Select Year" />
                 </SelectTrigger>
                 <SelectContent>
@@ -1062,7 +1062,7 @@ export function MonthlyOverviewTab() {
                           <TableBody>
                             {filteredTenantsForMonth.length > 0 ? (
                               filteredTenantsForMonth.map((entry) => (
-                                <TableRow key={entry.id} data-state={isAdmin && selectedRentEntryIds.includes(entry.id) ? "selected" : undefined}>
+                                <TableRow key={entry.id} className="odd:bg-muted/50" data-state={isAdmin && selectedRentEntryIds.includes(entry.id) ? "selected" : undefined}>
                                   {isAdmin && <TableCell>
                                       <Checkbox
                                           checked={selectedRentEntryIds.includes(entry.id)}
@@ -1309,7 +1309,7 @@ export function MonthlyOverviewTab() {
                       </TableHeader>
                       <TableBody>
                         {filteredExpenses.map((expense) => (
-                            <TableRow key={expense.id} data-state={isAdmin && selectedExpenseIds.includes(expense.id) ? "selected" : undefined}>
+                            <TableRow key={expense.id} className="odd:bg-muted/50" data-state={isAdmin && selectedExpenseIds.includes(expense.id) ? "selected" : undefined}>
                               {isAdmin && <TableCell>
                                 <Checkbox
                                   checked={selectedExpenseIds.includes(expense.id)}

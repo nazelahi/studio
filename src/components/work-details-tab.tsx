@@ -80,7 +80,7 @@ const EditableAmount: React.FC<EditableAmountProps> = ({ initialAmount, onSave, 
                         setIsEditing(false);
                     }
                 }}
-                className="h-8 w-24 text-right"
+                className="h-8 w-24 text-left"
             />
         );
     }
@@ -89,7 +89,7 @@ const EditableAmount: React.FC<EditableAmountProps> = ({ initialAmount, onSave, 
         <button 
             onClick={handleClick}
             disabled={!isAdmin}
-            className={cn("text-right", isAdmin && "hover:bg-muted rounded-md px-2 py-1 transition-colors")}>
+            className={cn("text-left", isAdmin && "hover:bg-muted rounded-md px-2 py-1 transition-colors")}>
                 {formatCurrency(amount, currencySymbol)}
         </button>
     );
@@ -469,7 +469,7 @@ export function WorkDetailsTab({ year }: { year: number }) {
                 const totalCost = (work.product_cost || 0) + (work.worker_cost || 0);
                 const isCompleted = work.status === 'Completed';
                 return (
-                  <TableRow key={work.id}>
+                  <TableRow key={work.id} className="odd:bg-muted/50">
                     <TableCell>
                       <div className="font-medium">{work.title}</div>
                       <div className="text-sm text-muted-foreground sm:hidden">{work.description}</div>
