@@ -210,7 +210,7 @@ export default function DashboardPageClient() {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="rounded-full shrink-0 h-8 w-8 -ml-2">
-                  <Menu className="h-4 w-4" />
+                  <Settings className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
