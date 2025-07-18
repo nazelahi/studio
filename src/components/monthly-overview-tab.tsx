@@ -217,7 +217,6 @@ export function MonthlyOverviewTab() {
 
   const formRef = React.useRef<HTMLFormElement>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
-  const expenseFileInputRef = React.useRef<HTMLInputElement>(null);
   const receiptInputRef = React.useRef<HTMLInputElement>(null);
 
 
@@ -765,94 +764,6 @@ export function MonthlyOverviewTab() {
     });
   };
 
-    const handleDownloadExpenseTemplate = () => {
-        const headers = ["date", "category", "amount", "description", "status"];
-        const sampleData = [
-            ["2024-05-10", "Maintenance", 2500, "Fix leaking pipe in Apt 101", "Paid"],
-            ["2024-05-15", "Utilities", 5000, "Monthly electricity bill", "Due"]
-        ];
-        const worksheet = XLSX.utils.aoa_to_sheet([headers, ...sampleData]);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Expenses Template");
-        XLSX.writeFile(workbook, "Expenses_Template.xlsx");
-        toast({ title: "Template Downloaded", description: "Expenses_Template.xlsx has been downloaded." });
-    };
-
-    const handleImportExpenseClick = () => {
-        expenseFileInputRef.current?.click();
-    };
-
-    const handleExpenseFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (!file) return;
-
-        toast({ title: "Processing expense file...", description: "Please wait." });
-        
-        const reader = new FileReader();
-        reader.onload = async (e) => {
-            try {
-                const data = e.target?.result;
-                const workbook = XLSX.read(data, { type: 'array' });
-                const sheetName = workbook.SheetNames[0];
-                const worksheet = workbook.Sheets[sheetName];
-
-                const json: any[] = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
-
-                if (json.length < 2) {
-                    toast({ title: "Empty or invalid sheet", variant: "destructive" });
-                    return;
-                }
-
-                const header: string[] = json[0].map((h: any) => String(h).toLowerCase().trim().replace(/ /g, '_'));
-                const rows = json.slice(1);
-
-                const expensesToCreate = rows.map(rowArray => {
-                    const row: { [key: string]: any } = {};
-                    header.forEach((h, i) => { row[h] = rowArray[i]; });
-
-                    const validStatuses = ["paid", "due"];
-                    const statusInput = String(row.status || 'Due').toLowerCase();
-                    const status = validStatuses.includes(statusInput) ? (statusInput.charAt(0).toUpperCase() + statusInput.slice(1)) as Expense['status'] : "Due";
-
-                    let date: string;
-                    const dateInput = row.date;
-                    if (typeof dateInput === 'number') {
-                        const excelDate = new Date(Date.UTC(1900, 0, dateInput - 1));
-                        date = formatDate(excelDate.toISOString(), 'yyyy-MM-dd');
-                    } else if (typeof dateInput === 'string' && dateInput.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                        date = dateInput;
-                    }
-                    else {
-                        date = formatDate(new Date(selectedYear, selectedMonth, 1).toISOString(), 'yyyy-MM-dd');
-                    }
-                  
-                    return {
-                        date,
-                        category: String(row.category || 'Other'),
-                        amount: Number(row.amount || 0),
-                        description: String(row.description || ''),
-                        status,
-                    };
-                }).filter(entry => entry.category && entry.amount > 0);
-                
-                if (expensesToCreate.length === 0) {
-                    toast({ title: "No Valid Data Found", description: "Ensure file has columns: date, category, amount.", variant: "destructive" });
-                    return;
-                }
-                
-                await addRentEntriesBatch(expensesToCreate as any, selectedYear, selectedMonth, toast);
-                toast({ title: "Import Successful", description: `${expensesToCreate.length} expenses imported.` });
-
-            } catch (error) {
-                console.error("Error importing expense file:", error);
-                toast({ title: "Import Failed", description: "There was an error processing the file.", variant: "destructive" });
-            } finally {
-                if(event.target) event.target.value = '';
-            }
-        };
-        reader.readAsArrayBuffer(file);
-    };
-
     const handleDesktopMonthChange = (monthName: string) => {
         const monthIndex = months.indexOf(monthName);
         if (monthIndex !== -1) {
@@ -1045,7 +956,7 @@ export function MonthlyOverviewTab() {
                       <div className="relative overflow-x-auto">
                         <Table>
                           <TableHeader>
-                            <TableRow style={{ backgroundColor: 'hsl(var(--table-header-background))', color: 'hsl(var(--table-header-foreground))' }} className="hover:bg-[hsl(var(--table-header-background)/0.9)]">
+                            <TableRow>
                               {isAdmin && <TableHead className="w-10 text-inherit">
                                   <div className="text-white">
                                       <Checkbox
@@ -1061,12 +972,12 @@ export function MonthlyOverviewTab() {
                                       />
                                   </div>
                               </TableHead>}
-                              <TableHead className="text-inherit">Tenant</TableHead>
-                              <TableHead className="hidden md:table-cell text-inherit">Collected By</TableHead>
-                              <TableHead className="hidden sm:table-cell text-inherit">Payment Date</TableHead>
-                              <TableHead className="hidden sm:table-cell text-inherit">Status</TableHead>
-                              <TableHead className="text-inherit">Amount</TableHead>
-                              <TableHead className="w-[50px] text-right text-inherit"></TableHead>
+                              <TableHead>Tenant</TableHead>
+                              <TableHead className="hidden md:table-cell">Collected By</TableHead>
+                              <TableHead className="hidden sm:table-cell">Payment Date</TableHead>
+                              <TableHead className="hidden sm:table-cell">Status</TableHead>
+                              <TableHead>Amount</TableHead>
+                              <TableHead className="w-[50px] text-right"></TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -1201,7 +1112,7 @@ export function MonthlyOverviewTab() {
                           </TableBody>
                           {filteredTenantsForMonth.length > 0 && (
                             <TableFooter>
-                              <TableRow style={{ backgroundColor: 'hsl(var(--table-footer-background))', color: 'hsl(var(--table-footer-foreground))' }} className="font-bold hover:bg-[hsl(var(--table-footer-background)/0.9)]">
+                              <TableRow>
                                   <TableCell colSpan={isAdmin ? 7 : 6} className="text-inherit p-2">
                                     <div className="flex flex-col sm:flex-row items-center justify-between px-2">
                                       <div className="sm:hidden text-center text-inherit font-bold">Total Rent Collected</div>
@@ -1285,11 +1196,6 @@ export function MonthlyOverviewTab() {
                                     </Button>
                                 </TooltipTrigger><TooltipContent>Sync from Previous Month</TooltipContent></Tooltip>
                         </div>
-                         <div className="hidden sm:flex items-center gap-2">
-                            <Tooltip><TooltipTrigger asChild><Button size="icon" variant="outline" onClick={handleDownloadExpenseTemplate}><Download className="h-4 w-4" /><span className="sr-only">Download Template</span></Button></TooltipTrigger><TooltipContent>Download Template</TooltipContent></Tooltip>
-                            <Tooltip><TooltipTrigger asChild><Button size="icon" variant="outline" onClick={handleImportExpenseClick}><Upload className="h-4 w-4" /><span className="sr-only">Import from file</span></Button></TooltipTrigger><TooltipContent>Import</TooltipContent></Tooltip>
-                            <input type="file" ref={expenseFileInputRef} className="hidden" accept=".xlsx, .csv" onChange={handleExpenseFileChange}/>
-                        </div>
                       </div>
                     }
                   </CardHeader>
@@ -1297,7 +1203,7 @@ export function MonthlyOverviewTab() {
                     <div className="relative overflow-x-auto">
                     <Table>
                       <TableHeader>
-                        <TableRow style={{ backgroundColor: 'hsl(var(--table-header-background))', color: 'hsl(var(--table-header-foreground))' }} className="hover:bg-[hsl(var(--table-header-background)/0.9)]">
+                        <TableRow>
                           {isAdmin && <TableHead className="w-10 text-inherit">
                             <Checkbox
                               checked={selectedExpenseIds.length > 0 && selectedExpenseIds.length === filteredExpenses.length}
@@ -1310,11 +1216,11 @@ export function MonthlyOverviewTab() {
                               }}
                             />
                           </TableHead>}
-                          <TableHead className="text-inherit">Details</TableHead>
-                          <TableHead className="text-inherit hidden sm:table-cell">Category</TableHead>
-                          <TableHead className="text-inherit">Amount</TableHead>
-                          <TableHead className="text-inherit hidden sm:table-cell">Status</TableHead>
-                          <TableHead className="w-[50px] text-right text-inherit"></TableHead>
+                          <TableHead>Details</TableHead>
+                          <TableHead className="hidden sm:table-cell">Category</TableHead>
+                          <TableHead>Amount</TableHead>
+                          <TableHead className="hidden sm:table-cell">Status</TableHead>
+                          <TableHead className="w-[50px] text-right"></TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -1429,12 +1335,12 @@ export function MonthlyOverviewTab() {
                       </TableBody>
                       {filteredExpenses.length > 0 && (
                         <TableFooter>
-                          <TableRow style={{ backgroundColor: 'hsl(var(--table-footer-background))', color: 'hsl(var(--table-footer-foreground))' }} className="font-bold hover:bg-[hsl(var(--table-footer-background)/0.9)]">
-                            <TableCell colSpan={isAdmin ? 6 : 5} className="text-inherit p-2">
+                          <TableRow>
+                            <TableCell colSpan={isAdmin ? 6 : 5} className="p-2">
                                <div className="flex flex-col sm:flex-row items-center justify-between px-2">
-                                <div className="sm:hidden text-center text-inherit font-bold">Total Paid</div>
-                                <div className="hidden sm:block text-left text-inherit font-bold">Total Paid</div>
-                                <div className="text-inherit font-bold">{formatCurrency(totalExpensesPaid, settings.currencySymbol)}</div>
+                                <div className="sm:hidden text-center font-bold">Total Paid</div>
+                                <div className="hidden sm:block text-left font-bold">Total Paid</div>
+                                <div className="font-bold">{formatCurrency(totalExpensesPaid, settings.currencySymbol)}</div>
                                </div>
                             </TableCell>
                           </TableRow>
