@@ -396,9 +396,9 @@ export function ContactsTab() {
   return (
     <>
       <Card>
-        <CardHeader>
+        <CardHeader className="p-4 sm:p-6">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div>
+            <div className="flex-1 text-center sm:text-left">
               <CardTitle>Tenants</CardTitle>
               <CardDescription>Manage your tenants and their information.</CardDescription>
             </div>
@@ -632,10 +632,8 @@ export function ContactsTab() {
           </div>
         </CardHeader>
         <CardContent className={cn(
-          "pt-0", 
-          settings.tenantViewStyle === 'list' ? "p-0" : "p-4 sm:p-6"
+          settings.tenantViewStyle === 'list' ? 'p-0' : 'p-4 sm:p-6'
         )}>
-          <div className="">
             {loading ? (
                 <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {[...Array(4)].map((_, i) => <TenantCardSkeleton key={i} />)}
@@ -784,7 +782,6 @@ export function ContactsTab() {
                     </Table>
                 </div>
             )}
-            </div>
         </CardContent>
       </Card>
       {selectedTenantForSheet && (
