@@ -961,7 +961,7 @@ export function MonthlyOverviewTab() {
                       <div className="relative overflow-x-auto">
                         <Table>
                           <TableHeader>
-                            <TableRow>
+                            <TableRow style={{ backgroundColor: 'hsl(var(--table-header-background))', color: 'hsl(var(--table-header-foreground))' }} className="hover:bg-[hsl(var(--table-header-background)/0.9)]">
                               {isAdmin && <TableHead className="w-10 text-inherit">
                                   <div className="text-white">
                                       <Checkbox
@@ -977,12 +977,12 @@ export function MonthlyOverviewTab() {
                                       />
                                   </div>
                               </TableHead>}
-                              <TableHead>Tenant</TableHead>
-                              <TableHead className="hidden md:table-cell">Collected By</TableHead>
-                              <TableHead className="hidden sm:table-cell">Payment Date</TableHead>
-                              <TableHead className="hidden sm:table-cell">Status</TableHead>
-                              <TableHead>Amount</TableHead>
-                              <TableHead className="w-[50px] text-right"></TableHead>
+                              <TableHead className="text-inherit">Tenant</TableHead>
+                              <TableHead className="hidden md:table-cell text-inherit">Collected By</TableHead>
+                              <TableHead className="hidden sm:table-cell text-inherit">Payment Date</TableHead>
+                              <TableHead className="hidden sm:table-cell text-inherit">Status</TableHead>
+                              <TableHead className="text-inherit">Amount</TableHead>
+                              <TableHead className="w-[50px] text-right text-inherit"></TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
@@ -1117,7 +1117,7 @@ export function MonthlyOverviewTab() {
                           </TableBody>
                           {filteredTenantsForMonth.length > 0 && (
                             <TableFooter>
-                              <TableRow>
+                              <TableRow style={{ backgroundColor: 'hsl(var(--table-footer-background))', color: 'hsl(var(--table-footer-foreground))' }} className="font-bold hover:bg-[hsl(var(--table-footer-background)/0.9)]">
                                   <TableCell colSpan={isAdmin ? 7 : 6} className="text-inherit p-2">
                                     <div className="flex flex-col sm:flex-row items-center justify-between px-2">
                                       <div className="sm:hidden text-center text-inherit font-bold">Total Rent Collected</div>
@@ -1220,7 +1220,7 @@ export function MonthlyOverviewTab() {
                     <div className="relative overflow-x-auto">
                     <Table>
                       <TableHeader>
-                        <TableRow>
+                        <TableRow style={{ backgroundColor: 'hsl(var(--table-header-background))', color: 'hsl(var(--table-header-foreground))' }} className="hover:bg-[hsl(var(--table-header-background)/0.9)]">
                           {isAdmin && <TableHead className="w-10 text-inherit">
                             <Checkbox
                               checked={selectedExpenseIds.length > 0 && selectedExpenseIds.length === filteredExpenses.length}
@@ -1233,11 +1233,11 @@ export function MonthlyOverviewTab() {
                               }}
                             />
                           </TableHead>}
-                          <TableHead>Details</TableHead>
-                          <TableHead className="hidden sm:table-cell">Category</TableHead>
-                          <TableHead>Amount</TableHead>
-                          <TableHead className="hidden sm:table-cell">Status</TableHead>
-                          <TableHead className="w-[50px] text-right"></TableHead>
+                          <TableHead className="text-inherit">Details</TableHead>
+                          <TableHead className="hidden sm:table-cell text-inherit">Category</TableHead>
+                          <TableHead className="text-inherit">Amount</TableHead>
+                          <TableHead className="hidden sm:table-cell text-inherit">Status</TableHead>
+                          <TableHead className="w-[50px] text-right text-inherit"></TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -1352,12 +1352,12 @@ export function MonthlyOverviewTab() {
                       </TableBody>
                       {filteredExpenses.length > 0 && (
                         <TableFooter>
-                          <TableRow>
-                            <TableCell colSpan={isAdmin ? 6 : 5} className="p-2">
+                          <TableRow style={{ backgroundColor: 'hsl(var(--table-footer-background))', color: 'hsl(var(--table-footer-foreground))' }} className="font-bold hover:bg-[hsl(var(--table-footer-background)/0.9)]">
+                            <TableCell colSpan={isAdmin ? 6 : 5} className="p-2 text-inherit">
                                <div className="flex flex-col sm:flex-row items-center justify-between px-2">
-                                <div className="sm:hidden text-center font-bold">Total Paid</div>
-                                <div className="hidden sm:block text-left font-bold">Total Paid</div>
-                                <div className="font-bold">{formatCurrency(totalExpensesPaid, settings.currencySymbol)}</div>
+                                <div className="sm:hidden text-center font-bold text-inherit">Total Paid</div>
+                                <div className="hidden sm:block text-left font-bold text-inherit">Total Paid</div>
+                                <div className="font-bold text-inherit">{formatCurrency(totalExpensesPaid, settings.currencySymbol)}</div>
                                </div>
                             </TableCell>
                           </TableRow>

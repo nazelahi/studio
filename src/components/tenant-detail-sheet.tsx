@@ -26,7 +26,7 @@ import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 import { useAppContext } from "@/context/app-context";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "./ui/table";
 import { TenantIdCard } from "./tenant-id-card";
 import { saveAs } from "file-saver";
 import { formatCurrency, formatDate } from "@/lib/utils"
@@ -303,10 +303,10 @@ export function TenantDetailSheet({
                         <>
                             <Table>
                                 <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Period</TableHead>
-                                        <TableHead>Status</TableHead>
-                                        <TableHead className="text-right">Amount</TableHead>
+                                    <TableRow style={{ backgroundColor: 'hsl(var(--table-header-background))', color: 'hsl(var(--table-header-foreground))' }} className="hover:bg-[hsl(var(--table-header-background)/0.9)]">
+                                        <TableHead className="text-inherit">Period</TableHead>
+                                        <TableHead className="text-inherit">Status</TableHead>
+                                        <TableHead className="text-right text-inherit">Amount</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>

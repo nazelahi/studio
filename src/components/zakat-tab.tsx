@@ -7,7 +7,7 @@ import { useAppContext } from "@/context/app-context"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { PlusCircle, Edit, Trash2, ArrowUpCircle, ArrowDownCircle, Banknote, LoaderCircle, Settings, Landmark, Eye, Upload, ImageIcon, MapPin, MoreHorizontal } from "lucide-react"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter as UiTableFooter } from "@/components/ui/table"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/hooks/use-toast"
 import { useAuth } from "@/context/auth-context"
@@ -198,7 +198,7 @@ export function ZakatTab() {
      <>
         <Table>
             <TableHeader>
-              <TableRow>
+              <TableRow style={{ backgroundColor: 'hsl(var(--table-header-background))', color: 'hsl(var(--table-header-foreground))' }} className="hover:bg-[hsl(var(--table-header-background)/0.9)]">
                 <TableHead className="text-inherit">Date</TableHead>
                 <TableHead className="text-inherit">{type === 'inflow' ? 'Source' : 'Recipient'}</TableHead>
                 <TableHead className="hidden sm:table-cell text-inherit">Description</TableHead>
@@ -274,17 +274,17 @@ export function ZakatTab() {
               )}
             </TableBody>
             {transactions.length > 0 && (
-                <UiTableFooter>
-                    <TableRow>
-                        <TableCell colSpan={5} className="p-2">
+                <TableFooter>
+                    <TableRow style={{ backgroundColor: 'hsl(var(--table-footer-background))', color: 'hsl(var(--table-footer-foreground))' }} className="font-bold hover:bg-[hsl(var(--table-footer-background)/0.9)]">
+                        <TableCell colSpan={5} className="p-2 text-inherit">
                             <div className="flex flex-col sm:flex-row items-center justify-between px-2">
-                              <div className="sm:hidden text-center font-bold">Total</div>
-                              <div className="hidden sm:block text-left font-bold">Total</div>
-                              <div className="font-bold">{formatCurrency(totalAmount, settings.currencySymbol)}</div>
+                              <div className="sm:hidden text-center font-bold text-inherit">Total</div>
+                              <div className="hidden sm:block text-left font-bold text-inherit">Total</div>
+                              <div className="font-bold text-inherit">{formatCurrency(totalAmount, settings.currencySymbol)}</div>
                             </div>
                         </TableCell>
                     </TableRow>
-                </UiTableFooter>
+                </TableFooter>
             )}
           </Table>
           {transactions.length > 10 && (
@@ -379,12 +379,12 @@ export function ZakatTab() {
            {settings.zakatBankDetails.length > 0 ? (
                  <Table>
                     <TableHeader>
-                        <TableRow>
-                            <TableHead>Logo</TableHead>
-                            <TableHead>Bank Name</TableHead>
-                            <TableHead>Account Number</TableHead>
-                            <TableHead>Location</TableHead>
-                            <TableHead className="text-right w-12"></TableHead>
+                        <TableRow style={{ backgroundColor: 'hsl(var(--table-header-background))', color: 'hsl(var(--table-header-foreground))' }} className="hover:bg-[hsl(var(--table-header-background)/0.9)]">
+                            <TableHead className="text-inherit">Logo</TableHead>
+                            <TableHead className="text-inherit">Bank Name</TableHead>
+                            <TableHead className="text-inherit">Account Number</TableHead>
+                            <TableHead className="text-inherit">Location</TableHead>
+                            <TableHead className="text-right w-12 text-inherit"></TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>

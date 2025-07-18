@@ -16,6 +16,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
 import { Logo } from "@/components/icons"
 import { formatCurrency, formatDate } from "@/lib/utils"
+import { AppContextProvider } from "@/context/app-context"
+import { getDashboardData } from "@/lib/data"
+import type { AppData } from "@/lib/data"
 
 function ReceiptPageContent() {
     const { getRentEntryById, tenants, settings, loading: dataLoading } = useAppContext()
@@ -195,7 +198,7 @@ function ReceiptPageContent() {
                                 </TableRow>
                             </TableBody>
                             <TableFooter>
-                                <TableRow className="font-bold bg-muted/50">
+                                <TableRow style={{ backgroundColor: 'hsl(var(--table-footer-background))', color: 'hsl(var(--table-footer-foreground))' }} className="font-bold hover:bg-[hsl(var(--table-footer-background)/0.9)]">
                                     <TableCell>Total Amount</TableCell>
                                     <TableCell className="text-right">{formatCurrency(rentEntry.rent, settings.currencySymbol)}</TableCell>
                                 </TableRow>
@@ -230,9 +233,31 @@ function ReceiptPageContent() {
     );
 }
 
-// This page does not need its own provider since the root layout now provides it.
+// This page needs its own provider since it's a dynamic route
+// and can't rely on the root layout's server-fetched data.
 export default function ReceiptPage() {
+    const [initialData, setInitialData] = React.useState<AppData | null>(null);
+
+    React.useEffect(() => {
+        async function loadData() {
+            const data = await getDashboardData();
+            setInitialData(data);
+        }
+        loadData();
+    }, [])
+
+    if (!initialData) {
+        return (
+             <div className="flex min-h-screen w-full flex-col items-center justify-center bg-muted/40">
+                <LoaderCircle className="h-10 w-10 animate-spin text-primary" />
+                <p className="mt-4 text-muted-foreground">Loading Data...</p>
+            </div>
+        )
+    }
+
     return (
-        <ReceiptPageContent />
+        <AppContextProvider initialData={initialData}>
+            <ReceiptPageContent />
+        </AppContextProvider>
     )
 }

@@ -459,7 +459,7 @@ export function WorkDetailsTab({ year }: { year: number }) {
       <CardContent className="p-0">
         <Table>
           <TableHeader>
-            <TableRow>
+            <TableRow style={{ backgroundColor: 'hsl(var(--table-header-background))', color: 'hsl(var(--table-header-foreground))' }} className="hover:bg-[hsl(var(--table-header-background)/0.9)]">
               <TableHead className="text-inherit">Work Item</TableHead>
               <TableHead className="text-inherit hidden sm:table-cell">Product Cost</TableHead>
               <TableHead className="text-inherit hidden sm:table-cell">Worker Cost</TableHead>
@@ -563,7 +563,7 @@ export function WorkDetailsTab({ year }: { year: number }) {
           </TableBody>
             {filteredWorkDetails.length > 0 && (
                 <TableFooter>
-                    <TableRow className="font-bold hover:bg-muted/50">
+                    <TableRow style={{ backgroundColor: 'hsl(var(--table-footer-background))', color: 'hsl(var(--table-footer-foreground))' }} className="font-bold hover:bg-[hsl(var(--table-footer-background)/0.9)]">
                         <TableCell colSpan={6} className="text-inherit p-2">
                            <div className="flex flex-col sm:flex-row items-center justify-between px-2">
                                 <div className="sm:hidden text-center text-inherit font-bold">Total for {year}</div>
