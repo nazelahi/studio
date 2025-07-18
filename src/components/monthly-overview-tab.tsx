@@ -900,7 +900,7 @@ export function MonthlyOverviewTab() {
           </div>
       </div>
 
-        <div className="md:hidden flex gap-2 mb-4">
+        <div className="md:hidden grid grid-cols-2 gap-2 mb-4">
             <Select value={String(selectedMonth)} onValueChange={(v) => setSelectedMonth(Number(v))}>
               <SelectTrigger>
                 <SelectValue placeholder="Select Month" />
@@ -914,7 +914,7 @@ export function MonthlyOverviewTab() {
               </SelectContent>
             </Select>
             <Select value={String(selectedYear)} onValueChange={(v) => setSelectedYear(Number(v))}>
-                <SelectTrigger className="w-[120px]">
+                <SelectTrigger>
                   <SelectValue placeholder="Select Year" />
                 </SelectTrigger>
                 <SelectContent>
