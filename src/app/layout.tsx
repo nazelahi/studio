@@ -5,11 +5,10 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from '@/context/auth-context';
 import { ThemeProvider } from '@/components/theme-provider';
-import { AppContextProvider } from '@/context/app-context';
 import { ProtectionProvider } from '@/context/protection-context';
-import type { PropertySettings, ZakatBankDetail } from '@/types';
-import { getSettingsData } from '@/lib/data';
+import { getDashboardData, getSettingsData } from '@/lib/data';
 import { hexToHsl } from '@/lib/utils';
+import { AppContextProvider } from '@/context/app-context';
 
 export async function generateMetadata(
   parent: ResolvingMetadata
@@ -57,7 +56,8 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   
-  const { propertySettings, zakatBankDetails } = await getSettingsData();
+  const initialData = await getDashboardData();
+  const { propertySettings } = initialData;
 
   const themeColors = {
     primary: propertySettings?.theme_primary || defaultTheme.primary,
@@ -113,13 +113,13 @@ export default async function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
-          <AuthProvider>
-            <AppContextProvider initialSettings={{ propertySettings, zakatBankDetails }}>
+          <AppContextProvider initialData={initialData}>
+            <AuthProvider>
               <ProtectionProvider>
                   {children}
               </ProtectionProvider>
-            </AppContextProvider>
-          </AuthProvider>
+            </AuthProvider>
+          </AppContextProvider>
           <Toaster />
         </ThemeProvider>
       </body>

@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
@@ -248,23 +247,6 @@ const deepMerge = (target: any, source: any) => {
 
 // --- END: Settings-related logic ---
 
-type InitialSettings = {
-    propertySettings: DbPropertySettings | null;
-    zakatBankDetails: ZakatBankDetail[];
-}
-
-const initialAppData: Omit<AppData, 'propertySettings'> = {
-    tenants: [],
-    expenses: [],
-    rentData: [],
-    deposits: [],
-    zakatTransactions: [],
-    zakatBankDetails: [],
-    notices: [],
-    workDetails: [],
-    documents: [],
-}
-
 const getInitialSettings = (serverSettings: DbPropertySettings | null, zakatDetails: ZakatBankDetail[]) => {
     let combinedSettings = { ...defaultSettings };
      if (serverSettings) {
@@ -326,10 +308,11 @@ const getInitialSettings = (serverSettings: DbPropertySettings | null, zakatDeta
 };
 
 
-export function AppContextProvider({ children, initialSettings }: { children: ReactNode; initialSettings: InitialSettings }) {
-    const [data, setData] = useState(initialAppData);
-    const [settings, setSettings] = useState<AppSettings>(() => getInitialSettings(initialSettings.propertySettings, initialSettings.zakatBankDetails));
-    const [loading, setLoading] = useState(true);
+export function AppContextProvider({ children, initialData }: { children: ReactNode; initialData: AppData }) {
+    const { propertySettings, zakatBankDetails, ...dashboardData } = initialData;
+    const [data, setData] = useState(dashboardData);
+    const [settings, setSettings] = useState<AppSettings>(() => getInitialSettings(propertySettings, zakatBankDetails));
+    const [loading, setLoading] = useState(false);
     
     const refreshData = useCallback(async (showLoading = true) => {
         if (showLoading) {
@@ -351,11 +334,6 @@ export function AppContextProvider({ children, initialSettings }: { children: Re
             }
         }
     }, []);
-
-    useEffect(() => {
-        refreshData();
-    }, [refreshData]);
-
 
      const handleSetSettings = (newSettingsOrFn: AppSettings | ((prev: AppSettings) => AppSettings)) => {
         const newSettings = typeof newSettingsOrFn === 'function' ? newSettingsOrFn(settings) : newSettingsOrFn;
@@ -899,7 +877,7 @@ export function AppContextProvider({ children, initialSettings }: { children: Re
     };
 
     const getAllData = (): Omit<AppData, 'propertySettings'> => {
-        return { ...data };
+        return { ...data, zakatBankDetails: settings.zakatBankDetails, propertySettings: null };
     };
 
     const restoreAllData = async (backupData: Omit<AppData, 'propertySettings'>, toast: ToastFn) => {
