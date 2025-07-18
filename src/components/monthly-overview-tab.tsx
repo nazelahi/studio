@@ -90,6 +90,14 @@ const getExpenseStatusBadge = (status: Expense["status"]) => {
       : "bg-warning text-warning-foreground hover:bg-warning/80";
 };
 
+const getExpenseStatusIcon = (status: Expense["status"]) => {
+    switch(status) {
+        case "Paid": return <CheckCircle className="h-4 w-4 text-green-500"/>;
+        case "Due": return <AlertCircle className="h-4 w-4 text-yellow-500"/>;
+        default: return null;
+    }
+}
+
 interface EditableAmountProps {
     initialAmount: number;
     onSave: (newAmount: number) => void;
@@ -1307,7 +1315,7 @@ export function MonthlyOverviewTab() {
                           <TableHead className="text-inherit">Details</TableHead>
                           <TableHead className="text-inherit hidden sm:table-cell">Category</TableHead>
                           <TableHead className="text-inherit">Amount</TableHead>
-                          <TableHead className="text-inherit">Status</TableHead>
+                          <TableHead className="text-inherit hidden sm:table-cell">Status</TableHead>
                           <TableHead className="text-right text-inherit">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -1325,7 +1333,10 @@ export function MonthlyOverviewTab() {
                                 />
                               </TableCell>}
                               <TableCell>
-                                <div className="font-medium">{expense.description || expense.category}</div>
+                                <div className="font-medium flex items-center gap-2">
+                                    {expense.description || expense.category}
+                                    <div className="sm:hidden">{getExpenseStatusIcon(expense.status)}</div>
+                                </div>
                                 <div className="text-xs text-muted-foreground md:hidden">
                                   {formatDate(expense.date, 'dd MMM, yy')}
                                 </div>
@@ -1347,7 +1358,7 @@ export function MonthlyOverviewTab() {
                                     />
                                 </div>
                               </TableCell>
-                              <TableCell>
+                              <TableCell className="hidden sm:table-cell">
                                  {isAdmin && expense.status === 'Due' ? (
                                   <Select
                                       value={expense.status}
