@@ -51,7 +51,7 @@ export async function getDashboardData(): Promise<AppData> {
         ] = await Promise.all([
             supabase.from('tenants').select('id, name, email, phone, property, rent, join_date, notes, status, avatar, type, documents, father_name, address, date_of_birth, nid_number, advance_deposit, gas_meter_number, electric_meter_number, created_at').gte('created_at', twoYearsAgo).order('name', { ascending: true }),
             supabase.from('expenses').select('id, date, category, amount, description, status').is('deleted_at', null).gte('date', twoYearsAgo).order('date', { ascending: false }),
-            supabase.from('rent_entries').select('id, tenant_id, name, property, rent, due_date, status, avatar, year, month, payment_date, collected_by').gte('due_date', twoYearsAgo).order('due_date', { ascending: false }),
+            supabase.from('rent_entries').select('id, tenant_id, name, property, rent, due_date, status, avatar, year, month, payment_date, collected_by').is('deleted_at', null).gte('due_date', twoYearsAgo).order('due_date', { ascending: false }),
             supabase.from('property_settings').select('*').eq('id', 1).maybeSingle(),
             supabase.from('deposits').select('id, year, month, amount, deposit_date, receipt_url').gte('deposit_date', twoYearsAgo).order('deposit_date', { ascending: false }),
             supabase.from('zakat_transactions').select('id, transaction_date, type, amount, source_or_recipient, description, receipt_url').gte('transaction_date', twoYearsAgo).order('transaction_date', { ascending: false }),
@@ -97,6 +97,41 @@ export async function getDashboardData(): Promise<AppData> {
         return {
             tenants: [], expenses: [], rentData: [], propertySettings: null, deposits: [],
             zakatTransactions: [], notices: [], workDetails: [], zakatBankDetails: [], documents: []
+        };
+    }
+}
+
+export async function getSettingsData(): Promise<{
+    propertySettings: PropertySettings | null;
+    zakatBankDetails: ZakatBankDetail[];
+}> {
+    const supabase = getSupabaseAdmin();
+
+    try {
+        const [propertySettingsRes, zakatBankDetailsRes] = await Promise.all([
+            supabase.from('property_settings').select('*').eq('id', 1).maybeSingle(),
+            supabase.from('zakat_bank_details').select('id, bank_name, account_number, account_holder, logo_url, location').order('bank_name', { ascending: true }),
+        ]);
+
+        const checkError = (res: any, name: string) => {
+            if (res.error && res.error.code !== 'PGRST116' && res.error.code !== '42P01') {
+                console.error(`Error fetching ${name}:`, res.error);
+                throw res.error;
+            }
+        };
+
+        checkError(propertySettingsRes, 'propertySettings');
+        checkError(zakatBankDetailsRes, 'zakatBankDetails');
+
+        return {
+            propertySettings: propertySettingsRes.data || null,
+            zakatBankDetails: zakatBankDetailsRes.data || [],
+        };
+    } catch (error) {
+        console.error("Failed to fetch settings data on server:", error);
+        return {
+            propertySettings: null,
+            zakatBankDetails: [],
         };
     }
 }
