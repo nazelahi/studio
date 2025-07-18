@@ -2,13 +2,13 @@
 
 "use client"
 
-import { useSettings } from "@/context/settings-context"
+import { useAppContext } from "@/context/app-context"
 import { Mail, MapPin, Phone } from "lucide-react";
 import Link from "next/link";
 import { Logo } from "./icons";
 
 export function AppFooter() {
-    const { settings } = useSettings();
+    const { settings } = useAppContext();
 
     return (
         <footer className="mt-auto pt-6 border-t bg-background">

@@ -6,7 +6,7 @@ import { useAuth } from './auth-context';
 import { LoginDialog } from '@/components/login-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { PasscodeDialog } from '@/components/passcode-dialog';
-import { useSettings } from './settings-context';
+import { useAppContext } from './app-context';
 
 interface ProtectionContextType {
   withProtection: (action: () => void, event?: React.MouseEvent) => void;
@@ -16,7 +16,7 @@ const ProtectionContext = createContext<ProtectionContextType | undefined>(undef
 
 export function ProtectionProvider({ children }: { children: ReactNode }) {
     const { isAdmin } = useAuth();
-    const { settings } = useSettings();
+    const { settings } = useAppContext();
     const [isLoginDialogOpen, setIsLoginDialogOpen] = useState(false);
     const [isPasscodeDialogOpen, setIsPasscodeDialogOpen] = useState(false);
     const [protectedAction, setProtectedAction] = useState<(() => void) | null>(null);

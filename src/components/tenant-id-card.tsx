@@ -5,7 +5,7 @@ import React from 'react';
 import type { Tenant } from '@/types';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Logo } from './icons';
-import { useSettings } from '@/context/settings-context';
+import { useAppContext } from '@/context/app-context';
 import { Building, Cake, DollarSign, Home, User, UserCircle, MapPin, Calendar, CreditCard, Flame, Zap } from 'lucide-react';
 import { Separator } from './ui/separator';
 import { formatDate } from '@/lib/utils';
@@ -16,7 +16,7 @@ interface TenantIdCardProps {
 }
 
 export const TenantIdCard: React.FC<TenantIdCardProps> = ({ tenant, innerRef }) => {
-  const { settings } = useSettings();
+  const { settings } = useAppContext();
 
   const InfoRow: React.FC<{ icon: React.ElementType, label: string, value?: string | number }> = ({ icon: Icon, label, value }) => {
     if (!value) return null;

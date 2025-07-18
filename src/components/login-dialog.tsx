@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Logo } from "@/components/icons";
 import { LoaderCircle } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useSettings } from "@/context/settings-context";
+import { useAppContext } from "@/context/app-context";
 
 interface LoginDialogProps {
   isOpen: boolean;
@@ -23,7 +23,7 @@ export function LoginDialog({ isOpen, onOpenChange }: LoginDialogProps) {
   const [password, setPassword] = React.useState('');
   const [loading, setLoading] = React.useState(false);
   const { signIn } = useAuth();
-  const { settings } = useSettings();
+  const { settings } = useAppContext();
   const { toast } = useToast();
 
   const handleSignIn = async (e: React.FormEvent) => {

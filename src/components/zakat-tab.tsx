@@ -3,7 +3,7 @@
 "use client"
 
 import * as React from "react"
-import { useData } from "@/context/data-context"
+import { useAppContext } from "@/context/app-context"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { PlusCircle, Edit, Trash2, ArrowUpCircle, ArrowDownCircle, Banknote, LoaderCircle, Settings, Landmark, Eye, Upload, ImageIcon, MapPin } from "lucide-react"
@@ -20,15 +20,13 @@ import { saveZakatTransactionAction, deleteZakatTransactionAction, saveZakatBank
 import type { ZakatTransaction, ZakatBankDetail } from "@/types"
 import { Skeleton } from "./ui/skeleton"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs"
-import { useSettings } from "@/context/settings-context"
 import { cn } from "@/lib/utils"
 import { Avatar, AvatarImage, AvatarFallback } from "./ui/avatar"
 import { formatCurrency, formatDate } from "@/lib/utils"
 
 export function ZakatTab() {
-  const { zakatTransactions, loading } = useData();
+  const { zakatTransactions, loading, settings } = useAppContext();
   const { isAdmin } = useAuth();
-  const { settings } = useSettings();
   const { toast } = useToast();
 
   const [isTxDialogOpen, setIsTxDialogOpen] = React.useState(false);

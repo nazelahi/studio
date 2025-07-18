@@ -5,9 +5,8 @@ import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from '@/context/auth-context';
 import { ThemeProvider } from '@/components/theme-provider';
 import { createClient } from '@supabase/supabase-js';
-import { DataProvider } from '@/context/data-context';
+import { AppContextProvider } from '@/context/app-context';
 import { getDashboardData } from '@/lib/data';
-import { SettingsProvider } from '@/context/settings-context';
 import { ProtectionProvider } from '@/context/protection-context';
 
 // It's safe to use service role key here as this runs on the server.
@@ -84,13 +83,11 @@ export default async function RootLayout({
           disableTransitionOnChange
         >
           <AuthProvider>
-            <DataProvider initialData={initialData}>
-              <SettingsProvider serverSettings={initialData.propertySettings}>
-                <ProtectionProvider>
-                    {children}
-                </ProtectionProvider>
-              </SettingsProvider>
-            </DataProvider>
+            <AppContextProvider initialData={initialData}>
+              <ProtectionProvider>
+                  {children}
+              </ProtectionProvider>
+            </AppContextProvider>
           </AuthProvider>
           <Toaster />
         </ThemeProvider>

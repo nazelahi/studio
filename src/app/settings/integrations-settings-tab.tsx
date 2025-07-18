@@ -7,14 +7,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
 import { updatePropertySettingsAction } from "./actions"
-import { useSettings } from "@/context/settings-context"
+import { useAppContext } from "@/context/app-context"
 import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Switch } from "@/components/ui/switch"
 import { LoaderCircle } from "lucide-react"
 
 export default function IntegrationsSettingsTab() {
-  const { settings, setSettings, refreshSettings } = useSettings();
+  const { settings, setSettings, refreshData } = useAppContext();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
 
@@ -45,7 +45,7 @@ export default function IntegrationsSettingsTab() {
             toast({ title: 'Error Saving Settings', description: result.error, variant: 'destructive'});
         } else {
             toast({ title: 'Integration Settings Saved', description: 'Your changes have been saved to the database.' });
-            refreshSettings();
+            refreshData();
         }
     });
   }

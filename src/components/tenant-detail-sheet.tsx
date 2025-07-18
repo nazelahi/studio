@@ -24,11 +24,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from "@/components/ui/carousel";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { useData } from "@/context/data-context";
+import { useAppContext } from "@/context/app-context";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "./ui/table";
 import { TenantIdCard } from "./tenant-id-card";
 import { saveAs } from "file-saver";
-import { useSettings } from "@/context/settings-context"
 import { formatCurrency, formatDate } from "@/lib/utils"
 
 interface TenantDetailSheetProps {
@@ -43,8 +42,7 @@ export function TenantDetailSheet({
   onOpenChange,
 }: TenantDetailSheetProps) {
   const { toast } = useToast();
-  const { rentData } = useData();
-  const { settings } = useSettings();
+  const { rentData, settings } = useAppContext();
   const sheetContentRef = React.useRef<HTMLDivElement>(null);
   const idCardRef = React.useRef<HTMLDivElement>(null);
   
@@ -67,7 +65,7 @@ export function TenantDetailSheet({
     
     try {
       const originalBackgroundColor = document.body.style.backgroundColor;
-      document.body.style.backgroundColor = "white"; // Ensure a white background for PDF
+      document.body.style.backgroundColor = "white";
 
       const canvas = await html2canvas(input, { 
         scale: 2,
@@ -75,7 +73,7 @@ export function TenantDetailSheet({
         backgroundColor: '#ffffff'
       });
       
-      document.body.style.backgroundColor = originalBackgroundColor; // Restore original background color
+      document.body.style.backgroundColor = originalBackgroundColor;
 
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF({
@@ -101,9 +99,9 @@ export function TenantDetailSheet({
 
     try {
         const canvas = await html2canvas(input, {
-            scale: 3, // Higher scale for better quality
+            scale: 3, 
             useCORS: true,
-            backgroundColor: null, // Transparent background
+            backgroundColor: null,
         });
         canvas.toBlob(function(blob) {
             if (blob) {
@@ -125,7 +123,6 @@ export function TenantDetailSheet({
       const printContainer = document.createElement('div');
       printContainer.innerHTML = input.innerHTML;
 
-      // Add Tailwind classes to a style tag
       const styles = Array.from(document.styleSheets)
         .map(sheet => {
             try {

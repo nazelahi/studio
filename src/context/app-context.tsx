@@ -1,9 +1,8 @@
 
-
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
-import type { Tenant, Expense, RentEntry, PropertySettings, Deposit, ZakatTransaction, Notice, WorkDetail, ZakatBankDetail, ToastFn, Document } from '@/types';
+import type { Tenant, Expense, RentEntry, PropertySettings as DbPropertySettings, Deposit, ZakatTransaction, Notice, WorkDetail, ZakatBankDetail, ToastFn, Document, TabNames } from '@/types';
 import { parseISO, getMonth, getYear, subMonths, format, subYears } from 'date-fns';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/auth-context';
@@ -11,9 +10,86 @@ import { Button } from '@/components/ui/button';
 import { addWorkDetailsBatch as addWorkDetailsBatchAction } from '@/app/actions/work';
 import type { AppData } from '@/lib/data';
 
+// --- START: Settings-related types moved here ---
+interface PageDashboard {
+    nav_dashboard: string;
+    nav_settings: string;
+}
+
+interface PageOverview {
+    financial_overview_title: string;
+    financial_overview_description: string;
+}
+
+interface PageSettings {
+    title: string;
+    property_details: {
+        title: string;
+        description: string;
+        house_name_label: string;
+        house_address_label: string;
+    };
+    app_settings: {
+        title: string;
+        description: string;
+    };
+    overview_settings: {
+        title: string;
+        description: string;
+        financial_title_label: string;
+        financial_description_label: string;
+    };
+}
+
+interface AppTheme {
+    colors: {
+        primary: string;
+        table_header_background: string;
+        table_header_foreground: string;
+        table_footer_background: string;
+        mobile_nav_background: string;
+        mobile_nav_foreground: string;
+    };
+}
+
+export interface AppSettings {
+  houseName: string;
+  houseAddress: string;
+  bankName: string;
+  bankAccountNumber: string;
+  bankLogoUrl?: string;
+  ownerName?: string;
+  ownerPhotoUrl?: string;
+  passcode?: string;
+  passcodeProtectionEnabled: boolean;
+  footerName: string;
+  tabNames: TabNames;
+  theme: AppTheme;
+  page_dashboard: PageDashboard;
+  page_overview: PageOverview;
+  page_settings: PageSettings;
+  aboutUs?: string;
+  contactPhone?: string;
+  contactEmail?: string;
+  contactAddress?: string;
+  whatsappRemindersEnabled?: boolean;
+  whatsappReminderSchedule?: string[];
+  whatsappReminderTemplate?: string;
+  tenantViewStyle: 'grid' | 'list';
+  metadataTitle?: string;
+  faviconUrl?: string;
+  appLogoUrl?: string;
+  documentCategories: string[];
+  dateFormat: string;
+  currencySymbol: string;
+}
+// --- END: Settings-related types ---
+
 type NewRentEntry = Omit<RentEntry, 'id' | 'avatar' | 'year' | 'month' | 'due_date' | 'created_at' | 'deleted_at'> & { avatar?: string, tenant_id?: string };
 
-interface DataContextType extends AppData {
+interface AppContextType extends AppData {
+  settings: AppSettings;
+  setSettings: (newSettings: AppSettings | ((prev: AppSettings) => AppSettings)) => void;
   addTenant: (tenant: Omit<Tenant, 'id' | 'deleted_at' | 'created_at'>, toast: ToastFn, files?: File[]) => Promise<void>;
   updateTenant: (tenant: Tenant, toast: ToastFn, files?: File[]) => Promise<void>;
   deleteTenant: (tenantId: string, toast: ToastFn) => Promise<void>;
@@ -29,7 +105,7 @@ interface DataContextType extends AppData {
   deleteMultipleRentEntries: (rentEntryIds: string[], toast: ToastFn) => Promise<void>;
   syncTenantsForMonth: (year: number, month: number, toast: ToastFn) => Promise<number>;
   syncExpensesFromPreviousMonth: (year: number, month: number, toast: ToastFn) => Promise<number>;
-  updatePropertySettings: (settings: Omit<PropertySettings, 'id'>, toast: ToastFn) => Promise<void>;
+  updatePropertySettings: (settings: Omit<DbPropertySettings, 'id'>, toast: ToastFn) => Promise<void>;
   loading: boolean;
   getAllData: () => AppData;
   restoreAllData: (backupData: AppData, toast: ToastFn) => void;
@@ -38,7 +114,7 @@ interface DataContextType extends AppData {
   addWorkDetailsBatch: (workDetails: Omit<WorkDetail, 'id' | 'created_at' | 'deleted_at'>[], toast: ToastFn) => Promise<void>;
 }
 
-const DataContext = createContext<DataContextType | undefined>(undefined);
+const AppContext = createContext<AppContextType | undefined>(undefined);
 
 const handleError = (error: any, context: string, toast: ToastFn) => {
     const errorMessage = error.message || 'An unexpected error occurred.';
@@ -50,19 +126,136 @@ const handleError = (error: any, context: string, toast: ToastFn) => {
     });
 };
 
+// --- START: Settings-related logic moved here ---
+const defaultSettings: AppSettings = {
+    houseName: "RentFlow",
+    houseAddress: "Property Address",
+    bankName: "",
+    bankAccountNumber: "",
+    bankLogoUrl: undefined,
+    ownerName: "Owner Name",
+    ownerPhotoUrl: undefined,
+    passcode: "",
+    passcodeProtectionEnabled: true,
+    zakatBankDetails: [],
+    footerName: "© 2024 RentFlow. All Rights Reserved.",
+    aboutUs: "Your trusted partner in property management. Providing seamless rental experiences.",
+    contactPhone: "+1 (555) 123-4567",
+    contactEmail: "contact@rentflow.com",
+    contactAddress: "123 Property Lane, Real Estate City, 12345",
+    whatsappRemindersEnabled: false,
+    whatsappReminderSchedule: ['before', 'on', 'after'],
+    whatsappReminderTemplate: "Hi {tenantName}, a friendly reminder that your rent of ৳{rentAmount} for {property} is due on {dueDate}. Thank you!",
+    tenantViewStyle: 'grid',
+    metadataTitle: "RentFlow",
+    faviconUrl: "/favicon.ico",
+    appLogoUrl: undefined,
+    documentCategories: ["Legal", "Agreements", "Receipts", "ID Cards", "Property Deeds", "Blueprints", "Miscellaneous"],
+    dateFormat: "dd MMM, yyyy",
+    currencySymbol: "৳",
+    tabNames: {
+        overview: "Overview",
+        tenants: "Tenants",
+        work: "Work",
+        reports: "Reports",
+        zakat: "Zakat",
+        documents: "Documents",
+    },
+    theme: {
+        colors: {
+            primary: '#14b8a6', // teal-500
+            table_header_background: '#14b8a6',
+            table_header_foreground: '#ffffff',
+            table_footer_background: '#84cc16', // lime-500
+            mobile_nav_background: '#008080',
+            mobile_nav_foreground: '#ffffff',
+        }
+    },
+    page_dashboard: {
+        nav_dashboard: "Dashboard",
+        nav_settings: "Settings",
+    },
+    page_overview: {
+        financial_overview_title: "Financial Overview",
+        financial_overview_description: "A summary of your income and expenses for the month.",
+    },
+    page_settings: {
+        title: "Settings",
+        property_details: {
+            title: "Property & Bank Details",
+            description: "Set your property and bank details. This is stored in the database.",
+            house_name_label: "House Name",
+            house_address_label: "House Address",
+        },
+        app_settings: {
+            title: "Application Settings",
+            description: "Customize the names and labels used throughout the application. These are saved in your browser.",
+        },
+        overview_settings: {
+            title: "Overview Settings",
+            description: "Customize the text on the monthly overview page. These are saved in your browser.",
+            financial_title_label: "Financial Overview Title",
+            financial_description_label: "Financial Overview Description",
+        },
+    },
+};
 
-export function DataProvider({ children, initialData }: { children: ReactNode, initialData: AppData }) {
+const isObject = (item: any) => {
+    return (item && typeof item === 'object' && !Array.isArray(item));
+}
+
+const deepMerge = (target: any, source: any) => {
+    const output = { ...target };
+    if (isObject(target) && isObject(source)) {
+        Object.keys(source).forEach(key => {
+            if (isObject(source[key]) && key in target && isObject(target[key])) {
+                 output[key] = deepMerge(target[key], source[key]);
+            } else {
+                Object.assign(output, { [key]: source[key] });
+            }
+        });
+    }
+    return output;
+}
+
+const hexToHsl = (hex: string): string => {
+    if (!hex || typeof hex !== 'string') return '0 0% 0%';
+    hex = hex.replace(/^#/, '');
+    const r = parseInt(hex.substring(0, 2), 16) / 255;
+    const g = parseInt(hex.substring(2, 4), 16) / 255;
+    const b = parseInt(hex.substring(4, 6), 16) / 255;
+
+    const max = Math.max(r, g, b);
+    const min = Math.min(r, g, b);
+    let h = 0, s = 0, l = (max + min) / 2;
+
+    if (max !== min) {
+        const d = max - min;
+        s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+        switch (max) {
+            case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+            case g: h = (b - r) / d + 2; break;
+            case b: h = (r - g) / d + 4; break;
+        }
+        h /= 6;
+    }
+    
+    return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
+};
+// --- END: Settings-related logic ---
+
+
+export function AppContextProvider({ children, initialData }: { children: ReactNode, initialData: AppData }) {
     const [data, setData] = useState<AppData>(initialData);
+    const [settings, setSettings] = useState<AppSettings>(defaultSettings);
     const [loading, setLoading] = useState(false);
+    const [isMounted, setIsMounted] = useState(false);
     
     const { user, loading: authLoading } = useAuth();
     
     const refreshData = useCallback(async () => {
         setLoading(true);
         try {
-            // Using window.location.reload() is a simple and effective way to ensure
-            // the client has the freshest data from the server after a mutation.
-            // Next.js App Router will handle this efficiently.
             window.location.reload();
         } catch (error: any) {
             console.error(`Error in refreshing data:`, error.message, error);
@@ -70,6 +263,101 @@ export function DataProvider({ children, initialData }: { children: ReactNode, i
             setLoading(false);
         }
     }, []);
+
+    // Effect to initialize settings
+     useEffect(() => {
+        setIsMounted(true);
+        let localSettings = {};
+        try {
+            const item = window.localStorage.getItem('appSettings');
+            if (item) {
+                localSettings = JSON.parse(item);
+            }
+        } catch (error) {
+            console.error("Failed to parse settings from localStorage", error);
+        }
+
+        const combinedSettings = deepMerge(defaultSettings, localSettings);
+        const serverSettings = initialData.propertySettings;
+
+        if (serverSettings) {
+             combinedSettings.houseName = serverSettings.house_name || defaultSettings.houseName;
+                combinedSettings.houseAddress = serverSettings.house_address || defaultSettings.houseAddress;
+                combinedSettings.bankName = serverSettings.bank_name || defaultSettings.bankName;
+                combinedSettings.bankAccountNumber = serverSettings.bank_account_number || defaultSettings.bankAccountNumber;
+                combinedSettings.bankLogoUrl = serverSettings.bank_logo_url || defaultSettings.bankLogoUrl;
+                combinedSettings.ownerName = serverSettings.owner_name || defaultSettings.ownerName;
+                combinedSettings.ownerPhotoUrl = serverSettings.owner_photo_url || defaultSettings.ownerPhotoUrl;
+                combinedSettings.passcode = serverSettings.passcode || defaultSettings.passcode;
+                combinedSettings.passcodeProtectionEnabled = serverSettings.passcode_protection_enabled ?? defaultSettings.passcodeProtectionEnabled;
+                combinedSettings.aboutUs = serverSettings.about_us || defaultSettings.aboutUs;
+                combinedSettings.contactPhone = serverSettings.contact_phone || defaultSettings.contactPhone;
+                combinedSettings.contactEmail = serverSettings.contact_email || defaultSettings.contactEmail;
+                combinedSettings.contactAddress = serverSettings.contact_address || defaultSettings.contactAddress;
+                combinedSettings.footerName = serverSettings.footer_name || defaultSettings.footerName;
+                combinedSettings.tenantViewStyle = serverSettings.tenant_view_style || defaultSettings.tenantViewStyle;
+                combinedSettings.metadataTitle = serverSettings.metadata_title || defaultSettings.metadataTitle;
+                combinedSettings.faviconUrl = serverSettings.favicon_url || defaultSettings.faviconUrl;
+                combinedSettings.appLogoUrl = serverSettings.app_logo_url || defaultSettings.appLogoUrl;
+                combinedSettings.dateFormat = serverSettings.date_format || defaultSettings.dateFormat;
+                combinedSettings.currencySymbol = serverSettings.currency_symbol || defaultSettings.currencySymbol;
+                
+                combinedSettings.documentCategories = serverSettings.document_categories || combinedSettings.documentCategories;
+
+                combinedSettings.theme.colors.primary = serverSettings.theme_primary || defaultSettings.theme.colors.primary;
+                combinedSettings.theme.colors.table_header_background = serverSettings.theme_table_header_background || defaultSettings.theme.colors.table_header_background;
+                combinedSettings.theme.colors.table_header_foreground = serverSettings.theme_table_header_foreground || defaultSettings.theme.colors.table_header_foreground;
+                combinedSettings.theme.colors.table_footer_background = serverSettings.theme_table_footer_background || defaultSettings.theme.colors.table_footer_background;
+                combinedSettings.theme.colors.mobile_nav_background = serverSettings.theme_mobile_nav_background || defaultSettings.theme.colors.mobile_nav_background;
+                combinedSettings.theme.colors.mobile_nav_foreground = serverSettings.theme_mobile_nav_foreground || defaultSettings.theme.colors.mobile_nav_foreground;
+
+                combinedSettings.whatsappRemindersEnabled = serverSettings.whatsapp_reminders_enabled ?? defaultSettings.whatsappRemindersEnabled;
+                combinedSettings.whatsappReminderSchedule = serverSettings.whatsapp_reminder_schedule || defaultSettings.whatsappReminderSchedule;
+                combinedSettings.whatsappReminderTemplate = serverSettings.whatsapp_reminder_template || defaultSettings.whatsappReminderTemplate;
+        }
+
+        setSettings(combinedSettings);
+    }, [initialData.propertySettings]);
+
+     const handleSetSettings = (newSettingsOrFn: AppSettings | ((prev: AppSettings) => AppSettings)) => {
+        const newSettings = typeof newSettingsOrFn === 'function' ? newSettingsOrFn(settings) : newSettingsOrFn;
+        
+        const { 
+            houseName, houseAddress, bankName, bankAccountNumber, bankLogoUrl, ownerName, ownerPhotoUrl, 
+            zakatBankDetails, passcode, passcodeProtectionEnabled, aboutUs, contactPhone, contactEmail, contactAddress, footerName,
+            theme, whatsappRemindersEnabled, whatsappReminderSchedule, whatsappReminderTemplate, tenantViewStyle,
+            metadataTitle, faviconUrl, appLogoUrl, documentCategories, dateFormat, currencySymbol,
+            ...localSettingsToSave 
+        } = newSettings;
+        try {
+            const currentLocal = JSON.parse(window.localStorage.getItem('appSettings') || '{}');
+            const newLocal = deepMerge(currentLocal, localSettingsToSave);
+            window.localStorage.setItem('appSettings', JSON.stringify(newLocal));
+        } catch (error) {
+            console.error("Failed to save settings to localStorage", error);
+        }
+
+        setSettings(newSettings);
+    };
+
+    useEffect(() => {
+        if (isMounted) {
+            const root = document.documentElement;
+            root.style.setProperty('--primary', hexToHsl(settings.theme.colors.primary));
+            
+            const headerBgHsl = hexToHsl(settings.theme.colors.table_header_background);
+            const headerFgHex = settings.theme.colors.table_header_foreground;
+
+            root.style.setProperty('--table-header-background', headerBgHsl);
+            root.style.setProperty('--table-header-foreground', hexToHsl(headerFgHex));
+            root.style.setProperty('--table-footer-background', hexToHsl(settings.theme.colors.table_footer_background));
+            root.style.setProperty('--table-footer-foreground', hexToHsl('#ffffff'));
+
+            root.style.setProperty('--mobile-nav-background', hexToHsl(settings.theme.colors.mobile_nav_background));
+            root.style.setProperty('--mobile-nav-foreground', hexToHsl(settings.theme.colors.mobile_nav_foreground));
+        }
+    }, [settings.theme, isMounted]);
+
 
     const uploadFiles = async (tenantId: string, files: File[], toast: ToastFn): Promise<string[]> => {
       try {
@@ -607,7 +895,7 @@ export function DataProvider({ children, initialData }: { children: ReactNode, i
       }
     };
 
-    const updatePropertySettings = async (settings: Omit<PropertySettings, 'id'>, toast: ToastFn) => {
+    const updatePropertySettings = async (settings: Omit<DbPropertySettings, 'id'>, toast: ToastFn) => {
       try {
         if (!supabase) return;
         const { error } = await supabase.from('property_settings').update(settings).eq('id', 1);
@@ -619,7 +907,7 @@ export function DataProvider({ children, initialData }: { children: ReactNode, i
     }
 
     const getAllData = () => {
-        return data;
+        return { ...data, settings };
     };
 
     const restoreAllData = async (backupData: AppData, toast: ToastFn) => {
@@ -635,7 +923,6 @@ export function DataProvider({ children, initialData }: { children: ReactNode, i
             if (deleteError) throw new Error(`Failed to clear ${table}: ${deleteError.message}`);
         }
         
-        // Restore property settings first
         if (backupData.propertySettings) {
              const { error: insertError } = await supabase.from('property_settings').insert(backupData.propertySettings);
              if (insertError) throw new Error(`Failed to insert into property_settings: ${insertError.message}`);
@@ -689,16 +976,16 @@ export function DataProvider({ children, initialData }: { children: ReactNode, i
 
 
     return (
-        <DataContext.Provider value={{ ...data, addTenant, updateTenant, deleteTenant, addExpense, addExpensesBatch, updateExpense, deleteExpense, deleteMultipleExpenses, addRentEntry, addRentEntriesBatch, updateRentEntry, deleteRentEntry, deleteMultipleRentEntries, syncTenantsForMonth, syncExpensesFromPreviousMonth, updatePropertySettings, loading, getAllData, restoreAllData, refreshData, getRentEntryById, addWorkDetailsBatch }}>
+        <AppContext.Provider value={{ ...data, settings, setSettings: handleSetSettings, addTenant, updateTenant, deleteTenant, addExpense, addExpensesBatch, updateExpense, deleteExpense, deleteMultipleExpenses, addRentEntry, addRentEntriesBatch, updateRentEntry, deleteRentEntry, deleteMultipleRentEntries, syncTenantsForMonth, syncExpensesFromPreviousMonth, updatePropertySettings, loading, getAllData, restoreAllData, refreshData, getRentEntryById, addWorkDetailsBatch }}>
             {children}
-        </DataContext.Provider>
+        </AppContext.Provider>
     );
 }
 
-export const useData = () => {
-  const context = useContext(DataContext);
+export const useAppContext = () => {
+  const context = useContext(AppContext);
   if (context === undefined) {
-    throw new Error('useData must be used within a DataProvider');
+    throw new Error('useAppContext must be used within a AppContextProvider');
   }
   return context;
 }

@@ -3,7 +3,7 @@
 "use client"
 
 import * as React from "react"
-import { useData } from "@/context/data-context"
+import { useAppContext } from "@/context/app-context"
 import { useAuth } from "@/context/auth-context"
 import { useToast } from "@/hooks/use-toast"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -25,7 +25,6 @@ import { useRouter } from "next/navigation"
 import { useProtection } from "@/context/protection-context"
 import * as XLSX from 'xlsx';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip"
-import { useSettings } from "@/context/settings-context"
 import { formatCurrency, formatDate } from "@/lib/utils"
 
 const workCategories = ["Plumbing", "Electrical", "Painting", "Cleaning", "Appliance Repair", "General Maintenance", "Other"];
@@ -98,9 +97,8 @@ const EditableAmount: React.FC<EditableAmountProps> = ({ initialAmount, onSave, 
 
 
 export function WorkDetailsTab({ year }: { year: number }) {
-  const { workDetails, loading, addWorkDetailsBatch, refreshData } = useData();
+  const { workDetails, loading, addWorkDetailsBatch, refreshData, settings } = useAppContext();
   const { isAdmin } = useAuth();
-  const { settings } = useSettings();
   const { toast } = useToast();
   const router = useRouter();
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
@@ -118,8 +116,6 @@ export function WorkDetailsTab({ year }: { year: number }) {
     return workDetails.filter(work => {
       const workDate = work.due_date ? new Date(work.due_date) : work.created_at ? new Date(work.created_at) : null;
       if (!workDate) {
-        // Decide if items without a date should be shown for the current year or not at all.
-        // Here, we include them if we are viewing the current year.
         return year === new Date().getFullYear();
       }
       return getYear(workDate) === year;

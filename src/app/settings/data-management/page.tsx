@@ -6,8 +6,7 @@ import Link from "next/link"
 import React, { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/context/auth-context"
-import { useSettings } from "@/context/settings-context"
-import { useData } from "@/context/data-context"
+import { useAppContext } from "@/context/app-context"
 import { saveAs } from "file-saver"
 import { useToast } from "@/hooks/use-toast"
 import { useProtection } from "@/context/protection-context"
@@ -47,8 +46,7 @@ function AccessDenied() {
 export default function DataManagementPage() {
     const router = useRouter();
     const { isAdmin, user, signOut } = useAuth();
-    const { settings } = useSettings();
-    const { tenants, getAllData, restoreAllData } = useData();
+    const { settings, tenants, getAllData, restoreAllData } = useAppContext();
     const { toast } = useToast();
     const { withProtection } = useProtection();
     

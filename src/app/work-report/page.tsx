@@ -1,9 +1,10 @@
+
 // src/app/work-report/page.tsx
 
 "use client"
 
 import * as React from "react"
-import { useData } from "@/context/data-context"
+import { useAppContext } from "@/context/app-context"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
@@ -14,12 +15,10 @@ import html2canvas from "html2canvas"
 import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
 import { Skeleton } from "@/components/ui/skeleton"
-import { useSettings } from "@/context/settings-context"
 import { formatCurrency } from "@/lib/utils"
 
 export default function WorkReportPage() {
-    const { workDetails, loading } = useData()
-    const { settings } = useSettings();
+    const { workDetails, loading, settings } = useAppContext()
     const router = useRouter()
     const reportContentRef = React.useRef<HTMLDivElement>(null);
     const { toast } = useToast();

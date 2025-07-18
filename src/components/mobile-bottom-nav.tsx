@@ -4,7 +4,7 @@
 
 import * as React from "react"
 import { Home, Users, Briefcase, FileText, HandCoins, Archive } from "lucide-react"
-import { useSettings } from "@/context/settings-context"
+import { useAppContext } from "@/context/app-context"
 import { cn } from "@/lib/utils"
 import { useAuth } from "@/context/auth-context"
 
@@ -14,7 +14,7 @@ interface MobileBottomNavProps {
 }
 
 export function MobileBottomNav({ activeTab, onTabChange }: MobileBottomNavProps) {
-  const { settings } = useSettings();
+  const { settings } = useAppContext();
   const { isAdmin } = useAuth();
 
   const navItems = [

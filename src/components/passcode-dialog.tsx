@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { LockKeyhole } from "lucide-react";
-import { useSettings } from "@/context/settings-context";
+import { useAppContext } from "@/context/app-context";
 
 interface PasscodeDialogProps {
   isOpen: boolean;
@@ -28,7 +28,7 @@ export function PasscodeDialog({ isOpen, onOpenChange, onSuccess }: PasscodeDial
   const [passcode, setPasscode] = React.useState("");
   const [error, setError] = React.useState("");
   const { toast } = useToast();
-  const { settings } = useSettings();
+  const { settings } = useAppContext();
   const correctPasscode = settings.passcode || "";
 
   const handleVerify = () => {

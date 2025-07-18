@@ -3,7 +3,7 @@
 "use client"
 
 import * as React from "react"
-import { useData } from "@/context/data-context"
+import { useAppContext } from "@/context/app-context"
 import { useAuth } from "@/context/auth-context"
 import { useToast } from "@/hooks/use-toast"
 import { useProtection } from "@/context/protection-context"
@@ -19,7 +19,6 @@ import { saveDocumentAction, deleteDocumentAction } from "@/app/actions/document
 import type { Document as DocType, Tenant } from "@/types"
 import { Skeleton } from "./ui/skeleton"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { useSettings } from "@/context/settings-context"
 import { cn } from "@/lib/utils"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
@@ -38,11 +37,10 @@ type StagedFile = {
 };
 
 export function DocumentsTab() {
-  const { documents, tenants, loading } = useData();
+  const { documents, tenants, loading, settings } = useAppContext();
   const { isAdmin } = useAuth();
   const { toast } = useToast();
   const { withProtection } = useProtection();
-  const { settings } = useSettings();
 
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [editingDoc, setEditingDoc] = React.useState<DocType | null>(null);

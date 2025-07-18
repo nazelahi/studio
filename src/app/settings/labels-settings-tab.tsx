@@ -7,10 +7,10 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
-import { useSettings } from "@/context/settings-context"
+import { useAppContext } from "@/context/app-context"
 
 export default function LabelsSettingsTab() {
-  const { settings, setSettings } = useSettings();
+  const { settings, setSettings } = useAppContext();
   const { toast } = useToast();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {

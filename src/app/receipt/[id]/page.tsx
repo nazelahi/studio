@@ -2,8 +2,7 @@
 "use client"
 
 import * as React from "react"
-import { useData, DataProvider } from "@/context/data-context"
-import { useSettings, SettingsProvider } from "@/context/settings-context"
+import { useAppContext, AppContextProvider } from "@/context/app-context"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
@@ -19,8 +18,7 @@ import { Logo } from "@/components/icons"
 import { formatCurrency, formatDate } from "@/lib/utils"
 
 function ReceiptPageContent() {
-    const { getRentEntryById, tenants } = useData()
-    const { settings, loading: settingsLoading } = useSettings()
+    const { getRentEntryById, tenants, settings, loading: settingsLoading } = useAppContext()
     const router = useRouter()
     const params = useParams()
     const { toast } = useToast()
@@ -230,12 +228,9 @@ function ReceiptPageContent() {
     );
 }
 
+// This page does not need its own provider since the root layout now provides it.
 export default function ReceiptPage() {
     return (
-        <DataProvider>
-            <SettingsProvider>
-                <ReceiptPageContent />
-            </SettingsProvider>
-        </DataProvider>
+        <ReceiptPageContent />
     )
 }

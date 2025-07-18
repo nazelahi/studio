@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter }
 import { Button } from "@/components/ui/button"
 import { useToast } from "@/hooks/use-toast"
 import { updatePropertySettingsAction } from "./actions"
-import { useSettings } from "@/context/settings-context"
+import { useAppContext } from "@/context/app-context"
 import { Separator } from "@/components/ui/separator"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { LoaderCircle, PlusCircle, Trash2, GripVertical } from "lucide-react"
@@ -31,7 +31,7 @@ const currencyOptions = [
 ];
 
 export default function ApplicationSettingsTab() {
-  const { settings, setSettings, refreshSettings } = useSettings();
+  const { settings, setSettings, refreshData } = useAppContext();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
 
@@ -69,7 +69,7 @@ export default function ApplicationSettingsTab() {
             toast({ title: 'Error Saving Categories', description: result.error, variant: 'destructive'});
         } else {
             toast({ title: 'Categories Saved', description: 'Your document categories have been saved to the database.' });
-            refreshSettings();
+            refreshData();
         }
     });
   };
@@ -95,7 +95,7 @@ export default function ApplicationSettingsTab() {
             toast({ title: 'Error Saving Setting', description: result.error, variant: 'destructive'});
         } else {
             toast({ title: 'Setting Saved', description: 'Your change has been saved to the database.' });
-            refreshSettings();
+            refreshData();
         }
     });
   }

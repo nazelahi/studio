@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
 import { Logo } from "@/components/icons"
-import { useSettings } from "@/context/settings-context"
+import { useAppContext } from "@/context/app-context"
 import { Button } from "@/components/ui/button"
 import { Landmark, Upload, Banknote, UserCircle, Edit, Check, X, Image as ImageIcon, MessageSquare, Info, Phone, Mail, } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
@@ -76,7 +76,7 @@ const EditableField: React.FC<EditableFieldProps> = ({ label, value, onSave, isT
 };
 
 export default function PropertySettingsTab() {
-  const { settings, refreshSettings } = useSettings();
+  const { settings, refreshData } = useAppContext();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
 
@@ -98,7 +98,7 @@ export default function PropertySettingsTab() {
         toast({ title: `Error Saving Image`, description: result.error, variant: 'destructive'});
       } else {
         toast({ title: 'Image Saved', description: `Your new image has been updated.` });
-        refreshSettings();
+        refreshData();
       }
     });
     if (e.target) {
@@ -130,10 +130,10 @@ export default function PropertySettingsTab() {
             toast({ title: 'Error Saving Settings', description: result.error, variant: 'destructive'});
         } else {
             toast({ title: 'Setting Saved', description: 'Your change has been saved to the database.' });
-            refreshSettings();
+            refreshData();
         }
     });
-  }, [refreshSettings, toast]);
+  }, [refreshData, toast]);
 
   return (
     <Card>

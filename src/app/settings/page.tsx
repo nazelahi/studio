@@ -4,7 +4,7 @@
 import Link from "next/link"
 import React, { useState, Suspense } from "react"
 import { Logo } from "@/components/icons"
-import { useSettings } from "@/context/settings-context"
+import { useAppContext } from "@/context/app-context"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/context/auth-context"
 import { Button } from "@/components/ui/button"
@@ -55,7 +55,7 @@ const LabelsSettingsTab = dynamic(() => import('./labels-settings-tab'), { loadi
 const IntegrationsSettingsTab = dynamic(() => import('./integrations-settings-tab'), { loading: () => <LoadingSkeleton /> });
 
 export default function SettingsPage() {
-  const { settings } = useSettings();
+  const { settings } = useAppContext();
   const router = useRouter();
   const { isAdmin, user, signOut } = useAuth();
   const { toast } = useToast();

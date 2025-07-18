@@ -2,11 +2,11 @@
 "use client"
 
 import * as React from "react"
-import { useSettings } from "@/context/settings-context"
+import { useAppContext } from "@/context/app-context"
 import { MapPin } from "lucide-react"
 
 export function AppHeader() {
-  const { settings } = useSettings();
+  const { settings } = useAppContext();
 
   return (
     <div className="relative rounded-lg border bg-card text-card-foreground shadow-sm p-6 overflow-hidden">

@@ -17,7 +17,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "./ui/alert-dialog"
-import { useData } from "@/context/data-context"
+import { useAppContext } from "@/context/app-context"
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "./ui/command"
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar"
@@ -26,7 +26,6 @@ import { Checkbox } from "./ui/checkbox"
 import { TenantDetailSheet } from "./tenant-detail-sheet"
 import * as XLSX from 'xlsx';
 import { useAuth } from "@/context/auth-context"
-import { useSettings } from "@/context/settings-context"
 import { useRouter } from "next/navigation"
 import { logDepositAction, deleteDepositAction } from "@/app/actions/deposits"
 import { saveNoticeAction, deleteNoticeAction } from "@/app/actions/notices"
@@ -169,11 +168,10 @@ export function MonthlyOverviewTab() {
 
   const router = useRouter();
   const { isAdmin } = useAuth();
-  const { settings } = useSettings();
   const { toast } = useToast();
   const { withProtection } = useProtection();
 
-  const { tenants, expenses, rentData, deposits, notices, addRentEntry, addRentEntriesBatch, updateRentEntry, deleteRentEntry, syncTenantsForMonth, syncExpensesFromPreviousMonth, loading, deleteMultipleRentEntries, deleteMultipleExpenses, refreshData, getRentEntryById, addExpense, updateExpense, deleteExpense } = useData();
+  const { tenants, expenses, rentData, deposits, notices, addRentEntry, addRentEntriesBatch, updateRentEntry, deleteRentEntry, syncTenantsForMonth, syncExpensesFromPreviousMonth, loading, deleteMultipleRentEntries, deleteMultipleExpenses, refreshData, getRentEntryById, addExpense, updateExpense, deleteExpense, settings } = useAppContext();
 
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = React.useState(false);
   const [editingExpense, setEditingExpense] = React.useState<Expense | null>(null);
@@ -249,7 +247,6 @@ export function MonthlyOverviewTab() {
   }, [notices, selectedYear, selectedMonth]);
 
 
-  // Clear selections when month or year changes
   React.useEffect(() => {
     setSelectedRentEntryIds([]);
     setSelectedExpenseIds([]);
@@ -330,7 +327,6 @@ export function MonthlyOverviewTab() {
   }, [rentData, tenants, filteredTenantsForMonth]);
 
 
-  // Rent Entry Handlers
   const handleRentOpenChange = (isOpen: boolean) => {
     if (!isOpen) {
         setEditingRentEntry(null);
@@ -448,7 +444,6 @@ export function MonthlyOverviewTab() {
     });
   }
 
-  // Expense Handlers
   const handleSaveExpense = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
@@ -520,7 +515,6 @@ export function MonthlyOverviewTab() {
   }
 
 
-  // Import Handler
   const handleImportClick = () => {
     fileInputRef.current?.click();
   };
@@ -540,7 +534,7 @@ export function MonthlyOverviewTab() {
         const worksheet = workbook.Sheets[sheetName];
 
         const json: any[] = XLSX.utils.sheet_to_json(worksheet, {
-          header: 1, // Get an array of arrays
+          header: 1, 
           blankrows: false,
         });
 
@@ -566,12 +560,10 @@ export function MonthlyOverviewTab() {
           const dateInput = row.payment_date;
           if (dateInput) {
             if (typeof dateInput === 'number') {
-              // Handle Excel date serial number
               const excelEpoch = new Date(1899, 11, 30);
               const excelDate = new Date(excelEpoch.getTime() + dateInput * 86400000);
               paymentDate = formatDate(excelDate.toISOString(), 'yyyy-MM-dd');
             } else {
-              // Handle string date
               const parsed = new Date(dateInput);
               if (!isNaN(parsed.getTime())) {
                 paymentDate = formatDate(parsed.toISOString(), 'yyyy-MM-dd');
@@ -641,7 +633,7 @@ export function MonthlyOverviewTab() {
     setIsUploading(true);
 
     const formData = new FormData(event.currentTarget);
-    formData.set('amount', depositAmount); // Ensure the state value is used
+    formData.set('amount', depositAmount); 
     let receiptUrl: string | null = loggedDeposit?.receipt_url || null;
 
     if (receiptFile) {
@@ -663,7 +655,6 @@ export function MonthlyOverviewTab() {
         
         receiptUrl = publicUrlData.publicUrl;
 
-        // Pass the old URL to the action if it exists, for deletion
         if (loggedDeposit?.receipt_url) {
             formData.set('oldReceiptUrl', loggedDeposit.receipt_url);
         }
@@ -675,7 +666,6 @@ export function MonthlyOverviewTab() {
     
     if (result.error) {
         toast({ title: "Error", description: result.error, variant: "destructive" });
-        // If the DB operation fails, try to clean up the newly uploaded file.
         if (receiptFile && receiptUrl) {
             try {
                 const pathToDelete = new URL(receiptUrl).pathname.split('/deposit-receipts/')[1];
@@ -817,14 +807,12 @@ export function MonthlyOverviewTab() {
                     let date: string;
                     const dateInput = row.date;
                     if (typeof dateInput === 'number') {
-                        // Handle Excel date serial number.
                         const excelDate = new Date(Date.UTC(1900, 0, dateInput - 1));
                         date = formatDate(excelDate.toISOString(), 'yyyy-MM-dd');
                     } else if (typeof dateInput === 'string' && dateInput.match(/^\d{4}-\d{2}-\d{2}$/)) {
                         date = dateInput;
                     }
                     else {
-                        // Default to the first of the month if no date is provided or format is wrong
                         date = formatDate(new Date(selectedYear, selectedMonth, 1).toISOString(), 'yyyy-MM-dd');
                     }
                   
@@ -866,7 +854,6 @@ export function MonthlyOverviewTab() {
     <TooltipProvider>
     <Tabs value={months[selectedMonth]} onValueChange={handleDesktopMonthChange} className="w-full pt-4 md:pt-0">
       
-      {/* Desktop View: Tabs */}
       <div className="hidden md:flex gap-4 mb-4">
         <TabsList className="grid w-full grid-cols-12">
             {months.map(month => (
@@ -888,7 +875,6 @@ export function MonthlyOverviewTab() {
           </div>
       </div>
 
-       {/* Mobile View: Selects */}
         <div className="md:hidden flex gap-2 mb-4">
             <Select value={String(selectedMonth)} onValueChange={(v) => setSelectedMonth(Number(v))}>
               <SelectTrigger>

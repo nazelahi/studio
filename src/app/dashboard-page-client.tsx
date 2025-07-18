@@ -3,7 +3,7 @@
 
 import Link from "next/link"
 import * as React from "react"
-import { useSettings } from "@/context/settings-context"
+import { useAppContext } from "@/context/app-context"
 import { usePathname, useRouter } from "next/navigation"
 import { Logo } from "@/components/icons"
 import DashboardTabs from "@/components/dashboard-tabs"
@@ -32,7 +32,7 @@ function FullPageLoader() {
 }
 
 export default function DashboardPageClient() {
-  const { settings, loading: settingsLoading } = useSettings();
+  const { settings, loading: settingsLoading } = useAppContext();
   const pathname = usePathname();
   const router = useRouter();
   const { isAdmin, user, signOut } = useAuth();

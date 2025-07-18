@@ -14,13 +14,12 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { useToast } from "@/hooks/use-toast"
 import type { Tenant } from "@/types"
-import { useData } from "@/context/data-context"
+import { useAppContext } from "@/context/app-context"
 import { Skeleton } from "./ui/skeleton"
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "./ui/command"
 import { TenantDetailSheet } from "./tenant-detail-sheet"
 import { useAuth } from "@/context/auth-context"
-import { useSettings } from "@/context/settings-context"
 import { Badge } from "./ui/badge"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select"
 import { useProtection } from "@/context/protection-context"
@@ -108,9 +107,8 @@ const Combobox: React.FC<ComboboxProps> = ({ options, value, onValueChange, plac
 
 
 export function ContactsTab() {
-  const { tenants, addTenant, updateTenant, deleteTenant, loading } = useData();
+  const { tenants, addTenant, updateTenant, deleteTenant, loading, settings, setSettings } = useAppContext();
   const { isAdmin } = useAuth();
-  const { settings, setSettings } = useSettings();
   const [open, setOpen] = React.useState(false);
   const [editingTenant, setEditingTenant] = React.useState<Tenant | null>(null);
   const { toast } = useToast();
@@ -299,7 +297,6 @@ export function ContactsTab() {
              console.error("AI scan failed:", error);
         } finally {
             setIsScanning(false);
-            // Reset file input value to allow re-uploading the same file
             if(event.target) event.target.value = '';
         }
     };

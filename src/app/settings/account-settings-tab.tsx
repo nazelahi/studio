@@ -10,12 +10,12 @@ import { Button } from "@/components/ui/button"
 import { LoaderCircle } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { updateUserCredentialsAction, updatePasscodeAction } from "./actions"
-import { useSettings } from "@/context/settings-context"
+import { useAppContext } from "@/context/app-context"
 import { Switch } from "@/components/ui/switch"
 
 export default function AccountSettingsTab() {
   const { user } = useAuth();
-  const { settings, setSettings, refreshSettings } = useSettings();
+  const { settings, setSettings, refreshData } = useAppContext();
   const { toast } = useToast();
   const [isCredentialsPending, startCredentialsTransition] = useTransition();
   const [isPasscodePending, startPasscodeTransition] = useTransition();
@@ -63,7 +63,7 @@ export default function AccountSettingsTab() {
         toast({ title: 'Error Saving Passcode', description: result.error, variant: 'destructive'});
       } else {
         toast({ title: 'Passcode Settings Saved', description: 'Your passcode settings have been updated.' });
-        refreshSettings();
+        refreshData();
       }
     });
   }

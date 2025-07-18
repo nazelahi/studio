@@ -3,7 +3,7 @@
 "use client"
 
 import * as React from "react"
-import { useData } from "@/context/data-context"
+import { useAppContext } from "@/context/app-context"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -19,7 +19,6 @@ import jsPDF from "jspdf"
 import html2canvas from "html2canvas"
 import { useToast } from "@/hooks/use-toast"
 import { cn } from "@/lib/utils"
-import { useSettings } from "@/context/settings-context"
 import { formatCurrency, formatDate } from "@/lib/utils"
 
 const months = [
@@ -51,15 +50,13 @@ const CustomTooltip = ({ active, payload, label, settings }: TooltipProps<number
 };
 
 export function ReportsTab({ year }: { year: number }) {
-  const { rentData, expenses, tenants, loading } = useData();
-  const { settings } = useSettings();
+  const { rentData, expenses, tenants, loading, settings } = useAppContext();
   const [reportType, setReportType] = React.useState("monthly");
   const [selectedTenant, setSelectedTenant] = React.useState<string | null>(null);
   const [selectedMonth, setSelectedMonth] = React.useState<number>(new Date().getMonth());
   const reportContentRef = React.useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
-  // Yearly Data
   const yearlySummary = React.useMemo(() => {
     const income = rentData.filter(e => e.year === year && e.status === 'Paid').reduce((acc, e) => acc + e.rent, 0);
     const expenseTotal = expenses.filter(e => {
@@ -74,7 +71,6 @@ export function ReportsTab({ year }: { year: number }) {
       { name: 'Total Expenses', value: yearlySummary.expenses },
   ];
 
-  // Monthly Data
   const monthlySummary = React.useMemo(() => {
     const income = rentData.filter(e => e.year === year && e.month === selectedMonth && e.status === 'Paid').reduce((acc, e) => acc + e.rent, 0);
     const expenseTotal = expenses.filter(e => {
@@ -110,7 +106,6 @@ export function ReportsTab({ year }: { year: number }) {
   }, [monthlyExpenses]);
 
 
-  // Tenant Data
   const tenantReportData = React.useMemo(() => {
     if (!selectedTenant) return [];
     return rentData

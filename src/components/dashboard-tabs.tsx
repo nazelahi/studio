@@ -4,7 +4,7 @@
 import * as React from "react"
 import dynamic from 'next/dynamic'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useSettings } from "@/context/settings-context"
+import { useAppContext } from "@/context/app-context"
 import { useAuth } from "@/context/auth-context"
 import { cn } from "@/lib/utils"
 import { Skeleton } from "./ui/skeleton"
@@ -48,7 +48,7 @@ const ZakatTab = dynamic(() => import('@/components/zakat-tab').then(mod => mod.
 
 
 export default function DashboardTabs({ activeTab, onTabChange }: DashboardTabsProps) {
-  const { settings } = useSettings();
+  const { settings } = useAppContext();
   const { isAdmin } = useAuth();
   const [currentYear] = React.useState(new Date().getFullYear());
 
