@@ -268,6 +268,14 @@ export default function DashboardPageClient() {
                 </SheetContent>
                 </Sheet>
                 
+                 <div className="md:hidden flex-1 text-center">
+                    <h1 className="text-base font-bold tracking-tight text-primary truncate">{settings.houseName}</h1>
+                    <div className="flex items-center justify-center gap-1 mt-0.5 text-xs text-muted-foreground">
+                        <MapPin className="h-3 w-3 flex-shrink-0" />
+                        <p className="truncate">{settings.houseAddress}</p>
+                    </div>
+                </div>
+
                 <div className="hidden md:flex flex-1">
                     <TabsList className="grid w-full grid-cols-6">
                         <TabsTrigger value="overview">{settings.tabNames.overview}</TabsTrigger>
@@ -279,7 +287,7 @@ export default function DashboardPageClient() {
                     </TabsList>
                 </div>
                 
-                <div className="flex w-full items-center gap-4 md:ml-auto md:w-auto md:gap-2 lg:gap-4 justify-end">
+                <div className="flex w-auto items-center gap-4 md:ml-auto md:w-auto md:gap-2 lg:gap-4 justify-end">
                     <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon" className="rounded-full shrink-0 h-8 w-8">
@@ -355,5 +363,3 @@ export default function DashboardPageClient() {
     </div>
   )
 }
-
-
