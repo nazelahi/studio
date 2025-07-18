@@ -36,7 +36,7 @@ import { useProtection } from "@/context/protection-context"
 import { Separator } from "./ui/separator"
 import { formatCurrency, formatDate } from "@/lib/utils"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "./ui/dropdown-menu"
-import { saveExpenseAction, deleteExpenseAction } from "@/app/actions/expenses"
+import { saveExpenseAction, deleteExpenseAction, addExpensesBatch } from "@/app/actions/expenses"
 
 type HistoricalTenant = {
     id: string;
@@ -468,15 +468,7 @@ export function MonthlyOverviewTab() {
     const finalCategory = expenseCategory === 'Other' 
         ? formData.get('customCategory') as string
         : expenseCategory;
-
-    const expenseData = {
-      id: editingExpense?.id,
-      date: formData.get('date') as string,
-      category: finalCategory,
-      amount: Number(formData.get('amount')),
-      description: formData.get('description') as string,
-      status: formData.get('status') as "Paid" | "Due",
-    };
+    formData.set('category', finalCategory);
 
     const result = await saveExpenseAction(formData);
     if (result.error) {
@@ -642,109 +634,6 @@ export function MonthlyOverviewTab() {
         XLSX.writeFile(workbook, "RentRoll_Template.xlsx");
         toast({ title: "Template Downloaded", description: "RentRoll_Template.xlsx has been downloaded." });
     };
-    
-    const handleDownloadExpenseTemplate = () => {
-        const headers = ["date", "category", "amount", "description", "status"];
-        const sampleData = [
-            [formatDate(new Date().toISOString(), 'yyyy-MM-dd'), "Repairs", 2500, "Fix leaky pipe in Apt 101", "Paid"],
-            [formatDate(new Date().toISOString(), 'yyyy-MM-dd'), "Utilities", 15000, "Monthly electricity bill", "Due"]
-        ];
-        const worksheet = XLSX.utils.aoa_to_sheet([headers, ...sampleData]);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, "Expenses Template");
-        XLSX.writeFile(workbook, "Expenses_Template.xlsx");
-        toast({ title: "Template Downloaded", description: "Expenses_Template.xlsx has been downloaded." });
-    };
-  
-  const handleImportExpenseClick = () => {
-    expenseFileInputRef.current?.click();
-  };
-  
-  const handleExpenseFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    toast({ title: "Processing file...", description: "Please wait while we read your spreadsheet." });
-    
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-        try {
-            const data = e.target?.result;
-            const workbook = XLSX.read(data, { type: 'array' });
-            const sheetName = workbook.SheetNames[0];
-            const worksheet = workbook.Sheets[sheetName];
-
-            const json: any[] = XLSX.utils.sheet_to_json(worksheet, {
-                header: 1,
-                blankrows: false,
-                defval: '',
-            });
-
-            if (json.length < 2) {
-                toast({ title: "Empty or invalid sheet", description: "The sheet must have a header row and at least one data row.", variant: "destructive" });
-                return;
-            }
-
-            const header: string[] = json[0].map((h: any) => String(h).toLowerCase().trim().replace(/ /g, '_'));
-            const rows = json.slice(1);
-
-            const expensesToCreate = rows.map(rowArray => {
-                const row: { [key: string]: any } = {};
-                header.forEach((h, i) => { row[h] = rowArray[i]; });
-                
-                const validStatuses = ["paid", "due"];
-                const statusInput = String(row.status || 'Due').toLowerCase();
-                const status = validStatuses.find(s => s === statusInput)
-                    ? statusInput.charAt(0).toUpperCase() + statusInput.slice(1) as Expense['status']
-                    : 'Due';
-                
-                let expenseDate: string | null = null;
-                const dateInput = row.date;
-                 if (dateInput) {
-                    if (typeof dateInput === 'number') {
-                        const excelDate = new Date(Date.UTC(1900, 0, dateInput - 1));
-                        expenseDate = formatDate(excelDate.toISOString(), 'yyyy-MM-dd');
-                    } else {
-                        const parsed = new Date(dateInput);
-                        if (!isNaN(parsed.getTime())) {
-                            expenseDate = formatDate(parsed.toISOString(), 'yyyy-MM-dd');
-                        }
-                    }
-                } else {
-                    expenseDate = formatDate(new Date().toISOString(), 'yyyy-MM-dd');
-                }
-
-                return {
-                    date: expenseDate,
-                    category: String(row.category || 'Other'),
-                    amount: Number(row.amount) || 0,
-                    description: String(row.description || ''),
-                    status: status,
-                };
-            }).filter(item => item.category && item.amount > 0);
-            
-             if (expensesToCreate.length === 0) {
-                toast({ title: "No Valid Data Found", description: "Ensure your file has 'category' and 'amount' columns.", variant: "destructive" });
-                return;
-            }
-
-            const result = await addExpensesBatch(expensesToCreate);
-             if (result?.error) {
-                toast({ title: "Import Failed", description: result.error, variant: "destructive" });
-             } else {
-                toast({ title: "Import Successful", description: `${expensesToCreate.length} expenses have been added.` });
-                refreshData();
-             }
-
-        } catch (error) {
-             console.error("Error importing file:", error);
-             toast({ title: "Import Failed", description: "There was an error processing your file.", variant: "destructive" });
-        } finally {
-             if (event.target) event.target.value = '';
-        }
-    };
-    reader.readAsArrayBuffer(file);
-  };
     
     const handleReceiptFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -1088,34 +977,31 @@ export function MonthlyOverviewTab() {
                       <div className="relative overflow-x-auto">
                         <Table>
                           <TableHeader>
-                            <TableRow style={{ backgroundColor: 'hsl(var(--table-header-background))', color: 'hsl(var(--table-header-foreground))' }} className="hover:bg-[hsl(var(--table-header-background)/0.9)]">
-                              {isAdmin && <TableHead className="w-10 text-inherit">
-                                  <div className="text-white">
-                                      <Checkbox
-                                          className="border-primary data-[state=checked]:bg-primary-foreground data-[state=checked]:text-primary"
-                                          checked={selectedRentEntryIds.length > 0 && selectedRentEntryIds.length === filteredTenantsForMonth.length}
-                                          onCheckedChange={(checked) => {
-                                              if (checked) {
-                                                  setSelectedRentEntryIds(filteredTenantsForMonth.map(t => t.id));
-                                              } else {
-                                                  setSelectedRentEntryIds([]);
-                                              }
-                                          }}
-                                      />
-                                  </div>
+                            <TableRow>
+                              {isAdmin && <TableHead className="w-10">
+                                  <Checkbox
+                                      checked={selectedRentEntryIds.length > 0 && selectedRentEntryIds.length === filteredTenantsForMonth.length}
+                                      onCheckedChange={(checked) => {
+                                          if (checked) {
+                                              setSelectedRentEntryIds(filteredTenantsForMonth.map(t => t.id));
+                                          } else {
+                                              setSelectedRentEntryIds([]);
+                                          }
+                                      }}
+                                  />
                               </TableHead>}
-                              <TableHead className="text-inherit">Tenant</TableHead>
-                              <TableHead className="hidden md:table-cell text-inherit">Payment For</TableHead>
-                              <TableHead className="hidden md:table-cell text-inherit">Collected By</TableHead>
-                              <TableHead className="hidden sm:table-cell text-inherit">Payment Date</TableHead>
-                              <TableHead className="hidden sm:table-cell text-inherit">Status</TableHead>
-                              <TableHead className="text-inherit">Amount</TableHead>
-                              <TableHead className="w-[50px] text-right text-inherit"></TableHead>
+                              <TableHead>Tenant</TableHead>
+                              <TableHead className="hidden md:table-cell">Payment For</TableHead>
+                              <TableHead className="hidden md:table-cell">Collected By</TableHead>
+                              <TableHead className="hidden sm:table-cell">Payment Date</TableHead>
+                              <TableHead className="hidden sm:table-cell">Status</TableHead>
+                              <TableHead>Amount</TableHead>
+                              <TableHead className="w-[50px] text-right"></TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
                             {filteredTenantsForMonth.length > 0 ? (
-                              filteredTenantsForMonth.slice(0, showAllRent ? filteredTenantsForMonth.length : 10).map((entry) => (
+                              filteredTenantsForMonth.map((entry) => (
                                 <TableRow key={entry.id} className="odd:bg-muted/50" data-state={isAdmin && selectedRentEntryIds.includes(entry.id) ? "selected" : undefined}>
                                   {isAdmin && <TableCell>
                                       <Checkbox
@@ -1246,12 +1132,12 @@ export function MonthlyOverviewTab() {
                           </TableBody>
                           {filteredTenantsForMonth.length > 0 && (
                             <TableFooter>
-                              <TableRow style={{ backgroundColor: 'hsl(var(--table-footer-background))', color: 'hsl(var(--table-footer-foreground))' }} className="font-bold hover:bg-[hsl(var(--table-footer-background)/0.9)]">
-                                  <TableCell colSpan={isAdmin ? 8 : 7} className="text-inherit p-2">
-                                    <div className="flex flex-col sm:flex-row items-center justify-between px-2">
-                                      <div className="sm:hidden text-center text-inherit font-bold">Total Rent Collected</div>
-                                      <div className="hidden sm:block text-left text-inherit font-bold">Total Rent Collected</div>
-                                      <div className="text-inherit font-bold">{formatCurrency(totalRentCollected, settings.currencySymbol)}</div>
+                              <TableRow>
+                                  <TableCell colSpan={isAdmin ? 8 : 7} className="p-2">
+                                    <div className="flex flex-col sm:flex-row items-center justify-between px-2 text-primary font-bold bg-primary/10 rounded-md py-2">
+                                      <div className="sm:hidden text-center">Total Rent Collected</div>
+                                      <div className="hidden sm:block text-left">Total Rent Collected</div>
+                                      <div>{formatCurrency(totalRentCollected, settings.currencySymbol)}</div>
                                     </div>
                                   </TableCell>
                               </TableRow>
@@ -1259,13 +1145,6 @@ export function MonthlyOverviewTab() {
                           )}
                         </Table>
                       </div>
-                      {filteredTenantsForMonth.length > 10 && (
-                        <div className="p-4 border-t text-center">
-                          <Button variant="link" onClick={() => setShowAllRent(!showAllRent)}>
-                            {showAllRent ? "Show Less" : `View All ${filteredTenantsForMonth.length} Entries`}
-                          </Button>
-                        </div>
-                      )}
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -1344,11 +1223,6 @@ export function MonthlyOverviewTab() {
                                     </Button>
                                 </TooltipTrigger><TooltipContent>Sync from Previous Month</TooltipContent></Tooltip>
                         </div>
-                        <div className="hidden sm:flex items-center gap-2">
-                            <Tooltip><TooltipTrigger asChild><Button size="icon" variant="outline" onClick={handleDownloadExpenseTemplate}><Download className="h-4 w-4" /><span className="sr-only">Download Template</span></Button></TooltipTrigger><TooltipContent>Download Template</TooltipContent></Tooltip>
-                            <Tooltip><TooltipTrigger asChild><Button size="icon" variant="outline" onClick={handleImportExpenseClick}><Upload className="h-4 w-4" /><span className="sr-only">Import from file</span></Button></TooltipTrigger><TooltipContent>Import</TooltipContent></Tooltip>
-                            <input type="file" ref={expenseFileInputRef} className="hidden" accept=".xlsx, .csv" onChange={handleExpenseFileChange}/>
-                        </div>
                       </div>
                     }
                   </CardHeader>
@@ -1356,8 +1230,8 @@ export function MonthlyOverviewTab() {
                     <div className="relative overflow-x-auto">
                     <Table>
                       <TableHeader>
-                        <TableRow style={{ backgroundColor: 'hsl(var(--table-header-background))', color: 'hsl(var(--table-header-foreground))' }} className="hover:bg-[hsl(var(--table-header-background)/0.9)]">
-                          {isAdmin && <TableHead className="w-10 text-inherit">
+                        <TableRow>
+                          {isAdmin && <TableHead className="w-10">
                             <Checkbox
                               checked={selectedExpenseIds.length > 0 && selectedExpenseIds.length === filteredExpenses.length}
                               onCheckedChange={(checked) => {
@@ -1369,15 +1243,15 @@ export function MonthlyOverviewTab() {
                               }}
                             />
                           </TableHead>}
-                          <TableHead className="text-inherit">Details</TableHead>
-                          <TableHead className="hidden sm:table-cell text-inherit">Category</TableHead>
-                          <TableHead className="text-inherit">Amount</TableHead>
-                          <TableHead className="hidden sm:table-cell text-inherit">Status</TableHead>
-                          <TableHead className="w-[50px] text-right text-inherit"></TableHead>
+                          <TableHead>Details</TableHead>
+                          <TableHead className="hidden sm:table-cell">Category</TableHead>
+                          <TableHead>Amount</TableHead>
+                          <TableHead className="hidden sm:table-cell">Status</TableHead>
+                          <TableHead className="w-[50px] text-right"></TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {filteredExpenses.slice(0, showAllExpenses ? filteredExpenses.length : 10).map((expense) => (
+                        {filteredExpenses.map((expense) => (
                             <TableRow key={expense.id} className="odd:bg-muted/50" data-state={isAdmin && selectedExpenseIds.includes(expense.id) ? "selected" : undefined}>
                               {isAdmin && <TableCell>
                                 <Checkbox
@@ -1488,12 +1362,12 @@ export function MonthlyOverviewTab() {
                       </TableBody>
                       {filteredExpenses.length > 0 && (
                         <TableFooter>
-                          <TableRow style={{ backgroundColor: 'hsl(var(--table-footer-background))', color: 'hsl(var(--table-footer-foreground))' }} className="font-bold hover:bg-[hsl(var(--table-footer-background)/0.9)]">
-                            <TableCell colSpan={isAdmin ? 6 : 5} className="p-2 text-inherit">
-                               <div className="flex flex-col sm:flex-row items-center justify-between px-2">
-                                <div className="sm:hidden text-center font-bold text-inherit">Total Paid</div>
-                                <div className="hidden sm:block text-left font-bold text-inherit">Total Paid</div>
-                                <div className="font-bold text-inherit">{formatCurrency(totalExpensesPaid, settings.currencySymbol)}</div>
+                          <TableRow>
+                            <TableCell colSpan={isAdmin ? 6 : 5} className="p-2">
+                               <div className="flex flex-col sm:flex-row items-center justify-between px-2 text-destructive font-bold bg-destructive/10 rounded-md py-2">
+                                <div className="sm:hidden text-center">Total Paid</div>
+                                <div className="hidden sm:block text-left">Total Paid</div>
+                                <div>{formatCurrency(totalExpensesPaid, settings.currencySymbol)}</div>
                                </div>
                             </TableCell>
                           </TableRow>
@@ -1501,13 +1375,6 @@ export function MonthlyOverviewTab() {
                       )}
                     </Table>
                     </div>
-                    {filteredExpenses.length > 10 && (
-                      <div className="p-4 border-t text-center">
-                        <Button variant="link" onClick={() => setShowAllExpenses(!showAllExpenses)}>
-                          {showAllExpenses ? "Show Less" : `View All ${filteredExpenses.length} Entries`}
-                        </Button>
-                      </div>
-                    )}
                   </CardContent>
                 </Card>
               </TabsContent>

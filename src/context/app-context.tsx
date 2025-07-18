@@ -663,7 +663,7 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
                         join_date: new Date(year, month, 1).toISOString().split('T')[0],
                         avatar: 'https://placehold.co/80x80.png',
                         status: 'Active' as const,
-                        email: rentEntryData.name ? `${rentEntryData.name.replace(/\s+/g, '.').toLowerCase()}@example.com` : 'tenant@example.com',
+                        email: rentEntryData.name ? rentEntryData.name.replace(/\s+/g, '.').toLowerCase() + '@example.com' : 'tenant@example.com',
                     };
                     const { data: newTenant, error } = await supabase.from('tenants').insert(newTenantData).select().single();
                     if (error) {
