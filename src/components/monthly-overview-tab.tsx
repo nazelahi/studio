@@ -1111,7 +1111,7 @@ export function MonthlyOverviewTab() {
                                               value={entry.status}
                                               onValueChange={(newStatus) => handleStatusChange(entry, newStatus as RentEntry['status'])}
                                           >
-                                              <SelectTrigger className={cn("w-[120px] h-auto py-1 px-2 border", getStatusBadge(entry.status))}>
+                                              <SelectTrigger className={cn("h-auto py-1 px-2 border", getStatusBadge(entry.status))}>
                                                   <div className="flex items-center">
                                                       {getStatusIcon(entry.status)}
                                                       <SelectValue />
@@ -1131,7 +1131,7 @@ export function MonthlyOverviewTab() {
                                       )}
                                   </TableCell>
                                   <TableCell>
-                                    <div className="text-right w-full">
+                                    <div className="text-right">
                                         <EditableAmount
                                             initialAmount={entry.rent}
                                             onSave={(newAmount) => updateRentEntry({ ...entry, rent: newAmount }, toast)}
@@ -1347,7 +1347,7 @@ export function MonthlyOverviewTab() {
                                 {expense.category}
                               </TableCell>
                               <TableCell>
-                                <div className="text-right w-full">
+                                <div className="text-right">
                                     <EditableAmount
                                         initialAmount={expense.amount}
                                         onSave={(newAmount) => updateExpense({ ...expense, amount: newAmount }, toast)}
@@ -1363,7 +1363,7 @@ export function MonthlyOverviewTab() {
                                       value={expense.status}
                                       onValueChange={(newStatus) => handleExpenseStatusChange(expense, newStatus as Expense['status'])}
                                   >
-                                      <SelectTrigger className={cn("w-[120px] h-auto py-1 px-2 border", getExpenseStatusBadge(expense.status))}>
+                                      <SelectTrigger className={cn("h-auto py-1 px-2 border", getExpenseStatusBadge(expense.status))}>
                                           <SelectValue />
                                       </SelectTrigger>
                                       <SelectContent>
