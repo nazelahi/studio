@@ -76,6 +76,18 @@ export type RentEntry = {
     deleted_at?: string | null;
 }
 
+export type PageLabels = {
+  page_dashboard: {
+    nav_dashboard: string;
+    nav_settings: string;
+  };
+  tabNames: TabNames;
+  page_overview: {
+    financial_overview_title: string;
+    financial_overview_description: string;
+  };
+}
+
 export type PropertySettings = {
   id: number;
   house_name: string;
@@ -114,6 +126,7 @@ export type PropertySettings = {
   document_categories?: string[];
   date_format?: string;
   currency_symbol?: string;
+  page_labels?: PageLabels;
 };
 
 export type ZakatBankDetail = {

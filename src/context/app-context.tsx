@@ -1,8 +1,9 @@
 
+
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
-import type { Tenant, Expense, RentEntry, PropertySettings as DbPropertySettings, Deposit, ZakatTransaction, Notice, WorkDetail, ZakatBankDetail, ToastFn, Document, TabNames } from '@/types';
+import type { Tenant, Expense, RentEntry, PropertySettings as DbPropertySettings, Deposit, ZakatTransaction, Notice, WorkDetail, ZakatBankDetail, ToastFn, Document, TabNames, PageLabels } from '@/types';
 import { parseISO, getMonth, getYear, subMonths, format } from 'date-fns';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from './auth-context';
@@ -311,7 +312,14 @@ const getInitialSettings = (serverSettings: DbPropertySettings | null, zakatDeta
                     mobile_nav_background: serverSettings.theme_mobile_nav_background_dark || defaultSettings.theme.darkColors.mobile_nav_background,
                     mobile_nav_foreground: serverSettings.theme_mobile_nav_foreground_dark || defaultSettings.theme.darkColors.mobile_nav_foreground,
                 }
-            }
+            },
+            // Merge page_labels from database
+            ...deepMerge({ 
+              page_dashboard: defaultSettings.page_dashboard, 
+              tabNames: defaultSettings.tabNames, 
+              page_overview: defaultSettings.page_overview 
+            }, serverSettings.page_labels || {}),
+            page_settings: defaultSettings.page_settings,
          }
     }
     return combinedSettings;
@@ -330,35 +338,8 @@ export function AppContextProvider({ children, initialSettings }: { children: Re
         try {
             const { propertySettings, zakatBankDetails, ...dashboardData } = await getDashboardDataAction();
             setData({ ...dashboardData, zakatBankDetails });
-
-            let localSettings = {};
-            try {
-                const item = window.localStorage.getItem('appSettings');
-                if (item) {
-                    localSettings = JSON.parse(item);
-                }
-            } catch (error) {
-                console.error("Failed to parse settings from localStorage", error);
-            }
             
-            const serverDefaults = getInitialSettings(propertySettings, zakatBankDetails);
-            const localAndServer = deepMerge(serverDefaults, localSettings)
-
-            // Final merge to ensure DB values for theme are not overwritten by local defaults
-            const finalSettings = {
-                ...localAndServer,
-                theme: {
-                    colors: {
-                        ...localAndServer.theme.colors,
-                        ...serverDefaults.theme.colors,
-                    },
-                    darkColors: {
-                        ...localAndServer.theme.darkColors,
-                        ...serverDefaults.theme.darkColors,
-                    }
-                }
-            };
-            
+            const finalSettings = getInitialSettings(propertySettings, zakatBankDetails);
             setSettings(finalSettings);
 
         } catch (error: any) {
@@ -378,22 +359,6 @@ export function AppContextProvider({ children, initialSettings }: { children: Re
 
      const handleSetSettings = (newSettingsOrFn: AppSettings | ((prev: AppSettings) => AppSettings)) => {
         const newSettings = typeof newSettingsOrFn === 'function' ? newSettingsOrFn(settings) : newSettingsOrFn;
-        
-        const { 
-            houseName, houseAddress, bankName, bankAccountNumber, bankLogoUrl, ownerName, ownerPhotoUrl, 
-            zakatBankDetails, passcode, passcodeProtectionEnabled, aboutUs, contactPhone, contactEmail, contactAddress, footerName,
-            theme, whatsappRemindersEnabled, whatsappReminderSchedule, whatsappReminderTemplate, tenantViewStyle,
-            metadataTitle, faviconUrl, appLogoUrl, documentCategories, dateFormat, currencySymbol,
-            ...localSettingsToSave 
-        } = newSettings;
-        try {
-            const currentLocal = JSON.parse(window.localStorage.getItem('appSettings') || '{}');
-            const newLocal = deepMerge(currentLocal, localSettingsToSave);
-            window.localStorage.setItem('appSettings', JSON.stringify(newLocal));
-        } catch (error) {
-            console.error("Failed to save settings to localStorage", error);
-        }
-
         setSettings(newSettings);
     };
 

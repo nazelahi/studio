@@ -46,13 +46,27 @@ export async function updatePropertySettingsAction(formData: FormData) {
     const fileKeys = ['bankLogoFile', 'ownerPhotoFile', 'faviconFile', 'appLogoFile'];
     const arrayKeys = ['document_categories[]', 'whatsapp_reminder_schedule'];
 
+    // Handle special case for page_labels JSON
+    if (formData.has('page_labels')) {
+      const labelsJson = formData.get('page_labels') as string;
+      try {
+        settingsData.page_labels = JSON.parse(labelsJson);
+      } catch (e) {
+        console.error("Error parsing page_labels JSON:", e);
+        return { error: 'Invalid format for page labels.' };
+      }
+    }
+
+
     // Handle simple text/value fields from FormData
     for (const [key, value] of formData.entries()) {
-        if (!fileKeys.includes(key) && !arrayKeys.includes(key) && key !== 'whatsapp_reminders_enabled') {
-             // Only set the value if it's not an empty string, unless it's a color field
-            if (value !== '' || key.includes('theme')) {
-                settingsData[key] = value;
-            }
+        if (key === 'page_labels' || fileKeys.includes(key) || arrayKeys.includes(key) || key === 'whatsapp_reminders_enabled') {
+            continue;
+        }
+        
+        // Only set the value if it's not an empty string, unless it's a color field
+        if (value !== '' || key.includes('theme')) {
+            settingsData[key] = value;
         }
     }
     
