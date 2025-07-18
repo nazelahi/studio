@@ -221,7 +221,6 @@ export function MonthlyOverviewTab() {
 
   const formRef = React.useRef<HTMLFormElement>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
-  const expenseFileInputRef = React.useRef<HTMLInputElement>(null);
   const receiptInputRef = React.useRef<HTMLInputElement>(null);
 
 
@@ -977,8 +976,8 @@ export function MonthlyOverviewTab() {
                       <div className="relative overflow-x-auto">
                         <Table>
                           <TableHeader>
-                            <TableRow>
-                              {isAdmin && <TableHead className="w-10">
+                            <TableRow style={{ backgroundColor: 'hsl(var(--table-header-background))', color: 'hsl(var(--table-header-foreground))' }} className="hover:bg-[hsl(var(--table-header-background)/0.9)]">
+                              {isAdmin && <TableHead className="w-10 text-inherit">
                                   <Checkbox
                                       checked={selectedRentEntryIds.length > 0 && selectedRentEntryIds.length === filteredTenantsForMonth.length}
                                       onCheckedChange={(checked) => {
@@ -990,18 +989,18 @@ export function MonthlyOverviewTab() {
                                       }}
                                   />
                               </TableHead>}
-                              <TableHead>Tenant</TableHead>
-                              <TableHead className="hidden md:table-cell">Payment For</TableHead>
-                              <TableHead className="hidden md:table-cell">Collected By</TableHead>
-                              <TableHead className="hidden sm:table-cell">Payment Date</TableHead>
-                              <TableHead className="hidden sm:table-cell">Status</TableHead>
-                              <TableHead>Amount</TableHead>
-                              <TableHead className="w-[50px] text-right"></TableHead>
+                              <TableHead className="text-inherit">Tenant</TableHead>
+                              <TableHead className="hidden md:table-cell text-inherit">Payment For</TableHead>
+                              <TableHead className="hidden md:table-cell text-inherit">Collected By</TableHead>
+                              <TableHead className="hidden sm:table-cell text-inherit">Payment Date</TableHead>
+                              <TableHead className="hidden sm:table-cell text-inherit">Status</TableHead>
+                              <TableHead className="text-inherit">Amount</TableHead>
+                              <TableHead className="w-[50px] text-right text-inherit"></TableHead>
                             </TableRow>
                           </TableHeader>
                           <TableBody>
                             {filteredTenantsForMonth.length > 0 ? (
-                              filteredTenantsForMonth.map((entry) => (
+                              filteredTenantsForMonth.slice(0, showAllRent ? filteredTenantsForMonth.length : 10).map((entry) => (
                                 <TableRow key={entry.id} className="odd:bg-muted/50" data-state={isAdmin && selectedRentEntryIds.includes(entry.id) ? "selected" : undefined}>
                                   {isAdmin && <TableCell>
                                       <Checkbox
@@ -1132,18 +1131,25 @@ export function MonthlyOverviewTab() {
                           </TableBody>
                           {filteredTenantsForMonth.length > 0 && (
                             <TableFooter>
-                              <TableRow>
-                                  <TableCell colSpan={isAdmin ? 8 : 7} className="p-2">
-                                    <div className="flex flex-col sm:flex-row items-center justify-between px-2 text-primary font-bold bg-primary/10 rounded-md py-2">
-                                      <div className="sm:hidden text-center">Total Rent Collected</div>
-                                      <div className="hidden sm:block text-left">Total Rent Collected</div>
-                                      <div>{formatCurrency(totalRentCollected, settings.currencySymbol)}</div>
+                              <TableRow style={{ backgroundColor: 'hsl(var(--table-footer-background))', color: 'hsl(var(--table-footer-foreground))' }} className="font-bold hover:bg-[hsl(var(--table-footer-background)/0.9)]">
+                                  <TableCell colSpan={isAdmin ? 8 : 7} className="p-2 text-inherit">
+                                    <div className="flex flex-col sm:flex-row items-center justify-between px-2 py-2">
+                                      <div className="sm:hidden text-center text-inherit">Total Rent Collected</div>
+                                      <div className="hidden sm:block text-left text-inherit">Total Rent Collected</div>
+                                      <div className="text-inherit">{formatCurrency(totalRentCollected, settings.currencySymbol)}</div>
                                     </div>
                                   </TableCell>
                               </TableRow>
                             </TableFooter>
                           )}
                         </Table>
+                         {filteredTenantsForMonth.length > 10 && (
+                            <div className="p-4 border-t text-center">
+                                <Button variant="link" onClick={() => setShowAllRent(!showAllRent)}>
+                                    {showAllRent ? "Show Less" : `View All ${filteredTenantsForMonth.length} Entries`}
+                                </Button>
+                            </div>
+                        )}
                       </div>
                   </CardContent>
                 </Card>
@@ -1251,7 +1257,7 @@ export function MonthlyOverviewTab() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {filteredExpenses.map((expense) => (
+                        {filteredExpenses.slice(0, showAllExpenses ? filteredExpenses.length : 10).map((expense) => (
                             <TableRow key={expense.id} className="odd:bg-muted/50" data-state={isAdmin && selectedExpenseIds.includes(expense.id) ? "selected" : undefined}>
                               {isAdmin && <TableCell>
                                 <Checkbox
@@ -1374,6 +1380,13 @@ export function MonthlyOverviewTab() {
                         </TableFooter>
                       )}
                     </Table>
+                    {filteredExpenses.length > 10 && (
+                        <div className="p-4 border-t text-center">
+                            <Button variant="link" onClick={() => setShowAllExpenses(!showAllExpenses)}>
+                                {showAllExpenses ? "Show Less" : `View All ${filteredExpenses.length} Expenses`}
+                            </Button>
+                        </div>
+                    )}
                     </div>
                   </CardContent>
                 </Card>
