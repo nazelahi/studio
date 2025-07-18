@@ -268,8 +268,8 @@ export default function DashboardPageClient() {
                 </SheetContent>
                 </Sheet>
                 
-                <div className="hidden md:flex flex-1 justify-center">
-                    <TabsList className="grid w-full max-w-2xl grid-cols-6">
+                <div className="hidden md:flex flex-1">
+                    <TabsList className="grid w-full grid-cols-6">
                         <TabsTrigger value="overview">{settings.tabNames.overview}</TabsTrigger>
                         <TabsTrigger value="contacts">{settings.tabNames.tenants}</TabsTrigger>
                         <TabsTrigger value="work">{settings.tabNames.work}</TabsTrigger>
