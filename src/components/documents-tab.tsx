@@ -296,12 +296,12 @@ export function DocumentsTab() {
   const DocumentTable = ({ docs }: { docs: DocType[] }) => (
     <Table>
         <TableHeader>
-            <TableRow>
-                <TableHead className="w-16 p-2">Preview</TableHead>
-                <TableHead>Description</TableHead>
-                <TableHead className="hidden md:table-cell">Date</TableHead>
-                <TableHead className="hidden md:table-cell">Category</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+            <TableRow style={{ backgroundColor: 'hsl(var(--table-header-background))', color: 'hsl(var(--table-header-foreground))' }} className="hover:bg-[hsl(var(--table-header-background)/0.9)]">
+                <TableHead className="w-16 p-2 text-inherit">Preview</TableHead>
+                <TableHead className="text-inherit">Description</TableHead>
+                <TableHead className="hidden md:table-cell text-inherit">Date</TableHead>
+                <TableHead className="hidden md:table-cell text-inherit">Category</TableHead>
+                <TableHead className="text-right text-inherit">Actions</TableHead>
             </TableRow>
         </TableHeader>
         <TableBody>
@@ -445,16 +445,16 @@ export function DocumentsTab() {
                 </Dialog>
             )}
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0">
             {loading ? (
-                <div className="space-y-4">
+                <div className="space-y-4 p-6">
                     <Skeleton className="h-12 w-full" />
                     <Skeleton className="h-12 w-full" />
                     <Skeleton className="h-12 w-full" />
                 </div>
             ) : (
                 <Tabs defaultValue="all" className="w-full">
-                  <TabsList className="w-full justify-start overflow-x-auto h-auto">
+                  <TabsList className="w-full justify-start overflow-x-auto h-auto p-4">
                     <TabsTrigger value="all">All Documents</TabsTrigger>
                     {documentCategories.map(category => (
                         <TabsTrigger key={category} value={category}>{category}</TabsTrigger>
@@ -462,17 +462,17 @@ export function DocumentsTab() {
                     {tenantsWithDocs.length > 0 && <TabsTrigger value="tenants">Tenant Documents</TabsTrigger>}
                   </TabsList>
                   
-                  <TabsContent value="all" className="mt-4">
+                  <TabsContent value="all" className="mt-0">
                     <DocumentTable docs={allDocuments} />
                   </TabsContent>
 
                   {documentCategories.map(category => (
-                    <TabsContent key={category} value={category} className="mt-4">
+                    <TabsContent key={category} value={category} className="mt-0">
                        <DocumentTable docs={allDocuments.filter(d => d.category === category)} />
                     </TabsContent>
                   ))}
 
-                  <TabsContent value="tenants" className="mt-4">
+                  <TabsContent value="tenants" className="mt-4 p-6">
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                         {tenantsWithDocs.map((tenant) => (
                            <Dialog key={tenant.id}>
