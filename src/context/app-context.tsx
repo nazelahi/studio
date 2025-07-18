@@ -227,8 +227,13 @@ const deepMerge = (target: any, source: any) => {
 }
 
 const hexToHsl = (hex: string): string => {
-    if (!hex || typeof hex !== 'string') return '0 0% 0%';
+    if (!hex || typeof hex !== 'string' || !/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/.test(hex)) {
+        return '0 0% 0%'; // Return a default for invalid hex
+    }
     hex = hex.replace(/^#/, '');
+    if (hex.length === 3) {
+        hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+    }
     const r = parseInt(hex.substring(0, 2), 16) / 255;
     const g = parseInt(hex.substring(2, 4), 16) / 255;
     const b = parseInt(hex.substring(4, 6), 16) / 255;
@@ -250,6 +255,7 @@ const hexToHsl = (hex: string): string => {
     
     return `${Math.round(h * 360)} ${Math.round(s * 100)}% ${Math.round(l * 100)}%`;
 };
+
 // --- END: Settings-related logic ---
 
 type InitialSettings = {
@@ -269,56 +275,57 @@ const initialAppData: Omit<AppData, 'propertySettings'> = {
     documents: [],
 }
 
+const getInitialSettings = (serverSettings: DbPropertySettings | null, zakatDetails: ZakatBankDetail[]) => {
+    let combinedSettings = { ...defaultSettings };
+     if (serverSettings) {
+         combinedSettings = {
+            ...defaultSettings,
+            houseName: serverSettings.house_name || defaultSettings.houseName,
+            houseAddress: serverSettings.house_address || defaultSettings.houseAddress,
+            bankName: serverSettings.bank_name || defaultSettings.bankName,
+            bankAccountNumber: serverSettings.bank_account_number || defaultSettings.bankAccountNumber,
+            bankLogoUrl: serverSettings.bank_logo_url || defaultSettings.bankLogoUrl,
+            ownerName: serverSettings.owner_name || defaultSettings.ownerName,
+            ownerPhotoUrl: serverSettings.owner_photo_url || defaultSettings.ownerPhotoUrl,
+            passcode: serverSettings.passcode || defaultSettings.passcode,
+            passcodeProtectionEnabled: serverSettings.passcode_protection_enabled ?? defaultSettings.passcodeProtectionEnabled,
+            aboutUs: serverSettings.about_us || defaultSettings.aboutUs,
+            contactPhone: serverSettings.contact_phone || defaultSettings.contactPhone,
+            contactEmail: serverSettings.contact_email || defaultSettings.contactEmail,
+            contactAddress: serverSettings.contact_address || defaultSettings.contactAddress,
+            footerName: serverSettings.footer_name || defaultSettings.footerName,
+            tenantViewStyle: serverSettings.tenant_view_style || defaultSettings.tenantViewStyle,
+            metadataTitle: serverSettings.metadata_title || defaultSettings.metadataTitle,
+            faviconUrl: serverSettings.favicon_url || defaultSettings.faviconUrl,
+            appLogoUrl: serverSettings.app_logo_url || defaultSettings.appLogoUrl,
+            dateFormat: serverSettings.date_format || defaultSettings.dateFormat,
+            currencySymbol: serverSettings.currency_symbol || defaultSettings.currencySymbol,
+            documentCategories: serverSettings.document_categories || defaultSettings.documentCategories,
+            whatsappRemindersEnabled: serverSettings.whatsapp_reminders_enabled ?? defaultSettings.whatsappRemindersEnabled,
+            whatsappReminderSchedule: serverSettings.whatsapp_reminder_schedule || defaultSettings.whatsappReminderSchedule,
+            whatsappReminderTemplate: serverSettings.whatsapp_reminder_template || defaultSettings.whatsappReminderTemplate,
+            zakatBankDetails: zakatDetails || [],
+            theme: {
+                ...defaultSettings.theme,
+                colors: {
+                    ...defaultSettings.theme.colors,
+                    primary: serverSettings.theme_primary || defaultSettings.theme.colors.primary,
+                    table_header_background: serverSettings.theme_table_header_background || defaultSettings.theme.colors.table_header_background,
+                    table_header_foreground: serverSettings.theme_table_header_foreground || defaultSettings.theme.colors.table_header_foreground,
+                    table_footer_background: serverSettings.theme_table_footer_background || defaultSettings.theme.colors.table_footer_background,
+                    mobile_nav_background: serverSettings.theme_mobile_nav_background || defaultSettings.theme.colors.mobile_nav_background,
+                    mobile_nav_foreground: serverSettings.theme_mobile_nav_foreground || defaultSettings.theme.colors.mobile_nav_foreground,
+                }
+            }
+         }
+    }
+    return combinedSettings;
+};
+
+
 export function AppContextProvider({ children, initialSettings }: { children: ReactNode; initialSettings: InitialSettings }) {
     const [data, setData] = useState(initialAppData);
-    const [settings, setSettings] = useState<AppSettings>(() => {
-        const serverSettings = initialSettings.propertySettings;
-        let combinedSettings = defaultSettings;
-
-        if (serverSettings) {
-             combinedSettings = {
-                ...defaultSettings,
-                houseName: serverSettings.house_name || defaultSettings.houseName,
-                houseAddress: serverSettings.house_address || defaultSettings.houseAddress,
-                bankName: serverSettings.bank_name || defaultSettings.bankName,
-                bankAccountNumber: serverSettings.bank_account_number || defaultSettings.bankAccountNumber,
-                bankLogoUrl: serverSettings.bank_logo_url || defaultSettings.bankLogoUrl,
-                ownerName: serverSettings.owner_name || defaultSettings.ownerName,
-                ownerPhotoUrl: serverSettings.owner_photo_url || defaultSettings.ownerPhotoUrl,
-                passcode: serverSettings.passcode || defaultSettings.passcode,
-                passcodeProtectionEnabled: serverSettings.passcode_protection_enabled ?? defaultSettings.passcodeProtectionEnabled,
-                aboutUs: serverSettings.about_us || defaultSettings.aboutUs,
-                contactPhone: serverSettings.contact_phone || defaultSettings.contactPhone,
-                contactEmail: serverSettings.contact_email || defaultSettings.contactEmail,
-                contactAddress: serverSettings.contact_address || defaultSettings.contactAddress,
-                footerName: serverSettings.footer_name || defaultSettings.footerName,
-                tenantViewStyle: serverSettings.tenant_view_style || defaultSettings.tenantViewStyle,
-                metadataTitle: serverSettings.metadata_title || defaultSettings.metadataTitle,
-                faviconUrl: serverSettings.favicon_url || defaultSettings.faviconUrl,
-                appLogoUrl: serverSettings.app_logo_url || defaultSettings.appLogoUrl,
-                dateFormat: serverSettings.date_format || defaultSettings.dateFormat,
-                currencySymbol: serverSettings.currency_symbol || defaultSettings.currencySymbol,
-                documentCategories: serverSettings.document_categories || defaultSettings.documentCategories,
-                whatsappRemindersEnabled: serverSettings.whatsapp_reminders_enabled ?? defaultSettings.whatsappRemindersEnabled,
-                whatsappReminderSchedule: serverSettings.whatsapp_reminder_schedule || defaultSettings.whatsappReminderSchedule,
-                whatsappReminderTemplate: serverSettings.whatsapp_reminder_template || defaultSettings.whatsappReminderTemplate,
-                zakatBankDetails: initialSettings.zakatBankDetails || [],
-                theme: {
-                    ...defaultSettings.theme,
-                    colors: {
-                        ...defaultSettings.theme.colors,
-                        primary: serverSettings.theme_primary || defaultSettings.theme.colors.primary,
-                        table_header_background: serverSettings.theme_table_header_background || defaultSettings.theme.colors.table_header_background,
-                        table_header_foreground: serverSettings.theme_table_header_foreground || defaultSettings.theme.colors.table_header_foreground,
-                        table_footer_background: serverSettings.theme_table_footer_background || defaultSettings.theme.colors.table_footer_background,
-                        mobile_nav_background: serverSettings.theme_mobile_nav_background || defaultSettings.theme.colors.mobile_nav_background,
-                        mobile_nav_foreground: serverSettings.theme_mobile_nav_foreground || defaultSettings.theme.colors.mobile_nav_foreground,
-                    }
-                }
-             }
-        }
-        return combinedSettings;
-    });
+    const [settings, setSettings] = useState<AppSettings>(() => getInitialSettings(initialSettings.propertySettings, initialSettings.zakatBankDetails));
     const [loading, setLoading] = useState(true);
     const [isMounted, setIsMounted] = useState(false);
     
@@ -330,7 +337,6 @@ export function AppContextProvider({ children, initialSettings }: { children: Re
             const { propertySettings, zakatBankDetails, ...dashboardData } = await getDashboardDataAction();
             setData({ ...dashboardData, zakatBankDetails });
 
-            // Since settings are now mostly server-driven, we only need to merge local overrides
             let localSettings = {};
             try {
                 const item = window.localStorage.getItem('appSettings');
@@ -341,8 +347,8 @@ export function AppContextProvider({ children, initialSettings }: { children: Re
                 console.error("Failed to parse settings from localStorage", error);
             }
             
-            // Re-apply local overrides on top of the latest server settings
-             handleSetSettings(prev => deepMerge(prev, localSettings));
+            const newServerSettings = getInitialSettings(propertySettings, zakatBankDetails);
+            setSettings(prev => deepMerge(newServerSettings, localSettings));
 
         } catch (error: any) {
             console.error(`Error in refreshing data:`, error.message, error);
@@ -385,15 +391,10 @@ export function AppContextProvider({ children, initialSettings }: { children: Re
         if (isMounted) {
             const root = document.documentElement;
             root.style.setProperty('--primary', hexToHsl(settings.theme.colors.primary));
-            
-            const headerBgHsl = hexToHsl(settings.theme.colors.table_header_background);
-            const headerFgHex = settings.theme.colors.table_header_foreground;
-
-            root.style.setProperty('--table-header-background', headerBgHsl);
-            root.style.setProperty('--table-header-foreground', hexToHsl(headerFgHex));
+            root.style.setProperty('--table-header-background', hexToHsl(settings.theme.colors.table_header_background));
+            root.style.setProperty('--table-header-foreground', hexToHsl(settings.theme.colors.table_header_foreground));
             root.style.setProperty('--table-footer-background', hexToHsl(settings.theme.colors.table_footer_background));
-            root.style.setProperty('--table-footer-foreground', hexToHsl('#ffffff'));
-
+            root.style.setProperty('--table-footer-foreground', hexToHsl('#ffffff')); // Assuming white text on footer
             root.style.setProperty('--mobile-nav-background', hexToHsl(settings.theme.colors.mobile_nav_background));
             root.style.setProperty('--mobile-nav-foreground', hexToHsl(settings.theme.colors.mobile_nav_foreground));
         }
