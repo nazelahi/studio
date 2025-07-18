@@ -632,8 +632,8 @@ export function ContactsTab() {
             </div>
           </div>
         </CardHeader>
-        <CardContent className="p-0">
-          <div className="p-6 pt-0">
+        <CardContent className={cn(settings.tenantViewStyle === 'list' ? "p-0" : "p-6 pt-0")}>
+          <div className="">
             {loading ? (
                 <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {[...Array(4)].map((_, i) => <TenantCardSkeleton key={i} />)}
