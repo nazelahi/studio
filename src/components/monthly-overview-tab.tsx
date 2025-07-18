@@ -1347,7 +1347,7 @@ export function MonthlyOverviewTab() {
                                 {expense.category}
                               </TableCell>
                               <TableCell>
-                                <div className="w-full text-right">
+                                <div className="text-right w-full">
                                     <EditableAmount
                                         initialAmount={expense.amount}
                                         onSave={(newAmount) => updateExpense({ ...expense, amount: newAmount }, toast)}
@@ -1515,8 +1515,8 @@ export function MonthlyOverviewTab() {
             </div>
             <div className="mt-6">
                  <Card>
-                    <CardHeader className="p-3 bg-primary/10 border-b">
-                        <CardTitle className="flex items-center gap-2 text-base text-primary"><Landmark className="h-5 w-5"/>Bank Deposit Information</CardTitle>
+                    <CardHeader className="p-3 bg-primary text-primary-foreground border-b">
+                        <CardTitle className="flex items-center gap-2 text-base"><Landmark className="h-5 w-5"/>Bank Deposit Information</CardTitle>
                     </CardHeader>
                     <CardContent className="p-4">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
