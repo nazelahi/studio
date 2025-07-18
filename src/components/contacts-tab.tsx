@@ -397,7 +397,7 @@ export function ContactsTab() {
     <>
       <Card>
         <CardHeader className="flex flex-col gap-4 p-4 sm:p-6">
-          <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center sm:justify-between gap-4">
             <div className="flex-1 text-left">
               <CardTitle>Tenants</CardTitle>
               <CardDescription>Manage your tenants and their information.</CardDescription>
@@ -631,7 +631,7 @@ export function ContactsTab() {
             </div>
           </div>
         </CardHeader>
-        <CardContent className={cn(settings.tenantViewStyle === 'grid' ? "p-0 sm:p-6" : "p-0")}>
+        <CardContent className={cn(settings.tenantViewStyle === 'list' ? "p-0" : "p-0 sm:p-6")}>
             {loading ? (
                 <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {[...Array(4)].map((_, i) => <TenantCardSkeleton key={i} />)}
@@ -714,11 +714,12 @@ export function ContactsTab() {
                                 <TableHead className="w-[300px] p-2 text-inherit">Tenant</TableHead>
                                 <TableHead className="p-2 text-inherit">Details</TableHead>
                                 <TableHead className="p-2 text-inherit">Status</TableHead>
+                                <TableHead className="text-right p-2 text-inherit">Actions</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {filteredTenants.map(tenant => (
-                                <TableRow key={tenant.id} className="group relative odd:bg-muted/50">
+                                <TableRow key={tenant.id}>
                                     <TableCell className="p-2">
                                         <div className="flex items-center gap-3">
                                             <Avatar className="h-10 w-10">
@@ -736,41 +737,41 @@ export function ContactsTab() {
                                         <div className="text-xs text-muted-foreground">{formatCurrency(tenant.rent, settings.currencySymbol)}</div>
                                     </TableCell>
                                      <TableCell className="p-2">
-                                        <div className="flex items-center">
-                                            <Badge variant="secondary" className={getStatusBadge(tenant.status)}>{tenant.status}</Badge>
-                                            <div className={cn("absolute right-4 top-1/2 -translate-y-1/2 hidden h-full items-center border-l bg-background/50 pl-2 backdrop-blur-sm lg:flex", "opacity-0 group-hover:opacity-100 transition-opacity")}>
-                                               <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => openWhatsApp(tenant, e)}>
-                                                    <MessageSquare className="h-4 w-4" />
-                                                </Button>
-                                                {isAdmin && (
-                                                    <>
-                                                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => handleEdit(tenant, e)}>
-                                                            <Edit className="h-4 w-4" />
-                                                        </Button>
-                                                        <AlertDialog>
-                                                            <AlertDialogTrigger asChild>
-                                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={(e) => e.stopPropagation()}>
-                                                                    <Trash2 className="h-4 w-4" />
-                                                                </Button>
-                                                            </AlertDialogTrigger>
-                                                            <AlertDialogContent onClick={(e) => e.stopPropagation()}>
-                                                                <AlertDialogHeader>
-                                                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                                                    <AlertDialogDescription>
-                                                                        This will permanently delete {tenant.name} and all their data. This action cannot be undone.
-                                                                    </AlertDialogDescription>
-                                                                </AlertDialogHeader>
-                                                                <AlertDialogFooter>
-                                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                                    <AlertDialogAction onClick={(e) => handleDelete(tenant.id, e)} className="bg-destructive hover:bg-destructive/90">
-                                                                        Yes, Delete Tenant
-                                                                    </AlertDialogAction>
-                                                                </AlertDialogFooter>
-                                                            </AlertDialogContent>
-                                                        </AlertDialog>
-                                                    </>
-                                                )}
-                                            </div>
+                                        <Badge variant="secondary" className={getStatusBadge(tenant.status)}>{tenant.status}</Badge>
+                                    </TableCell>
+                                    <TableCell className="text-right p-2">
+                                        <div className="flex items-center justify-end gap-1">
+                                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => openWhatsApp(tenant, e)}>
+                                                <MessageSquare className="h-4 w-4" />
+                                            </Button>
+                                            {isAdmin && (
+                                                <>
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => handleEdit(tenant, e)}>
+                                                        <Edit className="h-4 w-4" />
+                                                    </Button>
+                                                    <AlertDialog>
+                                                        <AlertDialogTrigger asChild>
+                                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={(e) => e.stopPropagation()}>
+                                                                <Trash2 className="h-4 w-4" />
+                                                            </Button>
+                                                        </AlertDialogTrigger>
+                                                        <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                                                            <AlertDialogHeader>
+                                                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                                                <AlertDialogDescription>
+                                                                    This will permanently delete {tenant.name} and all their data. This action cannot be undone.
+                                                                </AlertDialogDescription>
+                                                            </AlertDialogHeader>
+                                                            <AlertDialogFooter>
+                                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                                <AlertDialogAction onClick={(e) => handleDelete(tenant.id, e)} className="bg-destructive hover:bg-destructive/90">
+                                                                    Yes, Delete Tenant
+                                                                </AlertDialogAction>
+                                                            </AlertDialogFooter>
+                                                        </AlertDialogContent>
+                                                    </AlertDialog>
+                                                </>
+                                            )}
                                         </div>
                                     </TableCell>
                                 </TableRow>

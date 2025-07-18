@@ -370,8 +370,9 @@ export function WorkDetailsTab({ year }: { year: number }) {
               <TableHead className="text-inherit">Work Item</TableHead>
               <TableHead className="text-inherit hidden sm:table-cell">Product Cost</TableHead>
               <TableHead className="text-inherit hidden sm:table-cell">Worker Cost</TableHead>
+              <TableHead className="text-inherit">Total Cost</TableHead>
               <TableHead className="text-inherit">Status</TableHead>
-              <TableHead className="text-right text-inherit">Total Cost</TableHead>
+              <TableHead className="text-right text-inherit">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -386,54 +387,47 @@ export function WorkDetailsTab({ year }: { year: number }) {
                 const totalCost = (work.product_cost || 0) + (work.worker_cost || 0);
                 const isCompleted = work.status === 'Completed';
                 return (
-                  <TableRow key={work.id} className="group relative odd:bg-muted/50">
+                  <TableRow key={work.id}>
                     <TableCell>
                       <div className="font-medium">{work.title}</div>
                       <div className="text-sm text-muted-foreground sm:hidden">{work.description}</div>
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">{formatCurrency(work.product_cost, settings.currencySymbol)}</TableCell>
                     <TableCell className="hidden sm:table-cell">{formatCurrency(work.worker_cost, settings.currencySymbol)}</TableCell>
+                    <TableCell className="font-bold">{formatCurrency(totalCost, settings.currencySymbol)}</TableCell>
                     <TableCell>
                         <Badge variant={isCompleted ? 'default': 'secondary'} className={cn(isCompleted && 'bg-success hover:bg-success/80')}>
                             {work.status}
                         </Badge>
                     </TableCell>
-                    <TableCell className="text-right font-bold">
-                        <div className="flex items-center justify-end">
-                            {formatCurrency(totalCost, settings.currencySymbol)}
-                             <div className={cn(
-                                "absolute right-4 top-1/2 -translate-y-1/2 hidden h-full items-center border-l bg-background/50 pl-2 backdrop-blur-sm lg:flex",
-                                "opacity-0 group-hover:opacity-100 transition-opacity"
-                            )}>
-                                {isAdmin && (
-                                  <>
-                                      <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => handleEdit(work, e)}>
-                                        <Edit className="h-4 w-4" />
-                                      </Button>
-                                      <AlertDialog>
-                                        <AlertDialogTrigger asChild>
-                                          <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
-                                            <Trash2 className="h-4 w-4" />
-                                          </Button>
-                                        </AlertDialogTrigger>
-                                        <AlertDialogContent>
-                                          <AlertDialogHeader>
-                                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                            <AlertDialogDescription>This will permanently delete this work item. This action cannot be undone.</AlertDialogDescription>
-                                          </AlertDialogHeader>
-                                          <AlertDialogFooter>
-                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                            <form onSubmit={handleDelete}>
-                                              <input type="hidden" name="workId" value={work.id} />
-                                              <AlertDialogAction type="submit" disabled={isPending}>Delete</AlertDialogAction>
-                                            </form>
-                                          </AlertDialogFooter>
-                                        </AlertDialogContent>
-                                      </AlertDialog>
-                                  </>
-                                )}
-                            </div>
-                        </div>
+                    <TableCell className="text-right">
+                      {isAdmin && (
+                          <div className="flex items-center justify-end gap-1">
+                              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => handleEdit(work, e)}>
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                    <AlertDialogDescription>This will permanently delete this work item. This action cannot be undone.</AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <form onSubmit={handleDelete}>
+                                      <input type="hidden" name="workId" value={work.id} />
+                                      <AlertDialogAction type="submit" disabled={isPending}>Delete</AlertDialogAction>
+                                    </form>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                          </div>
+                      )}
                     </TableCell>
                   </TableRow>
                 )

@@ -1068,13 +1068,14 @@ export function MonthlyOverviewTab() {
                             <TableHead className="hidden md:table-cell text-inherit">Collected By</TableHead>
                             <TableHead className="hidden sm:table-cell text-inherit">Payment Date</TableHead>
                             <TableHead className="text-inherit">Status</TableHead>
-                            <TableHead className="text-right text-inherit">Amount</TableHead>
+                            <TableHead className="text-inherit">Amount</TableHead>
+                            <TableHead className="text-right text-inherit">Actions</TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
                           {filteredTenantsForMonth.length > 0 ? (
                             filteredTenantsForMonth.map((entry) => (
-                              <TableRow key={entry.id} className="group relative odd:bg-muted/50" data-state={isAdmin && selectedRentEntryIds.includes(entry.id) ? "selected" : undefined}>
+                              <TableRow key={entry.id} data-state={isAdmin && selectedRentEntryIds.includes(entry.id) ? "selected" : undefined}>
                                 {isAdmin && <TableCell>
                                     <Checkbox
                                         checked={selectedRentEntryIds.includes(entry.id)}
@@ -1128,99 +1129,67 @@ export function MonthlyOverviewTab() {
                                         </Badge>
                                     )}
                                 </TableCell>
+                                <TableCell>
+                                  <EditableAmount
+                                    initialAmount={entry.rent}
+                                    onSave={(newAmount) => updateRentEntry({ ...entry, rent: newAmount }, toast)}
+                                    currencySymbol={settings.currencySymbol}
+                                    isAdmin={isAdmin}
+                                    withProtection={withProtection}
+                                  />
+                                </TableCell>
                                 <TableCell className="text-right">
-                                    <div className="flex items-center justify-end">
-                                        <EditableAmount
-                                            initialAmount={entry.rent}
-                                            onSave={(newAmount) => updateRentEntry({ ...entry, rent: newAmount }, toast)}
-                                            currencySymbol={settings.currencySymbol}
-                                            isAdmin={isAdmin}
-                                            withProtection={withProtection}
-                                        />
-                                        <div className="ml-2 flex items-center gap-1 lg:hidden">
-                                            {entry.status === 'Paid' && (
-                                               <Button
-                                                  size="icon"
-                                                  variant="ghost"
-                                                  className="h-8 w-8"
-                                                  onClick={() => {
-                                                    setNavigatingToReceiptId(entry.id);
-                                                    startNavigation(() => {
-                                                        router.push(`/receipt/${entry.id}`);
-                                                    });
-                                                  }}
-                                                  disabled={isNavigating && navigatingToReceiptId === entry.id}
-                                                >
-                                                  {isNavigating && navigatingToReceiptId === entry.id ? (
-                                                    <LoaderCircle className="h-4 w-4 animate-spin" />
-                                                  ) : (
-                                                    <Receipt className="h-4 w-4" />
-                                                  )}
-                                                  <span className="sr-only">View Receipt</span>
-                                              </Button>
-                                            )}
-                                            {isAdmin && <>
-                                                <Button size="icon" variant="ghost" className="h-8 w-8" onClick={(e) => handleEditRentEntry(entry, e)}>
-                                                  <Pencil className="h-4 w-4" />
-                                                  <span className="sr-only">Edit</span>
-                                                </Button>
-                                             </>}
-                                        </div>
-                                        <div className={cn(
-                                            "absolute right-4 top-1/2 -translate-y-1/2 hidden h-full items-center border-l bg-background/50 pl-2 backdrop-blur-sm lg:flex",
-                                            "opacity-0 group-hover:opacity-100 transition-opacity"
-                                        )}>
-                                            {entry.status === 'Paid' && (
-                                               <Button
-                                                  size="icon"
-                                                  variant="ghost"
-                                                  className="h-8 w-8"
-                                                  onClick={() => {
-                                                    setNavigatingToReceiptId(entry.id);
-                                                    startNavigation(() => {
-                                                        router.push(`/receipt/${entry.id}`);
-                                                    });
-                                                  }}
-                                                  disabled={isNavigating && navigatingToReceiptId === entry.id}
-                                                >
-                                                  {isNavigating && navigatingToReceiptId === entry.id ? (
-                                                    <LoaderCircle className="h-4 w-4 animate-spin" />
-                                                  ) : (
-                                                    <Receipt className="h-4 w-4" />
-                                                  )}
-                                                  <span className="sr-only">View Receipt</span>
-                                              </Button>
-                                            )}
-                                            {isAdmin && <>
-                                                <Button size="icon" variant="ghost" className="h-8 w-8" onClick={(e) => handleEditRentEntry(entry, e)}>
-                                                  <Pencil className="h-4 w-4" />
-                                                  <span className="sr-only">Edit</span>
-                                                </Button>
-                                                 <AlertDialog>
-                                                    <AlertDialogTrigger asChild>
-                                                      <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive">
-                                                        <Trash2 className="h-4 w-4" />
-                                                        <span className="sr-only">Delete</span>
-                                                      </Button>
-                                                    </AlertDialogTrigger>
-                                                    <AlertDialogContent>
-                                                        <form onSubmit={(e) => { e.preventDefault(); withProtection(() => handleDeleteRentEntry(entry), e as any); }}>
-                                                          <AlertDialogHeader>
-                                                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                                            <AlertDialogDescription>
-                                                              This will mark the rent entry for {entry.name} as deleted. You can undo this action.
-                                                            </AlertDialogDescription>
-                                                          </AlertDialogHeader>
-                                                          <AlertDialogFooter>
-                                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                            <AlertDialogAction type="submit">Delete</AlertDialogAction>
-                                                          </AlertDialogFooter>
-                                                        </form>
-                                                    </AlertDialogContent>
-                                                  </AlertDialog>
-                                              </>
-                                            }
-                                        </div>
+                                    <div className="flex items-center justify-end gap-1">
+                                        {entry.status === 'Paid' && (
+                                           <Button
+                                              size="icon"
+                                              variant="ghost"
+                                              className="h-8 w-8"
+                                              onClick={() => {
+                                                setNavigatingToReceiptId(entry.id);
+                                                startNavigation(() => {
+                                                    router.push(`/receipt/${entry.id}`);
+                                                });
+                                              }}
+                                              disabled={isNavigating && navigatingToReceiptId === entry.id}
+                                            >
+                                              {isNavigating && navigatingToReceiptId === entry.id ? (
+                                                <LoaderCircle className="h-4 w-4 animate-spin" />
+                                              ) : (
+                                                <Receipt className="h-4 w-4" />
+                                              )}
+                                              <span className="sr-only">View Receipt</span>
+                                          </Button>
+                                        )}
+                                        {isAdmin && <>
+                                            <Button size="icon" variant="ghost" className="h-8 w-8" onClick={(e) => handleEditRentEntry(entry, e)}>
+                                              <Pencil className="h-4 w-4" />
+                                              <span className="sr-only">Edit</span>
+                                            </Button>
+                                             <AlertDialog>
+                                                <AlertDialogTrigger asChild>
+                                                  <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive">
+                                                    <Trash2 className="h-4 w-4" />
+                                                    <span className="sr-only">Delete</span>
+                                                  </Button>
+                                                </AlertDialogTrigger>
+                                                <AlertDialogContent>
+                                                    <form onSubmit={(e) => { e.preventDefault(); withProtection(() => handleDeleteRentEntry(entry), e as any); }}>
+                                                      <AlertDialogHeader>
+                                                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                        <AlertDialogDescription>
+                                                          This will mark the rent entry for {entry.name} as deleted. You can undo this action.
+                                                        </AlertDialogDescription>
+                                                      </AlertDialogHeader>
+                                                      <AlertDialogFooter>
+                                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                        <AlertDialogAction type="submit">Delete</AlertDialogAction>
+                                                      </AlertDialogFooter>
+                                                    </form>
+                                                </AlertDialogContent>
+                                              </AlertDialog>
+                                          </>
+                                        }
                                     </div>
                                 </TableCell>
                               </TableRow>
@@ -1342,13 +1311,14 @@ export function MonthlyOverviewTab() {
                           </TableHead>}
                           <TableHead className="text-inherit">Details</TableHead>
                           <TableHead className="text-inherit hidden sm:table-cell">Category</TableHead>
-                          <TableHead className="text-inherit hidden sm:table-cell text-right">Amount</TableHead>
+                          <TableHead className="text-inherit">Amount</TableHead>
                           <TableHead className="text-inherit">Status</TableHead>
+                          <TableHead className="text-right text-inherit">Actions</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {filteredExpenses.map((expense) => (
-                            <TableRow key={expense.id} className="group relative odd:bg-muted/50" data-state={isAdmin && selectedExpenseIds.includes(expense.id) ? "selected" : undefined}>
+                            <TableRow key={expense.id} data-state={isAdmin && selectedExpenseIds.includes(expense.id) ? "selected" : undefined}>
                               {isAdmin && <TableCell>
                                 <Checkbox
                                   checked={selectedExpenseIds.includes(expense.id)}
@@ -1367,20 +1337,11 @@ export function MonthlyOverviewTab() {
                                 <div className="text-sm text-muted-foreground hidden md:block">
                                     {formatDate(expense.date, settings.dateFormat)}
                                 </div>
-                                <p className="sm:hidden text-sm text-destructive font-semibold">
-                                    <EditableAmount
-                                        initialAmount={expense.amount}
-                                        onSave={(newAmount) => updateExpense({ ...expense, amount: newAmount }, toast)}
-                                        currencySymbol={settings.currencySymbol}
-                                        isAdmin={isAdmin}
-                                        withProtection={withProtection}
-                                    />
-                                </p>
                               </TableCell>
                               <TableCell className="text-sm text-muted-foreground hidden sm:table-cell">
                                 {expense.category}
                               </TableCell>
-                              <TableCell className="hidden sm:table-cell text-right">
+                              <TableCell>
                                 <EditableAmount
                                     initialAmount={expense.amount}
                                     onSave={(newAmount) => updateExpense({ ...expense, amount: newAmount }, toast)}
@@ -1390,68 +1351,56 @@ export function MonthlyOverviewTab() {
                                 />
                               </TableCell>
                               <TableCell>
-                                 <div className="flex items-center">
-                                      {isAdmin && expense.status === 'Due' ? (
-                                        <Select
-                                            value={expense.status}
-                                            onValueChange={(newStatus) => handleExpenseStatusChange(expense, newStatus as Expense['status'])}
-                                        >
-                                            <SelectTrigger className={cn("w-[120px] h-auto py-1 px-2 border", getExpenseStatusBadge(expense.status))}>
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="Due">Due</SelectItem>
-                                                <SelectItem value="Paid">Paid</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    ) : (
-                                        <Badge className={getExpenseStatusBadge(expense.status)}>
-                                            {expense.status}
-                                        </Badge>
-                                    )}
-
-                                    <div className="ml-2 flex items-center gap-1 lg:hidden">
-                                        {isAdmin && <>
-                                            <Button size="icon" variant="ghost" className="h-8 w-8" onClick={(e) => handleEditExpense(expense, e)}>
-                                              <Pencil className="h-4 w-4" />
-                                              <span className="sr-only">Edit</span>
+                                 {isAdmin && expense.status === 'Due' ? (
+                                  <Select
+                                      value={expense.status}
+                                      onValueChange={(newStatus) => handleExpenseStatusChange(expense, newStatus as Expense['status'])}
+                                  >
+                                      <SelectTrigger className={cn("w-[120px] h-auto py-1 px-2 border", getExpenseStatusBadge(expense.status))}>
+                                          <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                          <SelectItem value="Due">Due</SelectItem>
+                                          <SelectItem value="Paid">Paid</SelectItem>
+                                      </SelectContent>
+                                  </Select>
+                              ) : (
+                                  <Badge className={getExpenseStatusBadge(expense.status)}>
+                                      {expense.status}
+                                  </Badge>
+                              )}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                <div className="flex items-center justify-end gap-1">
+                                   {isAdmin && <>
+                                        <Button size="icon" variant="ghost" className="h-8 w-8" onClick={(e) => handleEditExpense(expense, e)}>
+                                          <Pencil className="h-4 w-4" />
+                                          <span className="sr-only">Edit</span>
+                                        </Button>
+                                        <AlertDialog>
+                                          <AlertDialogTrigger asChild>
+                                            <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive">
+                                              <Trash2 className="h-4 w-4" />
+                                              <span className="sr-only">Delete</span>
                                             </Button>
-                                        </>}
-                                    </div>
-                                    <div className={cn(
-                                        "absolute right-4 top-1/2 -translate-y-1/2 hidden h-full items-center border-l bg-background/50 pl-2 backdrop-blur-sm lg:flex",
-                                        "opacity-0 group-hover:opacity-100 transition-opacity"
-                                    )}>
-                                       {isAdmin && <>
-                                            <Button size="icon" variant="ghost" className="h-8 w-8" onClick={(e) => handleEditExpense(expense, e)}>
-                                              <Pencil className="h-4 w-4" />
-                                              <span className="sr-only">Edit</span>
-                                            </Button>
-                                            <AlertDialog>
-                                              <AlertDialogTrigger asChild>
-                                                <Button size="icon" variant="ghost" className="h-8 w-8 text-destructive hover:text-destructive">
-                                                  <Trash2 className="h-4 w-4" />
-                                                  <span className="sr-only">Delete</span>
-                                                </Button>
-                                              </AlertDialogTrigger>
-                                              <AlertDialogContent>
-                                                <form onSubmit={(e) => { e.preventDefault(); withProtection(() => handleDeleteExpense(expense), e as any); }}>
-                                                  <AlertDialogHeader>
-                                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                                    <AlertDialogDescription>
-                                                      This will mark the expense as deleted. You can undo this action.
-                                                    </AlertDialogDescription>
-                                                  </AlertDialogHeader>
-                                                  <AlertDialogFooter>
-                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                    <AlertDialogAction type="submit">Delete</AlertDialogAction>
-                                                  </AlertDialogFooter>
-                                                </form>
-                                              </AlertDialogContent>
-                                            </AlertDialog>
-                                          </>}
-                                    </div>
-                                 </div>
+                                          </AlertDialogTrigger>
+                                          <AlertDialogContent>
+                                            <form onSubmit={(e) => { e.preventDefault(); withProtection(() => handleDeleteExpense(expense), e as any); }}>
+                                              <AlertDialogHeader>
+                                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                  This will mark the expense as deleted. You can undo this action.
+                                                </AlertDialogDescription>
+                                              </AlertDialogHeader>
+                                              <AlertDialogFooter>
+                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                <AlertDialogAction type="submit">Delete</AlertDialogAction>
+                                              </AlertDialogFooter>
+                                            </form>
+                                          </AlertDialogContent>
+                                        </AlertDialog>
+                                      </>}
+                                </div>
                               </TableCell>
                             </TableRow>
                           ))}

@@ -230,7 +230,7 @@ export function DocumentsTab() {
 
 
   const DocumentRow = ({ doc }: { doc: DocType }) => (
-    <TableRow className="group relative odd:bg-muted/50">
+    <TableRow>
         <TableCell className="w-16 p-2">
             <a href={doc.file_url} target="_blank" rel="noopener noreferrer" className="block">
                  <div className="flex-shrink-0 w-12 h-12 rounded-md bg-muted flex items-center justify-center overflow-hidden">
@@ -251,46 +251,43 @@ export function DocumentsTab() {
             <p className="text-sm text-muted-foreground">{doc.created_at ? format(parseISO(doc.created_at), 'dd MMM, yyyy') : '-'}</p>
         </TableCell>
         <TableCell>
-            <div className="flex items-center">
-                {doc.isTenantDoc ? (
-                    <Badge variant="secondary">Tenant Upload</Badge>
-                ) : (
-                    <Badge variant="outline">{doc.category}</Badge>
+          {doc.isTenantDoc ? (
+              <Badge variant="secondary">Tenant Upload</Badge>
+          ) : (
+              <Badge variant="outline">{doc.category}</Badge>
+          )}
+        </TableCell>
+        <TableCell className="text-right">
+            <div className="flex items-center justify-end gap-1">
+                <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
+                    <a href={doc.file_url} target="_blank" rel="noopener noreferrer" download={doc.file_name}>
+                        <Download className="h-4 w-4" />
+                    </a>
+                </Button>
+                {isAdmin && !doc.isTenantDoc && (
+                    <>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => handleEdit(doc, e)}>
+                            <Edit className="h-4 w-4" />
+                        </Button>
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={(e) => e.stopPropagation()}>
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                    <AlertDialogDescription>This action will permanently delete this document. This cannot be undone.</AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={(e) => handleDelete(e, doc)} disabled={isPending}>Delete</AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    </>
                 )}
-                <div className={cn(
-                    "absolute right-4 top-1/2 -translate-y-1/2 hidden h-full items-center border-l bg-background/50 pl-2 backdrop-blur-sm lg:flex",
-                    "opacity-0 group-hover:opacity-100 transition-opacity"
-                )}>
-                    <Button variant="ghost" size="icon" className="h-8 w-8" asChild>
-                        <a href={doc.file_url} target="_blank" rel="noopener noreferrer" download={doc.file_name}>
-                            <Download className="h-4 w-4" />
-                        </a>
-                    </Button>
-                    {isAdmin && !doc.isTenantDoc && (
-                        <>
-                            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => handleEdit(doc, e)}>
-                                <Edit className="h-4 w-4" />
-                            </Button>
-                            <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive" onClick={(e) => e.stopPropagation()}>
-                                        <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent onClick={(e) => e.stopPropagation()}>
-                                    <AlertDialogHeader>
-                                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                        <AlertDialogDescription>This action will permanently delete this document. This cannot be undone.</AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                        <AlertDialogAction onClick={(e) => handleDelete(e, doc)} disabled={isPending}>Delete</AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
-                        </>
-                    )}
-                </div>
             </div>
         </TableCell>
     </TableRow>
@@ -304,6 +301,7 @@ export function DocumentsTab() {
                 <TableHead className="text-inherit">Description</TableHead>
                 <TableHead className="hidden md:table-cell text-inherit">Date</TableHead>
                 <TableHead className="text-inherit">Category</TableHead>
+                <TableHead className="text-right text-inherit">Actions</TableHead>
             </TableRow>
         </TableHeader>
         <TableBody>
