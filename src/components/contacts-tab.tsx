@@ -396,31 +396,13 @@ export function ContactsTab() {
   return (
     <>
       <Card>
-        <CardHeader className="p-4 sm:p-6">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex-1 text-center sm:text-left">
+        <CardHeader className="p-4 sm:p-6 space-y-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex-1 text-left">
               <CardTitle>Tenants</CardTitle>
               <CardDescription>Manage your tenants and their information.</CardDescription>
             </div>
-            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-              <div className="relative flex-1 sm:max-w-xs">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input 
-                  placeholder="Search tenants..."
-                  className="pl-9"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-              <div className="flex items-center gap-1 rounded-md bg-muted p-1">
-                <Button variant={settings.tenantViewStyle === 'grid' ? 'secondary' : 'ghost'} size="icon" className="h-8 w-8" onClick={() => handleSetViewStyle('grid')}>
-                  <LayoutGrid className="h-4 w-4" />
-                </Button>
-                  <Button variant={settings.tenantViewStyle === 'list' ? 'secondary' : 'ghost'} size="icon" className="h-8 w-8" onClick={() => handleSetViewStyle('list')}>
-                  <List className="h-4 w-4" />
-                </Button>
-              </div>
-              {isAdmin && 
+            {isAdmin && 
               <Dialog open={open} onOpenChange={handleOpenChange}>
                 <DialogTrigger asChild>
                   <Button onClick={() => setEditingTenant(null)} className="w-full sm:w-auto shrink-0">
@@ -628,6 +610,24 @@ export function ContactsTab() {
                   </DialogContent>
                 </Dialog>
               }
+          </div>
+           <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input 
+                placeholder="Search tenants..."
+                className="pl-9"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+            <div className="flex items-center gap-1 rounded-md bg-muted p-1">
+              <Button variant={settings.tenantViewStyle === 'grid' ? 'secondary' : 'ghost'} size="icon" className="h-8 w-8" onClick={() => handleSetViewStyle('grid')}>
+                <LayoutGrid className="h-4 w-4" />
+              </Button>
+              <Button variant={settings.tenantViewStyle === 'list' ? 'secondary' : 'ghost'} size="icon" className="h-8 w-8" onClick={() => handleSetViewStyle('list')}>
+                <List className="h-4 w-4" />
+              </Button>
             </div>
           </div>
         </CardHeader>
