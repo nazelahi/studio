@@ -1431,7 +1431,7 @@ export function MonthlyOverviewTab() {
                               )}
                               </TableCell>
                               <TableCell className="text-right">
-                                <div className="flex items-center justify-end gap-1">
+                                <div className="hidden md:flex items-center justify-end gap-1">
                                    {isAdmin && <>
                                         <Button size="icon" variant="ghost" className="h-8 w-8" onClick={(e) => handleEditExpense(expense, e)}>
                                           <Pencil className="h-4 w-4" />
@@ -1460,6 +1460,45 @@ export function MonthlyOverviewTab() {
                                           </AlertDialogContent>
                                         </AlertDialog>
                                       </>}
+                                </div>
+                                <div className="flex md:hidden">
+                                  <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                                            <MoreHorizontal className="h-4 w-4" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                      {isAdmin && (
+                                          <>
+                                              <DropdownMenuItem onClick={(e) => handleEditExpense(expense, e as any)}>
+                                                  <Pencil className="mr-2 h-4 w-4" />
+                                                  Edit
+                                              </DropdownMenuItem>
+                                              <AlertDialog>
+                                                  <AlertDialogTrigger asChild>
+                                                      <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive">
+                                                          <Trash2 className="mr-2 h-4 w-4" />
+                                                          Delete
+                                                      </DropdownMenuItem>
+                                                  </AlertDialogTrigger>
+                                                  <AlertDialogContent>
+                                                      <form onSubmit={(e) => { e.preventDefault(); withProtection(() => handleDeleteExpense(expense), e as any); }}>
+                                                          <AlertDialogHeader>
+                                                              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                              <AlertDialogDescription>This will mark the expense as deleted. You can undo this action.</AlertDialogDescription>
+                                                          </AlertDialogHeader>
+                                                          <AlertDialogFooter>
+                                                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                              <AlertDialogAction type="submit">Delete</AlertDialogAction>
+                                                          </AlertDialogFooter>
+                                                      </form>
+                                                  </AlertDialogContent>
+                                              </AlertDialog>
+                                          </>
+                                      )}
+                                    </DropdownMenuContent>
+                                  </DropdownMenu>
                                 </div>
                               </TableCell>
                             </TableRow>
