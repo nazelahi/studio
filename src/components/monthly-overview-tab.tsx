@@ -36,7 +36,7 @@ import { useProtection } from "@/context/protection-context"
 import { Separator } from "./ui/separator"
 import { formatCurrency, formatDate } from "@/lib/utils"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "./ui/dropdown-menu"
-import { saveExpenseAction, deleteExpenseAction, addExpensesBatch } from "@/app/actions/expenses"
+import { saveExpenseAction, deleteExpenseAction } from "@/app/actions/expenses"
 
 type HistoricalTenant = {
     id: string;
@@ -182,7 +182,7 @@ export function MonthlyOverviewTab() {
   const { toast } = useToast();
   const { withProtection } = useProtection();
 
-  const { tenants, expenses, rentData, deposits, notices, addRentEntry, addRentEntriesBatch, updateRentEntry, deleteRentEntry, syncTenantsForMonth, syncExpensesFromPreviousMonth, loading, deleteMultipleRentEntries, deleteMultipleExpenses, refreshData, getRentEntryById, addExpense, updateExpense, deleteExpense, settings } = useAppContext();
+  const { tenants, expenses, rentData, deposits, notices, addRentEntry, addRentEntriesBatch, updateRentEntry, deleteRentEntry, syncTenantsForMonth, syncExpensesFromPreviousMonth, loading, deleteMultipleRentEntries, deleteMultipleExpenses, refreshData, getRentEntryById, addExpense, addExpensesBatch, updateExpense, deleteExpense, settings } = useAppContext();
 
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = React.useState(false);
   const [editingExpense, setEditingExpense] = React.useState<Expense | null>(null);
@@ -727,7 +727,7 @@ export function MonthlyOverviewTab() {
                 return;
             }
 
-            const result = await addExpensesBatch(expensesToCreate);
+            const result = await addExpensesBatch(expensesToCreate, toast);
              if (result?.error) {
                 toast({ title: "Import Failed", description: result.error, variant: "destructive" });
              } else {
@@ -1310,6 +1310,7 @@ export function MonthlyOverviewTab() {
                                                 <SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger>
                                                 <SelectContent>
                                                     {expenseCategories.map(cat => (<SelectItem key={cat} value={cat}>{cat}</SelectItem>))}
+                                                    <SelectItem value="Other">Other</SelectItem>
                                                 </SelectContent>
                                             </Select>
                                         </div>
