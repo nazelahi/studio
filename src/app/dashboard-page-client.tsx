@@ -32,7 +32,7 @@ function FullPageLoader() {
 }
 
 export default function DashboardPageClient() {
-  const { settings, loading: settingsLoading } = useAppContext();
+  const { settings, loading: dataLoading } = useAppContext();
   const pathname = usePathname();
   const router = useRouter();
   const { isAdmin, user, signOut } = useAuth();
@@ -87,7 +87,7 @@ export default function DashboardPageClient() {
     </>
   );
 
-  if (settingsLoading) {
+  if (dataLoading) {
     return <FullPageLoader />;
   }
 

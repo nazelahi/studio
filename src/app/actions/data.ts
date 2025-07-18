@@ -8,7 +8,7 @@ import { getDashboardData } from '@/lib/data'
 
 
 // This function is called from the client to fetch all initial data.
-export async function getDashboardDataAction(): Promise<AppData> {
+export async function getDashboardDataAction(): Promise<Omit<AppData, 'propertySettings'>> {
     return await getDashboardData();
 }
 

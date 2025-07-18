@@ -3,13 +3,14 @@
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import type { Tenant, Expense, RentEntry, PropertySettings as DbPropertySettings, Deposit, ZakatTransaction, Notice, WorkDetail, ZakatBankDetail, ToastFn, Document, TabNames } from '@/types';
-import { parseISO, getMonth, getYear, subMonths, format, subYears } from 'date-fns';
+import { parseISO, getMonth, getYear, subMonths, format } from 'date-fns';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/context/auth-context';
 import { Button } from '@/components/ui/button';
 import { addWorkDetailsBatch as addWorkDetailsBatchAction } from '@/app/actions/work';
 import type { AppData } from '@/lib/data';
 import { getDashboardDataAction } from '@/app/actions/data';
+import { getSettingsData } from '@/lib/data';
 
 // --- START: Settings-related types moved here ---
 interface PageDashboard {
@@ -63,6 +64,7 @@ export interface AppSettings {
   ownerPhotoUrl?: string;
   passcode?: string;
   passcodeProtectionEnabled: boolean;
+  zakatBankDetails: ZakatBankDetail[];
   footerName: string;
   tabNames: TabNames;
   theme: AppTheme;
@@ -86,9 +88,15 @@ export interface AppSettings {
 }
 // --- END: Settings-related types ---
 
-type NewRentEntry = Omit<RentEntry, 'id' | 'avatar' | 'year' | 'month' | 'due_date' | 'created_at' | 'deleted_at'> & { avatar?: string, tenant_id?: string };
-
-interface AppContextType extends AppData {
+type AppContextType = {
+  tenants: Tenant[];
+  expenses: Expense[];
+  rentData: RentEntry[];
+  deposits: Deposit[];
+  zakatTransactions: ZakatTransaction[];
+  notices: Notice[];
+  workDetails: WorkDetail[];
+  documents: Document[];
   settings: AppSettings;
   setSettings: (newSettings: AppSettings | ((prev: AppSettings) => AppSettings)) => void;
   addTenant: (tenant: Omit<Tenant, 'id' | 'deleted_at' | 'created_at'>, toast: ToastFn, files?: File[]) => Promise<void>;
@@ -106,10 +114,9 @@ interface AppContextType extends AppData {
   deleteMultipleRentEntries: (rentEntryIds: string[], toast: ToastFn) => Promise<void>;
   syncTenantsForMonth: (year: number, month: number, toast: ToastFn) => Promise<number>;
   syncExpensesFromPreviousMonth: (year: number, month: number, toast: ToastFn) => Promise<number>;
-  updatePropertySettings: (settings: Omit<DbPropertySettings, 'id'>, toast: ToastFn) => Promise<void>;
   loading: boolean;
-  getAllData: () => AppData;
-  restoreAllData: (backupData: AppData, toast: ToastFn) => void;
+  getAllData: () => Omit<AppData, 'propertySettings'>;
+  restoreAllData: (backupData: Omit<AppData, 'propertySettings'>, toast: ToastFn) => void;
   refreshData: () => Promise<void>;
   getRentEntryById: (id: string) => RentEntry | null;
   addWorkDetailsBatch: (workDetails: Omit<WorkDetail, 'id' | 'created_at' | 'deleted_at'>[], toast: ToastFn) => Promise<void>;
@@ -138,6 +145,7 @@ const defaultSettings: AppSettings = {
     ownerPhotoUrl: undefined,
     passcode: "",
     passcodeProtectionEnabled: true,
+    zakatBankDetails: [],
     footerName: "© 2024 RentFlow. All Rights Reserved.",
     aboutUs: "Your trusted partner in property management. Providing seamless rental experiences.",
     contactPhone: "+1 (555) 123-4567",
@@ -244,11 +252,15 @@ const hexToHsl = (hex: string): string => {
 };
 // --- END: Settings-related logic ---
 
-const initialAppData: AppData = {
+type InitialSettings = {
+    propertySettings: DbPropertySettings | null;
+    zakatBankDetails: ZakatBankDetail[];
+}
+
+const initialAppData: Omit<AppData, 'propertySettings'> = {
     tenants: [],
     expenses: [],
     rentData: [],
-    propertySettings: null,
     deposits: [],
     zakatTransactions: [],
     zakatBankDetails: [],
@@ -257,20 +269,68 @@ const initialAppData: AppData = {
     documents: [],
 }
 
-export function AppContextProvider({ children }: { children: ReactNode }) {
-    const [data, setData] = useState<AppData>(initialAppData);
-    const [settings, setSettings] = useState<AppSettings>(defaultSettings);
+export function AppContextProvider({ children, initialSettings }: { children: ReactNode; initialSettings: InitialSettings }) {
+    const [data, setData] = useState(initialAppData);
+    const [settings, setSettings] = useState<AppSettings>(() => {
+        const serverSettings = initialSettings.propertySettings;
+        let combinedSettings = defaultSettings;
+
+        if (serverSettings) {
+             combinedSettings = {
+                ...defaultSettings,
+                houseName: serverSettings.house_name || defaultSettings.houseName,
+                houseAddress: serverSettings.house_address || defaultSettings.houseAddress,
+                bankName: serverSettings.bank_name || defaultSettings.bankName,
+                bankAccountNumber: serverSettings.bank_account_number || defaultSettings.bankAccountNumber,
+                bankLogoUrl: serverSettings.bank_logo_url || defaultSettings.bankLogoUrl,
+                ownerName: serverSettings.owner_name || defaultSettings.ownerName,
+                ownerPhotoUrl: serverSettings.owner_photo_url || defaultSettings.ownerPhotoUrl,
+                passcode: serverSettings.passcode || defaultSettings.passcode,
+                passcodeProtectionEnabled: serverSettings.passcode_protection_enabled ?? defaultSettings.passcodeProtectionEnabled,
+                aboutUs: serverSettings.about_us || defaultSettings.aboutUs,
+                contactPhone: serverSettings.contact_phone || defaultSettings.contactPhone,
+                contactEmail: serverSettings.contact_email || defaultSettings.contactEmail,
+                contactAddress: serverSettings.contact_address || defaultSettings.contactAddress,
+                footerName: serverSettings.footer_name || defaultSettings.footerName,
+                tenantViewStyle: serverSettings.tenant_view_style || defaultSettings.tenantViewStyle,
+                metadataTitle: serverSettings.metadata_title || defaultSettings.metadataTitle,
+                faviconUrl: serverSettings.favicon_url || defaultSettings.faviconUrl,
+                appLogoUrl: serverSettings.app_logo_url || defaultSettings.appLogoUrl,
+                dateFormat: serverSettings.date_format || defaultSettings.dateFormat,
+                currencySymbol: serverSettings.currency_symbol || defaultSettings.currencySymbol,
+                documentCategories: serverSettings.document_categories || defaultSettings.documentCategories,
+                whatsappRemindersEnabled: serverSettings.whatsapp_reminders_enabled ?? defaultSettings.whatsappRemindersEnabled,
+                whatsappReminderSchedule: serverSettings.whatsapp_reminder_schedule || defaultSettings.whatsappReminderSchedule,
+                whatsappReminderTemplate: serverSettings.whatsapp_reminder_template || defaultSettings.whatsappReminderTemplate,
+                zakatBankDetails: initialSettings.zakatBankDetails || [],
+                theme: {
+                    ...defaultSettings.theme,
+                    colors: {
+                        ...defaultSettings.theme.colors,
+                        primary: serverSettings.theme_primary || defaultSettings.theme.colors.primary,
+                        table_header_background: serverSettings.theme_table_header_background || defaultSettings.theme.colors.table_header_background,
+                        table_header_foreground: serverSettings.theme_table_header_foreground || defaultSettings.theme.colors.table_header_foreground,
+                        table_footer_background: serverSettings.theme_table_footer_background || defaultSettings.theme.colors.table_footer_background,
+                        mobile_nav_background: serverSettings.theme_mobile_nav_background || defaultSettings.theme.colors.mobile_nav_background,
+                        mobile_nav_foreground: serverSettings.theme_mobile_nav_foreground || defaultSettings.theme.colors.mobile_nav_foreground,
+                    }
+                }
+             }
+        }
+        return combinedSettings;
+    });
     const [loading, setLoading] = useState(true);
     const [isMounted, setIsMounted] = useState(false);
     
-    const { user, loading: authLoading } = useAuth();
-    
-    const refreshData = useCallback(async () => {
-        setLoading(true);
+    const refreshData = useCallback(async (showLoading = true) => {
+        if (showLoading) {
+            setLoading(true);
+        }
         try {
-            const initialData = await getDashboardDataAction();
-            setData(initialData);
+            const { propertySettings, zakatBankDetails, ...dashboardData } = await getDashboardDataAction();
+            setData({ ...dashboardData, zakatBankDetails });
 
+            // Since settings are now mostly server-driven, we only need to merge local overrides
             let localSettings = {};
             try {
                 const item = window.localStorage.getItem('appSettings');
@@ -280,53 +340,17 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
             } catch (error) {
                 console.error("Failed to parse settings from localStorage", error);
             }
-
-            const combinedSettings = deepMerge(defaultSettings, localSettings);
-            const serverSettings = initialData.propertySettings;
-
-            if (serverSettings) {
-                combinedSettings.houseName = serverSettings.house_name || defaultSettings.houseName;
-                combinedSettings.houseAddress = serverSettings.house_address || defaultSettings.houseAddress;
-                combinedSettings.bankName = serverSettings.bank_name || defaultSettings.bankName;
-                combinedSettings.bankAccountNumber = serverSettings.bank_account_number || defaultSettings.bankAccountNumber;
-                combinedSettings.bankLogoUrl = serverSettings.bank_logo_url || defaultSettings.bankLogoUrl;
-                combinedSettings.ownerName = serverSettings.owner_name || defaultSettings.ownerName;
-                combinedSettings.ownerPhotoUrl = serverSettings.owner_photo_url || defaultSettings.ownerPhotoUrl;
-                combinedSettings.passcode = serverSettings.passcode || defaultSettings.passcode;
-                combinedSettings.passcodeProtectionEnabled = serverSettings.passcode_protection_enabled ?? defaultSettings.passcodeProtectionEnabled;
-                combinedSettings.aboutUs = serverSettings.about_us || defaultSettings.aboutUs;
-                combinedSettings.contactPhone = serverSettings.contact_phone || defaultSettings.contactPhone;
-                combinedSettings.contactEmail = serverSettings.contact_email || defaultSettings.contactEmail;
-                combinedSettings.contactAddress = serverSettings.contact_address || defaultSettings.contactAddress;
-                combinedSettings.footerName = serverSettings.footer_name || defaultSettings.footerName;
-                combinedSettings.tenantViewStyle = serverSettings.tenant_view_style || defaultSettings.tenantViewStyle;
-                combinedSettings.metadataTitle = serverSettings.metadata_title || defaultSettings.metadataTitle;
-                combinedSettings.faviconUrl = serverSettings.favicon_url || defaultSettings.faviconUrl;
-                combinedSettings.appLogoUrl = serverSettings.app_logo_url || defaultSettings.appLogoUrl;
-                combinedSettings.dateFormat = serverSettings.date_format || defaultSettings.dateFormat;
-                combinedSettings.currencySymbol = serverSettings.currency_symbol || defaultSettings.currencySymbol;
-                
-                combinedSettings.documentCategories = serverSettings.document_categories || combinedSettings.documentCategories;
-
-                combinedSettings.theme.colors.primary = serverSettings.theme_primary || defaultSettings.theme.colors.primary;
-                combinedSettings.theme.colors.table_header_background = serverSettings.theme_table_header_background || defaultSettings.theme.colors.table_header_background;
-                combinedSettings.theme.colors.table_header_foreground = serverSettings.theme_table_header_foreground || defaultSettings.theme.colors.table_header_foreground;
-                combinedSettings.theme.colors.table_footer_background = serverSettings.theme_table_footer_background || defaultSettings.theme.colors.table_footer_background;
-                combinedSettings.theme.colors.mobile_nav_background = serverSettings.theme_mobile_nav_background || defaultSettings.theme.colors.mobile_nav_background;
-                combinedSettings.theme.colors.mobile_nav_foreground = serverSettings.theme_mobile_nav_foreground || defaultSettings.theme.colors.mobile_nav_foreground;
-
-                combinedSettings.whatsappRemindersEnabled = serverSettings.whatsapp_reminders_enabled ?? defaultSettings.whatsappRemindersEnabled;
-                combinedSettings.whatsappReminderSchedule = serverSettings.whatsapp_reminder_schedule || defaultSettings.whatsappReminderSchedule;
-                combinedSettings.whatsappReminderTemplate = serverSettings.whatsapp_reminder_template || defaultSettings.whatsappReminderTemplate;
-            }
-
-            setSettings(combinedSettings);
             
+            // Re-apply local overrides on top of the latest server settings
+             handleSetSettings(prev => deepMerge(prev, localSettings));
+
         } catch (error: any) {
             console.error(`Error in refreshing data:`, error.message, error);
             handleError(error, "refreshing data", () => {});
         } finally {
-            setLoading(false);
+            if (showLoading) {
+                setLoading(false);
+            }
         }
     }, []);
 
@@ -341,7 +365,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
         
         const { 
             houseName, houseAddress, bankName, bankAccountNumber, bankLogoUrl, ownerName, ownerPhotoUrl, 
-            passcode, passcodeProtectionEnabled, aboutUs, contactPhone, contactEmail, contactAddress, footerName,
+            zakatBankDetails, passcode, passcodeProtectionEnabled, aboutUs, contactPhone, contactEmail, contactAddress, footerName,
             theme, whatsappRemindersEnabled, whatsappReminderSchedule, whatsappReminderTemplate, tenantViewStyle,
             metadataTitle, faviconUrl, appLogoUrl, documentCategories, dateFormat, currencySymbol,
             ...localSettingsToSave 
@@ -421,7 +445,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
             handleError(error, `undoing delete on ${table}`, toast);
         } else {
             toast({ title: 'Restored', description: `The item(s) have been restored.` });
-            await refreshData();
+            await refreshData(false);
         }
       } catch (error) {
         handleError(error, `undoing delete on ${table}`, toast);
@@ -474,7 +498,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
         };
         const { error: rentError } = await supabase.from('rent_entries').insert([newRentEntryData]);
         if (rentError) handleError(rentError, 'auto-creating rent entry', toast);
-        await refreshData();
+        await refreshData(false);
       } catch (error) {
         handleError(error, 'adding tenant', toast);
       }
@@ -517,7 +541,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
         if (rentUpdateError) {
             handleError(rentUpdateError, 'syncing future rent entries', toast);
         }
-        await refreshData();
+        await refreshData(false);
       } catch (error) {
         handleError(error, 'updating tenant', toast);
       }
@@ -536,7 +560,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
                 action: <Button variant="secondary" onClick={() => undoDelete('tenants', [tenantId], toast)}>Undo</Button>
              });
         }
-        await refreshData();
+        await refreshData(false);
       } catch (error) {
         handleError(error, 'deleting tenant', toast);
       }
@@ -547,7 +571,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
         if (!supabase) return;
         const { error } = await supabase.from('expenses').insert([expense]);
         if (error) handleError(error, 'adding expense', toast);
-        await refreshData();
+        await refreshData(false);
       } catch (error) {
         handleError(error, 'adding expense', toast);
       }
@@ -560,7 +584,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
         if (error) {
             handleError(error, 'batch adding expenses', toast);
         }
-        await refreshData();
+        await refreshData(false);
       } catch (error) {
         handleError(error, 'batch adding expenses', toast);
       }
@@ -573,7 +597,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
         const { id, ...expenseData } = updatedExpense;
         const { error } = await supabase.from('expenses').update(expenseData).eq('id', id);
         if (error) handleError(error, 'updating expense', toast);
-        await refreshData();
+        await refreshData(false);
       } catch (error) {
         handleError(error, 'updating expense', toast);
       }
@@ -592,7 +616,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
                 action: <Button variant="secondary" onClick={() => undoDelete('expenses', [expenseId], toast)}>Undo</Button>
              });
         }
-        await refreshData();
+        await refreshData(false);
       } catch (error) {
         handleError(error, 'deleting expense', toast);
       }
@@ -611,7 +635,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
                 action: <Button variant="secondary" onClick={() => undoDelete('expenses', expenseIds, toast)}>Undo</Button>
              });
         }
-        await refreshData();
+        await refreshData(false);
       } catch (error) {
         handleError(error, 'deleting multiple expenses', toast);
       }
@@ -670,7 +694,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
         
         const { error } = await supabase.from('rent_entries').insert(newEntry);
         if (error) handleError(error, 'adding rent entry', toast);
-        await refreshData();
+        await refreshData(false);
       } catch (error) {
         handleError(error, 'adding rent entry', toast);
       }
@@ -732,7 +756,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
             const { error } = await supabase.from('rent_entries').insert(validNewEntries);
             if (error) handleError(error, 'batch adding rent entries', toast);
         }
-        await refreshData();
+        await refreshData(false);
       } catch (error) {
         handleError(error, 'batch adding rent entries', toast);
       }
@@ -744,7 +768,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
         const { id, ...rentEntryData } = updatedRentEntry;
         const { error } = await supabase.from('rent_entries').update(rentEntryData).eq('id', id);
         if (error) handleError(error, 'updating rent entry', toast);
-        await refreshData();
+        await refreshData(false);
       } catch (error) {
         handleError(error, 'updating rent entry', toast);
       }
@@ -763,7 +787,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
                 action: <Button variant="secondary" onClick={() => undoDelete('rent_entries', [rentEntryId], toast)}>Undo</Button>
             });
         }
-        await refreshData();
+        await refreshData(false);
       } catch (error) {
         handleError(error, 'deleting rent entry', toast);
       }
@@ -782,7 +806,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
                 action: <Button variant="secondary" onClick={() => undoDelete('rent_entries', rentEntryIds, toast)}>Undo</Button>
              });
         }
-        await refreshData();
+        await refreshData(false);
       } catch (error) {
         handleError(error, 'deleting multiple rent entries', toast);
       }
@@ -852,7 +876,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
             return 0;
         }
 
-        await refreshData();
+        await refreshData(false);
         return tenantsToSync.length;
       } catch (error) {
         handleError(error, 'syncing tenants to rent roll', toast);
@@ -904,7 +928,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
             return 0;
         }
 
-        await refreshData();
+        await refreshData(false);
         return newExpenses.length;
       } catch (error) {
         handleError(error, 'syncing expenses to current month', toast);
@@ -912,22 +936,11 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
       }
     };
 
-    const updatePropertySettings = async (settings: Omit<DbPropertySettings, 'id'>, toast: ToastFn) => {
-      try {
-        if (!supabase) return;
-        const { error } = await supabase.from('property_settings').update(settings).eq('id', 1);
-        if (error) handleError(error, 'updating property settings', toast);
-        await refreshData();
-      } catch (error) {
-        handleError(error, 'updating property settings', toast);
-      }
-    }
-
-    const getAllData = () => {
-        return { ...data, settings };
+    const getAllData = (): Omit<AppData, 'propertySettings'> => {
+        return { ...data };
     };
 
-    const restoreAllData = async (backupData: AppData, toast: ToastFn) => {
+    const restoreAllData = async (backupData: Omit<AppData, 'propertySettings'>, toast: ToastFn) => {
       if (!supabase) return;
 
       try {
@@ -940,12 +953,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
             if (deleteError) throw new Error(`Failed to clear ${table}: ${deleteError.message}`);
         }
         
-        if (backupData.propertySettings) {
-             const { error: insertError } = await supabase.from('property_settings').insert(backupData.propertySettings);
-             if (insertError) throw new Error(`Failed to insert into property_settings: ${insertError.message}`);
-        }
-
-        const { propertySettings, ...dataToInsert } = backupData;
+        const { ...dataToInsert } = backupData;
 
         for (const [table, records] of Object.entries(dataToInsert)) {
             const tableName = table === 'rentData' ? 'rent_entries' : table;
@@ -962,7 +970,7 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
             }
         }
         
-        toast({ title: "Restore Complete", description: "Your data has been restored from the backup file. The application will now reload." });
+        toast({ title: "Restore Complete", description: "Your data has been restored. The application will now reload." });
         setTimeout(() => {
           window.location.reload();
         }, 2000);
@@ -985,15 +993,43 @@ export function AppContextProvider({ children }: { children: ReactNode }) {
         } else {
             toast({ title: "Import Successful", description: `${result.count} work items have been imported.` });
         }
-        await refreshData();
+        await refreshData(false);
       } catch(error) {
         handleError(error, 'batch adding work details', toast);
       }
     };
 
+    type NewRentEntry = Omit<RentEntry, 'id' | 'avatar' | 'year' | 'month' | 'due_date' | 'created_at' | 'deleted_at'> & { avatar?: string, tenant_id?: string };
+
+    const value: AppContextType = {
+        ...data,
+        settings,
+        setSettings: handleSetSettings,
+        loading,
+        refreshData,
+        getAllData,
+        restoreAllData,
+        addTenant,
+        updateTenant,
+        deleteTenant,
+        addExpense,
+        addExpensesBatch,
+        updateExpense,
+        deleteExpense,
+        deleteMultipleExpenses,
+        addRentEntry,
+        addRentEntriesBatch,
+        updateRentEntry,
+        deleteRentEntry,
+        deleteMultipleRentEntries,
+        syncTenantsForMonth,
+        syncExpensesFromPreviousMonth,
+        getRentEntryById,
+        addWorkDetailsBatch,
+    };
 
     return (
-        <AppContext.Provider value={{ ...data, settings, setSettings: handleSetSettings, addTenant, updateTenant, deleteTenant, addExpense, addExpensesBatch, updateExpense, deleteExpense, deleteMultipleExpenses, addRentEntry, addRentEntriesBatch, updateRentEntry, deleteRentEntry, deleteMultipleRentEntries, syncTenantsForMonth, syncExpensesFromPreviousMonth, updatePropertySettings, loading, getAllData, restoreAllData, refreshData, getRentEntryById, addWorkDetailsBatch }}>
+        <AppContext.Provider value={value}>
             {children}
         </AppContext.Provider>
     );

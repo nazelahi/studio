@@ -2,7 +2,7 @@
 "use client"
 
 import * as React from "react"
-import { useAppContext, AppContextProvider } from "@/context/app-context"
+import { useAppContext } from "@/context/app-context"
 import { Card, CardContent, CardHeader } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from "@/components/ui/table"
 import { Button } from "@/components/ui/button"
@@ -18,7 +18,7 @@ import { Logo } from "@/components/icons"
 import { formatCurrency, formatDate } from "@/lib/utils"
 
 function ReceiptPageContent() {
-    const { getRentEntryById, tenants, settings, loading: settingsLoading } = useAppContext()
+    const { getRentEntryById, tenants, settings, loading: dataLoading } = useAppContext()
     const router = useRouter()
     const params = useParams()
     const { toast } = useToast()
@@ -74,7 +74,7 @@ function ReceiptPageContent() {
         }
     };
     
-    if (loading || settingsLoading) {
+    if (loading || dataLoading) {
         return (
             <div className="flex min-h-screen w-full flex-col items-center justify-center bg-muted/40">
                 <LoaderCircle className="h-10 w-10 animate-spin text-primary" />

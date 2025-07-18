@@ -4,53 +4,25 @@ import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { AuthProvider } from '@/context/auth-context';
 import { ThemeProvider } from '@/components/theme-provider';
-import { createClient } from '@supabase/supabase-js';
 import { AppContextProvider } from '@/context/app-context';
 import { ProtectionProvider } from '@/context/protection-context';
+import type { PropertySettings, ZakatBankDetail } from '@/types';
+import { getSettingsData } from '@/lib/data';
 
-// It's safe to use service role key here as this runs on the server.
-const getSupabaseAdmin = () => {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-
-    if (!supabaseUrl || !supabaseServiceKey) {
-        console.warn('Supabase URL or service role key is not configured on the server. Please check your environment variables.');
-        return null;
-    }
-    
-    return createClient(supabaseUrl, supabaseServiceKey, {
-        auth: {
-            autoRefreshToken: false,
-            persistSession: false,
-        },
-    });
-}
 
 export async function generateMetadata(
   parent: ResolvingMetadata
 ): Promise<Metadata> {
-  const supabaseAdmin = getSupabaseAdmin();
+  const { propertySettings } = await getSettingsData();
   let title = "RentFlow";
   let description = "Manage your rental properties with ease.";
   let icons = {};
-
-  if (supabaseAdmin) {
-      const { data: settings, error } = await supabaseAdmin
-        .from('property_settings')
-        .select('metadata_title, favicon_url')
-        .eq('id', 1)
-        .single();
-    
-      if (error && error.code !== 'PGRST116') { // Ignore "No rows found" error
-        console.error("Error fetching metadata:", error);
-      }
       
-      if (settings) {
-        title = settings.metadata_title || "RentFlow";
-        if (settings.favicon_url) {
-            icons = { icon: settings.favicon_url };
-        }
-      }
+  if (propertySettings) {
+    title = propertySettings.metadata_title || "RentFlow";
+    if (propertySettings.favicon_url) {
+        icons = { icon: propertySettings.favicon_url };
+    }
   }
 
   return {
@@ -66,6 +38,8 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   
+  const initialSettings = await getSettingsData();
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -81,7 +55,7 @@ export default async function RootLayout({
           disableTransitionOnChange
         >
           <AuthProvider>
-            <AppContextProvider>
+            <AppContextProvider initialSettings={initialSettings}>
               <ProtectionProvider>
                   {children}
               </ProtectionProvider>
