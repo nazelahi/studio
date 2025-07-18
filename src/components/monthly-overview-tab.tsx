@@ -142,7 +142,7 @@ const EditableAmount: React.FC<EditableAmountProps> = ({ initialAmount, onSave, 
                         setIsEditing(false);
                     }
                 }}
-                className="h-8 w-24 text-right"
+                className="h-8 w-24 text-left"
             />
         );
     }
@@ -151,7 +151,7 @@ const EditableAmount: React.FC<EditableAmountProps> = ({ initialAmount, onSave, 
         <button 
             onClick={handleClick}
             disabled={!isAdmin}
-            className={cn("text-right", isAdmin && "hover:bg-muted rounded-md px-2 py-1 transition-colors")}>
+            className={cn("text-left", isAdmin && "hover:bg-muted rounded-md px-2 py-1 transition-colors")}>
                 {formatCurrency(amount, currencySymbol)}
         </button>
     );
@@ -1131,7 +1131,7 @@ export function MonthlyOverviewTab() {
                                       )}
                                   </TableCell>
                                   <TableCell>
-                                    <div className="text-right">
+                                    <div className="text-left">
                                         <EditableAmount
                                             initialAmount={entry.rent}
                                             onSave={(newAmount) => updateRentEntry({ ...entry, rent: newAmount }, toast)}
@@ -1347,7 +1347,7 @@ export function MonthlyOverviewTab() {
                                 {expense.category}
                               </TableCell>
                               <TableCell>
-                                <div className="text-right">
+                                <div className="text-left">
                                     <EditableAmount
                                         initialAmount={expense.amount}
                                         onSave={(newAmount) => updateExpense({ ...expense, amount: newAmount }, toast)}
