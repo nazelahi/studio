@@ -25,7 +25,7 @@ export type Document = {
 };
 
 export type Tenant = {
-  id: string;
+  id:string;
   name: string;
   email: string;
   phone?: string;
@@ -98,6 +98,12 @@ export type PropertySettings = {
   theme_table_footer_background?: string;
   theme_mobile_nav_background?: string;
   theme_mobile_nav_foreground?: string;
+  theme_primary_dark?: string;
+  theme_table_header_background_dark?: string;
+  theme_table_header_foreground_dark?: string;
+  theme_table_footer_background_dark?: string;
+  theme_mobile_nav_background_dark?: string;
+  theme_mobile_nav_foreground_dark?: string;
   whatsapp_reminders_enabled?: boolean;
   whatsapp_reminder_schedule?: string[];
   whatsapp_reminder_template?: string;

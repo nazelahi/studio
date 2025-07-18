@@ -11,7 +11,7 @@ import { updatePropertySettingsAction } from "./actions"
 import { useAppContext } from "@/context/app-context"
 import { Separator } from "@/components/ui/separator"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { LoaderCircle, PlusCircle, Trash2, GripVertical } from "lucide-react"
+import { LoaderCircle, PlusCircle, Trash2, GripVertical, Sun, Moon } from "lucide-react"
 
 const currencyOptions = [
     { value: "৳", label: "BDT (Bangladesh)" },
@@ -86,6 +86,12 @@ export default function ApplicationSettingsTab() {
             themeTableFooterBackground: 'theme_table_footer_background',
             themeMobileNavBackground: 'theme_mobile_nav_background',
             themeMobileNavForeground: 'theme_mobile_nav_foreground',
+            themePrimaryDark: 'theme_primary_dark',
+            themeTableHeaderBackgroundDark: 'theme_table_header_background_dark',
+            themeTableHeaderForegroundDark: 'theme_table_header_foreground_dark',
+            themeTableFooterBackgroundDark: 'theme_table_footer_background_dark',
+            themeMobileNavBackgroundDark: 'theme_mobile_nav_background_dark',
+            themeMobileNavForegroundDark: 'theme_mobile_nav_foreground_dark',
         };
         const mappedKey = keyMap[field] || field;
         formData.set(mappedKey, value);
@@ -107,6 +113,19 @@ export default function ApplicationSettingsTab() {
         ...prev.theme,
         colors: {
           ...prev.theme.colors,
+          [field]: value,
+        },
+      },
+    }));
+  };
+  
+  const handleDarkColorChange = (field: keyof typeof settings.theme.darkColors, value: string) => {
+    setSettings(prev => ({
+      ...prev,
+      theme: {
+        ...prev.theme,
+        darkColors: {
+          ...prev.theme.darkColors,
           [field]: value,
         },
       },
@@ -158,10 +177,11 @@ export default function ApplicationSettingsTab() {
                     </Select>
                   </div>
               </div>
+              
               <Separator className="my-6" />
               <div className="space-y-4">
-                  <Label className="font-medium">Theme Colors</Label>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  <h3 className="text-lg font-semibold flex items-center gap-2"><Sun className="h-5 w-5"/>Light Theme Colors</h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                       <div className="space-y-2">
                           <Label htmlFor="theme_primary">Primary</Label>
                           <Input id="theme_primary" name="theme_primary" type="color" 
@@ -190,24 +210,68 @@ export default function ApplicationSettingsTab() {
                             onChange={(e) => handleColorChange('table_footer_background', e.target.value)}
                             onBlur={(e) => handleSavePropertySettings('themeTableFooterBackground', e.target.value)} className="p-1 h-10"/>
                       </div>
-                  </div>
-              </div>
-              <div className="space-y-4 mt-6">
-                  <Label className="font-medium">Mobile Navigation Colors</Label>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                        <div className="space-y-2">
-                          <Label htmlFor="theme_mobile_nav_background">Background</Label>
+                          <Label htmlFor="theme_mobile_nav_background">Mobile Nav Bg</Label>
                           <Input id="theme_mobile_nav_background" name="theme_mobile_nav_background" type="color" 
                             value={settings.theme.colors.mobile_nav_background}
                             onChange={(e) => handleColorChange('mobile_nav_background', e.target.value)}
                             onBlur={(e) => handleSavePropertySettings('themeMobileNavBackground', e.target.value)} className="p-1 h-10"/>
                       </div>
                        <div className="space-y-2">
-                          <Label htmlFor="theme_mobile_nav_foreground">Text/Icon</Label>
+                          <Label htmlFor="theme_mobile_nav_foreground">Mobile Nav Text</Label>
                           <Input id="theme_mobile_nav_foreground" name="theme_mobile_nav_foreground" type="color" 
                             value={settings.theme.colors.mobile_nav_foreground}
                             onChange={(e) => handleColorChange('mobile_nav_foreground', e.target.value)}
                             onBlur={(e) => handleSavePropertySettings('themeMobileNavForeground', e.target.value)} className="p-1 h-10"/>
+                      </div>
+                  </div>
+              </div>
+              
+               <Separator className="my-6" />
+              <div className="space-y-4">
+                  <h3 className="text-lg font-semibold flex items-center gap-2"><Moon className="h-5 w-5"/>Dark Theme Colors</h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                      <div className="space-y-2">
+                          <Label htmlFor="theme_primary_dark">Primary</Label>
+                          <Input id="theme_primary_dark" name="theme_primary_dark" type="color" 
+                            value={settings.theme.darkColors.primary}
+                            onChange={(e) => handleDarkColorChange('primary', e.target.value)}
+                            onBlur={(e) => handleSavePropertySettings('themePrimaryDark', e.target.value)} className="p-1 h-10"/>
+                      </div>
+                      <div className="space-y-2">
+                          <Label htmlFor="theme_table_header_background_dark">Table Header</Label>
+                          <Input id="theme_table_header_background_dark" name="theme_table_header_background_dark" type="color" 
+                            value={settings.theme.darkColors.table_header_background}
+                            onChange={(e) => handleDarkColorChange('table_header_background', e.target.value)}
+                            onBlur={(e) => handleSavePropertySettings('themeTableHeaderBackgroundDark', e.target.value)} className="p-1 h-10"/>
+                      </div>
+                      <div className="space-y-2">
+                          <Label htmlFor="theme_table_header_foreground_dark">Table Header Text</Label>
+                          <Input id="theme_table_header_foreground_dark" name="theme_table_header_foreground_dark" type="color" 
+                            value={settings.theme.darkColors.table_header_foreground}
+                            onChange={(e) => handleDarkColorChange('table_header_foreground', e.target.value)}
+                            onBlur={(e) => handleSavePropertySettings('themeTableHeaderForegroundDark', e.target.value)} className="p-1 h-10"/>
+                      </div>
+                      <div className="space-y-2">
+                          <Label htmlFor="theme_table_footer_background_dark">Table Footer</Label>
+                          <Input id="theme_table_footer_background_dark" name="theme_table_footer_background_dark" type="color" 
+                            value={settings.theme.darkColors.table_footer_background}
+                            onChange={(e) => handleDarkColorChange('table_footer_background', e.target.value)}
+                            onBlur={(e) => handleSavePropertySettings('themeTableFooterBackgroundDark', e.target.value)} className="p-1 h-10"/>
+                      </div>
+                       <div className="space-y-2">
+                          <Label htmlFor="theme_mobile_nav_background_dark">Mobile Nav Bg</Label>
+                          <Input id="theme_mobile_nav_background_dark" name="theme_mobile_nav_background_dark" type="color" 
+                            value={settings.theme.darkColors.mobile_nav_background}
+                            onChange={(e) => handleDarkColorChange('mobile_nav_background', e.target.value)}
+                            onBlur={(e) => handleSavePropertySettings('themeMobileNavBackgroundDark', e.target.value)} className="p-1 h-10"/>
+                      </div>
+                       <div className="space-y-2">
+                          <Label htmlFor="theme_mobile_nav_foreground_dark">Mobile Nav Text</Label>
+                          <Input id="theme_mobile_nav_foreground_dark" name="theme_mobile_nav_foreground_dark" type="color" 
+                            value={settings.theme.darkColors.mobile_nav_foreground}
+                            onChange={(e) => handleDarkColorChange('mobile_nav_foreground', e.target.value)}
+                            onBlur={(e) => handleSavePropertySettings('themeMobileNavForegroundDark', e.target.value)} className="p-1 h-10"/>
                       </div>
                   </div>
               </div>

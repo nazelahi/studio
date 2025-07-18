@@ -49,7 +49,10 @@ export async function updatePropertySettingsAction(formData: FormData) {
     // Handle simple text/value fields from FormData
     for (const [key, value] of formData.entries()) {
         if (!fileKeys.includes(key) && !arrayKeys.includes(key) && key !== 'whatsapp_reminders_enabled') {
-            settingsData[key] = value;
+             // Only set the value if it's not an empty string, unless it's a color field
+            if (value !== '' || key.includes('theme')) {
+                settingsData[key] = value;
+            }
         }
     }
     

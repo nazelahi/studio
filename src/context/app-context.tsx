@@ -5,11 +5,12 @@ import React, { createContext, useContext, useState, ReactNode, useEffect, useCa
 import type { Tenant, Expense, RentEntry, PropertySettings as DbPropertySettings, Deposit, ZakatTransaction, Notice, WorkDetail, ZakatBankDetail, ToastFn, Document, TabNames } from '@/types';
 import { parseISO, getMonth, getYear, subMonths, format } from 'date-fns';
 import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/context/auth-context';
+import { useAuth } from './auth-context';
 import { Button } from '@/components/ui/button';
 import { addWorkDetailsBatch as addWorkDetailsBatchAction } from '@/app/actions/work';
 import type { AppData } from '@/lib/data';
 import { getDashboardDataAction } from '@/app/actions/data';
+import { getSettingsData } from '@/lib/data';
 
 // --- START: Settings-related types moved here ---
 interface PageDashboard {
@@ -42,15 +43,27 @@ interface PageSettings {
     };
 }
 
+interface ColorSet {
+    primary: string;
+    table_header_background: string;
+    table_header_foreground: string;
+    table_footer_background: string;
+    mobile_nav_background: string;
+    mobile_nav_foreground: string;
+}
+
+interface DarkColorSet {
+    primary: string;
+    table_header_background: string;
+    table_header_foreground: string;
+    table_footer_background: string;
+    mobile_nav_background: string;
+    mobile_nav_foreground: string;
+}
+
 interface AppTheme {
-    colors: {
-        primary: string;
-        table_header_background: string;
-        table_header_foreground: string;
-        table_footer_background: string;
-        mobile_nav_background: string;
-        mobile_nav_foreground: string;
-    };
+    colors: ColorSet;
+    darkColors: DarkColorSet;
 }
 
 export interface AppSettings {
@@ -176,6 +189,14 @@ const defaultSettings: AppSettings = {
             table_footer_background: '#84cc16', // lime-500
             mobile_nav_background: '#008080',
             mobile_nav_foreground: '#ffffff',
+        },
+         darkColors: {
+            primary: '#2dd4bf', // teal-400
+            table_header_background: '#2dd4bf',
+            table_header_foreground: '#000000',
+            table_footer_background: '#a3e635', // lime-400
+            mobile_nav_background: '#0d9488', // teal-600
+            mobile_nav_foreground: '#ffffff',
         }
     },
     page_dashboard: {
@@ -275,15 +296,21 @@ const getInitialSettings = (serverSettings: DbPropertySettings | null, zakatDeta
             whatsappReminderTemplate: serverSettings.whatsapp_reminder_template || defaultSettings.whatsappReminderTemplate,
             zakatBankDetails: zakatDetails || [],
             theme: {
-                ...defaultSettings.theme,
                 colors: {
-                    ...defaultSettings.theme.colors,
                     primary: serverSettings.theme_primary || defaultSettings.theme.colors.primary,
                     table_header_background: serverSettings.theme_table_header_background || defaultSettings.theme.colors.table_header_background,
                     table_header_foreground: serverSettings.theme_table_header_foreground || defaultSettings.theme.colors.table_header_foreground,
                     table_footer_background: serverSettings.theme_table_footer_background || defaultSettings.theme.colors.table_footer_background,
                     mobile_nav_background: serverSettings.theme_mobile_nav_background || defaultSettings.theme.colors.mobile_nav_background,
                     mobile_nav_foreground: serverSettings.theme_mobile_nav_foreground || defaultSettings.theme.colors.mobile_nav_foreground,
+                },
+                 darkColors: {
+                    primary: serverSettings.theme_primary_dark || defaultSettings.theme.darkColors.primary,
+                    table_header_background: serverSettings.theme_table_header_background_dark || defaultSettings.theme.darkColors.table_header_background,
+                    table_header_foreground: serverSettings.theme_table_header_foreground_dark || defaultSettings.theme.darkColors.table_header_foreground,
+                    table_footer_background: serverSettings.theme_table_footer_background_dark || defaultSettings.theme.darkColors.table_footer_background,
+                    mobile_nav_background: serverSettings.theme_mobile_nav_background_dark || defaultSettings.theme.darkColors.mobile_nav_background,
+                    mobile_nav_foreground: serverSettings.theme_mobile_nav_foreground_dark || defaultSettings.theme.darkColors.mobile_nav_foreground,
                 }
             }
          }
