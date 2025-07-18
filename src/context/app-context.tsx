@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
@@ -8,6 +9,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from './auth-context';
 import { Button } from '@/components/ui/button';
 import { addWorkDetailsBatch as addWorkDetailsBatchAction } from '@/app/actions/work';
+import { addExpensesBatch as addExpensesBatchAction } from '@/app/actions/expenses';
 import type { AppData } from '@/lib/data';
 import { getDashboardDataAction } from '@/app/actions/data';
 
@@ -114,7 +116,7 @@ type AppContextType = {
   updateTenant: (tenant: Tenant, toast: ToastFn, files?: File[]) => Promise<void>;
   deleteTenant: (tenantId: string, toast: ToastFn) => Promise<void>;
   addExpense: (expense: Omit<Expense, 'id' | 'deleted_at' | 'created_at'>, toast: ToastFn) => Promise<void>;
-  addExpensesBatch: (expenses: Omit<Expense, 'id' | 'deleted_at' | 'created_at'>[], toast: ToastFn) => Promise<void>;
+  addExpensesBatch: (expenses: Omit<Expense, 'id' | 'deleted_at' | 'created_at'>[], toast: ToastFn) => Promise<any>;
   updateExpense: (expense: Expense, toast: ToastFn) => Promise<void>;
   deleteExpense: (expenseId: string, toast: ToastFn) => Promise<void>;
   deleteMultipleExpenses: (expenseIds: string[], toast: ToastFn) => Promise<void>;
@@ -518,16 +520,12 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
     };
 
     const addExpensesBatch = async (expenses: Omit<Expense, 'id' | 'created_at' | 'deleted_at'>[], toast: ToastFn) => {
-      try {
-        if (!supabase || expenses.length === 0) return;
-        const { error } = await supabase.from('expenses').insert(expenses);
-        if (error) {
-            handleError(error, 'batch adding expenses', toast);
+        const result = await addExpensesBatchAction(expenses);
+        if (result.error) {
+            handleError(new Error(result.error), 'batch adding expenses', toast);
         }
         await refreshData(false);
-      } catch (error) {
-        handleError(error, 'batch adding expenses', toast);
-      }
+        return result;
     };
 
 
@@ -605,7 +603,7 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
                     join_date: new Date(year, month, 1).toISOString().split('T')[0],
                     avatar: 'https://placehold.co/80x80.png',
                     status: 'Active',
-                    email: `${rentEntryData.name.replace(/\s+/g, '.').toLowerCase()}@example.com`,
+                    email: rentEntryData.name ? `${rentEntryData.name.replace(/\s+/g, '.').toLowerCase()}@example.com` : 'tenant@example.com',
                 };
                 const { data: newTenant, error } = await supabase.from('tenants').insert(newTenantData).select().single();
                 if (error || !newTenant) {
@@ -664,7 +662,7 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
                         join_date: new Date(year, month, 1).toISOString().split('T')[0],
                         avatar: 'https://placehold.co/80x80.png',
                         status: 'Active' as const,
-                        email: `${rentEntryData.name.replace(/\s+/g, '.').toLowerCase()}@example.com`,
+                        email: rentEntryData.name ? `${rentEntryData.name.replace(/\s+/g, '.').toLowerCase()}@example.com` : 'tenant@example.com',
                     };
                     const { data: newTenant, error } = await supabase.from('tenants').insert(newTenantData).select().single();
                     if (error) {

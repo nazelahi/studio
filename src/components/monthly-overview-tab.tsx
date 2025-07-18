@@ -36,6 +36,7 @@ import { useProtection } from "@/context/protection-context"
 import { Separator } from "./ui/separator"
 import { formatCurrency, formatDate } from "@/lib/utils"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "./ui/dropdown-menu"
+import { saveExpenseAction, deleteExpenseAction, addExpensesBatch } from "@/app/actions/expenses"
 
 type HistoricalTenant = {
     id: string;
@@ -220,6 +221,7 @@ export function MonthlyOverviewTab() {
 
   const formRef = React.useRef<HTMLFormElement>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const expenseFileInputRef = React.useRef<HTMLInputElement>(null);
   const receiptInputRef = React.useRef<HTMLInputElement>(null);
 
 
@@ -467,6 +469,7 @@ export function MonthlyOverviewTab() {
         : expenseCategory;
 
     const expenseData = {
+      id: editingExpense?.id,
       date: formData.get('date') as string,
       category: finalCategory,
       amount: Number(formData.get('amount')),
@@ -474,18 +477,17 @@ export function MonthlyOverviewTab() {
       status: formData.get('status') as "Paid" | "Due",
     };
 
-    if (editingExpense) {
-      await updateExpense({ ...editingExpense, ...expenseData } as any, toast);
-      toast({ title: "Expense Updated", description: "The expense has been successfully updated." });
+    const result = await saveExpenseAction(formData);
+    if (result.error) {
+        toast({ title: "Error saving expense", description: result.error, variant: 'destructive' });
     } else {
-      await addExpense(expenseData as any, toast);
-      toast({ title: "Expense Added", description: "The new expense has been successfully added." });
+        toast({ title: "Expense Saved", description: "The expense has been successfully saved." });
+        setIsExpenseDialogOpen(false);
+        setEditingExpense(null);
+        setExpenseCategory('');
+        setCustomCategory('');
+        refreshData();
     }
-
-    setIsExpenseDialogOpen(false);
-    setEditingExpense(null);
-    setExpenseCategory('');
-    setCustomCategory('');
   };
   
   const handleEditExpense = (expense: Expense, e: React.MouseEvent) => {
@@ -504,7 +506,17 @@ export function MonthlyOverviewTab() {
   };
   
   const handleDeleteExpense = (expense: Expense) => {
-    deleteExpense(expense.id, toast);
+    const formData = new FormData();
+    formData.append('expenseId', expense.id);
+    withProtection(async () => {
+        const result = await deleteExpenseAction(formData);
+        if (result.error) {
+            toast({ title: 'Error deleting expense', description: result.error, variant: 'destructive' });
+        } else {
+            toast({ title: 'Expense Deleted', description: 'The expense has been deleted.' });
+            refreshData();
+        }
+    });
   };
   
   const handleExpenseOpenChange = (isOpen: boolean) => {
@@ -629,7 +641,110 @@ export function MonthlyOverviewTab() {
         XLSX.writeFile(workbook, "RentRoll_Template.xlsx");
         toast({ title: "Template Downloaded", description: "RentRoll_Template.xlsx has been downloaded." });
     };
+    
+    const handleDownloadExpenseTemplate = () => {
+        const headers = ["date", "category", "amount", "description", "status"];
+        const sampleData = [
+            [formatDate(new Date().toISOString(), 'yyyy-MM-dd'), "Repairs", 2500, "Fix leaky pipe in Apt 101", "Paid"],
+            [formatDate(new Date().toISOString(), 'yyyy-MM-dd'), "Utilities", 15000, "Monthly electricity bill", "Due"]
+        ];
+        const worksheet = XLSX.utils.aoa_to_sheet([headers, ...sampleData]);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "Expenses Template");
+        XLSX.writeFile(workbook, "Expenses_Template.xlsx");
+        toast({ title: "Template Downloaded", description: "Expenses_Template.xlsx has been downloaded." });
+    };
   
+  const handleImportExpenseClick = () => {
+    expenseFileInputRef.current?.click();
+  };
+  
+  const handleExpenseFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    toast({ title: "Processing file...", description: "Please wait while we read your spreadsheet." });
+    
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+        try {
+            const data = e.target?.result;
+            const workbook = XLSX.read(data, { type: 'array' });
+            const sheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[sheetName];
+
+            const json: any[] = XLSX.utils.sheet_to_json(worksheet, {
+                header: 1,
+                blankrows: false,
+                defval: '',
+            });
+
+            if (json.length < 2) {
+                toast({ title: "Empty or invalid sheet", description: "The sheet must have a header row and at least one data row.", variant: "destructive" });
+                return;
+            }
+
+            const header: string[] = json[0].map((h: any) => String(h).toLowerCase().trim().replace(/ /g, '_'));
+            const rows = json.slice(1);
+
+            const expensesToCreate = rows.map(rowArray => {
+                const row: { [key: string]: any } = {};
+                header.forEach((h, i) => { row[h] = rowArray[i]; });
+                
+                const validStatuses = ["paid", "due"];
+                const statusInput = String(row.status || 'Due').toLowerCase();
+                const status = validStatuses.find(s => s === statusInput)
+                    ? statusInput.charAt(0).toUpperCase() + statusInput.slice(1) as Expense['status']
+                    : 'Due';
+                
+                let expenseDate: string | null = null;
+                const dateInput = row.date;
+                 if (dateInput) {
+                    if (typeof dateInput === 'number') {
+                        const excelDate = new Date(Date.UTC(1900, 0, dateInput - 1));
+                        expenseDate = formatDate(excelDate.toISOString(), 'yyyy-MM-dd');
+                    } else {
+                        const parsed = new Date(dateInput);
+                        if (!isNaN(parsed.getTime())) {
+                            expenseDate = formatDate(parsed.toISOString(), 'yyyy-MM-dd');
+                        }
+                    }
+                } else {
+                    expenseDate = formatDate(new Date().toISOString(), 'yyyy-MM-dd');
+                }
+
+                return {
+                    date: expenseDate,
+                    category: String(row.category || 'Other'),
+                    amount: Number(row.amount) || 0,
+                    description: String(row.description || ''),
+                    status: status,
+                };
+            }).filter(item => item.category && item.amount > 0);
+            
+             if (expensesToCreate.length === 0) {
+                toast({ title: "No Valid Data Found", description: "Ensure your file has 'category' and 'amount' columns.", variant: "destructive" });
+                return;
+            }
+
+            const result = await addExpensesBatch(expensesToCreate);
+             if (result?.error) {
+                toast({ title: "Import Failed", description: result.error, variant: "destructive" });
+             } else {
+                toast({ title: "Import Successful", description: `${expensesToCreate.length} expenses have been added.` });
+                refreshData();
+             }
+
+        } catch (error) {
+             console.error("Error importing file:", error);
+             toast({ title: "Import Failed", description: "There was an error processing your file.", variant: "destructive" });
+        } finally {
+             if (event.target) event.target.value = '';
+        }
+    };
+    reader.readAsArrayBuffer(file);
+  };
+    
     const handleReceiptFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
@@ -1187,6 +1302,7 @@ export function MonthlyOverviewTab() {
                                         <DialogDescription>Fill in the form below to {editingExpense ? 'update the' : 'add a new'} expense.</DialogDescription>
                                     </DialogHeader>
                                     <form onSubmit={handleSaveExpense} className="grid gap-4 py-4">
+                                        {editingExpense && <input type="hidden" name="expenseId" value={editingExpense.id} />}
                                         <div className="space-y-2"><Label htmlFor="date">Date</Label><Input id="date" name="date" type="date" defaultValue={editingExpense?.date ? formatDate(editingExpense.date, 'yyyy-MM-dd') : formatDate(new Date().toISOString(), 'yyyy-MM-dd')} required /></div>
                                         <div className="space-y-2">
                                             <Label htmlFor="category">Category</Label>
@@ -1212,6 +1328,11 @@ export function MonthlyOverviewTab() {
                                         <span className="sr-only">Sync expenses</span>
                                     </Button>
                                 </TooltipTrigger><TooltipContent>Sync from Previous Month</TooltipContent></Tooltip>
+                        </div>
+                        <div className="hidden sm:flex items-center gap-2">
+                            <Tooltip><TooltipTrigger asChild><Button size="icon" variant="outline" onClick={handleDownloadExpenseTemplate}><Download className="h-4 w-4" /><span className="sr-only">Download Template</span></Button></TooltipTrigger><TooltipContent>Download Template</TooltipContent></Tooltip>
+                            <Tooltip><TooltipTrigger asChild><Button size="icon" variant="outline" onClick={handleImportExpenseClick}><Upload className="h-4 w-4" /><span className="sr-only">Import from file</span></Button></TooltipTrigger><TooltipContent>Import</TooltipContent></Tooltip>
+                            <input type="file" ref={expenseFileInputRef} className="hidden" accept=".xlsx, .csv" onChange={handleExpenseFileChange}/>
                         </div>
                       </div>
                     }
