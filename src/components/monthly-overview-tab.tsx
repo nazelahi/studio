@@ -214,6 +214,9 @@ export function MonthlyOverviewTab() {
   const [navigatingToReceiptId, setNavigatingToReceiptId] = React.useState<string | null>(null);
   const [isNavigating, startNavigation] = React.useTransition();
 
+  const [showAllRent, setShowAllRent] = React.useState(false);
+  const [showAllExpenses, setShowAllExpenses] = React.useState(false);
+
 
   const formRef = React.useRef<HTMLFormElement>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -259,6 +262,8 @@ export function MonthlyOverviewTab() {
   React.useEffect(() => {
     setSelectedRentEntryIds([]);
     setSelectedExpenseIds([]);
+    setShowAllRent(false);
+    setShowAllExpenses(false);
   }, [selectedMonth, selectedYear]);
 
   const totalRentCollected = filteredTenantsForMonth
@@ -982,7 +987,7 @@ export function MonthlyOverviewTab() {
                           </TableHeader>
                           <TableBody>
                             {filteredTenantsForMonth.length > 0 ? (
-                              filteredTenantsForMonth.map((entry) => (
+                              filteredTenantsForMonth.slice(0, showAllRent ? filteredTenantsForMonth.length : 10).map((entry) => (
                                 <TableRow key={entry.id} className="odd:bg-muted/50" data-state={isAdmin && selectedRentEntryIds.includes(entry.id) ? "selected" : undefined}>
                                   {isAdmin && <TableCell>
                                       <Checkbox
@@ -1125,6 +1130,13 @@ export function MonthlyOverviewTab() {
                           )}
                         </Table>
                       </div>
+                      {filteredTenantsForMonth.length > 10 && (
+                        <div className="p-4 border-t text-center">
+                          <Button variant="link" onClick={() => setShowAllRent(!showAllRent)}>
+                            {showAllRent ? "Show Less" : `View All ${filteredTenantsForMonth.length} Entries`}
+                          </Button>
+                        </div>
+                      )}
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -1178,7 +1190,12 @@ export function MonthlyOverviewTab() {
                                         <div className="space-y-2"><Label htmlFor="date">Date</Label><Input id="date" name="date" type="date" defaultValue={editingExpense?.date ? formatDate(editingExpense.date, 'yyyy-MM-dd') : formatDate(new Date().toISOString(), 'yyyy-MM-dd')} required /></div>
                                         <div className="space-y-2">
                                             <Label htmlFor="category">Category</Label>
-                                            <Select value={expenseCategory} onValueChange={setExpenseCategory}><SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger><SelectContent>{expenseCategories.map(cat => (<SelectItem key={cat} value={cat}>{cat}</SelectItem>))}</SelectContent></Select>
+                                            <Select value={expenseCategory} onValueChange={setExpenseCategory}>
+                                                <SelectTrigger><SelectValue placeholder="Select a category" /></SelectTrigger>
+                                                <SelectContent>
+                                                    {expenseCategories.map(cat => (<SelectItem key={cat} value={cat}>{cat}</SelectItem>))}
+                                                </SelectContent>
+                                            </Select>
                                         </div>
                                         {expenseCategory === 'Other' && (<div className="space-y-2"><Label htmlFor="customCategory">Custom Category</Label><Input id="customCategory" name="customCategory" value={customCategory} onChange={(e) => setCustomCategory(e.target.value)} placeholder="Enter custom category" required/></div>)}
                                         <div className="space-y-2"><Label htmlFor="amount">Amount</Label><Input id="amount" name="amount" type="number" step="0.01" defaultValue={String(editingExpense?.amount ?? '')} placeholder="0.00" required /></div>
@@ -1224,7 +1241,7 @@ export function MonthlyOverviewTab() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {filteredExpenses.map((expense) => (
+                        {filteredExpenses.slice(0, showAllExpenses ? filteredExpenses.length : 10).map((expense) => (
                             <TableRow key={expense.id} className="odd:bg-muted/50" data-state={isAdmin && selectedExpenseIds.includes(expense.id) ? "selected" : undefined}>
                               {isAdmin && <TableCell>
                                 <Checkbox
@@ -1348,6 +1365,13 @@ export function MonthlyOverviewTab() {
                       )}
                     </Table>
                     </div>
+                    {filteredExpenses.length > 10 && (
+                      <div className="p-4 border-t text-center">
+                        <Button variant="link" onClick={() => setShowAllExpenses(!showAllExpenses)}>
+                          {showAllExpenses ? "Show Less" : `View All ${filteredExpenses.length} Entries`}
+                        </Button>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>

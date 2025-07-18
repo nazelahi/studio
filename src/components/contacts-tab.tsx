@@ -132,6 +132,7 @@ export function ContactsTab() {
   const [selectedTenantForSheet, setSelectedTenantForSheet] = React.useState<Tenant | null>(null);
 
   const [searchTerm, setSearchTerm] = React.useState("");
+  const [showAll, setShowAll] = React.useState(false);
 
   React.useEffect(() => {
     if (editingTenant) {
@@ -722,7 +723,7 @@ export function ContactsTab() {
                 <div className="overflow-x-auto">
                     <Table>
                         <TableHeader>
-                            <TableRow style={{ backgroundColor: 'hsl(var(--table-header-background))', color: 'hsl(var(--table-header-foreground))' }} className="hover:bg-[hsl(var(--table-header-background)/0.9)]">
+                            <TableRow>
                                 <TableHead className="w-[300px] p-2 text-inherit">Tenant</TableHead>
                                 <TableHead className="p-2 text-inherit">Details</TableHead>
                                 <TableHead className="p-2 text-inherit">Status</TableHead>
@@ -730,7 +731,7 @@ export function ContactsTab() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {filteredTenants.map(tenant => (
+                            {filteredTenants.slice(0, showAll ? filteredTenants.length : 10).map(tenant => (
                                 <TableRow key={tenant.id} className="odd:bg-muted/50">
                                     <TableCell className="p-2">
                                         <div className="flex items-center gap-3">
@@ -805,6 +806,13 @@ export function ContactsTab() {
                             ))}
                         </TableBody>
                     </Table>
+                     {filteredTenants.length > 10 && (
+                        <div className="p-4 border-t text-center">
+                            <Button variant="link" onClick={() => setShowAll(!showAll)}>
+                                {showAll ? 'Show Less' : `View All ${filteredTenants.length} Tenants`}
+                            </Button>
+                        </div>
+                    )}
                 </div>
             )}
         </CardContent>

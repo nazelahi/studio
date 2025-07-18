@@ -46,6 +46,7 @@ export function TenantDetailSheet({
   const { rentData, settings } = useAppContext();
   const sheetContentRef = React.useRef<HTMLDivElement>(null);
   const idCardRef = React.useRef<HTMLDivElement>(null);
+  const [showAllHistory, setShowAllHistory] = React.useState(false);
   
   const tenantPaymentHistory = React.useMemo(() => {
     if (!tenant) return [];
@@ -297,9 +298,9 @@ export function TenantDetailSheet({
                 <CardHeader>
                     <CardTitle className="text-base">Payment History</CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="p-0">
                      {tenantPaymentHistory.length > 0 ? (
-                        <div className="max-h-60 overflow-y-auto">
+                        <>
                             <Table>
                                 <TableHeader>
                                     <TableRow>
@@ -309,7 +310,7 @@ export function TenantDetailSheet({
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {tenantPaymentHistory.map(entry => (
+                                    {tenantPaymentHistory.slice(0, showAllHistory ? tenantPaymentHistory.length : 10).map(entry => (
                                         <TableRow key={entry.id} className="odd:bg-muted/50">
                                             <TableCell className="font-medium">{formatDateLib(new Date(entry.year, entry.month), 'MMMM yyyy')}</TableCell>
                                             <TableCell>
@@ -320,7 +321,14 @@ export function TenantDetailSheet({
                                     ))}
                                 </TableBody>
                             </Table>
-                        </div>
+                             {tenantPaymentHistory.length > 10 && (
+                                <div className="p-4 border-t text-center">
+                                    <Button variant="link" onClick={() => setShowAllHistory(!showAllHistory)}>
+                                        {showAllHistory ? "Show Less" : `View All ${tenantPaymentHistory.length} Records`}
+                                    </Button>
+                                </div>
+                            )}
+                        </>
                      ) : (
                         <p className="text-sm text-muted-foreground text-center py-4">No payment history available.</p>
                      )}

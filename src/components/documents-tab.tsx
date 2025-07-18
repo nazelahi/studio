@@ -54,6 +54,8 @@ export function DocumentsTab() {
   
   const [category, setCategory] = React.useState('');
   const [customCategory, setCustomCategory] = React.useState('');
+  const [showAll, setShowAll] = React.useState(false);
+
   
   React.useEffect(() => {
     const categories = settings.documentCategories || [];
@@ -302,27 +304,36 @@ export function DocumentsTab() {
     </TableRow>
   );
 
-  const DocumentTable = ({ docs }: { docs: DocType[] }) => (
-    <Table>
-        <TableHeader>
-            <TableRow style={{ backgroundColor: 'hsl(var(--table-header-background))', color: 'hsl(var(--table-header-foreground))' }} className="hover:bg-[hsl(var(--table-header-background)/0.9)]">
-                <TableHead className="w-16 p-2 text-inherit">Preview</TableHead>
-                <TableHead className="text-inherit">Description</TableHead>
-                <TableHead className="hidden md:table-cell text-inherit">Date</TableHead>
-                <TableHead className="text-inherit">Category</TableHead>
-                <TableHead className="text-right text-inherit w-12"></TableHead>
-            </TableRow>
-        </TableHeader>
-        <TableBody>
-            {docs.length > 0 ? (
-                docs.map((doc, index) => <DocumentRow key={`${doc.id}-${doc.file_url}-${index}`} doc={doc} />)
-            ) : (
-                <TableRow>
-                    <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">No documents found.</TableCell>
-                </TableRow>
-            )}
-        </TableBody>
-    </Table>
+  const DocumentTable = ({ docs, showAll, onToggleShowAll }: { docs: DocType[], showAll: boolean, onToggleShowAll: () => void }) => (
+    <>
+      <Table>
+          <TableHeader>
+              <TableRow>
+                  <TableHead className="w-16 p-2 text-inherit">Preview</TableHead>
+                  <TableHead className="text-inherit">Description</TableHead>
+                  <TableHead className="hidden md:table-cell text-inherit">Date</TableHead>
+                  <TableHead className="text-inherit">Category</TableHead>
+                  <TableHead className="text-right text-inherit w-12"></TableHead>
+              </TableRow>
+          </TableHeader>
+          <TableBody>
+              {docs.length > 0 ? (
+                  docs.slice(0, showAll ? docs.length : 10).map((doc, index) => <DocumentRow key={`${doc.id}-${doc.file_url}-${index}`} doc={doc} />)
+              ) : (
+                  <TableRow>
+                      <TableCell colSpan={5} className="text-center h-24 text-muted-foreground">No documents found.</TableCell>
+                  </TableRow>
+              )}
+          </TableBody>
+      </Table>
+      {docs.length > 10 && (
+          <div className="p-4 border-t text-center">
+              <Button variant="link" onClick={onToggleShowAll}>
+                  {showAll ? "Show Less" : `View All ${docs.length} Documents`}
+              </Button>
+          </div>
+      )}
+    </>
   );
 
 
@@ -357,6 +368,7 @@ export function DocumentsTab() {
                                             {(settings.documentCategories || []).map(cat => (
                                                 <SelectItem key={cat} value={cat}>{cat}</SelectItem>
                                             ))}
+                                            <SelectItem value="Other">Other</SelectItem>
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -471,12 +483,12 @@ export function DocumentsTab() {
                   </TabsList>
                   
                   <TabsContent value="all" className="mt-0">
-                    <DocumentTable docs={allDocuments} />
+                    <DocumentTable docs={allDocuments} showAll={showAll} onToggleShowAll={() => setShowAll(!showAll)} />
                   </TabsContent>
 
                   {documentCategories.map(category => (
                     <TabsContent key={category} value={category} className="mt-0">
-                       <DocumentTable docs={allDocuments.filter(d => d.category === category)} />
+                       <DocumentTable docs={allDocuments.filter(d => d.category === category)} showAll={showAll} onToggleShowAll={() => setShowAll(!showAll)} />
                     </TabsContent>
                   ))}
 
@@ -504,7 +516,7 @@ export function DocumentsTab() {
                                         <DialogTitle>Documents for {tenant.name}</DialogTitle>
                                     </DialogHeader>
                                     <div className="max-h-[60vh] overflow-y-auto pr-4 -mr-4">
-                                      <DocumentTable docs={tenant.docs} />
+                                      <DocumentTable docs={tenant.docs} showAll={true} onToggleShowAll={() => {}} />
                                     </div>
                                     <DialogFooter>
                                         <DialogClose asChild>

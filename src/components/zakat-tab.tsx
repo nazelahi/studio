@@ -39,7 +39,6 @@ export function ZakatTab() {
   const [editingBankDetail, setEditingBankDetail] = React.useState<ZakatBankDetail | null>(null);
   const [isBankDetailPending, startBankDetailTransition] = React.useTransition();
 
-
   const [receiptPreview, setReceiptPreview] = React.useState<string | null>(null);
   const [receiptFile, setReceiptFile] = React.useState<File | null>(null);
   const receiptInputRef = React.useRef<HTMLInputElement>(null);
@@ -47,6 +46,9 @@ export function ZakatTab() {
   const [logoPreview, setLogoPreview] = React.useState<string | null>(null);
   const [logoFile, setLogoFile] = React.useState<File | null>(null);
   const logoInputRef = React.useRef<HTMLInputElement>(null);
+
+  const [showAllInflow, setShowAllInflow] = React.useState(false);
+  const [showAllOutflow, setShowAllOutflow] = React.useState(false);
 
   const handleTxOpenChange = (isOpen: boolean) => {
     if (!isOpen) {
@@ -189,101 +191,110 @@ export function ZakatTab() {
     )
   }
 
-  const TransactionTable = ({ transactions, type }: { transactions: ZakatTransaction[], type: 'inflow' | 'outflow' }) => {
+  const TransactionTable = ({ transactions, type, showAll, onToggleShowAll }: { transactions: ZakatTransaction[], type: 'inflow' | 'outflow', showAll: boolean, onToggleShowAll: () => void }) => {
     const totalAmount = transactions.reduce((acc, tx) => acc + tx.amount, 0);
 
     return (
-     <Table>
-        <TableHeader>
-          <TableRow style={{ backgroundColor: 'hsl(var(--table-header-background))', color: 'hsl(var(--table-header-foreground))' }} className="hover:bg-[hsl(var(--table-header-background)/0.9)]">
-            <TableHead className="text-inherit">Date</TableHead>
-            <TableHead className="text-inherit">{type === 'inflow' ? 'Source' : 'Recipient'}</TableHead>
-            <TableHead className="hidden sm:table-cell text-inherit">Description</TableHead>
-            <TableHead className="text-right text-inherit">Amount</TableHead>
-            <TableHead className="text-right text-inherit w-12"></TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {transactions.length > 0 ? (
-            transactions.map(tx => (
-              <TableRow key={tx.id} className="odd:bg-muted/50">
-                <TableCell>{formatDate(tx.transaction_date, settings.dateFormat)}</TableCell>
-                <TableCell className="font-medium">{tx.source_or_recipient}</TableCell>
-                <TableCell className="text-muted-foreground hidden sm:table-cell">{tx.description || '-'}</TableCell>
-                <TableCell className={`text-right font-bold ${tx.type === 'inflow' ? 'text-green-600' : 'text-red-600'}`}>
-                  {formatCurrency(tx.amount, settings.currencySymbol)}
-                </TableCell>
-                <TableCell className="text-right">
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
-                                <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                            {tx.receipt_url && (
-                                <DropdownMenuItem asChild>
-                                <a href={tx.receipt_url} target="_blank" rel="noopener noreferrer">
-                                        <Eye className="mr-2 h-4 w-4" />
-                                        View Receipt
-                                    </a>
-                                </DropdownMenuItem>
-                            )}
-                            {isAdmin && (
-                                <>
-                                <DropdownMenuItem onClick={() => handleEditTx(tx)}>
-                                    <Edit className="mr-2 h-4 w-4" />
-                                    Edit
-                                </DropdownMenuItem>
-                                <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                        <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive">
-                                            <Trash2 className="mr-2 h-4 w-4" />
-                                            Delete
-                                        </DropdownMenuItem>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                        <AlertDialogHeader>
-                                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                            <AlertDialogDescription>This will permanently delete this Zakat transaction. This action cannot be undone.</AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                            <form onSubmit={(e) => { e.preventDefault(); const fd = new FormData(); fd.append('transactionId', tx.id); if(tx.receipt_url) fd.append('receiptUrl', tx.receipt_url); handleDeleteTx(fd); }}>
-                                                <AlertDialogAction type="submit" disabled={isTxPending}>Delete</AlertDialogAction>
-                                            </form>
-                                        </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                </AlertDialog>
-                                </>
-                            )}
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                </TableCell>
+     <>
+        <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="text-inherit">Date</TableHead>
+                <TableHead className="text-inherit">{type === 'inflow' ? 'Source' : 'Recipient'}</TableHead>
+                <TableHead className="hidden sm:table-cell text-inherit">Description</TableHead>
+                <TableHead className="text-right text-inherit">Amount</TableHead>
+                <TableHead className="text-right text-inherit w-12"></TableHead>
               </TableRow>
-            ))
-          ) : (
-            <TableRow>
-              <TableCell colSpan={5} className="text-center text-muted-foreground h-24">
-                No Zakat {type} transactions recorded.
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-        {transactions.length > 0 && (
-            <UiTableFooter>
-                <TableRow style={{ backgroundColor: 'hsl(var(--table-footer-background))', color: 'hsl(var(--table-footer-foreground))' }} className="font-bold hover:bg-[hsl(var(--table-footer-background)/0.9)]">
-                    <TableCell colSpan={5} className="text-inherit p-2">
-                        <div className="flex flex-col sm:flex-row items-center justify-between px-2">
-                          <div className="sm:hidden text-center text-inherit font-bold">Total</div>
-                          <div className="hidden sm:block text-left text-inherit font-bold">Total</div>
-                          <div className="text-inherit font-bold">{formatCurrency(totalAmount, settings.currencySymbol)}</div>
-                        </div>
+            </TableHeader>
+            <TableBody>
+              {transactions.length > 0 ? (
+                transactions.slice(0, showAll ? transactions.length : 10).map(tx => (
+                  <TableRow key={tx.id} className="odd:bg-muted/50">
+                    <TableCell>{formatDate(tx.transaction_date, settings.dateFormat)}</TableCell>
+                    <TableCell className="font-medium">{tx.source_or_recipient}</TableCell>
+                    <TableCell className="text-muted-foreground hidden sm:table-cell">{tx.description || '-'}</TableCell>
+                    <TableCell className={`text-right font-bold ${tx.type === 'inflow' ? 'text-green-600' : 'text-red-600'}`}>
+                      {formatCurrency(tx.amount, settings.currencySymbol)}
                     </TableCell>
+                    <TableCell className="text-right">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                {tx.receipt_url && (
+                                    <DropdownMenuItem asChild>
+                                    <a href={tx.receipt_url} target="_blank" rel="noopener noreferrer">
+                                            <Eye className="mr-2 h-4 w-4" />
+                                            View Receipt
+                                        </a>
+                                    </DropdownMenuItem>
+                                )}
+                                {isAdmin && (
+                                    <>
+                                    <DropdownMenuItem onClick={() => handleEditTx(tx)}>
+                                        <Edit className="mr-2 h-4 w-4" />
+                                        Edit
+                                    </DropdownMenuItem>
+                                    <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                            <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:text-destructive">
+                                                <Trash2 className="mr-2 h-4 w-4" />
+                                                Delete
+                                            </DropdownMenuItem>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                <AlertDialogDescription>This will permanently delete this Zakat transaction. This action cannot be undone.</AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                <form onSubmit={(e) => { e.preventDefault(); const fd = new FormData(); fd.append('transactionId', tx.id); if(tx.receipt_url) fd.append('receiptUrl', tx.receipt_url); handleDeleteTx(fd); }}>
+                                                    <AlertDialogAction type="submit" disabled={isTxPending}>Delete</AlertDialogAction>
+                                                </form>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
+                                    </>
+                                )}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center text-muted-foreground h-24">
+                    No Zakat {type} transactions recorded.
+                  </TableCell>
                 </TableRow>
-            </UiTableFooter>
-        )}
-      </Table>
+              )}
+            </TableBody>
+            {transactions.length > 0 && (
+                <UiTableFooter>
+                    <TableRow>
+                        <TableCell colSpan={5} className="p-2">
+                            <div className="flex flex-col sm:flex-row items-center justify-between px-2">
+                              <div className="sm:hidden text-center font-bold">Total</div>
+                              <div className="hidden sm:block text-left font-bold">Total</div>
+                              <div className="font-bold">{formatCurrency(totalAmount, settings.currencySymbol)}</div>
+                            </div>
+                        </TableCell>
+                    </TableRow>
+                </UiTableFooter>
+            )}
+          </Table>
+          {transactions.length > 10 && (
+              <div className="p-4 border-t text-center">
+                  <Button variant="link" onClick={onToggleShowAll}>
+                      {showAll ? "Show Less" : `View All ${transactions.length} Transactions`}
+                  </Button>
+              </div>
+          )}
+      </>
   );
 }
 
@@ -334,7 +345,7 @@ export function ZakatTab() {
                     {isAdmin && <Button onClick={() => handleAddTx('inflow')}><PlusCircle className="mr-2 h-4 w-4"/>Add Inflow</Button>}
                 </CardHeader>
                 <CardContent className="p-0">
-                    <TransactionTable transactions={inflowTransactions} type="inflow" />
+                    <TransactionTable transactions={inflowTransactions} type="inflow" showAll={showAllInflow} onToggleShowAll={() => setShowAllInflow(!showAllInflow)} />
                 </CardContent>
             </Card>
         </TabsContent>
@@ -348,7 +359,7 @@ export function ZakatTab() {
                     {isAdmin && <Button onClick={() => handleAddTx('outflow')}><PlusCircle className="mr-2 h-4 w-4"/>Add Outflow</Button>}
                 </CardHeader>
                 <CardContent className="p-0">
-                    <TransactionTable transactions={outflowTransactions} type="outflow" />
+                    <TransactionTable transactions={outflowTransactions} type="outflow" showAll={showAllOutflow} onToggleShowAll={() => setShowAllOutflow(!showAllOutflow)} />
                 </CardContent>
             </Card>
         </TabsContent>

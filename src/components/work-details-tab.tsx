@@ -119,6 +119,7 @@ export function WorkDetailsTab({ year }: { year: number }) {
 
   const [workCategory, setWorkCategory] = React.useState('');
   const [customWorkCategory, setCustomWorkCategory] = React.useState('');
+  const [showAll, setShowAll] = React.useState(false);
   
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   
@@ -458,7 +459,7 @@ export function WorkDetailsTab({ year }: { year: number }) {
       <CardContent className="p-0">
         <Table>
           <TableHeader>
-            <TableRow style={{ backgroundColor: 'hsl(var(--table-header-background))', color: 'hsl(var(--table-header-foreground))' }} className="hover:bg-[hsl(var(--table-header-background)/0.9)]">
+            <TableRow>
               <TableHead className="text-inherit">Work Item</TableHead>
               <TableHead className="text-inherit hidden sm:table-cell">Product Cost</TableHead>
               <TableHead className="text-inherit hidden sm:table-cell">Worker Cost</TableHead>
@@ -475,7 +476,7 @@ export function WorkDetailsTab({ year }: { year: number }) {
                     </TableRow>
                 ))
             ) : filteredWorkDetails.length > 0 ? (
-              filteredWorkDetails.map((work) => {
+              filteredWorkDetails.slice(0, showAll ? filteredWorkDetails.length : 10).map((work) => {
                 const totalCost = (work.product_cost || 0) + (work.worker_cost || 0);
                 const isCompleted = work.status === 'Completed';
                 return (
@@ -562,7 +563,7 @@ export function WorkDetailsTab({ year }: { year: number }) {
           </TableBody>
             {filteredWorkDetails.length > 0 && (
                 <TableFooter>
-                    <TableRow style={{ backgroundColor: 'hsl(var(--table-footer-background))', color: 'hsl(var(--table-footer-foreground))' }} className="font-bold hover:bg-[hsl(var(--table-footer-background)/0.9)]">
+                    <TableRow className="font-bold hover:bg-muted/50">
                         <TableCell colSpan={6} className="text-inherit p-2">
                            <div className="flex flex-col sm:flex-row items-center justify-between px-2">
                                 <div className="sm:hidden text-center text-inherit font-bold">Total for {year}</div>
@@ -574,6 +575,13 @@ export function WorkDetailsTab({ year }: { year: number }) {
                 </TableFooter>
             )}
         </Table>
+        {filteredWorkDetails.length > 10 && (
+            <div className="p-4 border-t text-center">
+                <Button variant="link" onClick={() => setShowAll(!showAll)}>
+                    {showAll ? "Show Less" : `View All ${filteredWorkDetails.length} Items`}
+                </Button>
+            </div>
+        )}
       </CardContent>
     </Card>
     </TooltipProvider>
