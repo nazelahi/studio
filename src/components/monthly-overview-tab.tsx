@@ -1236,8 +1236,8 @@ export function MonthlyOverviewTab() {
                     <div className="relative overflow-x-auto">
                     <Table>
                       <TableHeader>
-                        <TableRow>
-                          {isAdmin && <TableHead className="w-10">
+                        <TableRow style={{ backgroundColor: 'hsl(var(--table-header-background))', color: 'hsl(var(--table-header-foreground))' }} className="hover:bg-[hsl(var(--table-header-background)/0.9)]">
+                          {isAdmin && <TableHead className="w-10 text-inherit">
                             <Checkbox
                               checked={selectedExpenseIds.length > 0 && selectedExpenseIds.length === filteredExpenses.length}
                               onCheckedChange={(checked) => {
@@ -1249,11 +1249,11 @@ export function MonthlyOverviewTab() {
                               }}
                             />
                           </TableHead>}
-                          <TableHead>Details</TableHead>
-                          <TableHead className="hidden sm:table-cell">Category</TableHead>
-                          <TableHead>Amount</TableHead>
-                          <TableHead className="hidden sm:table-cell">Status</TableHead>
-                          <TableHead className="w-[50px] text-right"></TableHead>
+                          <TableHead className="text-inherit">Details</TableHead>
+                          <TableHead className="hidden sm:table-cell text-inherit">Category</TableHead>
+                          <TableHead className="text-inherit">Amount</TableHead>
+                          <TableHead className="hidden sm:table-cell text-inherit">Status</TableHead>
+                          <TableHead className="w-[50px] text-right text-inherit"></TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -1368,9 +1368,9 @@ export function MonthlyOverviewTab() {
                       </TableBody>
                       {filteredExpenses.length > 0 && (
                         <TableFooter>
-                          <TableRow>
-                            <TableCell colSpan={isAdmin ? 6 : 5} className="p-2">
-                               <div className="flex flex-col sm:flex-row items-center justify-between px-2 text-destructive font-bold bg-destructive/10 rounded-md py-2">
+                          <TableRow style={{ backgroundColor: 'hsl(var(--table-footer-background))', color: 'hsl(var(--table-footer-foreground))' }} className="font-bold hover:bg-[hsl(var(--table-footer-background)/0.9)]">
+                            <TableCell colSpan={isAdmin ? 6 : 5} className="p-2 text-inherit">
+                               <div className="flex flex-col sm:flex-row items-center justify-between px-2 text-destructive py-2">
                                 <div className="sm:hidden text-center">Total Paid</div>
                                 <div className="hidden sm:block text-left">Total Paid</div>
                                 <div>{formatCurrency(totalExpensesPaid, settings.currencySymbol)}</div>
