@@ -1331,6 +1331,11 @@ export function MonthlyOverviewTab() {
                                         <span className="sr-only">Sync expenses</span>
                                     </Button>
                                 </TooltipTrigger><TooltipContent>Sync from Previous Month</TooltipContent></Tooltip>
+                             <div className="hidden sm:flex items-center gap-2">
+                                <Tooltip><TooltipTrigger asChild><Button size="icon" variant="outline" onClick={handleDownloadExpenseTemplate}><Download className="h-4 w-4" /><span className="sr-only">Download Template</span></Button></TooltipTrigger><TooltipContent>Download Template</TooltipContent></Tooltip>
+                                <Tooltip><TooltipTrigger asChild><Button size="icon" variant="outline" onClick={handleImportExpenseClick}><Upload className="h-4 w-4" /><span className="sr-only">Import from file</span></Button></TooltipTrigger><TooltipContent>Import</TooltipContent></Tooltip>
+                                <input type="file" ref={expenseFileInputRef} className="hidden" accept=".xlsx, .csv" onChange={handleExpenseFileChange}/>
+                            </div>
                         </div>
                       </div>
                     }
