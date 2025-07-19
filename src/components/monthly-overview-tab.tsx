@@ -1085,10 +1085,8 @@ export function MonthlyOverviewTab() {
                                   />
                               </TableHead>}
                               <TableHead className="text-inherit">Tenant</TableHead>
-                              <TableHead className="hidden md:table-cell text-inherit">Payment For</TableHead>
-                              <TableHead className="hidden md:table-cell text-inherit">Collected By</TableHead>
-                              <TableHead className="hidden sm:table-cell text-inherit">Payment Date</TableHead>
-                              <TableHead className="hidden sm:table-cell text-inherit">Status</TableHead>
+                              <TableHead className="text-inherit">Payment Date</TableHead>
+                              <TableHead className="hidden md:table-cell text-inherit">Status</TableHead>
                               <TableHead className="text-inherit">Amount</TableHead>
                               <TableHead className="w-[50px] text-right text-inherit"></TableHead>
                             </TableRow>
@@ -1127,10 +1125,8 @@ export function MonthlyOverviewTab() {
                                       </div>
                                     </div>
                                   </TableCell>
-                                  <TableCell className="hidden md:table-cell">{months[entry.payment_for_month ?? entry.month]}</TableCell>
-                                  <TableCell className="hidden md:table-cell">{entry.collected_by || '-'}</TableCell>
-                                  <TableCell className="hidden sm:table-cell">{formatDate(entry.payment_date, settings.dateFormat)}</TableCell>
-                                  <TableCell className="hidden sm:table-cell">
+                                  <TableCell>{formatDate(entry.payment_date, settings.dateFormat)}</TableCell>
+                                  <TableCell className="hidden md:table-cell">
                                       {isAdmin && entry.status !== 'Paid' ? (
                                           <Select
                                               value={entry.status}
