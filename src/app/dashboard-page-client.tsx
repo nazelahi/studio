@@ -131,14 +131,16 @@ export default function DashboardPageClient() {
 
   const mobileNavLinks = (
      <>
-      <Link href="/" className={`hover:text-foreground ${pathname === '/' ? 'text-foreground' : 'text-muted-foreground'}`}>
+      <Link href="/" className={cn("flex items-center gap-4 hover:text-foreground", pathname === '/' ? 'text-foreground' : 'text-muted-foreground')}>
+        <Logo className="h-5 w-5"/>
         {settings.page_dashboard.nav_dashboard}
       </Link>
       {isAdmin && (
         <button
           onClick={handleNavigateToSettings}
-          className={`hover:text-foreground ${pathname === '/settings' ? 'text-foreground' : 'text-muted-foreground'}`}
+          className={cn("flex items-center gap-4 hover:text-foreground", pathname === '/settings' ? 'text-foreground' : 'text-muted-foreground')}
         >
+          <Settings className="h-5 w-5"/>
           {settings.page_dashboard.nav_settings}
         </button>
       )}
