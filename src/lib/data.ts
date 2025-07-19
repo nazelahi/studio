@@ -64,14 +64,12 @@ export async function getDashboardData(): Promise<AppData> {
         const checkError = (res: any, name: string) => {
             if (res.error) {
                  const errorCode = res.error?.code;
-                 // Ignore "No rows found" for single-item fetches and "undefined table" for optional tables.
                  if (errorCode && (errorCode === 'PGRST116' || errorCode === '42P01')) {
-                    // This is an expected case (e.g., no settings row found yet), so we don't throw.
                     return;
                  }
-                 // For all other errors, log and throw.
-                 console.error(`Error fetching ${name}:`, res.error);
-                 throw res.error;
+                 const errorToLog = res.error.message ? res.error : new Error(JSON.stringify(res.error));
+                 console.error(`Error fetching ${name}:`, errorToLog);
+                 throw errorToLog;
             }
         };
 
@@ -126,8 +124,9 @@ export async function getSettingsData(): Promise<{
                  if (errorCode && (errorCode === 'PGRST116' || errorCode === '42P01')) {
                     return;
                  }
-                 console.error(`Error fetching ${name}:`, res.error);
-                 throw res.error;
+                 const errorToLog = res.error.message ? res.error : new Error(JSON.stringify(res.error));
+                 console.error(`Error fetching ${name}:`, errorToLog);
+                 throw errorToLog;
             }
         };
 
