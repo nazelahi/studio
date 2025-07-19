@@ -12,7 +12,7 @@ import { addWorkDetailsBatch as addWorkDetailsBatchAction } from '@/app/actions/
 import { addExpensesBatch as addExpensesBatchAction, deleteExpenseAction, deleteMultipleExpensesAction } from '@/app/actions/expenses';
 import type { AppData } from '@/lib/data';
 import { getDashboardDataAction } from '@/app/actions/data';
-import { findOrCreateTenantAction } from '@/app/actions/tenants';
+import { findOrCreateTenantAction, updateTenantAction, deleteTenantAction } from '@/app/actions/tenants';
 import { addRentEntriesBatch as addRentEntriesBatchServerAction, deleteRentEntryAction, deleteMultipleRentEntriesAction } from '@/app/actions/rent';
 
 // --- START: Settings-related types moved here ---
@@ -114,9 +114,9 @@ type AppContextType = {
   documents: Document[];
   settings: AppSettings;
   setSettings: (newSettings: AppSettings | ((prev: AppSettings) => AppSettings)) => void;
-  addTenant: (tenant: Omit<Tenant, 'id' | 'deleted_at' | 'created_at'>, toast: ToastFn, files?: File[]) => Promise<void>;
-  updateTenant: (tenant: Tenant, toast: ToastFn, files?: File[]) => Promise<void>;
-  deleteTenant: (tenantId: string, toast: ToastFn) => Promise<void>;
+  addTenant: (formData: FormData, toast: ToastFn) => Promise<void>;
+  updateTenant: (formData: FormData, toast: ToastFn) => Promise<void>;
+  deleteTenant: (formData: FormData, toast: ToastFn) => Promise<void>;
   addExpense: (expense: Omit<Expense, 'id' | 'deleted_at' | 'created_at'>, toast: ToastFn) => Promise<void>;
   addExpensesBatch: (expenses: Omit<Expense, 'id' | 'deleted_at' | 'created_at'>[], toast: ToastFn) => Promise<any>;
   updateExpense: (expense: Expense, toast: ToastFn) => Promise<void>;
@@ -446,33 +446,15 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
       }
     }
 
-    const addTenant = async (tenantData: Omit<Tenant, 'id' | 'created_at' | 'deleted_at'>, toast: ToastFn, files: File[] = []) => {
-      try {
-        if (!supabase) return;
-        
-        const cleanTenantData = { ...tenantData };
-        if (cleanTenantData.date_of_birth === '') delete (cleanTenantData as any).date_of_birth;
-        if (cleanTenantData.father_name === '') delete (cleanTenantData as any).father_name;
-        if (cleanTenantData.address === '') delete (cleanTenantData as any).address;
-        if (cleanTenantData.nid_number === '') delete (cleanTenantData as any).nid_number;
-        if (cleanTenantData.gas_meter_number === '') delete (cleanTenantData as any).gas_meter_number;
-        if (cleanTenantData.electric_meter_number === '') delete (cleanTenantData as any).electric_meter_number;
+    const addTenant = async (formData: FormData, toast: ToastFn) => {
+        // This function might seem redundant now, but it's kept for potential future client-side logic before calling the server action.
+        // For now, it just passes through to the server action.
+        const tenantData = Object.fromEntries(formData.entries());
 
-        const { data: newTenant, error } = await supabase.from('tenants').insert([cleanTenantData]).select().single();
+        const { data: newTenant, error } = await supabase.from('tenants').insert([tenantData]).select().single();
         if (error || !newTenant) {
             handleError(error, 'adding tenant', toast);
             return;
-        }
-
-        const uploadedUrls = await uploadFiles(newTenant.id, files, toast);
-        
-        if (uploadedUrls.length > 0) {
-            const { error: updateError } = await supabase
-                .from('tenants')
-                .update({ documents: uploadedUrls })
-                .eq('id', newTenant.id);
-
-            if (updateError) handleError(updateError, 'updating tenant with documents', toast);
         }
 
         const joinDate = parseISO(newTenant.join_date);
@@ -492,72 +474,32 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
         };
         const { error: rentError } = await supabase.from('rent_entries').insert([newRentEntryData]);
         if (rentError) handleError(rentError, 'auto-creating rent entry', toast);
+
         await refreshData(false);
-      } catch (error) {
-        handleError(error, 'adding tenant', toast);
-      }
     };
 
-    const updateTenant = async (updatedTenant: Tenant, toast: ToastFn, files: File[] = []) => {
-      try {
-        if (!supabase) return;
-        const { id, ...tenantData } = updatedTenant;
-        
-        const uploadedUrls = await uploadFiles(id, files, toast);
-        const finalDocuments = [...(tenantData.documents || []), ...uploadedUrls];
-
-        const cleanTenantData = { ...tenantData, documents: finalDocuments };
-        if (cleanTenantData.date_of_birth === '') delete (cleanTenantData as any).date_of_birth;
-        if (cleanTenantData.father_name === '') delete (cleanTenantData as any).father_name;
-        if (cleanTenantData.address === '') delete (cleanTenantData as any).address;
-        if (cleanTenantData.nid_number === '') delete (cleanTenantData as any).nid_number;
-        if (cleanTenantData.gas_meter_number === '') delete (cleanTenantData as any).gas_meter_number;
-        if (cleanTenantData.electric_meter_number === '') delete (cleanTenantData as any).electric_meter_number;
-
-        const { error } = await supabase.from('tenants').update(cleanTenantData).eq('id', id);
-        if (error || !id) {
-            handleError(error, 'updating tenant', toast);
-            return;
+    const updateTenant = async (formData: FormData, toast: ToastFn) => {
+        const result = await updateTenantAction(formData);
+        if (result.error) {
+            handleError(new Error(result.error), 'updating tenant', toast);
+        } else {
+            await refreshData(false);
         }
-
-        const { error: rentUpdateError } = await supabase
-            .from('rent_entries')
-            .update({
-                name: tenantData.name,
-                property: tenantData.property,
-                rent: tenantData.rent,
-                avatar: tenantData.avatar,
-                tenant_id: id,
-            })
-            .eq('name', tenantData.name)
-            .eq('property', tenantData.property);
-
-        if (rentUpdateError) {
-            handleError(rentUpdateError, 'syncing future rent entries', toast);
-        }
-        await refreshData(false);
-      } catch (error) {
-        handleError(error, 'updating tenant', toast);
-      }
     };
 
-    const deleteTenant = async (tenantId: string, toast: ToastFn) => {
-      try {
-        if (!supabase) return;
-        const { error } = await supabase.from('tenants').update({ deleted_at: new Date().toISOString() }).eq('id', tenantId);
-        if (error) {
-            handleError(error, 'deleting tenant', toast);
+    const deleteTenant = async (formData: FormData, toast: ToastFn) => {
+        const tenantId = formData.get('tenantId') as string;
+        const result = await deleteTenantAction(formData);
+        if (result.error) {
+            handleError(new Error(result.error), 'deleting tenant', toast);
         } else {
              toast({
                 title: 'Tenant Deleted',
                 description: 'The tenant has been deleted.',
                 action: <Button variant="secondary" onClick={() => undoDelete('tenants', [tenantId], toast)}>Undo</Button>
              });
+             await refreshData(false);
         }
-        await refreshData(false);
-      } catch (error) {
-        handleError(error, 'deleting tenant', toast);
-      }
     };
 
     const addExpense = async (expense: Omit<Expense, 'id' | 'created_at' | 'deleted_at'>, toast: ToastFn) => {

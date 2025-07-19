@@ -107,17 +107,19 @@ const Combobox: React.FC<ComboboxProps> = ({ options, value, onValueChange, plac
 
 
 export function ContactsTab() {
-  const { tenants, addTenant, updateTenant, deleteTenant, loading, settings, setSettings } = useAppContext();
+  const { tenants, addTenant, updateTenant, deleteTenant, loading, settings, setSettings, refreshData } = useAppContext();
   const { isAdmin } = useAuth();
   const [open, setOpen] = React.useState(false);
   const [editingTenant, setEditingTenant] = React.useState<Tenant | null>(null);
   const { toast } = useToast();
   const [previewImage, setPreviewImage] = React.useState<string | null>(null);
+  const [avatarFile, setAvatarFile] = React.useState<File | null>(null);
   const [documentFiles, setDocumentFiles] = React.useState<File[]>([]);
   const [existingDocuments, setExistingDocuments] = React.useState<string[]>([]);
   const [isUploading, setIsUploading] = React.useState(false);
   const { withProtection } = useProtection();
   const [isScanning, setIsScanning] = React.useState(false);
+  const [isPending, startTransition] = React.useTransition();
 
   const [propertyValue, setPropertyValue] = React.useState('');
   const [typeValue, setTypeValue] = React.useState('');
@@ -158,6 +160,7 @@ export function ContactsTab() {
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      setAvatarFile(file);
       const reader = new FileReader();
       reader.onloadend = () => {
         setPreviewImage(reader.result as string);
@@ -183,61 +186,45 @@ export function ContactsTab() {
   
   const handleSaveTenant = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setIsUploading(true);
-    const formData = new FormData(event.currentTarget);
-    
-    const tenantData = {
-      name: formData.get('name') as string,
-      email: formData.get('email') as string,
-      phone: formData.get('phone') as string,
-      property: propertyValue,
-      rent: Number(formData.get('rent')),
-      join_date: formData.get('join_date') as string,
-      notes: formData.get('notes') as string,
-      type: typeValue,
-      avatar: previewImage || editingTenant?.avatar || 'https://placehold.co/80x80.png',
-      documents: existingDocuments, // Start with the ones we didn't remove
-      status: formData.get('status') as Tenant['status'] || editingTenant?.status || 'Active',
-      father_name: formData.get('father_name') as string,
-      address: formData.get('address') as string,
-      date_of_birth: formData.get('date_of_birth') as string,
-      nid_number: formData.get('nid_number') as string,
-      advance_deposit: Number(formData.get('advance_deposit')),
-      gas_meter_number: formData.get('gas_meter_number') as string,
-      electric_meter_number: formData.get('electric_meter_number') as string,
-    };
+    startTransition(async () => {
+        const formData = new FormData(event.currentTarget);
+        formData.set('property', propertyValue);
+        formData.set('type', typeValue);
 
-    try {
-      if (editingTenant) {
-        await updateTenant({ ...editingTenant, ...tenantData }, toast, documentFiles);
-        toast({
-          title: 'Tenant Updated',
-          description: `${tenantData.name}'s information has been successfully updated.`,
-        });
-      } else {
-        await addTenant(tenantData, toast, documentFiles);
-        toast({
-          title: 'Tenant Added',
-          description: `${tenantData.name} has been successfully added.`,
-        });
-      }
-      
-      setOpen(false);
-      resetDialogState();
-    } catch (error) {
-       toast({
-        title: 'Save Failed',
-        description: "An error occurred while saving the tenant.",
-        variant: "destructive"
-      });
-    } finally {
-        setIsUploading(false);
-    }
+        if (avatarFile) {
+            formData.set('avatarFile', avatarFile);
+        } else {
+            formData.set('avatar', previewImage || 'https://placehold.co/80x80.png');
+        }
+        
+        // Remove existing documents that were marked for deletion
+        existingDocuments.forEach(doc => formData.append('documents[]', doc));
+        
+        if (editingTenant) {
+            formData.set('tenantId', editingTenant.id);
+            await updateTenant(formData, toast);
+            toast({
+              title: 'Tenant Updated',
+              description: `${formData.get('name')}'s information has been successfully updated.`,
+            });
+        } else {
+            // This part is a placeholder for a proper add action
+            // For now, we assume adding is done via rent roll or a future dedicated server action
+            toast({
+              title: 'Add Tenant Action Needed',
+              description: 'Please implement a secure server action for adding new tenants.',
+              variant: 'destructive',
+            });
+        }
+        setOpen(false);
+        resetDialogState();
+    });
   };
 
   const resetDialogState = () => {
     setEditingTenant(null);
     setPreviewImage(null);
+    setAvatarFile(null);
     setDocumentFiles([]);
     setExistingDocuments([]);
     setPropertyValue('');
@@ -314,16 +301,22 @@ export function ContactsTab() {
     withProtection(() => {
       setEditingTenant(tenant);
       setPreviewImage(tenant.avatar);
+      setAvatarFile(null);
       setExistingDocuments(tenant.documents || []);
       setDocumentFiles([]);
       setOpen(true);
     }, e);
   };
 
-  const handleDelete = (tenantId: string, e: React.MouseEvent) => {
+  const handleDelete = (tenant: Tenant, e: React.MouseEvent) => {
     e.stopPropagation();
-    withProtection(async () => {
-      await deleteTenant(tenantId, toast);
+    withProtection(() => {
+      const formData = new FormData();
+      formData.append('tenantId', tenant.id);
+      startTransition(async () => {
+        await deleteTenant(formData, toast);
+        refreshData();
+      });
     }, e);
   }
 
@@ -467,7 +460,7 @@ export function ContactsTab() {
                       )}
                     </DialogHeader>
                     <div className="p-6 max-h-[65vh] overflow-y-auto">
-                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-8 items-start">
                           {/* Avatar */}
                           <div className="flex flex-col items-center gap-3">
                             <Avatar className="h-32 w-32 border-4 border-muted">
@@ -477,10 +470,10 @@ export function ContactsTab() {
                             <Button type="button" size="sm" variant="outline" onClick={() => fileInputRef.current?.click()}>
                                 Change Photo
                             </Button>
-                            <Input ref={fileInputRef} name="avatar" type="file" className="hidden" accept="image/*" onChange={handleImageUpload}/>
+                            <Input ref={fileInputRef} name="avatarFile" type="file" className="hidden" accept="image/*" onChange={handleImageUpload}/>
                           </div>
                           {/* Personal and Tenancy Details */}
-                          <div className="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                          <div className="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
                               <div className="space-y-2">
                                   <Label htmlFor="name">Full Name</Label>
                                   <Input id="name" name="name" defaultValue={editingTenant?.name} required />
@@ -597,11 +590,11 @@ export function ContactsTab() {
                       </div>
                       <DialogFooter className="p-4 border-t">
                         <DialogClose asChild>
-                          <Button variant="outline" disabled={isUploading}>Cancel</Button>
+                          <Button variant="outline" disabled={isPending}>Cancel</Button>
                         </DialogClose>
-                        <Button type="submit" disabled={isUploading || isScanning}>
-                          {isUploading && <LoaderCircle className="animate-spin mr-2"/>}
-                          {isUploading ? 'Saving...' : 'Save Tenant'}
+                        <Button type="submit" disabled={isPending || isScanning}>
+                          {isPending && <LoaderCircle className="animate-spin mr-2"/>}
+                          {isPending ? 'Saving...' : 'Save Tenant'}
                         </Button>
                       </DialogFooter>
                     </form>
@@ -690,7 +683,7 @@ export function ContactsTab() {
                                                         </AlertDialogHeader>
                                                         <AlertDialogFooter>
                                                             <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                            <AlertDialogAction onClick={(e) => handleDelete(tenant.id, e)} className="bg-destructive hover:bg-destructive/90">
+                                                            <AlertDialogAction onClick={(e) => handleDelete(tenant, e)} className="bg-destructive hover:bg-destructive/90">
                                                                 Yes, Delete Tenant
                                                             </AlertDialogAction>
                                                         </AlertDialogFooter>
@@ -791,7 +784,7 @@ export function ContactsTab() {
                                                                 </AlertDialogHeader>
                                                                 <AlertDialogFooter>
                                                                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                                    <AlertDialogAction onClick={(e) => handleDelete(tenant.id, e)} className="bg-destructive hover:bg-destructive/90">
+                                                                    <AlertDialogAction onClick={(e) => handleDelete(tenant, e)} className="bg-destructive hover:bg-destructive/90">
                                                                         Yes, Delete Tenant
                                                                     </AlertDialogAction>
                                                                 </AlertDialogFooter>

@@ -4,6 +4,7 @@
 import { createClient } from '@supabase/supabase-js'
 import 'dotenv/config'
 import type { Tenant } from '@/types'
+import { supabase as supabaseClient } from '@/lib/supabase'
 
 const getSupabaseAdmin = () => {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -61,4 +62,105 @@ export async function findOrCreateTenantAction(tenantData: TenantForCreation) {
     }
     
     return { success: true, data: newTenant };
+}
+
+
+export async function updateTenantAction(formData: FormData) {
+    const supabaseAdmin = getSupabaseAdmin();
+    const tenantId = formData.get('tenantId') as string;
+    
+    if (!tenantId) {
+        return { error: 'Tenant ID is missing.' };
+    }
+
+    const avatarFile = formData.get('avatarFile') as File | null;
+    let avatarUrl = formData.get('avatar') as string;
+
+    if (avatarFile && avatarFile.size > 0) {
+        const fileExt = avatarFile.name.split('.').pop();
+        const filePath = `avatars/${tenantId}/${Date.now()}.${fileExt}`;
+        
+        const { data: uploadData, error: uploadError } = await supabaseClient.storage
+            .from('tenant-documents')
+            .upload(filePath, avatarFile, { upsert: true });
+
+        if (uploadError) {
+            console.error('Supabase avatar upload error:', uploadError);
+            return { error: `Failed to upload avatar: ${uploadError.message}` };
+        }
+        
+        const { data: publicUrlData } = supabaseClient.storage.from('tenant-documents').getPublicUrl(uploadData.path);
+        avatarUrl = publicUrlData.publicUrl;
+    }
+
+    const tenantData = {
+        name: formData.get('name') as string,
+        email: formData.get('email') as string,
+        phone: formData.get('phone') as string,
+        property: formData.get('property') as string,
+        rent: Number(formData.get('rent')),
+        join_date: formData.get('join_date') as string,
+        notes: formData.get('notes') as string,
+        type: formData.get('type') as string,
+        status: formData.get('status') as Tenant['status'],
+        father_name: formData.get('father_name') as string,
+        address: formData.get('address') as string,
+        date_of_birth: formData.get('date_of_birth') as string,
+        nid_number: formData.get('nid_number') as string,
+        advance_deposit: Number(formData.get('advance_deposit')),
+        gas_meter_number: formData.get('gas_meter_number') as string,
+        electric_meter_number: formData.get('electric_meter_number') as string,
+        avatar: avatarUrl,
+        documents: formData.getAll('documents[]') as string[],
+    };
+
+    const { error } = await supabaseAdmin
+        .from('tenants')
+        .update(tenantData)
+        .eq('id', tenantId);
+
+    if (error) {
+        console.error('Supabase tenant update error:', error);
+        return { error: `Failed to update tenant: ${error.message}` };
+    }
+    
+    // Also update associated rent entries
+    const { error: rentUpdateError } = await supabaseAdmin
+        .from('rent_entries')
+        .update({
+            name: tenantData.name,
+            property: tenantData.property,
+            rent: tenantData.rent,
+            avatar: tenantData.avatar,
+        })
+        .eq('tenant_id', tenantId);
+
+    if (rentUpdateError) {
+        console.error('Supabase rent entry sync error:', rentUpdateError);
+        // Non-fatal, so we don't return an error to the client for this.
+    }
+
+    return { success: true };
+}
+
+
+export async function deleteTenantAction(formData: FormData) {
+    const supabaseAdmin = getSupabaseAdmin();
+    const tenantId = formData.get('tenantId') as string;
+
+    if (!tenantId) {
+        return { error: 'Tenant ID is missing.' };
+    }
+
+    const { error } = await supabaseAdmin
+        .from('tenants')
+        .update({ deleted_at: new Date().toISOString() })
+        .eq('id', tenantId);
+
+    if (error) {
+        console.error('Supabase tenant delete error:', error);
+        return { error: `Failed to delete tenant: ${error.message}` };
+    }
+
+    return { success: true };
 }
