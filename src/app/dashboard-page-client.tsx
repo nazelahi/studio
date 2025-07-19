@@ -8,8 +8,8 @@ import { usePathname, useRouter } from "next/navigation"
 import { Logo } from "@/components/icons"
 import { useAuth } from "@/context/auth-context"
 import { Button } from "@/components/ui/button"
-import { User, LogOut, MapPin, Menu, Settings, LogIn, UserCircle, LoaderCircle, Moon, Sun, Monitor, Archive, PanelLeftClose, PanelLeftOpen } from "lucide-react"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent } from "@/components/ui/dropdown-menu"
+import { User, LogOut, MapPin, Menu, Settings, LogIn, UserCircle, LoaderCircle, PanelLeftClose, PanelLeftOpen } from "lucide-react"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { useToast } from "@/hooks/use-toast"
@@ -18,12 +18,32 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { MobileBottomNav } from "@/components/mobile-bottom-nav"
 import { AppFooter } from "@/components/app-footer"
 import { BackToTopButton } from "@/components/back-to-top-button"
-import { useTheme } from "next-themes"
 import { cn } from "@/lib/utils"
-import dynamic from 'next/dynamic'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Card, CardContent, CardHeader, Skeleton, Progress } from "@/components/ui"
+import { Card, CardHeader, Skeleton, CardContent } from "@/components/ui"
 import { ThemeToggle } from "@/components/theme-toggle"
+import dynamic from 'next/dynamic'
+
+const LoadingSkeleton = () => (
+  <Card>
+    <CardHeader>
+      <Skeleton className="h-6 w-1/3" />
+      <Skeleton className="h-4 w-2/3" />
+    </CardHeader>
+    <CardContent className="space-y-6">
+      <Skeleton className="h-24 w-full" />
+      <Skeleton className="h-10 w-full" />
+      <Skeleton className="h-40 w-full" />
+    </CardContent>
+  </Card>
+);
+
+const MonthlyOverviewTab = dynamic(() => import('@/components/monthly-overview-tab').then(mod => mod.MonthlyOverviewTab), { loading: () => <LoadingSkeleton /> });
+const ContactsTab = dynamic(() => import('@/components/contacts-tab').then(mod => mod.ContactsTab), { loading: () => <LoadingSkeleton /> });
+const WorkDetailsTab = dynamic(() => import('@/components/work-details-tab').then(mod => mod.WorkDetailsTab), { loading: () => <LoadingSkeleton /> });
+const DocumentsTab = dynamic(() => import('@/components/documents-tab').then(mod => mod.DocumentsTab), { loading: () => <LoadingSkeleton /> });
+const ReportsTab = dynamic(() => import('@/components/reports-tab').then(mod => mod.ReportsTab), { loading: () => <LoadingSkeleton /> });
+const ZakatTab = dynamic(() => import('@/components/zakat-tab').then(mod => mod.ZakatTab), { loading: () => <LoadingSkeleton /> });
 
 
 function FullPageLoader() {
@@ -44,7 +64,6 @@ export default function DashboardPageClient() {
   const { isAdmin, user, signOut } = useAuth();
   const { toast } = useToast();
   const { withProtection } = useProtection();
-  const { setTheme } = useTheme();
 
   const [activeTab, setActiveTab] = React.useState("overview");
   const [isSheetOpen, setIsSheetOpen] = React.useState(false);
