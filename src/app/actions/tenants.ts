@@ -91,6 +91,35 @@ export async function updateTenantAction(formData: FormData) {
         const { data: publicUrlData } = supabaseAdmin.storage.from('tenant-documents').getPublicUrl(uploadData.path);
         avatarUrl = publicUrlData.publicUrl;
     }
+    
+    // Handle document uploads
+    const newDocumentFiles = formData.getAll('documentFiles') as File[];
+    const uploadedDocUrls: string[] = [];
+
+    if (newDocumentFiles.length > 0) {
+        for (const file of newDocumentFiles) {
+            if (file.size > 0) {
+                const fileExt = file.name.split('.').pop();
+                const filePath = `tenant-docs/${tenantId}/${Date.now()}-${file.name.replace(/ /g, '_')}.${fileExt}`;
+
+                const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
+                    .from('tenant-documents')
+                    .upload(filePath, file);
+
+                if (uploadError) {
+                    console.error('Supabase document upload error:', uploadError);
+                    return { error: `Failed to upload document: ${uploadError.message}` };
+                }
+
+                const { data: publicUrlData } = supabaseAdmin.storage.from('tenant-documents').getPublicUrl(uploadData.path);
+                uploadedDocUrls.push(publicUrlData.publicUrl);
+            }
+        }
+    }
+    
+    const existingDocuments = formData.getAll('documents[]') as string[];
+    const finalDocuments = [...existingDocuments, ...uploadedDocUrls];
+
 
     const joinDateValue = formData.get('join_date') as string;
     const dobValue = formData.get('date_of_birth') as string;
@@ -114,7 +143,7 @@ export async function updateTenantAction(formData: FormData) {
         gas_meter_number: formData.get('gas_meter_number') as string,
         electric_meter_number: formData.get('electric_meter_number') as string,
         avatar: avatarUrl,
-        documents: formData.getAll('documents[]') as string[],
+        documents: finalDocuments,
     };
 
     const { error } = await supabaseAdmin

@@ -192,29 +192,19 @@ export function ContactsTab() {
         formData.set('type', typeValue);
 
         if (avatarFile) {
-            formData.set('avatarFile', avatarFile);
+            formData.append('avatarFile', avatarFile);
         } else {
             formData.set('avatar', previewImage || 'https://placehold.co/80x80.png');
         }
         
-        // Remove existing documents that were marked for deletion
         existingDocuments.forEach(doc => formData.append('documents[]', doc));
+        documentFiles.forEach(file => formData.append('documentFiles', file));
         
         if (editingTenant) {
             formData.set('tenantId', editingTenant.id);
             await updateTenant(formData, toast);
-            toast({
-              title: 'Tenant Updated',
-              description: `${formData.get('name')}'s information has been successfully updated.`,
-            });
         } else {
-            // This part is a placeholder for a proper add action
-            // For now, we assume adding is done via rent roll or a future dedicated server action
-            toast({
-              title: 'Add Tenant Action Needed',
-              description: 'Please implement a secure server action for adding new tenants.',
-              variant: 'destructive',
-            });
+            await addTenant(formData, toast);
         }
         setOpen(false);
         resetDialogState();
@@ -504,7 +494,7 @@ export function ContactsTab() {
                               </div>
                               <div className="space-y-2">
                                   <Label htmlFor="advance_deposit">Advance Deposit</Label>
-                                  <Input id="advance_deposit" name="advance_deposit" type="number" defaultValue={editingTenant?.advance_deposit} className="[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"/>
+                                  <Input id="advance_deposit" name="advance_deposit" type="number" defaultValue={editingTenant?.advance_deposit || ''} className="[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"/>
                               </div>
                               <div className="space-y-2">
                                   <Label htmlFor="join_date">Join Date</Label>
