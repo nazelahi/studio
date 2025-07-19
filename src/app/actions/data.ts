@@ -193,11 +193,11 @@ export async function generateSqlBackupAction() {
                 data.forEach(row => {
                     const values = Object.values(row).map(value => {
                         if (value === null || value === undefined) return 'NULL';
-                        if (typeof value === 'string') return `'${value.replace(/'/g, "''")}'`;
                         if (typeof value === 'boolean') return value ? 'TRUE' : 'FALSE';
                         if (typeof value === 'number') return value;
                         if (Array.isArray(value)) return `'${JSON.stringify(value).replace(/'/g, "''")}'::jsonb`;
                         if (typeof value === 'object') return `'${JSON.stringify(value).replace(/'/g, "''")}'::jsonb`;
+                        // Default to string for all other types
                         return `'${String(value).replace(/'/g, "''")}'`;
                     }).join(', ');
                     sqlString += `INSERT INTO public.${table} (${columns}) VALUES (${values});\n`;
