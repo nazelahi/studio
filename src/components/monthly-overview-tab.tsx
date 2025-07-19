@@ -834,7 +834,9 @@ export function MonthlyOverviewTab() {
                 const dateInput = row.date;
                 if (dateInput) {
                     if (typeof dateInput === 'number') {
-                        const excelDate = new Date(Date.UTC(1900, 0, dateInput - 1));
+                        // Handle Excel's numeric date format
+                        const excelEpoch = new Date(1899, 11, 30);
+                        const excelDate = new Date(excelEpoch.getTime() + dateInput * 86400000);
                         expenseDate = formatDate(excelDate.toISOString(), 'yyyy-MM-dd');
                     } else {
                         const parsed = new Date(dateInput);
@@ -862,7 +864,8 @@ export function MonthlyOverviewTab() {
             if (result.error) {
               toast({ title: "Import Failed", description: result.error, variant: 'destructive'});
             } else {
-              toast({ title: "Import Successful", description: `${expensesToCreate.length} expenses have been added.` });
+              toast({ title: "Import Successful", description: `${result.count} expenses have been added.` });
+              refreshData();
             }
 
         } catch (error) {
