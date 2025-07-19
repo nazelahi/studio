@@ -198,7 +198,7 @@ function ReceiptPageContent() {
                                 </TableRow>
                             </TableBody>
                             <TableFooter>
-                                <TableRow style={{ backgroundColor: 'hsl(var(--table-footer-background))', color: 'hsl(var(--table-footer-foreground))' }} className="font-bold hover:bg-[hsl(var(--table-footer-background)/0.9)]">
+                                <TableRow className="font-bold bg-muted/50">
                                     <TableCell>Total Amount</TableCell>
                                     <TableCell className="text-right">{formatCurrency(rentEntry.rent, settings.currencySymbol)}</TableCell>
                                 </TableRow>
