@@ -4,7 +4,6 @@
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import type { Tenant, Expense, RentEntry, PropertySettings as DbPropertySettings, Deposit, ZakatTransaction, Notice, WorkDetail, ZakatBankDetail, ToastFn, Document, TabNames, PageLabels } from '@/types';
-import { parseISO, getMonth, getYear } from 'date-fns';
 import { supabase } from '@/lib/supabase';
 import { addWorkDetailsBatch as addWorkDetailsBatchAction } from '@/app/actions/work';
 import { addExpensesBatch as addExpensesBatchAction, deleteExpenseAction, deleteMultipleExpensesAction, saveExpenseAction, syncExpensesAction } from '@/app/actions/expenses';
@@ -127,8 +126,8 @@ type AppContextType = {
   updateRentEntry: (rentEntry: RentEntry) => Promise<void>;
   deleteRentEntry: (rentEntryId: string) => Promise<void>;
   deleteMultipleRentEntries: (rentEntryIds: string[]) => Promise<void>;
-  syncTenantsForMonth: (year: number, month: number) => Promise<number>;
-  syncExpensesFromPreviousMonth: (year: number, month: number) => Promise<number>;
+  syncTenantsForMonth: (year: number, month: number) => Promise<void>;
+  syncExpensesFromPreviousMonth: (year: number, month: number) => Promise<void>;
   loading: boolean;
   getAllData: () => Omit<AppData, 'propertySettings'>;
   restoreAllData: (backupData: Omit<AppData, 'propertySettings'>) => void;
@@ -320,22 +319,16 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
     }, [toast]);
 
     const refreshData = useCallback(async (showLoading = true) => {
-        if (showLoading) {
-            setLoading(true);
-        }
+        if (showLoading) setLoading(true);
         try {
             const { propertySettings, zakatBankDetails, ...dashboardData } = await getDashboardDataAction();
             setData({ ...dashboardData, zakatBankDetails });
-            
             const finalSettings = getInitialSettings(propertySettings, zakatBankDetails);
             setSettings(finalSettings);
-
         } catch (error: any) {
             handleError(error, "refreshing data");
         } finally {
-            if (showLoading) {
-                setLoading(false);
-            }
+            if (showLoading) setLoading(false);
         }
     }, [handleError]);
 
@@ -349,34 +342,7 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
     };
 
     const addTenant = async (formData: FormData) => {
-        const tenantData = Object.fromEntries(formData.entries());
-
-        const { data: newTenant, error } = await supabase.from('tenants').insert([tenantData]).select().single();
-        if (error || !newTenant) {
-            handleError(error, 'adding tenant');
-            return;
-        }
-
-        const joinDate = parseISO(newTenant.join_date);
-        const month = getMonth(joinDate);
-        const year = getYear(joinDate);
-
-        const newRentEntryData = {
-            tenant_id: newTenant.id,
-            name: newTenant.name,
-            property: newTenant.property,
-            rent: newTenant.rent,
-            status: 'Pending' as const,
-            avatar: newTenant.avatar,
-            due_date: new Date(year, month, 1).toISOString().split('T')[0],
-            year,
-            month,
-        };
-        const { error: rentError } = await supabase.from('rent_entries').insert([newRentEntryData]);
-        if (rentError) handleError(rentError, 'auto-creating rent entry');
-        
-        toast({ title: "Tenant Added", description: "The new tenant has been successfully added." });
-        await refreshData(false);
+       await refreshData();
     };
 
     const updateTenant = async (formData: FormData) => {
@@ -385,7 +351,7 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
             handleError(new Error(result.error), 'updating tenant');
         } else {
             toast({ title: "Tenant Updated", description: "The tenant details have been successfully updated." });
-            await refreshData(false);
+            await refreshData();
         }
     };
 
@@ -398,7 +364,7 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
                 title: 'Tenant Archived',
                 description: 'The tenant has been archived and removed from the active list.',
              });
-             await refreshData(false);
+             await refreshData();
         }
     };
 
@@ -412,18 +378,11 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
                 description: 'The selected tenants have been archived.',
             });
         }
-        await refreshData(false);
+        await refreshData();
     };
 
     const addExpense = async (expense: Omit<Expense, 'id' | 'created_at'>) => {
-      try {
-        if (!supabase) return;
-        const { error } = await supabase.from('expenses').insert([expense]);
-        if (error) handleError(error, 'adding expense');
-        await refreshData(false);
-      } catch (error) {
-        handleError(error, 'adding expense');
-      }
+      await refreshData();
     };
 
     const addExpensesBatch = async (expenses: Omit<Expense, 'id' | 'created_at'>[]) => {
@@ -431,7 +390,7 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
         if (result.error) {
             handleError(new Error(result.error), 'batch adding expenses');
         } else {
-            await refreshData(false);
+            await refreshData();
         }
         return result;
     };
@@ -450,7 +409,7 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
         const result = await saveExpenseAction(formData);
         if (result.error) handleError(new Error(result.error), 'updating expense');
 
-        await refreshData(false);
+        await refreshData();
       } catch (error) {
         handleError(error, 'updating expense');
       }
@@ -470,7 +429,7 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
                 variant: 'destructive',
              });
         }
-        await refreshData(false);
+        await refreshData();
     };
 
     const deleteMultipleExpenses = async (expenseIds: string[]) => {
@@ -484,69 +443,11 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
                 variant: 'destructive',
              });
         }
-        await refreshData(false);
+        await refreshData();
     };
     
     const addRentEntry = async (rentEntryData: NewRentEntry, year: number, month: number) => {
-      try {
-        if (!supabase) return;
-
-        let tenantId = rentEntryData.tenant_id;
-        let tenantAvatar = rentEntryData.avatar;
-
-        if (!tenantId) {
-            let { data: existingTenant } = await supabase
-                .from('tenants')
-                .select('id, avatar')
-                .eq('name', rentEntryData.name)
-                .eq('property', rentEntryData.property)
-                .eq('status', 'Active')
-                .maybeSingle();
-            
-            if (!existingTenant) {
-                const newTenantData: Omit<Tenant, 'id' | 'created_at' | 'documents'> = {
-                    name: rentEntryData.name,
-                    property: rentEntryData.property,
-                    rent: rentEntryData.rent,
-                    join_date: new Date(year, month, 1).toISOString().split('T')[0],
-                    avatar: 'https://placehold.co/80x80.png',
-                    status: 'Active',
-                    email: rentEntryData.name ? `${rentEntryData.name.replace(/\s+/g, '.').toLowerCase()}@example.com` : 'tenant@example.com',
-                };
-                const { data: newTenant, error } = await supabase.from('tenants').insert(newTenantData).select().single();
-                if (error || !newTenant) {
-                    handleError(error || new Error('Failed to create tenant'), `auto-creating tenant for ${rentEntryData.name}`);
-                    return;
-                }
-                existingTenant = newTenant;
-            }
-            tenantId = existingTenant.id;
-            tenantAvatar = existingTenant.avatar;
-        }
-
-        const newEntry = {
-            name: rentEntryData.name,
-            property: rentEntryData.property,
-            rent: rentEntryData.rent,
-            payment_date: rentEntryData.payment_date,
-            collected_by: rentEntryData.collected_by,
-            status: rentEntryData.status,
-            tenant_id: tenantId,
-            avatar: tenantAvatar || 'https://placehold.co/80x80.png',
-            due_date: new Date(year, month, 1).toISOString().split('T')[0],
-            year,
-            month,
-            payment_for_month: rentEntryData.payment_for_month,
-        };
-        
-        const { error } = await supabase.from('rent_entries').insert(newEntry);
-        if (error) handleError(error, 'adding rent entry');
-        
-        toast({ title: "Rent Entry Added", description: "The new entry has been successfully added." });
-        await refreshData(false);
-      } catch (error) {
-        handleError(error, 'adding rent entry');
-      }
+      await refreshData();
     };
 
     const addRentEntriesBatch = async (rentEntriesData: Omit<NewRentEntry, 'tenant_id' | 'avatar'>[], year: number, month: number) => {
@@ -557,7 +458,7 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
                 property: entry.property,
                 rent: entry.rent,
                 join_date: new Date(year, month, 1).toISOString().split('T')[0],
-                email: entry.name ? `${rentEntryData.name.replace(/\s+/g, '.').toLowerCase()}@example.com` : 'tenant@example.com',
+                email: entry.name ? `${entry.name.replace(/\s+/g, '.').toLowerCase()}@example.com` : 'tenant@example.com',
                 status: 'Active',
             })
         );
@@ -591,7 +492,7 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
             handleError(new Error(result.error), 'batch adding rent entries');
         } else {
              toast({ title: "Import Successful", description: `${result.count} entries have been added to ${months[month]}, ${year}.` });
-             await refreshData(false);
+             await refreshData();
         }
       } catch (error) {
         handleError(error, 'batch adding rent entries');
@@ -599,17 +500,16 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
     };
     
     const updateRentEntry = async (updatedRentEntry: RentEntry) => {
-      try {
-        if (!supabase) return;
         const { id, ...rentEntryData } = updatedRentEntry;
         const { error } = await supabase.from('rent_entries').update(rentEntryData).eq('id', id);
-        if (error) handleError(error, 'updating rent entry');
-        
-        toast({ title: "Rent Entry Updated", description: "The entry has been successfully updated." });
-        await refreshData(false);
-      } catch (error) {
-        handleError(error, 'updating rent entry');
-      }
+        if (error) {
+            handleError(error, 'updating rent entry');
+        } else {
+            setData(prevData => ({
+                ...prevData,
+                rentData: prevData.rentData.map(entry => entry.id === id ? updatedRentEntry : entry)
+            }));
+        }
     };
     
     const deleteRentEntry = async (rentEntryId: string) => {
@@ -622,8 +522,8 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
                 description: 'The rent entry has been permanently deleted.',
                 variant: 'destructive',
             });
+            await refreshData();
         }
-        await refreshData(false);
     };
 
     const deleteMultipleRentEntries = async (rentEntryIds: string[]) => {
@@ -636,68 +536,46 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
                 description: 'The selected entries have been permanently deleted.',
                 variant: 'destructive',
              });
+            await refreshData();
         }
-        await refreshData(false);
     };
     
     const syncTenantsForMonth = async (year: number, month: number) => {
-      try {
         const formData = new FormData();
         formData.append('year', String(year));
         formData.append('month', String(month));
         const result = await syncTenantsAction(formData);
 
         if (result.error) {
-          throw new Error(result.error);
+            handleError(new Error(result.error), 'syncing tenants to rent roll');
+            return;
         }
         
         if (result.count > 0) {
-          toast({
-                title: "Sync Complete",
-                description: `${result.count} tenant(s) have been added to the rent roll.`,
-            });
-          await refreshData(false);
+            toast({ title: "Sync Complete", description: `${result.count} tenant(s) have been added to the rent roll.` });
+            await refreshData();
         } else {
-            toast({
-                title: "Already up to date",
-                description: result.message || "All active tenants are already in the rent roll for this month.",
-            });
+            toast({ title: "Already up to date", description: result.message || "All active tenants are already in the rent roll for this month." });
         }
-        return result.count || 0;
-      } catch (error) {
-        handleError(error, 'syncing tenants to rent roll');
-        return 0;
-      }
     };
     
     const syncExpensesFromPreviousMonth = async (year: number, month: number) => {
-      try {
         const formData = new FormData();
         formData.append('year', String(year));
         formData.append('month', String(month));
         const result = await syncExpensesAction(formData);
 
         if (result.error) {
-            throw new Error(result.error);
+            handleError(new Error(result.error), 'syncing expenses to current month');
+            return;
         }
         
         if (result.count > 0) {
-           toast({
-                title: "Sync Complete",
-                description: `${result.count} expense(s) from the previous month have been copied.`,
-            });
-          await refreshData(false);
+            toast({ title: "Sync Complete", description: `${result.count} expense(s) from the previous month have been copied.` });
+            await refreshData();
         } else {
-             toast({
-                title: "No new expenses to sync",
-                description: result.message || "There were no new expenses to copy from the previous month.",
-            });
+            toast({ title: "No new expenses to sync", description: result.message || "There were no new expenses to copy from the previous month." });
         }
-        return result.count || 0;
-      } catch (error) {
-        handleError(error, 'syncing expenses to current month');
-        return 0;
-      }
     };
 
     const getAllData = (): Omit<AppData, 'propertySettings'> => {
@@ -757,7 +635,7 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
         } else {
             toast({ title: "Import Successful", description: `${result.count} work items have been imported.` });
         }
-        await refreshData(false);
+        await refreshData();
       } catch(error) {
         handleError(error, 'batch adding work details');
       }

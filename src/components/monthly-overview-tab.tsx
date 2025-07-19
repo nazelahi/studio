@@ -182,7 +182,7 @@ export function MonthlyOverviewTab() {
   const { toast } = useToast();
   const { withProtection } = useProtection();
 
-  const { tenants, expenses, rentData, deposits, notices, addRentEntry, addRentEntriesBatch, updateRentEntry, deleteRentEntry, syncTenantsForMonth, syncExpensesFromPreviousMonth, loading, deleteMultipleRentEntries, deleteMultipleExpenses, refreshData, getRentEntryById, addExpense, addExpensesBatch, updateExpense, deleteExpense, settings } = useAppContext();
+  const { tenants, expenses, rentData, deposits, notices, workDetails, addRentEntry, addRentEntriesBatch, updateRentEntry, deleteRentEntry, syncTenantsForMonth, syncExpensesFromPreviousMonth, loading, deleteMultipleRentEntries, deleteMultipleExpenses, refreshData, getRentEntryById, addExpense, addExpensesBatch, updateExpense, deleteExpense, settings } = useAppContext();
 
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = React.useState(false);
   const [editingExpense, setEditingExpense] = React.useState<Expense | null>(null);
@@ -280,7 +280,7 @@ export function MonthlyOverviewTab() {
   
   const netResult = totalRentCollected - totalExpensesPaid;
   const amountForDeposit = netResult > 0 ? netResult : 0;
-
+  
   const initialDepositAmount = React.useMemo(() => {
       if (loggedDeposit) {
           return String(loggedDeposit.amount || '');
@@ -288,12 +288,8 @@ export function MonthlyOverviewTab() {
       return amountForDeposit > 0 ? amountForDeposit.toFixed(2) : '';
   }, [loggedDeposit, amountForDeposit]);
 
-  React.useEffect(() => {
-      setDepositAmount(initialDepositAmount);
-  }, [initialDepositAmount]);
-
-
-
+  setDepositAmount(initialDepositAmount);
+  
   const historicalTenants = React.useMemo(() => {
     const allTenantsMap = new Map<string, HistoricalTenant>();
 
@@ -435,7 +431,7 @@ export function MonthlyOverviewTab() {
       toast({
         title: "Tenant Not Found",
         description: "Could not find the full details for this tenant.",
-        variant: "destructive",
+        variant: "destructive"
       });
     }
   };

@@ -1,4 +1,5 @@
 
+
 "use client"
 
 import React, { useState, useTransition } from "react"
@@ -35,7 +36,7 @@ export default function ApplicationSettingsTab() {
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
 
-  const [docCategories, setDocCategories] = useState<string[]>(() => settings.documentCategories || []);
+  const [docCategories, setDocCategories] = useState<string[]>([]);
   const [newCategory, setNewCategory] = useState('');
 
   const handleDocCategoryChange = (index: number, value: string) => {

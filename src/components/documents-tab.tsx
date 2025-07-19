@@ -38,7 +38,7 @@ type StagedFile = {
 };
 
 export function DocumentsTab() {
-  const { documents, tenants, loading, settings } = useAppContext();
+  const { documents, tenants, loading, settings, refreshData } = useAppContext();
   const { isAdmin } = useAuth();
   const { toast } = useToast();
   const { withProtection } = useProtection();
@@ -56,13 +56,12 @@ export function DocumentsTab() {
   const [customCategory, setCustomCategory] = React.useState('');
   const [showAll, setShowAll] = React.useState(false);
 
-
   const handleOpenChange = (isOpen: boolean) => {
     if (!isOpen) {
       setEditingDoc(null);
       setDocFile(null);
       setStagedFiles([]);
-      setCategory((settings.documentCategories || [])[0] || '');
+      setCategory('');
       setCustomCategory('');
     }
     setIsDialogOpen(isOpen);
@@ -107,6 +106,7 @@ export function DocumentsTab() {
       } else {
         toast({ title: editingDoc ? 'Document Updated' : 'Document(s) Added', description: 'Your documents have been saved successfully.' });
         handleOpenChange(false);
+        refreshData();
       }
     });
   };
@@ -124,6 +124,7 @@ export function DocumentsTab() {
           toast({ title: 'Error deleting document', description: result.error, variant: 'destructive' });
         } else {
           toast({ title: 'Document Deleted', description: 'The document has been removed.' });
+          refreshData();
         }
       });
     }, e);
