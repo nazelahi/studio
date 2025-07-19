@@ -56,26 +56,6 @@ export function DocumentsTab() {
   const [customCategory, setCustomCategory] = React.useState('');
   const [showAll, setShowAll] = React.useState(false);
 
-  
-  React.useEffect(() => {
-    const categories = settings.documentCategories || [];
-    if (editingDoc) {
-        const docCategory = editingDoc.category || '';
-        if (categories.includes(docCategory)) {
-            setCategory(docCategory);
-            setCustomCategory('');
-        } else if (docCategory) {
-            setCategory('Other');
-            setCustomCategory(docCategory);
-        } else {
-            setCategory('');
-            setCustomCategory('');
-        }
-    } else {
-        setCategory(categories[0] || '');
-    }
-  }, [editingDoc, settings.documentCategories]);
-
 
   const handleOpenChange = (isOpen: boolean) => {
     if (!isOpen) {
