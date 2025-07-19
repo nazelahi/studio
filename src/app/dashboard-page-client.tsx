@@ -61,8 +61,7 @@ function FullPageLoader() {
   return (
     <div className="flex min-h-screen w-full flex-col items-center justify-center bg-background p-4">
         <div className="w-full max-w-sm space-y-4 text-center">
-            <Logo className="mx-auto h-10 w-10 text-primary" />
-            <Progress value={100} className="h-2 w-full animate-shimmer bg-primary/20 bg-[length:200%_100%]" />
+            <Logo className="mx-auto h-12 w-12 text-primary animate-pulse" />
             <p className="text-muted-foreground">Loading Property Details...</p>
         </div>
     </div>
