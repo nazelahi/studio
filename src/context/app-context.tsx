@@ -12,6 +12,8 @@ import { addWorkDetailsBatch as addWorkDetailsBatchAction } from '@/app/actions/
 import { addExpensesBatch as addExpensesBatchAction } from '@/app/actions/expenses';
 import type { AppData } from '@/lib/data';
 import { getDashboardDataAction } from '@/app/actions/data';
+import { findOrCreateTenantAction } from '@/app/actions/tenants';
+import { addRentEntriesBatch as addRentEntriesBatchServerAction } from '@/app/actions/rent';
 
 // --- START: Settings-related types moved here ---
 interface PageDashboard {
@@ -525,10 +527,10 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
                 property: tenantData.property,
                 rent: tenantData.rent,
                 avatar: tenantData.avatar,
+                tenant_id: id,
             })
-            .eq('tenant_id', id)
-            .neq('status', 'Paid')
-            .gt('due_date', new Date().toISOString());
+            .eq('name', tenantData.name)
+            .eq('property', tenantData.property);
 
         if (rentUpdateError) {
             handleError(rentUpdateError, 'syncing future rent entries', toast);
@@ -569,7 +571,7 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
       }
     };
 
-    const addExpensesBatch = async (expenses: Omit<Expense, 'id' | 'created_at' | 'deleted_at'>[], toast: ToastFn) => {
+    const addExpensesBatch = async (expenses: Omit<Expense, 'id' | 'deleted_at' | 'created_at'>[], toast: ToastFn) => {
         const result = await addExpensesBatchAction(expenses);
         if (result.error) {
             handleError(new Error(result.error), 'batch adding expenses', toast);
@@ -629,7 +631,7 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
         handleError(error, 'deleting multiple expenses', toast);
       }
     };
-
+    
     const addRentEntry = async (rentEntryData: NewRentEntry, year: number, month: number, toast: ToastFn) => {
       try {
         if (!supabase) return;
@@ -692,61 +694,46 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
 
     const addRentEntriesBatch = async (rentEntriesData: Omit<NewRentEntry, 'tenant_id' | 'avatar'>[], year: number, month: number, toast: ToastFn) => {
       try {
-        if (!supabase) return;
+        const tenantPromises = rentEntriesData.map(entry => 
+            findOrCreateTenantAction({
+                name: entry.name,
+                property: entry.property,
+                rent: entry.rent,
+                join_date: new Date(year, month, 1).toISOString().split('T')[0],
+                email: entry.name ? `${entry.name.replace(/\s+/g, '.').toLowerCase()}@example.com` : 'tenant@example.com',
+            })
+        );
+        const tenantsResult = await Promise.all(tenantPromises);
 
-        const newEntriesWithDetails = await Promise.all(rentEntriesData.map(async (rentEntryData) => {
-            let tenantInfo = { id: (rentEntryData as NewRentEntry).tenant_id, avatar: (rentEntryData as NewRentEntry).avatar };
-
-            if (!tenantInfo.id) {
-                let { data: existingTenant } = await supabase
-                    .from('tenants')
-                    .select('id, avatar')
-                    .eq('name', rentEntryData.name)
-                    .eq('property', rentEntryData.property)
-                    .is('deleted_at', null)
-                    .maybeSingle();
-
-                if (!existingTenant) {
-                    const newTenantData = {
-                        name: rentEntryData.name,
-                        property: rentEntryData.property,
-                        rent: rentEntryData.rent,
-                        join_date: new Date(year, month, 1).toISOString().split('T')[0],
-                        avatar: 'https://placehold.co/80x80.png',
-                        status: 'Active' as const,
-                        email: rentEntryData.name ? rentEntryData.name.replace(/\s+/g, '.').toLowerCase() + '@example.com' : 'tenant@example.com',
-                    };
-                    const { data: newTenant, error } = await supabase.from('tenants').insert(newTenantData).select().single();
-                    if (error) {
-                        handleError(error, `auto-creating tenant for ${rentEntryData.name}`, toast);
-                        return null;
-                    }
-                    existingTenant = newTenant;
-                }
-                tenantInfo.id = existingTenant?.id;
-                tenantInfo.avatar = existingTenant?.avatar;
+        const newEntries = rentEntriesData.map((entry, index) => {
+            const tenant = tenantsResult[index];
+            if (!tenant || tenant.error) {
+                handleError(new Error(tenant?.error || `Failed to find or create tenant for ${entry.name}`), `batch tenant processing`, toast);
+                return null;
             }
             
-            const newEntry = {
-                ...rentEntryData,
-                tenant_id: tenantInfo.id,
-                avatar: tenantInfo.avatar || 'https://placehold.co/80x80.png',
+            return {
+                ...entry,
+                tenant_id: tenant.data!.id,
+                avatar: tenant.data!.avatar,
                 due_date: new Date(year, month, 1).toISOString().split('T')[0],
                 year,
                 month,
             };
+        }).filter(Boolean) as (Omit<NewRentEntry, 'tenant_id' | 'avatar'> & { tenant_id: string, avatar: string, year: number, month: number, due_date: string })[];
 
-            const { id, ...entryToInsert } = newEntry as any;
-
-            return entryToInsert;
-        }));
-        
-        const validNewEntries = newEntriesWithDetails.filter((entry): entry is Omit<RentEntry, 'id'> => entry !== null);
-        if(validNewEntries.length > 0) {
-            const { error } = await supabase.from('rent_entries').insert(validNewEntries);
-            if (error) handleError(error, 'batch adding rent entries', toast);
+        if (newEntries.length === 0) {
+            toast({ title: "No entries to add", description: "All entries failed during tenant processing.", variant: "destructive" });
+            return;
         }
-        await refreshData(false);
+
+        const result = await addRentEntriesBatchServerAction(newEntries);
+        
+        if (result.error) {
+            handleError(new Error(result.error), 'batch adding rent entries', toast);
+        } else {
+             await refreshData(false);
+        }
       } catch (error) {
         handleError(error, 'batch adding rent entries', toast);
       }
