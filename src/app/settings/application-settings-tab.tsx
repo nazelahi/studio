@@ -35,12 +35,8 @@ export default function ApplicationSettingsTab() {
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
 
-  const [docCategories, setDocCategories] = useState<string[]>([]);
+  const [docCategories, setDocCategories] = useState<string[]>(() => settings.documentCategories || []);
   const [newCategory, setNewCategory] = useState('');
-
-  useEffect(() => {
-    setDocCategories(settings.documentCategories || []);
-  }, [settings.documentCategories]);
 
   const handleDocCategoryChange = (index: number, value: string) => {
     const newCategories = [...docCategories];
