@@ -263,9 +263,9 @@ const getInitialSettings = (serverSettings: DbPropertySettings | null, zakatDeta
             metadataTitle: serverSettings.metadata_title || defaultSettings.metadataTitle,
             faviconUrl: serverSettings.favicon_url || defaultSettings.faviconUrl,
             appLogoUrl: serverSettings.app_logo_url || defaultSettings.appLogoUrl,
+            documentCategories: serverSettings.document_categories || defaultSettings.documentCategories,
             dateFormat: serverSettings.date_format || defaultSettings.dateFormat,
             currencySymbol: serverSettings.currency_symbol || defaultSettings.currencySymbol,
-            documentCategories: serverSettings.document_categories || defaultSettings.documentCategories,
             whatsappRemindersEnabled: serverSettings.whatsapp_reminders_enabled ?? defaultSettings.whatsappRemindersEnabled,
             whatsappReminderSchedule: serverSettings.whatsapp_reminder_schedule || defaultSettings.whatsappReminderSchedule,
             whatsappReminderTemplate: serverSettings.whatsapp_reminder_template || defaultSettings.whatsappReminderTemplate,
@@ -382,8 +382,8 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
                 title: `${tenantIds.length} Tenant(s) Archived`,
                 description: 'The selected tenants have been archived.',
             });
+            await refreshData();
         }
-        await refreshData();
     };
 
     const addExpense = async (expense: Omit<Expense, 'id' | 'created_at'>) => {
@@ -402,6 +402,7 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
         if (result.error) {
             handleError(new Error(result.error), 'batch adding expenses');
         } else {
+            toast({ title: "Import Successful", description: `${result.count} expenses have been added.` });
             await refreshData();
         }
         return result;
@@ -419,9 +420,14 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
         formData.append('status', updatedExpense.status);
         
         const result = await saveExpenseAction(formData);
-        if (result.error) handleError(new Error(result.error), 'updating expense');
-
-        await refreshData();
+        if (result.error) {
+             handleError(new Error(result.error), 'updating expense');
+        } else {
+             setData(prev => ({
+                ...prev,
+                expenses: prev.expenses.map(exp => exp.id === updatedExpense.id ? updatedExpense : exp)
+            }));
+        }
       } catch (error) {
         handleError(error, 'updating expense');
       }
@@ -434,16 +440,24 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
 
         if (result.error) {
             handleError(new Error(result.error), 'deleting expense');
+        } else {
+             setData(prev => ({
+                ...prev,
+                expenses: prev.expenses.filter(exp => exp.id !== expenseId)
+            }));
         }
-        await refreshData();
     };
 
     const deleteMultipleExpenses = async (expenseIds: string[]) => {
         const result = await deleteMultipleExpensesAction(expenseIds);
         if (result.error) {
             handleError(new Error(result.error), 'deleting multiple expenses');
+        } else {
+             setData(prev => ({
+                ...prev,
+                expenses: prev.expenses.filter(exp => !expenseIds.includes(exp.id))
+            }));
         }
-        await refreshData();
     };
     
     const addRentEntry = async (rentEntryData: NewRentEntry, year: number, month: number) => {
@@ -471,11 +485,11 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
             due_date: new Date(year, month, 1).toISOString().split('T')[0],
         }
 
-        const { error } = await supabase.from('rent_entries').insert(newEntry);
+        const { data: insertedEntry, error } = await supabase.from('rent_entries').insert(newEntry).select().single();
         if (error) {
              handleError(error, 'adding rent entry');
         } else {
-             await refreshData();
+             setData(prev => ({ ...prev, rentData: [...prev.rentData, insertedEntry] }));
         }
     };
 
@@ -534,7 +548,10 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
         if (error) {
             handleError(error, 'updating rent entry');
         } else {
-            await refreshData();
+            setData(prev => ({
+                ...prev,
+                rentData: prev.rentData.map(re => re.id === id ? updatedRentEntry : re)
+            }));
         }
     };
     
@@ -542,16 +559,24 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
         const result = await deleteRentEntryAction(rentEntryId);
         if (result.error) {
             handleError(new Error(result.error), 'deleting rent entry');
+        } else {
+            setData(prev => ({
+                ...prev,
+                rentData: prev.rentData.filter(re => re.id !== rentEntryId)
+            }));
         }
-        await refreshData();
     };
 
     const deleteMultipleRentEntries = async (rentEntryIds: string[]) => {
         const result = await deleteMultipleRentEntriesAction(rentEntryIds);
         if (result.error) {
             handleError(new Error(result.error), 'deleting multiple rent entries');
+        } else {
+            setData(prev => ({
+                ...prev,
+                rentData: prev.rentData.filter(re => !rentEntryIds.includes(re.id))
+            }));
         }
-        await refreshData();
     };
     
     const syncTenantsForMonth = async (year: number, month: number) => {
@@ -648,8 +673,8 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
             handleError(new Error(result.error), 'batch adding work details');
         } else {
             toast({ title: "Import Successful", description: `${result.count} work items have been imported.` });
+            await refreshData();
         }
-        await refreshData();
       } catch(error) {
         handleError(error, 'batch adding work details');
       }

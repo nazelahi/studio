@@ -1,4 +1,5 @@
 
+
 import { createClient } from '@supabase/supabase-js';
 import { subYears, format } from 'date-fns';
 import type { Tenant, Expense, RentEntry, PropertySettings, Deposit, ZakatTransaction, Notice, WorkDetail, ZakatBankDetail, Document } from '@/types';
