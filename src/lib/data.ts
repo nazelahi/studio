@@ -63,7 +63,7 @@ export async function getDashboardData(): Promise<AppData> {
 
         const checkError = (res: any, name: string) => {
             if (res.error) {
-                 const errorCode = res.error.code;
+                 const errorCode = res.error?.code;
                  // Ignore "No rows found" for single-item fetches and "undefined table" for optional tables.
                  if (errorCode && (errorCode === 'PGRST116' || errorCode === '42P01')) {
                     // This is an expected case (e.g., no settings row found yet), so we don't throw.
@@ -122,7 +122,7 @@ export async function getSettingsData(): Promise<{
 
         const checkError = (res: any, name: string) => {
             if (res.error) {
-                 const errorCode = res.error.code;
+                 const errorCode = res.error?.code;
                  if (errorCode && (errorCode === 'PGRST116' || errorCode === '42P01')) {
                     return;
                  }
