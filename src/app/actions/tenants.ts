@@ -4,7 +4,6 @@
 import { createClient } from '@supabase/supabase-js'
 import 'dotenv/config'
 import type { Tenant } from '@/types'
-import { supabase as supabaseClient } from '@/lib/supabase'
 
 const getSupabaseAdmin = () => {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -80,7 +79,7 @@ export async function updateTenantAction(formData: FormData) {
         const fileExt = avatarFile.name.split('.').pop();
         const filePath = `avatars/${tenantId}/${Date.now()}.${fileExt}`;
         
-        const { data: uploadData, error: uploadError } = await supabaseClient.storage
+        const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
             .from('tenant-documents')
             .upload(filePath, avatarFile, { upsert: true });
 
@@ -89,7 +88,7 @@ export async function updateTenantAction(formData: FormData) {
             return { error: `Failed to upload avatar: ${uploadError.message}` };
         }
         
-        const { data: publicUrlData } = supabaseClient.storage.from('tenant-documents').getPublicUrl(uploadData.path);
+        const { data: publicUrlData } = supabaseAdmin.storage.from('tenant-documents').getPublicUrl(uploadData.path);
         avatarUrl = publicUrlData.publicUrl;
     }
 
