@@ -233,14 +233,17 @@ export default function DashboardPageClient() {
                 </SheetTrigger>
                 <SheetContent side="left" className="p-0 flex flex-col">
                     <SheetHeader className="p-6">
-                    <SheetTitle className="sr-only">Mobile Navigation</SheetTitle>
-                    <div className="flex flex-col items-start gap-2">
-                        <h1 className="text-lg font-bold tracking-tight text-primary truncate">{settings.houseName}</h1>
-                        <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-                            <MapPin className="h-4 w-4 flex-shrink-0" />
-                            <p className="truncate">{settings.houseAddress}</p>
+                        <SheetTitle className="sr-only">Mobile Navigation</SheetTitle>
+                        <div className="flex items-start justify-between">
+                            <div className="flex flex-col items-start gap-2">
+                                <h1 className="text-lg font-bold tracking-tight text-primary truncate">{settings.houseName}</h1>
+                                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                                    <MapPin className="h-4 w-4 flex-shrink-0" />
+                                    <p className="truncate">{settings.houseAddress}</p>
+                                </div>
+                            </div>
+                            <ThemeToggle />
                         </div>
-                    </div>
                     </SheetHeader>
                     <nav className="grid gap-6 text-lg font-medium p-6 pt-0">
                     <div className="border-t pt-6 grid gap-4 text-base font-medium">
@@ -249,37 +252,34 @@ export default function DashboardPageClient() {
                     </div>
                     </nav>
                     <div className="mt-auto border-t p-4">
-                        <div className="flex items-center justify-between">
-                            <Dialog open={isOwnerDialogOpen} onOpenChange={setIsOwnerDialogOpen}>
-                            <DialogTrigger asChild>
-                                <div className="flex items-center gap-3 cursor-pointer">
-                                <Avatar className="h-9 w-9">
-                                    <AvatarImage src={settings.ownerPhotoUrl} data-ai-hint="person avatar" />
-                                    <AvatarFallback><UserCircle className="h-5 w-5"/></AvatarFallback>
+                        <Dialog open={isOwnerDialogOpen} onOpenChange={setIsOwnerDialogOpen}>
+                        <DialogTrigger asChild>
+                            <div className="flex items-center gap-3 cursor-pointer">
+                            <Avatar className="h-9 w-9">
+                                <AvatarImage src={settings.ownerPhotoUrl} data-ai-hint="person avatar" />
+                                <AvatarFallback><UserCircle className="h-5 w-5"/></AvatarFallback>
+                            </Avatar>
+                            <div className="flex flex-col items-start">
+                                <h1 className="text-sm font-bold tracking-tight text-primary truncate">{settings.ownerName}</h1>
+                                <p className="text-xs text-muted-foreground">Property Owner</p>
+                            </div>
+                            </div>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-sm">
+                            <DialogHeader className="items-center text-center">
+                                <Avatar className="h-32 w-32 border-4 border-primary/20 shadow-lg">
+                                <AvatarImage src={settings.ownerPhotoUrl} data-ai-hint="person avatar" />
+                                <AvatarFallback><UserCircle className="h-20 w-20 text-muted-foreground"/></AvatarFallback>
                                 </Avatar>
-                                <div className="flex flex-col items-start">
-                                    <h1 className="text-sm font-bold tracking-tight text-primary truncate">{settings.ownerName}</h1>
-                                    <p className="text-xs text-muted-foreground">Property Owner</p>
-                                </div>
-                                </div>
-                            </DialogTrigger>
-                            <DialogContent className="sm:max-w-sm">
-                                <DialogHeader className="items-center text-center">
-                                    <Avatar className="h-32 w-32 border-4 border-primary/20 shadow-lg">
-                                    <AvatarImage src={settings.ownerPhotoUrl} data-ai-hint="person avatar" />
-                                    <AvatarFallback><UserCircle className="h-20 w-20 text-muted-foreground"/></AvatarFallback>
-                                    </Avatar>
-                                    <DialogTitle className="text-2xl pt-4">{settings.ownerName}</DialogTitle>
-                                </DialogHeader>
-                                <div className="text-center text-muted-foreground text-sm">Property Owner</div>
-                                <div className="mt-4 pt-4 border-t text-center">
-                                    <h3 className="font-semibold text-primary">{settings.houseName}</h3>
-                                    <p className="text-sm text-muted-foreground">{settings.houseAddress}</p>
-                                </div>
-                            </DialogContent>
-                            </Dialog>
-                            <ThemeToggle />
-                        </div>
+                                <DialogTitle className="text-2xl pt-4">{settings.ownerName}</DialogTitle>
+                            </DialogHeader>
+                            <div className="text-center text-muted-foreground text-sm">Property Owner</div>
+                            <div className="mt-4 pt-4 border-t text-center">
+                                <h3 className="font-semibold text-primary">{settings.houseName}</h3>
+                                <p className="text-sm text-muted-foreground">{settings.houseAddress}</p>
+                            </div>
+                        </DialogContent>
+                        </Dialog>
                     </div>
                 </SheetContent>
                 </Sheet>
