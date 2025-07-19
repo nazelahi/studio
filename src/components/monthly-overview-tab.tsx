@@ -281,13 +281,16 @@ export function MonthlyOverviewTab() {
   const netResult = totalRentCollected - totalExpensesPaid;
   const amountForDeposit = netResult > 0 ? netResult : 0;
 
-    React.useEffect(() => {
-        if (loggedDeposit) {
-            setDepositAmount(String(loggedDeposit.amount || ''));
-        } else {
-             setDepositAmount(amountForDeposit > 0 ? amountForDeposit.toFixed(2) : '');
-        }
-    }, [loggedDeposit, amountForDeposit]);
+  const initialDepositAmount = React.useMemo(() => {
+      if (loggedDeposit) {
+          return String(loggedDeposit.amount || '');
+      }
+      return amountForDeposit > 0 ? amountForDeposit.toFixed(2) : '';
+  }, [loggedDeposit, amountForDeposit]);
+
+  React.useEffect(() => {
+      setDepositAmount(initialDepositAmount);
+  }, [initialDepositAmount]);
 
 
 
