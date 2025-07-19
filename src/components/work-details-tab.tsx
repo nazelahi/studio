@@ -24,7 +24,7 @@ import { cn } from "@/lib/utils"
 import { useRouter } from "next/navigation"
 import { useProtection } from "@/context/protection-context"
 import * as XLSX from 'xlsx';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "./ui/tooltip"
+import { Tooltip, TooltipContent, TooltipProvider } from "./ui/tooltip"
 import { formatCurrency, formatDate } from "@/lib/utils"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "./ui/dropdown-menu"
 
@@ -437,7 +437,7 @@ export function WorkDetailsTab({ year }: { year: number }) {
                           </form>
                       </DialogContent>
                   </Dialog>
-                  <div className="hidden sm:flex items-center gap-2">
+                  <div className="flex items-center gap-2">
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button size="icon" variant="outline" onClick={handleDownloadTemplate}><Download className="h-4 w-4" /></Button>
