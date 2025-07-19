@@ -205,10 +205,7 @@ export function MonthlyOverviewTab() {
   const [selectedTenantForSheet, setSelectedTenantForSheet] = React.useState<Tenant | null>(null);
   
   const [isDepositDialogOpen, setIsDepositDialogOpen] = React.useState(false);
-  const [receiptPreview, setReceiptPreview] = React.useState<string | null>(null);
-  const [receiptFile, setReceiptFile] = React.useState<File | null>(null);
   const [isUploading, setIsUploading] = React.useState(false);
-  const [depositAmount, setDepositAmount] = React.useState('');
   
   const [isNoticeDialogOpen, setIsNoticeDialogOpen] = React.useState(false);
   const [isNoticePending, startNoticeTransition] = React.useTransition();
@@ -221,7 +218,6 @@ export function MonthlyOverviewTab() {
 
   const formRef = React.useRef<HTMLFormElement>(null);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
-  const receiptInputRef = React.useRef<HTMLInputElement>(null);
   const expenseFileInputRef = React.useRef<HTMLInputElement>(null);
 
 
@@ -287,8 +283,6 @@ export function MonthlyOverviewTab() {
       }
       return amountForDeposit > 0 ? amountForDeposit.toFixed(2) : '';
   }, [loggedDeposit, amountForDeposit]);
-
-  setDepositAmount(initialDepositAmount);
   
   const historicalTenants = React.useMemo(() => {
     const allTenantsMap = new Map<string, HistoricalTenant>();
@@ -443,7 +437,7 @@ export function MonthlyOverviewTab() {
             payment_date = new Date().toISOString().split('T')[0];
         }
         await updateRentEntry({ ...entry, status: newStatus, payment_date });
-        toast({ title: "Status Updated", description: `${entry.name}'s status is now ${newStatus}.`});
+        toast({ title: "Status Updated", description: `${entry.name}'s status is now ${newStatus}.` });
     });
   }
 
@@ -515,7 +509,7 @@ export function MonthlyOverviewTab() {
   const handleExpenseStatusChange = (expense: Expense, newStatus: Expense['status']) => {
     withProtection(async () => {
         await updateExpense({ ...expense, status: newStatus } as any);
-        toast({ title: "Status Updated", description: `Expense status is now ${newStatus}.`});
+        toast({ title: "Status Updated", description: `Expense status is now ${newStatus}.` });
     });
   }
 
@@ -619,97 +613,6 @@ export function MonthlyOverviewTab() {
         toast({ title: "Template Downloaded", description: "RentRoll_Template.xlsx has been downloaded." });
     };
     
-    const handleReceiptFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            setReceiptFile(file);
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setReceiptPreview(reader.result as string);
-            };
-            reader.readAsDataURL(file);
-        }
-    };
-    
-  const handleSaveDeposit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setIsUploading(true);
-
-    const formData = new FormData(event.currentTarget);
-    formData.set('amount', depositAmount); 
-    let receiptUrl: string | null = loggedDeposit?.receipt_url || null;
-
-    if (receiptFile) {
-        const fileExt = receiptFile.name.split('.').pop();
-        const filePath = `${selectedYear}-${selectedMonth}/${Date.now()}.${fileExt}`;
-        const { error: uploadError } = await supabase.storage
-            .from('deposit-receipts')
-            .upload(filePath, receiptFile);
-
-        if (uploadError) {
-            toast({ title: "Upload Error", description: uploadError.message, variant: "destructive" });
-            setIsUploading(false);
-            return;
-        }
-
-        const { data: publicUrlData } = supabase.storage
-            .from('deposit-receipts')
-            .getPublicUrl(filePath);
-        
-        receiptUrl = publicUrlData.publicUrl;
-
-        if (loggedDeposit?.receipt_url) {
-            formData.set('oldReceiptUrl', loggedDeposit.receipt_url);
-        }
-    }
-
-    formData.set('receipt_url', receiptUrl || '');
-
-    const result = await logDepositAction(formData);
-    
-    if (result.error) {
-        toast({ title: "Error", description: result.error, variant: "destructive" });
-        if (receiptFile && receiptUrl) {
-            try {
-                const pathToDelete = new URL(receiptUrl).pathname.split('/deposit-receipts/')[1];
-                await supabase.storage.from('deposit-receipts').remove([pathToDelete]);
-                 toast({ title: "Cleanup", description: "Rolling back receipt upload due to database error." });
-            } catch (e) {
-                console.error("Error removing new receipt after failed DB update:", e);
-            }
-        }
-    } else {
-        toast({ title: "Success", description: "Bank deposit has been logged." });
-        setIsDepositDialogOpen(false);
-        refreshData();
-    }
-    setIsUploading(false);
-  };
-
-  const handleDeleteDeposit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    const result = await deleteDepositAction(formData);
-    
-    if (result.error) {
-        toast({ title: "Error", description: result.error, variant: "destructive" });
-    } else {
-        toast({ title: "Success", description: "Bank deposit has been removed.", variant: "destructive" });
-        setIsDepositDialogOpen(false);
-        refreshData();
-    }
-  };
-
-
-  
-  const handleDepositOpenChange = (isOpen: boolean) => {
-    if (!isOpen) {
-        setReceiptFile(null);
-        setReceiptPreview(null);
-        setIsUploading(false);
-    }
-    setIsDepositDialogOpen(isOpen);
-  };
   
   const handleSaveNotice = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -1588,81 +1491,14 @@ export function MonthlyOverviewTab() {
           </div>
         </TabsContent>
       ))}
-      <Dialog open={isDepositDialogOpen} onOpenChange={handleDepositOpenChange}>
-        <DialogContent>
-            <DialogHeader>
-                <DialogTitle>{loggedDeposit ? 'Edit Deposit' : 'Log New Deposit'}</DialogTitle>
-                <DialogDescription>
-                    Confirm the amount, date, and receipt for the deposit for {months[selectedMonth]}, {selectedYear}.
-                </DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleSaveDeposit}>
-                <input type="hidden" name="year" value={selectedYear} />
-                <input type="hidden" name="month" value={selectedMonth} />
-                {loggedDeposit && <input type="hidden" name="depositId" value={loggedDeposit.id} />}
-                {loggedDeposit?.receipt_url && <input type="hidden" name="receipt_url" value={loggedDeposit.receipt_url} />}
-                <div className="grid gap-4 py-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="deposit-amount">Amount to Deposit</Label>
-                        <Input id="deposit-amount" name="amount" type="number" step="0.01" value={depositAmount} onChange={(e) => setDepositAmount(e.target.value)} required />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="deposit-date">Deposit Date</Label>
-                        <Input id="deposit-date" name="deposit_date" type="date" defaultValue={loggedDeposit?.deposit_date ? formatDate(loggedDeposit.deposit_date, 'yyyy-MM-dd') : formatDate(new Date().toISOString(), 'yyyy-MM-dd')} required />
-                    </div>
-                    <div className="space-y-2">
-                        <Label>Bank Receipt</Label>
-                        <div className="flex items-center gap-4">
-                            <div className="w-24 h-24 bg-muted rounded-md flex items-center justify-center">
-                                {receiptPreview || loggedDeposit?.receipt_url ? (
-                                    <img src={receiptPreview || loggedDeposit?.receipt_url || ''} alt="Receipt Preview" className="h-full w-full object-contain rounded-md" data-ai-hint="document receipt"/>
-                                ) : (
-                                    <ImageIcon className="h-10 w-10 text-muted-foreground" />
-                                )}
-                            </div>
-                            <Button type="button" variant="outline" onClick={() => receiptInputRef.current?.click()}>
-                                <Upload className="mr-2 h-4 w-4"/>
-                                Upload Image
-                            </Button>
-                            <Input ref={receiptInputRef} type="file" className="hidden" accept="image/*" onChange={handleReceiptFileChange} />
-                        </div>
-                    </div>
-                </div>
-                <DialogFooter className="justify-between">
-                    {loggedDeposit ? (
-                        <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                                <Button type="button" variant="destructive" disabled={isUploading}>Delete</Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                        This will remove the deposit log and receipt for {months[selectedMonth]}, {selectedYear}. This action cannot be undone.
-                                    </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <form onSubmit={handleDeleteDeposit}>
-                                        <input type="hidden" name="depositId" value={loggedDeposit.id} />
-                                        <input type="hidden" name="receiptPath" value={loggedDeposit.receipt_url} />
-                                        <AlertDialogAction type="submit">Delete</AlertDialogAction>
-                                    </form>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
-                    ) : (<div></div>)}
-                    <div className="flex gap-2">
-                        <DialogClose asChild><Button type="button" variant="outline" disabled={isUploading}>Cancel</Button></DialogClose>
-                        <Button type="submit" disabled={isUploading}>
-                            {isUploading && <RefreshCw className="mr-2 h-4 w-4 animate-spin"/>}
-                            {isUploading ? 'Saving...' : 'Save Deposit'}
-                        </Button>
-                    </div>
-                </DialogFooter>
-            </form>
-        </DialogContent>
-     </Dialog>
+      <DepositDialog
+        isOpen={isDepositDialogOpen}
+        onOpenChange={setIsDepositDialogOpen}
+        loggedDeposit={loggedDeposit}
+        initialAmount={initialDepositAmount}
+        year={selectedYear}
+        month={selectedMonth}
+      />
     </Tabs>
     {selectedTenantForSheet && (
       <TenantDetailSheet 
@@ -1673,5 +1509,153 @@ export function MonthlyOverviewTab() {
     )}
      
     </TooltipProvider>
+  )
+}
+
+function DepositDialog({ isOpen, onOpenChange, loggedDeposit, initialAmount, year, month }: { isOpen: boolean, onOpenChange: (isOpen: boolean) => void, loggedDeposit: Deposit | undefined, initialAmount: string, year: number, month: number }) {
+  const { toast } = useToast();
+  const { refreshData } = useAppContext();
+  const [isUploading, setIsUploading] = React.useState(false);
+  const [receiptFile, setReceiptFile] = React.useState<File | null>(null);
+  const [receiptPreview, setReceiptPreview] = React.useState<string | null>(null);
+  const [depositAmount, setDepositAmount] = React.useState(initialAmount);
+  const receiptInputRef = React.useRef<HTMLInputElement>(null);
+
+  React.useEffect(() => {
+    if (isOpen) {
+      setDepositAmount(initialAmount);
+      setReceiptPreview(loggedDeposit?.receipt_url || null);
+    }
+  }, [isOpen, initialAmount, loggedDeposit]);
+
+  const handleOpenChange = (open: boolean) => {
+    if (!open) {
+      setReceiptFile(null);
+      setReceiptPreview(null);
+      setIsUploading(false);
+    }
+    onOpenChange(open);
+  }
+
+  const handleReceiptFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setReceiptFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setReceiptPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSaveDeposit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setIsUploading(true);
+    const formData = new FormData(event.currentTarget);
+    formData.set('amount', depositAmount);
+    if (receiptFile) formData.append('receiptFile', receiptFile);
+    if (loggedDeposit?.receipt_url) formData.set('oldReceiptUrl', loggedDeposit.receipt_url);
+
+    const result = await logDepositAction(formData);
+    if (result.error) {
+      toast({ title: "Error", description: result.error, variant: "destructive" });
+    } else {
+      toast({ title: "Success", description: "Bank deposit has been logged." });
+      refreshData();
+      handleOpenChange(false);
+    }
+    setIsUploading(false);
+  };
+
+  const handleDeleteDeposit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    const result = await deleteDepositAction(formData);
+    if (result.error) {
+      toast({ title: "Error", description: result.error, variant: "destructive" });
+    } else {
+      toast({ title: "Success", description: "Bank deposit has been removed.", variant: "destructive" });
+      refreshData();
+      handleOpenChange(false);
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{loggedDeposit ? 'Edit Deposit' : 'Log New Deposit'}</DialogTitle>
+          <DialogDescription>
+            Confirm the amount, date, and receipt for the deposit for {months[month]}, {year}.
+          </DialogDescription>
+        </DialogHeader>
+        <form onSubmit={handleSaveDeposit}>
+          <input type="hidden" name="year" value={year} />
+          <input type="hidden" name="month" value={month} />
+          {loggedDeposit && <input type="hidden" name="depositId" value={loggedDeposit.id} />}
+          {loggedDeposit?.receipt_url && !receiptFile && <input type="hidden" name="receipt_url" value={loggedDeposit.receipt_url} />}
+          <div className="grid gap-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="deposit-amount">Amount to Deposit</Label>
+              <Input id="deposit-amount" name="amount" type="number" step="0.01" value={depositAmount} onChange={(e) => setDepositAmount(e.target.value)} required />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="deposit-date">Deposit Date</Label>
+              <Input id="deposit-date" name="deposit_date" type="date" defaultValue={loggedDeposit?.deposit_date ? formatDate(loggedDeposit.deposit_date, 'yyyy-MM-dd') : formatDate(new Date().toISOString(), 'yyyy-MM-dd')} required />
+            </div>
+            <div className="space-y-2">
+              <Label>Bank Receipt</Label>
+              <div className="flex items-center gap-4">
+                <div className="w-24 h-24 bg-muted rounded-md flex items-center justify-center">
+                  {receiptPreview ? (
+                    <img src={receiptPreview} alt="Receipt Preview" className="h-full w-full object-contain rounded-md" data-ai-hint="document receipt" />
+                  ) : (
+                    <ImageIcon className="h-10 w-10 text-muted-foreground" />
+                  )}
+                </div>
+                <Button type="button" variant="outline" onClick={() => receiptInputRef.current?.click()}>
+                  <Upload className="mr-2 h-4 w-4" />
+                  Upload Image
+                </Button>
+                <Input ref={receiptInputRef} type="file" className="hidden" accept="image/*" onChange={handleReceiptFileChange} />
+              </div>
+            </div>
+          </div>
+          <DialogFooter className="justify-between">
+            {loggedDeposit ? (
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button type="button" variant="destructive" disabled={isUploading}>Delete</Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will remove the deposit log and receipt for {months[month]}, {year}. This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <form onSubmit={handleDeleteDeposit}>
+                      <input type="hidden" name="depositId" value={loggedDeposit.id} />
+                      <input type="hidden" name="receiptPath" value={loggedDeposit.receipt_url} />
+                      <AlertDialogAction type="submit">Delete</AlertDialogAction>
+                    </form>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            ) : (<div></div>)}
+            <div className="flex gap-2">
+              <DialogClose asChild><Button type="button" variant="outline" disabled={isUploading}>Cancel</Button></DialogClose>
+              <Button type="submit" disabled={isUploading}>
+                {isUploading && <RefreshCw className="mr-2 h-4 w-4 animate-spin" />}
+                {isUploading ? 'Saving...' : 'Save Deposit'}
+              </Button>
+            </div>
+          </DialogFooter>
+        </form>
+      </DialogContent>
+    </Dialog>
   )
 }
