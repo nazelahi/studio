@@ -329,22 +329,22 @@ export default function DashboardPageClient() {
                 </div>
             </header>
             <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8 pb-20 md:pb-8">
-                <TabsContent value="overview">
+                <TabsContent value="overview" forceMount>
                     {activeTab === 'overview' && <MonthlyOverviewTab />}
                 </TabsContent>
-                <TabsContent value="contacts">
+                <TabsContent value="contacts" forceMount>
                     {activeTab === 'contacts' && <ContactsTab />}
                 </TabsContent>
-                <TabsContent value="work">
+                <TabsContent value="work" forceMount>
                     {activeTab === 'work' && <WorkDetailsTab year={currentYear} />}
                 </TabsContent>
-                <TabsContent value="documents">
+                <TabsContent value="documents" forceMount>
                     {activeTab === 'documents' && <DocumentsTab />}
                 </TabsContent>
-                <TabsContent value="reports">
+                <TabsContent value="reports" forceMount>
                     {activeTab === 'reports' && <ReportsTab year={currentYear} />}
                 </TabsContent>
-                <TabsContent value="zakat">
+                <TabsContent value="zakat" forceMount>
                     {activeTab === 'zakat' && <ZakatTab />}
                 </TabsContent>
                 <AppFooter />
