@@ -26,38 +26,6 @@ import { Card, CardContent, CardHeader, Skeleton, Progress } from "@/components/
 import { ThemeToggle } from "@/components/theme-toggle"
 
 
-const LoadingSkeleton = () => (
-  <Card className="mt-4">
-    <CardHeader>
-      <Skeleton className="h-8 w-1/2" />
-      <Skeleton className="h-4 w-3/4" />
-    </CardHeader>
-    <CardContent>
-      <Skeleton className="h-40 w-full" />
-    </CardContent>
-  </Card>
-)
-
-const MonthlyOverviewTab = dynamic(() => import('@/components/monthly-overview-tab').then(mod => mod.MonthlyOverviewTab), {
-  loading: () => <LoadingSkeleton />,
-});
-const ContactsTab = dynamic(() => import('@/components/contacts-tab').then(mod => mod.ContactsTab), {
-  loading: () => <LoadingSkeleton />,
-});
-const WorkDetailsTab = dynamic(() => import('@/components/work-details-tab').then(mod => mod.WorkDetailsTab), {
-  loading: () => <LoadingSkeleton />,
-});
-const DocumentsTab = dynamic(() => import('@/components/documents-tab').then(mod => mod.DocumentsTab), {
-  loading: () => <LoadingSkeleton />,
-});
-const ReportsTab = dynamic(() => import('@/components/reports-tab').then(mod => mod.ReportsTab), {
-  loading: () => <LoadingSkeleton />,
-});
-const ZakatTab = dynamic(() => import('@/components/zakat-tab').then(mod => mod.ZakatTab), {
-  loading: () => <LoadingSkeleton />,
-});
-
-
 function FullPageLoader() {
   return (
     <div className="flex min-h-screen w-full flex-col items-center justify-center bg-background p-4">
@@ -242,7 +210,6 @@ export default function DashboardPageClient() {
                                     <p className="truncate">{settings.houseAddress}</p>
                                 </div>
                             </div>
-                            <ThemeToggle />
                         </div>
                     </SheetHeader>
                     <nav className="grid gap-6 text-lg font-medium p-6 pt-0">
@@ -253,18 +220,21 @@ export default function DashboardPageClient() {
                     </nav>
                     <div className="mt-auto border-t p-4">
                         <Dialog open={isOwnerDialogOpen} onOpenChange={setIsOwnerDialogOpen}>
-                        <DialogTrigger asChild>
-                            <div className="flex items-center gap-3 cursor-pointer">
-                            <Avatar className="h-9 w-9">
-                                <AvatarImage src={settings.ownerPhotoUrl} data-ai-hint="person avatar" />
-                                <AvatarFallback><UserCircle className="h-5 w-5"/></AvatarFallback>
-                            </Avatar>
-                            <div className="flex flex-col items-start">
-                                <h1 className="text-sm font-bold tracking-tight text-primary truncate">{settings.ownerName}</h1>
-                                <p className="text-xs text-muted-foreground">Property Owner</p>
-                            </div>
-                            </div>
-                        </DialogTrigger>
+                        <div className="flex items-center justify-between gap-3">
+                            <DialogTrigger asChild>
+                                <div className="flex items-center gap-3 cursor-pointer">
+                                <Avatar className="h-9 w-9">
+                                    <AvatarImage src={settings.ownerPhotoUrl} data-ai-hint="person avatar" />
+                                    <AvatarFallback><UserCircle className="h-5 w-5"/></AvatarFallback>
+                                </Avatar>
+                                <div className="flex flex-col items-start">
+                                    <h1 className="text-sm font-bold tracking-tight text-primary truncate">{settings.ownerName}</h1>
+                                    <p className="text-xs text-muted-foreground">Property Owner</p>
+                                </div>
+                                </div>
+                            </DialogTrigger>
+                             <ThemeToggle />
+                        </div>
                         <DialogContent className="sm:max-w-sm">
                             <DialogHeader className="items-center text-center">
                                 <Avatar className="h-32 w-32 border-4 border-primary/20 shadow-lg">
@@ -367,5 +337,3 @@ export default function DashboardPageClient() {
     </div>
   )
 }
-
-    
