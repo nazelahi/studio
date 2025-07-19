@@ -149,7 +149,8 @@ export async function clearAllDataAction() {
         'deposits',
         'notices',
         'work_details',
-        'zakat_transactions'
+        'zakat_transactions',
+        'documents'
     ];
 
     for (const table of tablesToClear) {
@@ -170,7 +171,7 @@ export async function clearAllDataAction() {
 
 export async function generateSqlBackupAction() {
     const supabaseAdmin = getSupabaseAdmin();
-    const tables = ['tenants', 'expenses', 'rent_entries', 'deposits', 'notices', 'work_details', 'zakat_transactions', 'zakat_bank_details', 'property_settings'];
+    const tables = ['tenants', 'expenses', 'rent_entries', 'deposits', 'notices', 'work_details', 'zakat_transactions', 'zakat_bank_details', 'property_settings', 'documents'];
     let sqlString = `
 -- RentFlow SQL Backup
 -- Generated on: ${new Date().toUTCString()}
