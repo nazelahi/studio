@@ -12,7 +12,7 @@ import { addWorkDetailsBatch as addWorkDetailsBatchAction } from '@/app/actions/
 import { addExpensesBatch as addExpensesBatchAction, deleteExpenseAction, deleteMultipleExpensesAction } from '@/app/actions/expenses';
 import type { AppData } from '@/lib/data';
 import { getDashboardDataAction } from '@/app/actions/data';
-import { findOrCreateTenantAction, updateTenantAction, deleteTenantAction } from '@/app/actions/tenants';
+import { findOrCreateTenantAction, updateTenantAction, deleteTenantAction, deleteMultipleTenantsAction } from '@/app/actions/tenants';
 import { addRentEntriesBatch as addRentEntriesBatchServerAction, deleteRentEntryAction, deleteMultipleRentEntriesAction } from '@/app/actions/rent';
 
 // --- START: Settings-related types moved here ---
@@ -117,6 +117,7 @@ type AppContextType = {
   addTenant: (formData: FormData, toast: ToastFn) => Promise<void>;
   updateTenant: (formData: FormData, toast: ToastFn) => Promise<void>;
   deleteTenant: (formData: FormData, toast: ToastFn) => Promise<void>;
+  deleteMultipleTenants: (tenantIds: string[], toast: ToastFn) => Promise<void>;
   addExpense: (expense: Omit<Expense, 'id' | 'deleted_at' | 'created_at'>, toast: ToastFn) => Promise<void>;
   addExpensesBatch: (expenses: Omit<Expense, 'id' | 'deleted_at' | 'created_at'>[], toast: ToastFn) => Promise<any>;
   updateExpense: (expense: Expense, toast: ToastFn) => Promise<void>;
@@ -500,6 +501,20 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
              });
              await refreshData(false);
         }
+    };
+
+    const deleteMultipleTenants = async (tenantIds: string[], toast: ToastFn) => {
+        const result = await deleteMultipleTenantsAction(tenantIds);
+        if (result.error) {
+            handleError(new Error(result.error), 'deleting multiple tenants', toast);
+        } else {
+            toast({
+                title: `${tenantIds.length} Tenant(s) Deleted`,
+                description: 'The selected tenants have been deleted.',
+                action: <Button variant="secondary" onClick={() => undoDelete('tenants', tenantIds, toast)}>Undo</Button>
+            });
+        }
+        await refreshData(false);
     };
 
     const addExpense = async (expense: Omit<Expense, 'id' | 'created_at' | 'deleted_at'>, toast: ToastFn) => {
@@ -903,6 +918,7 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
         addTenant,
         updateTenant,
         deleteTenant,
+        deleteMultipleTenants,
         addExpense,
         addExpensesBatch,
         updateExpense,

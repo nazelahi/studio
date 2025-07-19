@@ -30,6 +30,7 @@ import { updatePropertySettingsAction } from "@/app/settings/actions"
 import { Table, TableBody, TableCell, TableRow, TableHeader, TableHead } from "./ui/table"
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { formatCurrency } from "@/lib/utils"
+import { Checkbox } from "./ui/checkbox"
 
 const predefinedApartments = [
   'Flat-1A', 'Flat-1B', 'Flat-2A', 'Flat-2B', 'Flat-3A', 'Flat-3B',
@@ -107,7 +108,7 @@ const Combobox: React.FC<ComboboxProps> = ({ options, value, onValueChange, plac
 
 
 export function ContactsTab() {
-  const { tenants, addTenant, updateTenant, deleteTenant, loading, settings, setSettings, refreshData } = useAppContext();
+  const { tenants, addTenant, updateTenant, deleteTenant, deleteMultipleTenants, loading, settings, setSettings, refreshData } = useAppContext();
   const { isAdmin } = useAuth();
   const [open, setOpen] = React.useState(false);
   const [editingTenant, setEditingTenant] = React.useState<Tenant | null>(null);
@@ -135,6 +136,8 @@ export function ContactsTab() {
 
   const [searchTerm, setSearchTerm] = React.useState("");
   const [showAll, setShowAll] = React.useState(false);
+  const [selectedTenantIds, setSelectedTenantIds] = React.useState<string[]>([]);
+
 
   React.useEffect(() => {
     if (editingTenant) {
@@ -142,6 +145,10 @@ export function ContactsTab() {
       setTypeValue(editingTenant.type || '');
     }
   }, [editingTenant]);
+  
+  React.useEffect(() => {
+    setSelectedTenantIds([]);
+  }, [searchTerm, settings.tenantViewStyle]);
 
   const filteredTenants = React.useMemo(() => {
     if (!searchTerm) return tenants;
@@ -298,16 +305,25 @@ export function ContactsTab() {
     }, e);
   };
 
-  const handleDelete = (tenant: Tenant, e: React.MouseEvent) => {
+  const handleDelete = (tenantId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     withProtection(() => {
       const formData = new FormData();
-      formData.append('tenantId', tenant.id);
+      formData.append('tenantId', tenantId);
       startTransition(async () => {
         await deleteTenant(formData, toast);
         refreshData();
       });
     }, e);
+  }
+
+  const handleMassDelete = () => {
+    withProtection(() => {
+        startTransition(async () => {
+            await deleteMultipleTenants(selectedTenantIds, toast);
+            setSelectedTenantIds([]);
+        });
+    });
   }
 
   const handleOpenChange = (isOpen: boolean) => {
@@ -372,6 +388,22 @@ export function ContactsTab() {
       setSettings(prev => ({...prev, tenantViewStyle: style === 'grid' ? 'list' : 'grid'}));
     }
   }
+  
+  const handleSelectTenant = (tenantId: string) => {
+    setSelectedTenantIds(prev =>
+        prev.includes(tenantId)
+            ? prev.filter(id => id !== tenantId)
+            : [...prev, tenantId]
+    );
+  };
+
+  const handleSelectAll = (checked: boolean | 'indeterminate') => {
+    if (checked === true) {
+        setSelectedTenantIds(filteredTenants.map(t => t.id));
+    } else {
+        setSelectedTenantIds([]);
+    }
+  };
 
 
   return (
@@ -602,14 +634,35 @@ export function ContactsTab() {
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
-            <div className="flex items-center gap-1 rounded-md bg-muted p-1 self-end">
-              <Button variant={settings.tenantViewStyle === 'grid' ? 'secondary' : 'ghost'} size="icon" className="h-8 w-8" onClick={() => handleSetViewStyle('grid')}>
-                <LayoutGrid className="h-4 w-4" />
-              </Button>
-              <Button variant={settings.tenantViewStyle === 'list' ? 'secondary' : 'ghost'} size="icon" className="h-8 w-8" onClick={() => handleSetViewStyle('list')}>
-                <List className="h-4 w-4" />
-              </Button>
-            </div>
+            {selectedTenantIds.length > 0 ? (
+                <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                        <Button variant="destructive" className="w-full sm:w-auto">
+                            <Trash2 className="mr-2 h-4 w-4"/>
+                            Delete ({selectedTenantIds.length})
+                        </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                            <AlertDialogDescription>This will permanently delete {selectedTenantIds.length} tenant(s) and all their associated data. This action cannot be undone.</AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleMassDelete} className="bg-destructive hover:bg-destructive/90">Yes, Delete</AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+            ) : (
+                <div className="flex items-center gap-1 rounded-md bg-muted p-1 self-end">
+                <Button variant={settings.tenantViewStyle === 'grid' ? 'secondary' : 'ghost'} size="icon" className="h-8 w-8" onClick={() => handleSetViewStyle('grid')}>
+                    <LayoutGrid className="h-4 w-4" />
+                </Button>
+                <Button variant={settings.tenantViewStyle === 'list' ? 'secondary' : 'ghost'} size="icon" className="h-8 w-8" onClick={() => handleSetViewStyle('list')}>
+                    <List className="h-4 w-4" />
+                </Button>
+                </div>
+            )}
           </div>
         </CardHeader>
         <CardContent className={cn(settings.tenantViewStyle === 'list' ? "p-0" : "p-0 sm:p-6")}>
@@ -624,7 +677,15 @@ export function ContactsTab() {
             ) : settings.tenantViewStyle === 'grid' ? (
                  <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {filteredTenants.map((tenant) => (
-                     <Card key={tenant.id} className="overflow-hidden shadow-md transition-shadow hover:shadow-lg w-full">
+                     <Card key={tenant.id} className={cn("overflow-hidden shadow-md transition-all w-full relative", selectedTenantIds.includes(tenant.id) && "ring-2 ring-primary ring-offset-2")}>
+                        <div className="absolute top-2 left-2 z-10">
+                            <Checkbox 
+                                id={`select-tenant-grid-${tenant.id}`} 
+                                onCheckedChange={() => handleSelectTenant(tenant.id)}
+                                checked={selectedTenantIds.includes(tenant.id)}
+                                className="bg-background/80"
+                            />
+                        </div>
                         <div className="flex items-start gap-4 p-4">
                             <Avatar className="h-16 w-16 border">
                                 <AvatarImage src={tenant.avatar} alt={tenant.name} data-ai-hint="person avatar" />
@@ -673,7 +734,7 @@ export function ContactsTab() {
                                                         </AlertDialogHeader>
                                                         <AlertDialogFooter>
                                                             <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                            <AlertDialogAction onClick={(e) => handleDelete(tenant, e)} className="bg-destructive hover:bg-destructive/90">
+                                                            <AlertDialogAction onClick={(e) => handleDelete(tenant.id, e)} className="bg-destructive hover:bg-destructive/90">
                                                                 Yes, Delete Tenant
                                                             </AlertDialogAction>
                                                         </AlertDialogFooter>
@@ -707,6 +768,13 @@ export function ContactsTab() {
                     <Table>
                         <TableHeader>
                             <TableRow style={{ backgroundColor: 'hsl(var(--table-header-background))', color: 'hsl(var(--table-header-foreground))' }} className="hover:bg-[hsl(var(--table-header-background)/0.9)]">
+                                <TableHead className="p-2 text-inherit w-12">
+                                    <Checkbox
+                                        checked={selectedTenantIds.length > 0 && selectedTenantIds.length === filteredTenants.length}
+                                        onCheckedChange={handleSelectAll}
+                                        aria-label="Select all tenants"
+                                     />
+                                </TableHead>
                                 <TableHead className="w-[300px] p-2 text-inherit">Tenant</TableHead>
                                 <TableHead className="p-2 text-inherit">Details</TableHead>
                                 <TableHead className="p-2 text-inherit">Status</TableHead>
@@ -715,7 +783,14 @@ export function ContactsTab() {
                         </TableHeader>
                         <TableBody>
                             {filteredTenants.slice(0, showAll ? filteredTenants.length : 10).map(tenant => (
-                                <TableRow key={tenant.id} className="odd:bg-muted/50">
+                                <TableRow key={tenant.id} className="odd:bg-muted/50" data-state={selectedTenantIds.includes(tenant.id) ? "selected" : "unselected"}>
+                                    <TableCell className="p-2">
+                                        <Checkbox
+                                            checked={selectedTenantIds.includes(tenant.id)}
+                                            onCheckedChange={() => handleSelectTenant(tenant.id)}
+                                            aria-label={`Select tenant ${tenant.name}`}
+                                        />
+                                    </TableCell>
                                     <TableCell className="p-2">
                                         <div className="flex items-center gap-3">
                                             <Avatar className="h-10 w-10">
@@ -774,7 +849,7 @@ export function ContactsTab() {
                                                                 </AlertDialogHeader>
                                                                 <AlertDialogFooter>
                                                                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                                    <AlertDialogAction onClick={(e) => handleDelete(tenant, e)} className="bg-destructive hover:bg-destructive/90">
+                                                                    <AlertDialogAction onClick={(e) => handleDelete(tenant.id, e)} className="bg-destructive hover:bg-destructive/90">
                                                                         Yes, Delete Tenant
                                                                     </AlertDialogAction>
                                                                 </AlertDialogFooter>

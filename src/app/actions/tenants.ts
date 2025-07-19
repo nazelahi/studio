@@ -196,3 +196,22 @@ export async function deleteTenantAction(formData: FormData) {
 
     return { success: true };
 }
+
+export async function deleteMultipleTenantsAction(tenantIds: string[]) {
+    if (!tenantIds || tenantIds.length === 0) {
+        return { error: 'No tenant IDs provided.' };
+    }
+
+    const supabaseAdmin = getSupabaseAdmin();
+    const { error } = await supabaseAdmin
+        .from('tenants')
+        .update({ deleted_at: new Date().toISOString() })
+        .in('id', tenantIds);
+
+    if (error) {
+        console.error('Supabase multi-delete error:', error);
+        return { error: error.message };
+    }
+
+    return { success: true };
+}
