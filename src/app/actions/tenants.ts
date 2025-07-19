@@ -21,7 +21,7 @@ const getSupabaseAdmin = () => {
     });
 }
 
-type TenantForCreation = Omit<Tenant, 'id' | 'created_at' | 'deleted_at' | 'status' | 'documents'>;
+type TenantForCreation = Omit<Tenant, 'id' | 'created_at' | 'deleted_at' | 'documents'>;
 
 export async function findOrCreateTenantAction(tenantData: TenantForCreation) {
     const supabaseAdmin = getSupabaseAdmin();
@@ -31,7 +31,7 @@ export async function findOrCreateTenantAction(tenantData: TenantForCreation) {
         .select('id, avatar')
         .eq('name', tenantData.name)
         .eq('property', tenantData.property)
-        .is('deleted_at', null)
+        .eq('status', 'Active')
         .maybeSingle();
 
     if (findError) {
@@ -43,10 +43,9 @@ export async function findOrCreateTenantAction(tenantData: TenantForCreation) {
         return { success: true, data: existingTenant };
     }
 
-    const newTenantData: Omit<Tenant, 'id' | 'created_at' | 'deleted_at'> = {
+    const newTenantData: Omit<Tenant, 'id' | 'created_at' | 'deleted_at' | 'documents'> = {
         ...tenantData,
         avatar: tenantData.avatar || 'https://placehold.co/80x80.png',
-        status: 'Active',
     };
 
     const { data: newTenant, error: createError } = await supabaseAdmin
@@ -108,18 +107,17 @@ export async function updateTenantAction(formData: FormData) {
 
                 if (uploadError) {
                     console.error('Supabase document upload error:', uploadError);
-                    return { error: `Failed to upload document: ${uploadError.message}` };
+                    // We'll continue, but you might want to handle this more gracefully
+                } else {
+                    const { data: publicUrlData } = supabaseAdmin.storage.from('tenant-documents').getPublicUrl(uploadData.path);
+                    uploadedDocUrls.push(publicUrlData.publicUrl);
                 }
-
-                const { data: publicUrlData } = supabaseAdmin.storage.from('tenant-documents').getPublicUrl(uploadData.path);
-                uploadedDocUrls.push(publicUrlData.publicUrl);
             }
         }
     }
     
     const existingDocuments = formData.getAll('documents[]') as string[];
     const finalDocuments = [...existingDocuments, ...uploadedDocUrls];
-
 
     const joinDateValue = formData.get('join_date') as string;
     const dobValue = formData.get('date_of_birth') as string;
@@ -184,26 +182,16 @@ export async function deleteTenantAction(formData: FormData) {
         return { error: 'Tenant ID is missing.' };
     }
 
-    // First, delete associated rent entries
-    const { error: rentError } = await supabaseAdmin
-        .from('rent_entries')
-        .delete()
-        .eq('tenant_id', tenantId);
-
-    if (rentError) {
-        console.error('Supabase rent entry delete error:', rentError);
-        return { error: `Failed to delete associated rent entries: ${rentError.message}` };
-    }
-
-    // Then, delete the tenant
+    // Soft delete by updating status to "Archived"
     const { error } = await supabaseAdmin
         .from('tenants')
-        .delete()
+        .update({ status: 'Archived' })
         .eq('id', tenantId);
 
+
     if (error) {
-        console.error('Supabase tenant delete error:', error);
-        return { error: `Failed to delete tenant: ${error.message}` };
+        console.error('Supabase tenant archive error:', error);
+        return { error: `Failed to archive tenant: ${error.message}` };
     }
 
     return { success: true };
@@ -216,26 +204,16 @@ export async function deleteMultipleTenantsAction(tenantIds: string[]) {
 
     const supabaseAdmin = getSupabaseAdmin();
 
-    // First, delete all associated rent entries
-    const { error: rentError } = await supabaseAdmin
-        .from('rent_entries')
-        .delete()
-        .in('tenant_id', tenantIds);
-
-    if (rentError) {
-        console.error('Supabase multi-rent-entry delete error:', rentError);
-        return { error: `Failed to delete associated rent entries: ${rentError.message}` };
-    }
-
-    // Then, delete the tenants
+    // Soft delete by updating status to "Archived"
     const { error } = await supabaseAdmin
         .from('tenants')
-        .delete()
+        .update({ status: 'Archived' })
         .in('id', tenantIds);
 
+
     if (error) {
-        console.error('Supabase multi-delete error:', error);
-        return { error: error.message };
+        console.error('Supabase multi-archive error:', error);
+        return { error: `Failed to archive tenants: ${error.message}` };
     }
 
     return { success: true };

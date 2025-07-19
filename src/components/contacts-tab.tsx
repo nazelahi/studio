@@ -3,7 +3,7 @@
 "use client"
 
 import * as React from "react"
-import { MoreHorizontal, PlusCircle, Image as ImageIcon, Mail, Phone, Home, ChevronDown, Copy, X, Search, FileText, Check, UserPlus, Calendar, Briefcase, Upload, File, Trash2, LoaderCircle, ScanLine, Wallet, MessageSquare, LayoutGrid, List, Edit, CheckIcon, User as UserIcon, Building, Shield, View } from "lucide-react"
+import { MoreHorizontal, PlusCircle, Image as ImageIcon, Mail, Phone, Home, ChevronDown, Copy, X, Search, FileText, Check, UserPlus, Calendar, Briefcase, Upload, File, Trash2, LoaderCircle, ScanLine, Wallet, MessageSquare, LayoutGrid, List, Edit, CheckIcon, User as UserIcon, Building, ShieldCheck, View } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from "@/components/ui/dialog"
@@ -117,7 +117,6 @@ export function ContactsTab() {
   const [avatarFile, setAvatarFile] = React.useState<File | null>(null);
   const [documentFiles, setDocumentFiles] = React.useState<File[]>([]);
   const [existingDocuments, setExistingDocuments] = React.useState<string[]>([]);
-  const [isUploading, setIsUploading] = React.useState(false);
   const { withProtection } = useProtection();
   const [isScanning, setIsScanning] = React.useState(false);
   const [isPending, startTransition] = React.useTransition();
@@ -645,11 +644,11 @@ export function ContactsTab() {
                     <AlertDialogContent>
                         <AlertDialogHeader>
                             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                            <AlertDialogDescription>This will permanently delete {selectedTenantIds.length} tenant(s) and all their associated data. This action cannot be undone.</AlertDialogDescription>
+                            <AlertDialogDescription>This will archive {selectedTenantIds.length} tenant(s), removing them from the active list but preserving their history. This action can be undone in the database.</AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>
                             <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={handleMassDelete} className="bg-destructive hover:bg-destructive/90">Yes, Delete</AlertDialogAction>
+                            <AlertDialogAction onClick={handleMassDelete} className="bg-destructive hover:bg-destructive/90">Yes, Archive</AlertDialogAction>
                         </AlertDialogFooter>
                     </AlertDialogContent>
                 </AlertDialog>
@@ -729,13 +728,13 @@ export function ContactsTab() {
                                                         <AlertDialogHeader>
                                                             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                                                             <AlertDialogDescription>
-                                                                This will permanently delete {tenant.name} and all their data. This action cannot be undone.
+                                                                This will archive {tenant.name}, removing them from the active list. Their historical data will be preserved.
                                                             </AlertDialogDescription>
                                                         </AlertDialogHeader>
                                                         <AlertDialogFooter>
                                                             <AlertDialogCancel>Cancel</AlertDialogCancel>
                                                             <AlertDialogAction onClick={(e) => handleDelete(tenant.id, e)} className="bg-destructive hover:bg-destructive/90">
-                                                                Yes, Delete Tenant
+                                                                Yes, Archive Tenant
                                                             </AlertDialogAction>
                                                         </AlertDialogFooter>
                                                     </AlertDialogContent>
@@ -844,13 +843,13 @@ export function ContactsTab() {
                                                                 <AlertDialogHeader>
                                                                     <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                                                                     <AlertDialogDescription>
-                                                                        This will permanently delete {tenant.name} and all their data. This action cannot be undone.
+                                                                        This will archive {tenant.name}, removing them from the active list. Their historical data will be preserved.
                                                                     </AlertDialogDescription>
                                                                 </AlertDialogHeader>
                                                                 <AlertDialogFooter>
                                                                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                                                                     <AlertDialogAction onClick={(e) => handleDelete(tenant.id, e)} className="bg-destructive hover:bg-destructive/90">
-                                                                        Yes, Delete Tenant
+                                                                        Yes, Archive Tenant
                                                                     </AlertDialogAction>
                                                                 </AlertDialogFooter>
                                                             </AlertDialogContent>

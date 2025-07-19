@@ -33,7 +33,7 @@ export type Tenant = {
   rent: number;
   join_date: string;
   notes?: string;
-  status: "Paid" | "Active" | "Overdue";
+  status: "Paid" | "Active" | "Overdue" | "Archived";
   avatar: string;
   type?: string;
   documents?: string[];
@@ -173,5 +173,4 @@ export type WorkDetail = {
   worker_cost?: number;
   due_date?: string;
   created_at?: string;
-  deleted_at?: string | null;
 };

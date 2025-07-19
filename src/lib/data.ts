@@ -49,7 +49,7 @@ export async function getDashboardData(): Promise<AppData> {
             zakatBankDetailsRes, 
             documentsRes
         ] = await Promise.all([
-            supabase.from('tenants').select('id, name, email, phone, property, rent, join_date, notes, status, avatar, type, documents, father_name, address, date_of_birth, nid_number, advance_deposit, gas_meter_number, electric_meter_number, created_at').gte('created_at', twoYearsAgo).order('name', { ascending: true }),
+            supabase.from('tenants').select('id, name, email, phone, property, rent, join_date, notes, status, avatar, type, documents, father_name, address, date_of_birth, nid_number, advance_deposit, gas_meter_number, electric_meter_number, created_at').neq('status', 'Archived').order('name', { ascending: true }),
             supabase.from('expenses').select('id, date, category, amount, description, status, created_at').gte('date', twoYearsAgo).order('date', { ascending: false }),
             supabase.from('rent_entries').select('id, tenant_id, name, property, rent, due_date, status, avatar, year, month, payment_date, collected_by, payment_for_month, created_at').gte('due_date', twoYearsAgo).order('due_date', { ascending: false }),
             supabase.from('property_settings').select('*').eq('id', 1).maybeSingle(),

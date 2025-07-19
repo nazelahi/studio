@@ -4,10 +4,8 @@
 
 import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import type { Tenant, Expense, RentEntry, PropertySettings as DbPropertySettings, Deposit, ZakatTransaction, Notice, WorkDetail, ZakatBankDetail, ToastFn, Document, TabNames, PageLabels } from '@/types';
-import { parseISO, getMonth, getYear, subMonths, format } from 'date-fns';
+import { parseISO, getMonth, getYear } from 'date-fns';
 import { supabase } from '@/lib/supabase';
-import { useAuth } from './auth-context';
-import { Button } from '@/components/ui/button';
 import { addWorkDetailsBatch as addWorkDetailsBatchAction } from '@/app/actions/work';
 import { addExpensesBatch as addExpensesBatchAction, deleteExpenseAction, deleteMultipleExpensesAction, saveExpenseAction, syncExpensesAction } from '@/app/actions/expenses';
 import type { AppData } from '@/lib/data';
@@ -135,7 +133,7 @@ type AppContextType = {
   restoreAllData: (backupData: Omit<AppData, 'propertySettings'>, toast: ToastFn) => void;
   refreshData: () => Promise<void>;
   getRentEntryById: (id: string) => RentEntry | null;
-  addWorkDetailsBatch: (workDetails: Omit<WorkDetail, 'id' | 'created_at' | 'deleted_at'>[], toast: ToastFn) => Promise<void>;
+  addWorkDetailsBatch: (workDetails: Omit<WorkDetail, 'id' | 'created_at'>[], toast: ToastFn) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
@@ -397,43 +395,6 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
         setSettings(newSettings);
     };
 
-    const uploadFiles = async (tenantId: string, files: File[], toast: ToastFn): Promise<string[]> => {
-      try {
-        if (!supabase || files.length === 0) return [];
-        const timestamp = new Date().getTime();
-        const uploadPromises = files.map(async (file, index) => {
-            const fileExt = file.name.split('.').pop();
-            const fileName = `${tenantId}/${timestamp}-${index}.${fileExt}`;
-            const { error: uploadError, data: uploadData } = await supabase.storage
-                .from('tenant-documents')
-                .upload(fileName, file);
-
-            if (uploadError) {
-                handleError(uploadError, `uploading file ${file.name}`, toast);
-                return null;
-            }
-
-            if (!uploadData) {
-                const uploadError = new Error("Upload succeeded but no data was returned.");
-                handleError(uploadError, `uploading file ${file.name}`, toast);
-                return null;
-            }
-
-            const { data: publicUrlData } = supabase.storage
-                .from('tenant-documents')
-                .getPublicUrl(uploadData.path);
-                
-            return publicUrlData.publicUrl;
-        });
-
-        const results = await Promise.all(uploadPromises);
-        return results.filter((url): url is string => url !== null);
-      } catch (error) {
-        handleError(error, 'uploading files', toast);
-        return [];
-      }
-    };
-
     const addTenant = async (formData: FormData, toast: ToastFn) => {
         // This function might seem redundant now, but it's kept for potential future client-side logic before calling the server action.
         // For now, it just passes through to the server action.
@@ -478,12 +439,11 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
     const deleteTenant = async (formData: FormData, toast: ToastFn) => {
         const result = await deleteTenantAction(formData);
         if (result.error) {
-            handleError(new Error(result.error), 'deleting tenant', toast);
+            handleError(new Error(result.error), 'archiving tenant', toast);
         } else {
              toast({
-                title: 'Tenant Deleted',
-                description: 'The tenant has been permanently deleted.',
-                variant: 'destructive',
+                title: 'Tenant Archived',
+                description: 'The tenant has been archived and removed from the active list.',
              });
              await refreshData(false);
         }
@@ -492,12 +452,11 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
     const deleteMultipleTenants = async (tenantIds: string[], toast: ToastFn) => {
         const result = await deleteMultipleTenantsAction(tenantIds);
         if (result.error) {
-            handleError(new Error(result.error), 'deleting multiple tenants', toast);
+            handleError(new Error(result.error), 'archiving multiple tenants', toast);
         } else {
             toast({
-                title: `${tenantIds.length} Tenant(s) Deleted`,
-                description: 'The selected tenants have been permanently deleted.',
-                variant: 'destructive',
+                title: `${tenantIds.length} Tenant(s) Archived`,
+                description: 'The selected tenants have been archived.',
             });
         }
         await refreshData(false);
@@ -588,10 +547,11 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
                 .select('id, avatar')
                 .eq('name', rentEntryData.name)
                 .eq('property', rentEntryData.property)
+                .eq('status', 'Active')
                 .maybeSingle();
             
             if (!existingTenant) {
-                const newTenantData: Omit<Tenant, 'id' | 'created_at' | 'deleted_at'> = {
+                const newTenantData: Omit<Tenant, 'id' | 'created_at' | 'documents'> = {
                     name: rentEntryData.name,
                     property: rentEntryData.property,
                     rent: rentEntryData.rent,
@@ -643,6 +603,7 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
                 rent: entry.rent,
                 join_date: new Date(year, month, 1).toISOString().split('T')[0],
                 email: entry.name ? `${entry.name.replace(/\s+/g, '.').toLowerCase()}@example.com` : 'tenant@example.com',
+                status: 'Active',
             })
         );
         const tenantsResult = await Promise.all(tenantPromises);
@@ -741,7 +702,7 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
         } else {
             toast({
                 title: "Already up to date",
-                description: "All active tenants are already in the rent roll for this month.",
+                description: result.message || "All active tenants are already in the rent roll for this month.",
             });
         }
       } catch (error) {
@@ -826,7 +787,7 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
         return data.rentData.find(entry => entry.id === id) || null;
     }
     
-    const addWorkDetailsBatch = async (workDetails: Omit<WorkDetail, 'id' | 'created_at' | 'deleted_at'>[], toast: ToastFn) => {
+    const addWorkDetailsBatch = async (workDetails: Omit<WorkDetail, 'id' | 'created_at'>[], toast: ToastFn) => {
       try {
         const result = await addWorkDetailsBatchAction(workDetails);
         if (result.error) {
@@ -884,4 +845,3 @@ export const useAppContext = () => {
   }
   return context;
 }
- 

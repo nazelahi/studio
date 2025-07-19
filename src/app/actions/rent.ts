@@ -21,7 +21,7 @@ const getSupabaseAdmin = () => {
     });
 }
 
-type RentEntryForBatch = Omit<RentEntry, 'id' | 'created_at' | 'deleted_at'>;
+type RentEntryForBatch = Omit<RentEntry, 'id' | 'created_at'>;
 
 export async function addRentEntriesBatch(rentEntries: RentEntryForBatch[]) {
     if (!rentEntries || rentEntries.length === 0) {
@@ -107,7 +107,7 @@ export async function syncTenantsAction(formData: FormData) {
         const { data: allTenants, error: tenantsError } = await supabaseAdmin
             .from('tenants')
             .select('*')
-            .eq('status', 'Active');
+            .eq('status', 'Active'); // Only sync active tenants
 
         if (tenantsError) {
             throw new Error(`Failed to fetch tenants for sync: ${tenantsError.message}`);
@@ -116,7 +116,7 @@ export async function syncTenantsAction(formData: FormData) {
         const tenantsToSync = allTenants.filter(tenant => !existingTenantIds.has(tenant.id));
 
         if (tenantsToSync.length === 0) {
-            return { success: true, count: 0 };
+            return { success: true, count: 0, message: "All active tenants are already in the rent roll." };
         }
 
         const newRentEntries = tenantsToSync.map(tenant => ({
