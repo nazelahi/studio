@@ -108,7 +108,7 @@ const Combobox: React.FC<ComboboxProps> = ({ options, value, onValueChange, plac
 
 
 export function ContactsTab() {
-  const { tenants, addTenant, updateTenant, deleteTenant, deleteMultipleTenants, loading, settings, setSettings, refreshData } = useAppContext();
+  const { tenants, addTenant, updateTenant, deleteTenant, deleteMultipleTenants, loading, settings, setSettings } = useAppContext();
   const { isAdmin } = useAuth();
   const [open, setOpen] = React.useState(false);
   const [editingTenant, setEditingTenant] = React.useState<Tenant | null>(null);
@@ -208,9 +208,9 @@ export function ContactsTab() {
         
         if (editingTenant) {
             formData.set('tenantId', editingTenant.id);
-            await updateTenant(formData, toast);
+            await updateTenant(formData);
         } else {
-            await addTenant(formData, toast);
+            await addTenant(formData);
         }
         setOpen(false);
         resetDialogState();
@@ -310,8 +310,7 @@ export function ContactsTab() {
       const formData = new FormData();
       formData.append('tenantId', tenantId);
       startTransition(async () => {
-        await deleteTenant(formData, toast);
-        refreshData();
+        await deleteTenant(formData);
       });
     }, e);
   }
@@ -319,7 +318,7 @@ export function ContactsTab() {
   const handleMassDelete = () => {
     withProtection(() => {
         startTransition(async () => {
-            await deleteMultipleTenants(selectedTenantIds, toast);
+            await deleteMultipleTenants(selectedTenantIds);
             setSelectedTenantIds([]);
         });
     });

@@ -12,6 +12,7 @@ import type { AppData } from '@/lib/data';
 import { getDashboardDataAction } from '@/app/actions/data';
 import { findOrCreateTenantAction, updateTenantAction, deleteTenantAction, deleteMultipleTenantsAction } from '@/app/actions/tenants';
 import { addRentEntriesBatch as addRentEntriesBatchServerAction, deleteRentEntryAction, deleteMultipleRentEntriesAction, syncTenantsAction } from '@/app/actions/rent';
+import { useToast } from "@/hooks/use-toast";
 
 // --- START: Settings-related types moved here ---
 interface PageDashboard {
@@ -112,43 +113,31 @@ type AppContextType = {
   documents: Document[];
   settings: AppSettings;
   setSettings: (newSettings: AppSettings | ((prev: AppSettings) => AppSettings)) => void;
-  addTenant: (formData: FormData, toast: ToastFn) => Promise<void>;
-  updateTenant: (formData: FormData, toast: ToastFn) => Promise<void>;
-  deleteTenant: (formData: FormData, toast: ToastFn) => Promise<void>;
-  deleteMultipleTenants: (tenantIds: string[], toast: ToastFn) => Promise<void>;
-  addExpense: (expense: Omit<Expense, 'id' | 'created_at'>, toast: ToastFn) => Promise<void>;
-  addExpensesBatch: (expenses: Omit<Expense, 'id' | 'created_at'>[], toast: ToastFn) => Promise<any>;
-  updateExpense: (expense: Expense, toast: ToastFn) => Promise<void>;
-  deleteExpense: (expenseId: string, toast: ToastFn) => Promise<void>;
-  deleteMultipleExpenses: (expenseIds: string[], toast: ToastFn) => Promise<void>;
-  addRentEntry: (rentEntry: NewRentEntry, year: number, month: number, toast: ToastFn) => Promise<void>;
-  addRentEntriesBatch: (rentEntries: Omit<NewRentEntry, 'tenant_id' | 'avatar'>[], year: number, month: number, toast: ToastFn) => Promise<void>;
-  updateRentEntry: (rentEntry: RentEntry, toast: ToastFn) => Promise<void>;
-  deleteRentEntry: (rentEntryId: string, toast: ToastFn) => Promise<void>;
-  deleteMultipleRentEntries: (rentEntryIds: string[], toast: ToastFn) => Promise<void>;
-  syncTenantsForMonth: (year: number, month: number, toast: ToastFn) => Promise<void>;
-  syncExpensesFromPreviousMonth: (year: number, month: number, toast: ToastFn) => Promise<void>;
+  addTenant: (formData: FormData) => Promise<void>;
+  updateTenant: (formData: FormData) => Promise<void>;
+  deleteTenant: (formData: FormData) => Promise<void>;
+  deleteMultipleTenants: (tenantIds: string[]) => Promise<void>;
+  addExpense: (expense: Omit<Expense, 'id' | 'created_at'>) => Promise<void>;
+  addExpensesBatch: (expenses: Omit<Expense, 'id' | 'created_at'>[]) => Promise<any>;
+  updateExpense: (expense: Expense) => Promise<void>;
+  deleteExpense: (expenseId: string) => Promise<void>;
+  deleteMultipleExpenses: (expenseIds: string[]) => Promise<void>;
+  addRentEntry: (rentEntry: NewRentEntry, year: number, month: number) => Promise<void>;
+  addRentEntriesBatch: (rentEntries: Omit<NewRentEntry, 'tenant_id' | 'avatar'>[], year: number, month: number) => Promise<void>;
+  updateRentEntry: (rentEntry: RentEntry) => Promise<void>;
+  deleteRentEntry: (rentEntryId: string) => Promise<void>;
+  deleteMultipleRentEntries: (rentEntryIds: string[]) => Promise<void>;
+  syncTenantsForMonth: (year: number, month: number) => Promise<number>;
+  syncExpensesFromPreviousMonth: (year: number, month: number) => Promise<number>;
   loading: boolean;
   getAllData: () => Omit<AppData, 'propertySettings'>;
-  restoreAllData: (backupData: Omit<AppData, 'propertySettings'>, toast: ToastFn) => void;
+  restoreAllData: (backupData: Omit<AppData, 'propertySettings'>) => void;
   refreshData: () => Promise<void>;
   getRentEntryById: (id: string) => RentEntry | null;
-  addWorkDetailsBatch: (workDetails: Omit<WorkDetail, 'id' | 'created_at'>[], toast: ToastFn) => Promise<void>;
+  addWorkDetailsBatch: (workDetails: Omit<WorkDetail, 'id' | 'created_at'>[]) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
-
-const handleError = (error: any, context: string, toast?: ToastFn) => {
-    const errorMessage = error.message || 'An unexpected error occurred.';
-    console.error(`Error in ${context}:`, errorMessage, error);
-    if (toast && typeof toast === 'function') {
-        toast({
-            title: `Error: ${context}`,
-            description: errorMessage,
-            variant: 'destructive',
-        });
-    }
-};
 
 // --- START: Settings-related logic moved here ---
 const defaultSettings: AppSettings = {
@@ -314,11 +303,22 @@ const getInitialSettings = (serverSettings: DbPropertySettings | null, zakatDeta
 
 
 export function AppContextProvider({ children, initialData }: { children: ReactNode; initialData: AppData }) {
+    const { toast } = useToast();
     const { propertySettings, zakatBankDetails, ...dashboardData } = initialData;
     const [data, setData] = useState(dashboardData);
     const [settings, setSettings] = useState<AppSettings>(() => getInitialSettings(propertySettings, zakatBankDetails));
     const [loading, setLoading] = useState(true);
     
+    const handleError = useCallback((error: any, context: string) => {
+        const errorMessage = error.message || 'An unexpected error occurred.';
+        console.error(`Error in ${context}:`, errorMessage, error);
+        toast({
+            title: `Error: ${context}`,
+            description: errorMessage,
+            variant: 'destructive',
+        });
+    }, [toast]);
+
     const refreshData = useCallback(async (showLoading = true) => {
         if (showLoading) {
             setLoading(true);
@@ -331,14 +331,13 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
             setSettings(finalSettings);
 
         } catch (error: any) {
-            console.error(`Error in refreshing data:`, error.message, error);
             handleError(error, "refreshing data");
         } finally {
             if (showLoading) {
                 setLoading(false);
             }
         }
-    }, []);
+    }, [handleError]);
 
     useEffect(() => {
         setLoading(false);
@@ -395,14 +394,14 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
         setSettings(newSettings);
     };
 
-    const addTenant = async (formData: FormData, toast: ToastFn) => {
+    const addTenant = async (formData: FormData) => {
         // This function might seem redundant now, but it's kept for potential future client-side logic before calling the server action.
         // For now, it just passes through to the server action.
         const tenantData = Object.fromEntries(formData.entries());
 
         const { data: newTenant, error } = await supabase.from('tenants').insert([tenantData]).select().single();
         if (error || !newTenant) {
-            handleError(error, 'adding tenant', toast);
+            handleError(error, 'adding tenant');
             return;
         }
 
@@ -422,24 +421,26 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
             month,
         };
         const { error: rentError } = await supabase.from('rent_entries').insert([newRentEntryData]);
-        if (rentError) handleError(rentError, 'auto-creating rent entry', toast);
-
+        if (rentError) handleError(rentError, 'auto-creating rent entry');
+        
+        toast({ title: "Tenant Added", description: "The new tenant has been successfully added." });
         await refreshData(false);
     };
 
-    const updateTenant = async (formData: FormData, toast: ToastFn) => {
+    const updateTenant = async (formData: FormData) => {
         const result = await updateTenantAction(formData);
         if (result.error) {
-            handleError(new Error(result.error), 'updating tenant', toast);
+            handleError(new Error(result.error), 'updating tenant');
         } else {
+            toast({ title: "Tenant Updated", description: "The tenant details have been successfully updated." });
             await refreshData(false);
         }
     };
 
-    const deleteTenant = async (formData: FormData, toast: ToastFn) => {
+    const deleteTenant = async (formData: FormData) => {
         const result = await deleteTenantAction(formData);
         if (result.error) {
-            handleError(new Error(result.error), 'archiving tenant', toast);
+            handleError(new Error(result.error), 'archiving tenant');
         } else {
              toast({
                 title: 'Tenant Archived',
@@ -449,10 +450,10 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
         }
     };
 
-    const deleteMultipleTenants = async (tenantIds: string[], toast: ToastFn) => {
+    const deleteMultipleTenants = async (tenantIds: string[]) => {
         const result = await deleteMultipleTenantsAction(tenantIds);
         if (result.error) {
-            handleError(new Error(result.error), 'archiving multiple tenants', toast);
+            handleError(new Error(result.error), 'archiving multiple tenants');
         } else {
             toast({
                 title: `${tenantIds.length} Tenant(s) Archived`,
@@ -462,21 +463,21 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
         await refreshData(false);
     };
 
-    const addExpense = async (expense: Omit<Expense, 'id' | 'created_at'>, toast: ToastFn) => {
+    const addExpense = async (expense: Omit<Expense, 'id' | 'created_at'>) => {
       try {
         if (!supabase) return;
         const { error } = await supabase.from('expenses').insert([expense]);
-        if (error) handleError(error, 'adding expense', toast);
+        if (error) handleError(error, 'adding expense');
         await refreshData(false);
       } catch (error) {
-        handleError(error, 'adding expense', toast);
+        handleError(error, 'adding expense');
       }
     };
 
-    const addExpensesBatch = async (expenses: Omit<Expense, 'id' | 'created_at'>[], toast: ToastFn) => {
+    const addExpensesBatch = async (expenses: Omit<Expense, 'id' | 'created_at'>[]) => {
         const result = await addExpensesBatchAction(expenses);
         if (result.error) {
-            handleError(new Error(result.error), 'batch adding expenses', toast);
+            handleError(new Error(result.error), 'batch adding expenses');
         } else {
             await refreshData(false);
         }
@@ -484,7 +485,7 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
     };
 
 
-    const updateExpense = async (updatedExpense: Expense, toast: ToastFn) => {
+    const updateExpense = async (updatedExpense: Expense) => {
       try {
         const formData = new FormData();
         formData.append('expenseId', updatedExpense.id);
@@ -495,21 +496,21 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
         formData.append('status', updatedExpense.status);
         
         const result = await saveExpenseAction(formData);
-        if (result.error) handleError(new Error(result.error), 'updating expense', toast);
+        if (result.error) handleError(new Error(result.error), 'updating expense');
 
         await refreshData(false);
       } catch (error) {
-        handleError(error, 'updating expense', toast);
+        handleError(error, 'updating expense');
       }
     };
 
-    const deleteExpense = async (expenseId: string, toast: ToastFn) => {
+    const deleteExpense = async (expenseId: string) => {
         const formData = new FormData();
         formData.append('expenseId', expenseId);
         const result = await deleteExpenseAction(formData);
 
         if (result.error) {
-            handleError(new Error(result.error), 'deleting expense', toast);
+            handleError(new Error(result.error), 'deleting expense');
         } else {
             toast({
                 title: 'Expense Deleted',
@@ -520,10 +521,10 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
         await refreshData(false);
     };
 
-    const deleteMultipleExpenses = async (expenseIds: string[], toast: ToastFn) => {
+    const deleteMultipleExpenses = async (expenseIds: string[]) => {
         const result = await deleteMultipleExpensesAction(expenseIds);
         if (result.error) {
-            handleError(new Error(result.error), 'deleting multiple expenses', toast);
+            handleError(new Error(result.error), 'deleting multiple expenses');
         } else {
              toast({
                 title: `${expenseIds.length} Expense(s) Deleted`,
@@ -534,7 +535,7 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
         await refreshData(false);
     };
     
-    const addRentEntry = async (rentEntryData: NewRentEntry, year: number, month: number, toast: ToastFn) => {
+    const addRentEntry = async (rentEntryData: NewRentEntry, year: number, month: number) => {
       try {
         if (!supabase) return;
 
@@ -562,7 +563,7 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
                 };
                 const { data: newTenant, error } = await supabase.from('tenants').insert(newTenantData).select().single();
                 if (error || !newTenant) {
-                    handleError(error || new Error('Failed to create tenant'), `auto-creating tenant for ${rentEntryData.name}`, toast);
+                    handleError(error || new Error('Failed to create tenant'), `auto-creating tenant for ${rentEntryData.name}`);
                     return;
                 }
                 existingTenant = newTenant;
@@ -587,14 +588,16 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
         };
         
         const { error } = await supabase.from('rent_entries').insert(newEntry);
-        if (error) handleError(error, 'adding rent entry', toast);
+        if (error) handleError(error, 'adding rent entry');
+        
+        toast({ title: "Rent Entry Added", description: "The new entry has been successfully added." });
         await refreshData(false);
       } catch (error) {
-        handleError(error, 'adding rent entry', toast);
+        handleError(error, 'adding rent entry');
       }
     };
 
-    const addRentEntriesBatch = async (rentEntriesData: Omit<NewRentEntry, 'tenant_id' | 'avatar'>[], year: number, month: number, toast: ToastFn) => {
+    const addRentEntriesBatch = async (rentEntriesData: Omit<NewRentEntry, 'tenant_id' | 'avatar'>[], year: number, month: number) => {
       try {
         const tenantPromises = rentEntriesData.map(entry => 
             findOrCreateTenantAction({
@@ -611,7 +614,7 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
         const newEntries = rentEntriesData.map((entry, index) => {
             const tenant = tenantsResult[index];
             if (!tenant || tenant.error) {
-                handleError(new Error(tenant?.error || `Failed to find or create tenant for ${entry.name}`), `batch tenant processing`, toast);
+                handleError(new Error(tenant?.error || `Failed to find or create tenant for ${entry.name}`), `batch tenant processing`);
                 return null;
             }
             
@@ -633,31 +636,34 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
         const result = await addRentEntriesBatchServerAction(newEntries);
         
         if (result.error) {
-            handleError(new Error(result.error), 'batch adding rent entries', toast);
+            handleError(new Error(result.error), 'batch adding rent entries');
         } else {
+             toast({ title: "Import Successful", description: `${result.count} entries have been added to ${months[month]}, ${year}.` });
              await refreshData(false);
         }
       } catch (error) {
-        handleError(error, 'batch adding rent entries', toast);
+        handleError(error, 'batch adding rent entries');
       }
     };
     
-    const updateRentEntry = async (updatedRentEntry: RentEntry, toast: ToastFn) => {
+    const updateRentEntry = async (updatedRentEntry: RentEntry) => {
       try {
         if (!supabase) return;
         const { id, ...rentEntryData } = updatedRentEntry;
         const { error } = await supabase.from('rent_entries').update(rentEntryData).eq('id', id);
-        if (error) handleError(error, 'updating rent entry', toast);
+        if (error) handleError(error, 'updating rent entry');
+        
+        toast({ title: "Rent Entry Updated", description: "The entry has been successfully updated." });
         await refreshData(false);
       } catch (error) {
-        handleError(error, 'updating rent entry', toast);
+        handleError(error, 'updating rent entry');
       }
     };
     
-    const deleteRentEntry = async (rentEntryId: string, toast: ToastFn) => {
+    const deleteRentEntry = async (rentEntryId: string) => {
         const result = await deleteRentEntryAction(rentEntryId);
         if (result.error) {
-            handleError(new Error(result.error), 'deleting rent entry', toast);
+            handleError(new Error(result.error), 'deleting rent entry');
         } else {
             toast({
                 title: 'Rent Entry Deleted',
@@ -668,10 +674,10 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
         await refreshData(false);
     };
 
-    const deleteMultipleRentEntries = async (rentEntryIds: string[], toast: ToastFn) => {
+    const deleteMultipleRentEntries = async (rentEntryIds: string[]) => {
         const result = await deleteMultipleRentEntriesAction(rentEntryIds);
         if (result.error) {
-            handleError(new Error(result.error), 'deleting multiple rent entries', toast);
+            handleError(new Error(result.error), 'deleting multiple rent entries');
         } else {
              toast({
                 title: `${rentEntryIds.length} Rent Entries Deleted`,
@@ -682,7 +688,7 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
         await refreshData(false);
     };
     
-    const syncTenantsForMonth = async (year: number, month: number, toast: ToastFn) => {
+    const syncTenantsForMonth = async (year: number, month: number) => {
       try {
         const formData = new FormData();
         formData.append('year', String(year));
@@ -705,12 +711,14 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
                 description: result.message || "All active tenants are already in the rent roll for this month.",
             });
         }
+        return result.count || 0;
       } catch (error) {
-        handleError(error, 'syncing tenants to rent roll', toast);
+        handleError(error, 'syncing tenants to rent roll');
+        return 0;
       }
     };
     
-    const syncExpensesFromPreviousMonth = async (year: number, month: number, toast: ToastFn) => {
+    const syncExpensesFromPreviousMonth = async (year: number, month: number) => {
       try {
         const formData = new FormData();
         formData.append('year', String(year));
@@ -733,8 +741,10 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
                 description: result.message || "There were no new expenses to copy from the previous month.",
             });
         }
+        return result.count || 0;
       } catch (error) {
-        handleError(error, 'syncing expenses to current month', toast);
+        handleError(error, 'syncing expenses to current month');
+        return 0;
       }
     };
 
@@ -742,7 +752,7 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
         return { ...data, zakatBankDetails: settings.zakatBankDetails, propertySettings: null };
     };
 
-    const restoreAllData = async (backupData: Omit<AppData, 'propertySettings'>, toast: ToastFn) => {
+    const restoreAllData = async (backupData: Omit<AppData, 'propertySettings'>) => {
       if (!supabase) return;
 
       try {
@@ -778,7 +788,7 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
         }, 2000);
 
       } catch (error: any) {
-        handleError(error, "restoring data", toast);
+        handleError(error, "restoring data");
         setLoading(false);
       }
     };
@@ -787,17 +797,17 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
         return data.rentData.find(entry => entry.id === id) || null;
     }
     
-    const addWorkDetailsBatch = async (workDetails: Omit<WorkDetail, 'id' | 'created_at'>[], toast: ToastFn) => {
+    const addWorkDetailsBatch = async (workDetails: Omit<WorkDetail, 'id' | 'created_at'>[]) => {
       try {
         const result = await addWorkDetailsBatchAction(workDetails);
         if (result.error) {
-            handleError(new Error(result.error), 'batch adding work details', toast);
+            handleError(new Error(result.error), 'batch adding work details');
         } else {
             toast({ title: "Import Successful", description: `${result.count} work items have been imported.` });
         }
         await refreshData(false);
       } catch(error) {
-        handleError(error, 'batch adding work details', toast);
+        handleError(error, 'batch adding work details');
       }
     };
 

@@ -382,7 +382,7 @@ export function MonthlyOverviewTab() {
   }
 
   const handleDeleteRentEntry = (entry: RentEntry) => {
-    deleteRentEntry(entry.id, toast);
+    deleteRentEntry(entry.id);
   };
   
   const handleSaveRentEntry = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -402,11 +402,9 @@ export function MonthlyOverviewTab() {
     };
 
     if(editingRentEntry) {
-        await updateRentEntry({ ...editingRentEntry, ...rentEntryData }, toast);
-        toast({ title: "Rent Entry Updated", description: "The entry has been successfully updated." });
+        await updateRentEntry({ ...editingRentEntry, ...rentEntryData });
     } else {
-        await addRentEntry(rentEntryData, selectedYear, selectedMonth, toast);
-        toast({ title: "Rent Entry Added", description: "The new entry has been successfully added." });
+        await addRentEntry(rentEntryData, selectedYear, selectedMonth);
     }
 
     setIsRentDialogOpen(false);
@@ -416,23 +414,12 @@ export function MonthlyOverviewTab() {
 
     const handleSyncTenants = () => {
         startTenantSyncTransition(async () => {
-            const syncedCount = await syncTenantsForMonth(selectedYear, selectedMonth);
-            if (syncedCount > 0) {
-                toast({
-                    title: "Sync Complete",
-                    description: `${syncedCount} tenant(s) have been added to the rent roll for ${months[selectedMonth]}.`,
-                });
-            } else {
-                toast({
-                    title: "Already up to date",
-                    description: "All active tenants are already in the rent roll for this month.",
-                });
-            }
+            await syncTenantsForMonth(selectedYear, selectedMonth);
         });
     };
     
   const handleMassDeleteRentEntries = () => {
-    deleteMultipleRentEntries(selectedRentEntryIds, toast);
+    deleteMultipleRentEntries(selectedRentEntryIds);
     setSelectedRentEntryIds([]);
   }
 
@@ -456,7 +443,7 @@ export function MonthlyOverviewTab() {
         if (newStatus === 'Paid' && !payment_date) {
             payment_date = new Date().toISOString().split('T')[0];
         }
-        await updateRentEntry({ ...entry, status: newStatus, payment_date }, toast);
+        await updateRentEntry({ ...entry, status: newStatus, payment_date });
         toast({ title: "Status Updated", description: `${entry.name}'s status is now ${newStatus}.`});
     });
   }
@@ -522,13 +509,13 @@ export function MonthlyOverviewTab() {
   };
   
   const handleMassDeleteExpenses = () => {
-    deleteMultipleExpenses(selectedExpenseIds, toast);
+    deleteMultipleExpenses(selectedExpenseIds);
     setSelectedExpenseIds([]);
   }
   
   const handleExpenseStatusChange = (expense: Expense, newStatus: Expense['status']) => {
     withProtection(async () => {
-        await updateExpense({ ...expense, status: newStatus } as any, toast);
+        await updateExpense({ ...expense, status: newStatus } as any);
         toast({ title: "Status Updated", description: `Expense status is now ${newStatus}.`});
     });
   }
@@ -605,9 +592,7 @@ export function MonthlyOverviewTab() {
           return;
         }
         
-        await addRentEntriesBatch(rentEntriesToCreate, selectedYear, selectedMonth, toast);
-
-        toast({ title: "Import Successful", description: `${rentEntriesToCreate.length} entries have been added to ${months[selectedMonth]}, ${selectedYear}.` });
+        await addRentEntriesBatch(rentEntriesToCreate, selectedYear, selectedMonth);
 
       } catch (error) {
         console.error("Error importing file:", error);
@@ -759,18 +744,7 @@ export function MonthlyOverviewTab() {
 
   const handleSyncExpenses = () => {
       startExpenseSyncTransition(async () => {
-        const syncedCount = await syncExpensesFromPreviousMonth(selectedYear, selectedMonth);
-        if (syncedCount > 0) {
-            toast({
-                title: "Sync Complete",
-                description: `${syncedCount} expense(s) from the previous month have been copied to ${months[selectedMonth]}.`,
-            });
-        } else {
-            toast({
-                title: "No Expenses to Sync",
-                description: "There were no expenses recorded in the previous month to copy over.",
-            });
-        }
+        await syncExpensesFromPreviousMonth(selectedYear, selectedMonth);
     });
   };
 
@@ -944,7 +918,7 @@ export function MonthlyOverviewTab() {
                                         <form onSubmit={(e) => { e.preventDefault(); withProtection(handleMassDeleteRentEntries, e as any); }}>
                                             <AlertDialogHeader>
                                                 <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                                <AlertDialogDescription>This will mark {selectedRentEntryIds.length} selected rent entries as deleted. You can undo this action.</AlertDialogDescription>
+                                                <AlertDialogDescription>This will permanently delete {selectedRentEntryIds.length} selected rent entries.</AlertDialogDescription>
                                             </AlertDialogHeader>
                                             <AlertDialogFooter>
                                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
@@ -1156,7 +1130,7 @@ export function MonthlyOverviewTab() {
                                     <div className="text-left">
                                         <EditableAmount
                                             initialAmount={entry.rent}
-                                            onSave={(newAmount) => updateRentEntry({ ...entry, rent: newAmount }, toast)}
+                                            onSave={(newAmount) => updateRentEntry({ ...entry, rent: newAmount })}
                                             currencySymbol={settings.currencySymbol}
                                             isAdmin={isAdmin}
                                             withProtection={withProtection}
@@ -1200,7 +1174,7 @@ export function MonthlyOverviewTab() {
                                                             <form onSubmit={(e) => { e.preventDefault(); withProtection(() => handleDeleteRentEntry(entry), e as any); }}>
                                                                 <AlertDialogHeader>
                                                                     <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                                                    <AlertDialogDescription>This will mark the rent entry for {entry.name} as deleted. You can undo this action.</AlertDialogDescription>
+                                                                    <AlertDialogDescription>This will permanently delete the rent entry for {entry.name}.</AlertDialogDescription>
                                                                 </AlertDialogHeader>
                                                                 <AlertDialogFooter>
                                                                     <AlertDialogCancel>Cancel</AlertDialogCancel>
@@ -1269,7 +1243,7 @@ export function MonthlyOverviewTab() {
                                   <AlertDialogHeader>
                                     <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                                     <AlertDialogDescription>
-                                      This will mark {selectedExpenseIds.length} selected expenses as deleted. You can undo this action.
+                                      This will permanently delete {selectedExpenseIds.length} selected expenses.
                                     </AlertDialogDescription>
                                   </AlertDialogHeader>
                                   <AlertDialogFooter>
@@ -1386,7 +1360,7 @@ export function MonthlyOverviewTab() {
                                 <div className="text-left">
                                     <EditableAmount
                                         initialAmount={expense.amount}
-                                        onSave={(newAmount) => updateExpense({ ...expense, amount: newAmount }, toast)}
+                                        onSave={(newAmount) => updateExpense({ ...expense, amount: newAmount })}
                                         currencySymbol={settings.currencySymbol}
                                         isAdmin={isAdmin}
                                         withProtection={withProtection}
@@ -1438,7 +1412,7 @@ export function MonthlyOverviewTab() {
                                                       <form onSubmit={(e) => { e.preventDefault(); withProtection(() => handleDeleteExpense(expense), e as any); }}>
                                                           <AlertDialogHeader>
                                                               <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                                              <AlertDialogDescription>This will mark the expense as deleted. You can undo this action.</AlertDialogDescription>
+                                                              <AlertDialogDescription>This will permanently delete this expense.</AlertDialogDescription>
                                                           </AlertDialogHeader>
                                                           <AlertDialogFooter>
                                                               <AlertDialogCancel>Cancel</AlertDialogCancel>
