@@ -133,23 +133,6 @@ export function WorkDetailsTab({ year }: { year: number }) {
     });
   }, [workDetails, year]);
 
-  React.useEffect(() => {
-    if (editingWork) {
-        const category = editingWork.category || '';
-        if (workCategories.includes(category)) {
-            setWorkCategory(category);
-            setCustomWorkCategory('');
-        } else if (category) {
-            setWorkCategory('Other');
-            setCustomWorkCategory(category);
-        } else {
-            setWorkCategory('');
-            setCustomWorkCategory('');
-        }
-    }
-  }, [editingWork]);
-
-
   const handleOpenChange = (isOpen: boolean) => {
     if (!isOpen) {
       setEditingWork(null);
@@ -162,6 +145,17 @@ export function WorkDetailsTab({ year }: { year: number }) {
   const handleEdit = (work: WorkDetail, e: React.MouseEvent) => {
     withProtection(() => {
       setEditingWork(work);
+       const category = work.category || '';
+        if (workCategories.includes(category)) {
+            setWorkCategory(category);
+            setCustomWorkCategory('');
+        } else if (category) {
+            setWorkCategory('Other');
+            setCustomWorkCategory(category);
+        } else {
+            setWorkCategory('');
+            setCustomWorkCategory('');
+        }
       setIsDialogOpen(true);
     }, e);
   };
