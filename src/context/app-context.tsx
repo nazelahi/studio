@@ -9,11 +9,11 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from './auth-context';
 import { Button } from '@/components/ui/button';
 import { addWorkDetailsBatch as addWorkDetailsBatchAction } from '@/app/actions/work';
-import { addExpensesBatch as addExpensesBatchAction } from '@/app/actions/expenses';
+import { addExpensesBatch as addExpensesBatchAction, deleteExpenseAction, deleteMultipleExpensesAction } from '@/app/actions/expenses';
 import type { AppData } from '@/lib/data';
 import { getDashboardDataAction } from '@/app/actions/data';
 import { findOrCreateTenantAction } from '@/app/actions/tenants';
-import { addRentEntriesBatch as addRentEntriesBatchServerAction } from '@/app/actions/rent';
+import { addRentEntriesBatch as addRentEntriesBatchServerAction, deleteRentEntryAction, deleteMultipleRentEntriesAction } from '@/app/actions/rent';
 
 // --- START: Settings-related types moved here ---
 interface PageDashboard {
@@ -595,11 +595,12 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
     };
 
     const deleteExpense = async (expenseId: string, toast: ToastFn) => {
-      try {
-        if (!supabase) return;
-        const { error } = await supabase.from('expenses').update({ deleted_at: new Date().toISOString() }).eq('id', expenseId);
-        if (error) {
-            handleError(error, 'deleting expense', toast);
+        const formData = new FormData();
+        formData.append('expenseId', expenseId);
+        const result = await deleteExpenseAction(formData);
+
+        if (result.error) {
+            handleError(new Error(result.error), 'deleting expense', toast);
         } else {
             toast({
                 title: 'Expense Deleted',
@@ -608,17 +609,12 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
              });
         }
         await refreshData(false);
-      } catch (error) {
-        handleError(error, 'deleting expense', toast);
-      }
     };
 
     const deleteMultipleExpenses = async (expenseIds: string[], toast: ToastFn) => {
-      try {
-        if (!supabase || expenseIds.length === 0) return;
-        const { error } = await supabase.from('expenses').update({ deleted_at: new Date().toISOString() }).in('id', expenseIds);
-        if (error) {
-            handleError(error, 'deleting multiple expenses', toast);
+        const result = await deleteMultipleExpensesAction(expenseIds);
+        if (result.error) {
+            handleError(new Error(result.error), 'deleting multiple expenses', toast);
         } else {
              toast({
                 title: `${expenseIds.length} Expense(s) Deleted`,
@@ -627,9 +623,6 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
              });
         }
         await refreshData(false);
-      } catch (error) {
-        handleError(error, 'deleting multiple expenses', toast);
-      }
     };
     
     const addRentEntry = async (rentEntryData: NewRentEntry, year: number, month: number, toast: ToastFn) => {
@@ -752,11 +745,9 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
     };
     
     const deleteRentEntry = async (rentEntryId: string, toast: ToastFn) => {
-      try {
-        if (!supabase) return;
-        const { error } = await supabase.from('rent_entries').update({ deleted_at: new Date().toISOString() }).eq('id', rentEntryId);
-        if (error) {
-            handleError(error, 'deleting rent entry', toast);
+        const result = await deleteRentEntryAction(rentEntryId);
+        if (result.error) {
+            handleError(new Error(result.error), 'deleting rent entry', toast);
         } else {
             toast({
                 title: 'Rent Entry Deleted',
@@ -765,17 +756,12 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
             });
         }
         await refreshData(false);
-      } catch (error) {
-        handleError(error, 'deleting rent entry', toast);
-      }
     };
 
     const deleteMultipleRentEntries = async (rentEntryIds: string[], toast: ToastFn) => {
-      try {
-        if (!supabase || rentEntryIds.length === 0) return;
-        const { error } = await supabase.from('rent_entries').update({ deleted_at: new Date().toISOString() }).in('id', rentEntryIds);
-        if (error) {
-            handleError(error, 'deleting multiple rent entries', toast);
+        const result = await deleteMultipleRentEntriesAction(rentEntryIds);
+        if (result.error) {
+            handleError(new Error(result.error), 'deleting multiple rent entries', toast);
         } else {
              toast({
                 title: `${rentEntryIds.length} Rent Entries Deleted`,
@@ -784,9 +770,6 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
              });
         }
         await refreshData(false);
-      } catch (error) {
-        handleError(error, 'deleting multiple rent entries', toast);
-      }
     };
     
     const syncTenantsForMonth = async (year: number, month: number, toast: ToastFn): Promise<number> => {
@@ -1008,5 +991,3 @@ export const useAppContext = () => {
   }
   return context;
 }
-
-    

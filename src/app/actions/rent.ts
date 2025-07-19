@@ -41,3 +41,42 @@ export async function addRentEntriesBatch(rentEntries: RentEntryForBatch[]) {
 
     return { success: true, count: rentEntries.length };
 }
+
+
+export async function deleteRentEntryAction(rentEntryId: string) {
+    if (!rentEntryId) {
+        return { error: 'Rent entry ID is missing.' };
+    }
+
+    const supabaseAdmin = getSupabaseAdmin();
+    const { error } = await supabaseAdmin
+        .from('rent_entries')
+        .update({ deleted_at: new Date().toISOString() })
+        .eq('id', rentEntryId);
+
+    if (error) {
+        console.error('Supabase delete error:', error);
+        return { error: error.message };
+    }
+    
+    return { success: true };
+}
+
+export async function deleteMultipleRentEntriesAction(rentEntryIds: string[]) {
+    if (!rentEntryIds || rentEntryIds.length === 0) {
+        return { error: 'No rent entry IDs provided.' };
+    }
+
+    const supabaseAdmin = getSupabaseAdmin();
+    const { error } = await supabaseAdmin
+        .from('rent_entries')
+        .update({ deleted_at: new Date().toISOString() })
+        .in('id', rentEntryIds);
+
+    if (error) {
+        console.error('Supabase multi-delete error:', error);
+        return { error: error.message };
+    }
+
+    return { success: true };
+}

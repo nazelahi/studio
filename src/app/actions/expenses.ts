@@ -69,7 +69,7 @@ export async function deleteExpenseAction(formData: FormData) {
 
     const { error } = await supabaseAdmin
         .from('expenses')
-        .delete()
+        .update({ deleted_at: new Date().toISOString() })
         .eq('id', expenseId);
 
     if (error) {
@@ -79,6 +79,26 @@ export async function deleteExpenseAction(formData: FormData) {
     
     return { success: true };
 }
+
+export async function deleteMultipleExpensesAction(expenseIds: string[]) {
+    if (!expenseIds || expenseIds.length === 0) {
+        return { error: 'No expense IDs provided.' };
+    }
+
+    const supabaseAdmin = getSupabaseAdmin();
+    const { error } = await supabaseAdmin
+        .from('expenses')
+        .update({ deleted_at: new Date().toISOString() })
+        .in('id', expenseIds);
+
+    if (error) {
+        console.error('Supabase multi-delete error:', error);
+        return { error: error.message };
+    }
+
+    return { success: true };
+}
+
 
 export async function addExpensesBatch(expenses: Omit<Expense, 'id' | 'created_at' | 'deleted_at'>[]) {
     if (!expenses || expenses.length === 0) {
