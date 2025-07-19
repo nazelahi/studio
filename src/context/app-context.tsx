@@ -140,14 +140,16 @@ type AppContextType = {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
-const handleError = (error: any, context: string, toast: ToastFn) => {
+const handleError = (error: any, context: string, toast?: ToastFn) => {
     const errorMessage = error.message || 'An unexpected error occurred.';
     console.error(`Error in ${context}:`, errorMessage, error);
-    toast({
-        title: `Error: ${context}`,
-        description: errorMessage,
-        variant: 'destructive',
-    });
+    if (toast && typeof toast === 'function') {
+        toast({
+            title: `Error: ${context}`,
+            description: errorMessage,
+            variant: 'destructive',
+        });
+    }
 };
 
 // --- START: Settings-related logic moved here ---
@@ -332,7 +334,7 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
 
         } catch (error: any) {
             console.error(`Error in refreshing data:`, error.message, error);
-            handleError(error, "refreshing data", () => {});
+            handleError(error, "refreshing data");
         } finally {
             if (showLoading) {
                 setLoading(false);
@@ -882,3 +884,4 @@ export const useAppContext = () => {
   }
   return context;
 }
+ 
