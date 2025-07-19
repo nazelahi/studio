@@ -569,7 +569,7 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
       }
     };
 
-    const addExpensesBatch = async (expenses: Omit<Expense, 'id' | 'created_at' | 'deleted_at'>[]) => {
+    const addExpensesBatch = async (expenses: Omit<Expense, 'id' | 'deleted_at' | 'created_at'>[]) => {
         const result = await addExpensesBatchAction(expenses);
         if (result.error) {
             handleError(new Error(result.error), 'batch adding expenses', () => {});
@@ -617,7 +617,7 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
         if (error) {
             handleError(error, 'deleting multiple expenses', toast);
         } else {
-            toast({
+             toast({
                 title: `${expenseIds.length} Expense(s) Deleted`,
                 description: 'The selected expenses have been deleted.',
                 action: <Button variant="secondary" onClick={() => undoDelete('expenses', expenseIds, toast)}>Undo</Button>
@@ -627,7 +627,7 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
       } catch (error) {
         handleError(error, 'deleting multiple expenses', toast);
       }
-    }
+    };
 
     const addRentEntry = async (rentEntryData: NewRentEntry, year: number, month: number, toast: ToastFn) => {
       try {
@@ -653,7 +653,7 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
                     join_date: new Date(year, month, 1).toISOString().split('T')[0],
                     avatar: 'https://placehold.co/80x80.png',
                     status: 'Active',
-                    email: rentEntryData.name ? `${rentEntryData.name.replace(/\s+/g, '.').toLowerCase()}@example.com` : 'tenant@example.com',
+                    email: rentEntryData.name ? `${rentEntryData.replace(/\s+/g, '.').toLowerCase()}@example.com` : 'tenant@example.com',
                 };
                 const { data: newTenant, error } = await supabase.from('tenants').insert(newTenantData).select().single();
                 if (error || !newTenant) {
@@ -804,7 +804,6 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
     const syncTenantsForMonth = async (year: number, month: number, toast: ToastFn): Promise<number> => {
       try {
         if (!supabase) return 0;
-        const selectedMonthStartDate = new Date(year, month, 1);
         
         const { data: rentDataForMonth, error: rentDataError } = await supabase
             .from('rent_entries')
@@ -822,6 +821,7 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
         const { data: allTenants, error: tenantsError } = await supabase
             .from('tenants')
             .select('*')
+            .eq('status', 'Active') // Only sync tenants marked as "Active"
             .is('deleted_at', null);
 
         if (tenantsError) {
@@ -829,18 +829,7 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
             return 0;
         }
 
-        const tenantsToSync = allTenants.filter(tenant => {
-            if (existingTenantIds.has(tenant.id)) {
-                return false; 
-            }
-            if (!tenant.join_date) return false;
-            try {
-                const joinDate = parseISO(tenant.join_date);
-                return joinDate <= selectedMonthStartDate;
-            } catch {
-                return false; 
-            }
-        });
+        const tenantsToSync = allTenants.filter(tenant => !existingTenantIds.has(tenant.id));
 
         if (tenantsToSync.length === 0) {
             return 0; 
@@ -1031,3 +1020,5 @@ export const useAppContext = () => {
   }
   return context;
 }
+
+    
