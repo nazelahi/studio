@@ -31,6 +31,7 @@ import { Table, TableBody, TableCell, TableRow, TableHeader, TableHead } from ".
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog"
 import { formatCurrency } from "@/lib/utils"
 import { Checkbox } from "./ui/checkbox"
+import { deleteTenantAction, deleteMultipleTenantsAction } from "@/app/actions/tenants"
 
 const predefinedApartments = [
   'Flat-1A', 'Flat-1B', 'Flat-2A', 'Flat-2B', 'Flat-3A', 'Flat-3B',
@@ -108,7 +109,7 @@ const Combobox: React.FC<ComboboxProps> = ({ options, value, onValueChange, plac
 
 
 export function ContactsTab() {
-  const { tenants, addTenant, updateTenant, deleteTenant, deleteMultipleTenants, loading, settings, setSettings } = useAppContext();
+  const { tenants, addTenant, updateTenant, loading, settings, setSettings, refreshData } = useAppContext();
   const { isAdmin } = useAuth();
   const [open, setOpen] = React.useState(false);
   const [editingTenant, setEditingTenant] = React.useState<Tenant | null>(null);
@@ -144,10 +145,6 @@ export function ContactsTab() {
       setTypeValue(editingTenant.type || '');
     }
   }, [editingTenant]);
-  
-  React.useEffect(() => {
-    setSelectedTenantIds([]);
-  }, [searchTerm, settings.tenantViewStyle]);
 
   const filteredTenants = React.useMemo(() => {
     if (!searchTerm) return tenants;
@@ -310,7 +307,8 @@ export function ContactsTab() {
       const formData = new FormData();
       formData.append('tenantId', tenantId);
       startTransition(async () => {
-        await deleteTenant(formData);
+        await deleteTenantAction(formData);
+        refreshData();
       });
     }, e);
   }
@@ -318,8 +316,9 @@ export function ContactsTab() {
   const handleMassDelete = () => {
     withProtection(() => {
         startTransition(async () => {
-            await deleteMultipleTenants(selectedTenantIds);
+            await deleteMultipleTenantsAction(selectedTenantIds);
             setSelectedTenantIds([]);
+            refreshData();
         });
     });
   }
