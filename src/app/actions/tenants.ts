@@ -184,6 +184,18 @@ export async function deleteTenantAction(formData: FormData) {
         return { error: 'Tenant ID is missing.' };
     }
 
+    // First, delete associated rent entries
+    const { error: rentError } = await supabaseAdmin
+        .from('rent_entries')
+        .delete()
+        .eq('tenant_id', tenantId);
+
+    if (rentError) {
+        console.error('Supabase rent entry delete error:', rentError);
+        return { error: `Failed to delete associated rent entries: ${rentError.message}` };
+    }
+
+    // Then, delete the tenant
     const { error } = await supabaseAdmin
         .from('tenants')
         .delete()
@@ -203,6 +215,19 @@ export async function deleteMultipleTenantsAction(tenantIds: string[]) {
     }
 
     const supabaseAdmin = getSupabaseAdmin();
+
+    // First, delete all associated rent entries
+    const { error: rentError } = await supabaseAdmin
+        .from('rent_entries')
+        .delete()
+        .in('tenant_id', tenantIds);
+
+    if (rentError) {
+        console.error('Supabase multi-rent-entry delete error:', rentError);
+        return { error: `Failed to delete associated rent entries: ${rentError.message}` };
+    }
+
+    // Then, delete the tenants
     const { error } = await supabaseAdmin
         .from('tenants')
         .delete()
