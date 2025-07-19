@@ -1085,7 +1085,8 @@ export function MonthlyOverviewTab() {
                                   />
                               </TableHead>}
                               <TableHead className="text-inherit">Tenant</TableHead>
-                              <TableHead className="table-cell text-inherit">Payment Date</TableHead>
+                              <TableHead className="text-inherit">Payment Date</TableHead>
+                              <TableHead className="hidden md:table-cell text-inherit">Payment For</TableHead>
                               <TableHead className="hidden md:table-cell text-inherit">Status</TableHead>
                               <TableHead className="text-inherit">Amount</TableHead>
                               <TableHead className="w-[50px] text-right text-inherit"></TableHead>
@@ -1117,21 +1118,23 @@ export function MonthlyOverviewTab() {
                                         >
                                             {entry.name}
                                         </button>
-                                        <div className="sm:hidden">{getStatusIcon(entry.status)}</div>
+                                        <div className="md:hidden">{getStatusIcon(entry.status)}</div>
                                       </div>
                                       <div className="text-sm text-muted-foreground">
                                         <p>{entry.property}</p>
-                                        <p className="md:hidden text-xs">For: <span className="font-medium">{months[entry.payment_for_month ?? entry.month]}</span></p>
                                       </div>
                                     </div>
                                   </TableCell>
                                   <TableCell>
-                                      <div className="sm:hidden text-sm">
+                                      <div className="md:hidden text-sm">
                                           {formatDate(entry.payment_date, 'dd MMM')}
                                       </div>
-                                      <div className="hidden sm:block text-sm">
+                                      <div className="hidden md:block text-sm">
                                           {formatDate(entry.payment_date, settings.dateFormat)}
                                       </div>
+                                  </TableCell>
+                                  <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
+                                    {months[entry.payment_for_month ?? entry.month]}
                                   </TableCell>
                                   <TableCell className="hidden md:table-cell">
                                       {isAdmin && entry.status !== 'Paid' ? (
@@ -1224,14 +1227,14 @@ export function MonthlyOverviewTab() {
                               ))
                             ) : (
                               <TableRow>
-                                <TableCell colSpan={isAdmin ? 8 : 7} className="text-center text-muted-foreground p-10">No rent collection data for {month} {selectedYear}.</TableCell>
+                                <TableCell colSpan={isAdmin ? 7 : 6} className="text-center text-muted-foreground p-10">No rent collection data for {month} {selectedYear}.</TableCell>
                               </TableRow>
                             )}
                           </TableBody>
                           {filteredTenantsForMonth.length > 0 && (
                             <TableFooter>
                               <TableRow style={{ backgroundColor: 'hsl(var(--table-footer-background))', color: 'hsl(var(--table-footer-foreground))' }} className="font-bold hover:bg-[hsl(var(--table-footer-background)/0.9)]">
-                                  <TableCell colSpan={isAdmin ? 8 : 7} className="p-2 text-inherit">
+                                  <TableCell colSpan={isAdmin ? 7 : 6} className="p-2 text-inherit">
                                     <div className="flex flex-col sm:flex-row items-center justify-between px-2 py-2">
                                       <div className="sm:hidden text-center text-inherit">Total Rent Collected</div>
                                       <div className="hidden sm:block text-left text-inherit">Total Rent Collected</div>
