@@ -432,21 +432,6 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
       }
     };
 
-    const undoDelete = async (table: string, ids: string[], toast: ToastFn) => {
-      try {
-        if (!supabase) return;
-        const { error } = await supabase.from(table).update({ deleted_at: null }).in('id', ids);
-        if (error) {
-            handleError(error, `undoing delete on ${table}`, toast);
-        } else {
-            toast({ title: 'Restored', description: `The item(s) have been restored.` });
-            await refreshData(false);
-        }
-      } catch (error) {
-        handleError(error, `undoing delete on ${table}`, toast);
-      }
-    }
-
     const addTenant = async (formData: FormData, toast: ToastFn) => {
         // This function might seem redundant now, but it's kept for potential future client-side logic before calling the server action.
         // For now, it just passes through to the server action.
@@ -489,15 +474,14 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
     };
 
     const deleteTenant = async (formData: FormData, toast: ToastFn) => {
-        const tenantId = formData.get('tenantId') as string;
         const result = await deleteTenantAction(formData);
         if (result.error) {
             handleError(new Error(result.error), 'deleting tenant', toast);
         } else {
              toast({
                 title: 'Tenant Deleted',
-                description: 'The tenant has been deleted.',
-                action: <Button variant="secondary" onClick={() => undoDelete('tenants', [tenantId], toast)}>Undo</Button>
+                description: 'The tenant has been permanently deleted.',
+                variant: 'destructive',
              });
              await refreshData(false);
         }
@@ -510,8 +494,8 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
         } else {
             toast({
                 title: `${tenantIds.length} Tenant(s) Deleted`,
-                description: 'The selected tenants have been deleted.',
-                action: <Button variant="secondary" onClick={() => undoDelete('tenants', tenantIds, toast)}>Undo</Button>
+                description: 'The selected tenants have been permanently deleted.',
+                variant: 'destructive',
             });
         }
         await refreshData(false);
@@ -561,8 +545,8 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
         } else {
             toast({
                 title: 'Expense Deleted',
-                description: 'The expense has been deleted.',
-                action: <Button variant="secondary" onClick={() => undoDelete('expenses', [expenseId], toast)}>Undo</Button>
+                description: 'The expense has been permanently deleted.',
+                variant: 'destructive',
              });
         }
         await refreshData(false);
@@ -575,8 +559,8 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
         } else {
              toast({
                 title: `${expenseIds.length} Expense(s) Deleted`,
-                description: 'The selected expenses have been deleted.',
-                action: <Button variant="secondary" onClick={() => undoDelete('expenses', expenseIds, toast)}>Undo</Button>
+                description: 'The selected expenses have been permanently deleted.',
+                variant: 'destructive',
              });
         }
         await refreshData(false);
@@ -708,8 +692,8 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
         } else {
             toast({
                 title: 'Rent Entry Deleted',
-                description: 'The rent entry has been deleted.',
-                action: <Button variant="secondary" onClick={() => undoDelete('rent_entries', [rentEntryId], toast)}>Undo</Button>
+                description: 'The rent entry has been permanently deleted.',
+                variant: 'destructive',
             });
         }
         await refreshData(false);
@@ -722,8 +706,8 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
         } else {
              toast({
                 title: `${rentEntryIds.length} Rent Entries Deleted`,
-                description: 'The selected entries have been deleted.',
-                action: <Button variant="secondary" onClick={() => undoDelete('rent_entries', rentEntryIds, toast)}>Undo</Button>
+                description: 'The selected entries have been permanently deleted.',
+                variant: 'destructive',
              });
         }
         await refreshData(false);

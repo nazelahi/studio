@@ -69,7 +69,7 @@ export async function deleteExpenseAction(formData: FormData) {
 
     const { error } = await supabaseAdmin
         .from('expenses')
-        .update({ deleted_at: new Date().toISOString() })
+        .delete()
         .eq('id', expenseId);
 
     if (error) {
@@ -88,7 +88,7 @@ export async function deleteMultipleExpensesAction(expenseIds: string[]) {
     const supabaseAdmin = getSupabaseAdmin();
     const { error } = await supabaseAdmin
         .from('expenses')
-        .update({ deleted_at: new Date().toISOString() })
+        .delete()
         .in('id', expenseIds);
 
     if (error) {

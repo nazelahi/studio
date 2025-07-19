@@ -51,7 +51,7 @@ export async function deleteRentEntryAction(rentEntryId: string) {
     const supabaseAdmin = getSupabaseAdmin();
     const { error } = await supabaseAdmin
         .from('rent_entries')
-        .update({ deleted_at: new Date().toISOString() })
+        .delete()
         .eq('id', rentEntryId);
 
     if (error) {
@@ -70,7 +70,7 @@ export async function deleteMultipleRentEntriesAction(rentEntryIds: string[]) {
     const supabaseAdmin = getSupabaseAdmin();
     const { error } = await supabaseAdmin
         .from('rent_entries')
-        .update({ deleted_at: new Date().toISOString() })
+        .delete()
         .in('id', rentEntryIds);
 
     if (error) {

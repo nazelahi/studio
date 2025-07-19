@@ -186,7 +186,7 @@ export async function deleteTenantAction(formData: FormData) {
 
     const { error } = await supabaseAdmin
         .from('tenants')
-        .update({ deleted_at: new Date().toISOString() })
+        .delete()
         .eq('id', tenantId);
 
     if (error) {
@@ -205,7 +205,7 @@ export async function deleteMultipleTenantsAction(tenantIds: string[]) {
     const supabaseAdmin = getSupabaseAdmin();
     const { error } = await supabaseAdmin
         .from('tenants')
-        .update({ deleted_at: new Date().toISOString() })
+        .delete()
         .in('id', tenantIds);
 
     if (error) {
