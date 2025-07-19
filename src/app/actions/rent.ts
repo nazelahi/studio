@@ -80,3 +80,66 @@ export async function deleteMultipleRentEntriesAction(rentEntryIds: string[]) {
 
     return { success: true };
 }
+
+
+export async function syncTenantsAction(formData: FormData) {
+    const supabaseAdmin = getSupabaseAdmin();
+    const year = Number(formData.get('year'));
+    const month = Number(formData.get('month'));
+
+    if (isNaN(year) || isNaN(month)) {
+        return { error: 'Invalid year or month provided.' };
+    }
+
+    try {
+        const { data: rentDataForMonth, error: rentDataError } = await supabaseAdmin
+            .from('rent_entries')
+            .select('tenant_id')
+            .eq('year', year)
+            .eq('month', month);
+
+        if (rentDataError) {
+            throw new Error(`Failed to fetch rent data for sync: ${rentDataError.message}`);
+        }
+
+        const existingTenantIds = new Set(rentDataForMonth.map(e => e.tenant_id));
+
+        const { data: allTenants, error: tenantsError } = await supabaseAdmin
+            .from('tenants')
+            .select('*')
+            .eq('status', 'Active');
+
+        if (tenantsError) {
+            throw new Error(`Failed to fetch tenants for sync: ${tenantsError.message}`);
+        }
+
+        const tenantsToSync = allTenants.filter(tenant => !existingTenantIds.has(tenant.id));
+
+        if (tenantsToSync.length === 0) {
+            return { success: true, count: 0 };
+        }
+
+        const newRentEntries = tenantsToSync.map(tenant => ({
+            tenant_id: tenant.id,
+            name: tenant.name,
+            property: tenant.property,
+            rent: tenant.rent,
+            due_date: new Date(year, month, 1).toISOString().split("T")[0],
+            status: "Pending" as const,
+            avatar: tenant.avatar,
+            year: year,
+            month: month,
+        }));
+
+        const { error: insertError } = await supabaseAdmin.from('rent_entries').insert(newRentEntries);
+
+        if (insertError) {
+            throw new Error(`Failed to insert synced tenants: ${insertError.message}`);
+        }
+
+        return { success: true, count: tenantsToSync.length };
+    } catch (error: any) {
+        console.error('Error syncing tenants:', error);
+        return { error: error.message };
+    }
+}

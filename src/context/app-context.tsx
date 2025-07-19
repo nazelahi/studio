@@ -9,11 +9,11 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from './auth-context';
 import { Button } from '@/components/ui/button';
 import { addWorkDetailsBatch as addWorkDetailsBatchAction } from '@/app/actions/work';
-import { addExpensesBatch as addExpensesBatchAction, deleteExpenseAction, deleteMultipleExpensesAction, saveExpenseAction } from '@/app/actions/expenses';
+import { addExpensesBatch as addExpensesBatchAction, deleteExpenseAction, deleteMultipleExpensesAction, saveExpenseAction, syncExpensesAction } from '@/app/actions/expenses';
 import type { AppData } from '@/lib/data';
 import { getDashboardDataAction } from '@/app/actions/data';
 import { findOrCreateTenantAction, updateTenantAction, deleteTenantAction, deleteMultipleTenantsAction } from '@/app/actions/tenants';
-import { addRentEntriesBatch as addRentEntriesBatchServerAction, deleteRentEntryAction, deleteMultipleRentEntriesAction } from '@/app/actions/rent';
+import { addRentEntriesBatch as addRentEntriesBatchServerAction, deleteRentEntryAction, deleteMultipleRentEntriesAction, syncTenantsAction } from '@/app/actions/rent';
 
 // --- START: Settings-related types moved here ---
 interface PageDashboard {
@@ -128,8 +128,8 @@ type AppContextType = {
   updateRentEntry: (rentEntry: RentEntry, toast: ToastFn) => Promise<void>;
   deleteRentEntry: (rentEntryId: string, toast: ToastFn) => Promise<void>;
   deleteMultipleRentEntries: (rentEntryIds: string[], toast: ToastFn) => Promise<void>;
-  syncTenantsForMonth: (year: number, month: number, toast: ToastFn) => Promise<number>;
-  syncExpensesFromPreviousMonth: (year: number, month: number, toast: ToastFn) => Promise<number>;
+  syncTenantsForMonth: (year: number, month: number) => Promise<number>;
+  syncExpensesFromPreviousMonth: (year: number, month: number) => Promise<number>;
   loading: boolean;
   getAllData: () => Omit<AppData, 'propertySettings'>;
   restoreAllData: (backupData: Omit<AppData, 'propertySettings'>, toast: ToastFn) => void;
@@ -719,112 +719,46 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
         await refreshData(false);
     };
     
-    const syncTenantsForMonth = async (year: number, month: number, toast: ToastFn): Promise<number> => {
+    const syncTenantsForMonth = async (year: number, month: number): Promise<number> => {
       try {
-        if (!supabase) return 0;
-        
-        const { data: rentDataForMonth, error: rentDataError } = await supabase
-            .from('rent_entries')
-            .select('tenant_id')
-            .eq('year', year)
-            .eq('month', month);
+        const formData = new FormData();
+        formData.append('year', String(year));
+        formData.append('month', String(month));
+        const result = await syncTenantsAction(formData);
 
-        if (rentDataError) {
-            handleError(rentDataError, 'fetching rent data for sync', toast);
-            return 0;
-        }
-        const existingTenantIds = new Set(rentDataForMonth.map(e => e.tenant_id));
-
-        const { data: allTenants, error: tenantsError } = await supabase
-            .from('tenants')
-            .select('*')
-            .eq('status', 'Active'); // Only sync tenants marked as "Active"
-
-        if (tenantsError) {
-            handleError(tenantsError, 'fetching tenants for sync', toast);
-            return 0;
-        }
-
-        const tenantsToSync = allTenants.filter(tenant => !existingTenantIds.has(tenant.id));
-
-        if (tenantsToSync.length === 0) {
-            return 0; 
+        if (result.error) {
+          throw new Error(result.error);
         }
         
-        const newRentEntries = tenantsToSync.map(tenant => ({
-            tenant_id: tenant.id,
-            name: tenant.name,
-            property: tenant.property,
-            rent: tenant.rent,
-            due_date: new Date(year, month, 1).toISOString().split("T")[0],
-            status: "Pending" as const,
-            avatar: tenant.avatar,
-            year: year,
-            month: month,
-        }));
-
-        const { error } = await supabase.from('rent_entries').insert(newRentEntries);
-
-        if (error) {
-            handleError(error, 'syncing tenants to rent roll', toast);
-            return 0;
+        if (result.count > 0) {
+          await refreshData(false);
         }
-
-        await refreshData(false);
-        return tenantsToSync.length;
+        
+        return result.count || 0;
       } catch (error) {
-        handleError(error, 'syncing tenants to rent roll', toast);
+        handleError(error, 'syncing tenants to rent roll', () => {});
         return 0;
       }
     };
     
-    const syncExpensesFromPreviousMonth = async (year: number, month: number, toast: ToastFn): Promise<number> => {
+    const syncExpensesFromPreviousMonth = async (year: number, month: number): Promise<number> => {
       try {
-        if (!supabase) return 0;
-        
-        const currentMonthDate = new Date(year, month, 1);
-        const previousMonthDate = subMonths(currentMonthDate, 1);
-        const previousMonth = getMonth(previousMonthDate);
-        const previousYear = getYear(previousMonthDate);
+        const formData = new FormData();
+        formData.append('year', String(year));
+        formData.append('month', String(month));
+        const result = await syncExpensesAction(formData);
 
-        const { data: previousExpenses, error: fetchError } = await supabase
-            .from('expenses')
-            .select('*')
-            .gte('date', format(new Date(previousYear, previousMonth, 1), 'yyyy-MM-dd'))
-            .lt('date', format(new Date(previousYear, previousMonth + 1, 1), 'yyyy-MM-dd'));
-
-        if (fetchError) {
-            handleError(fetchError, 'fetching previous month expenses for sync', toast);
-            return 0;
-        }
-
-        if (!previousExpenses || previousExpenses.length === 0) {
-            return 0;
-        }
-        
-        const newExpenses = previousExpenses.map(expense => {
-            const { id, created_at, date, ...rest } = expense;
-            const previousDate = parseISO(date);
-            const newDate = new Date(year, month, previousDate.getDate());
-            
-            return {
-                ...rest,
-                date: format(newDate, 'yyyy-MM-dd'),
-                status: 'Due' as const, 
-            };
-        });
-
-        const result = await addExpensesBatch(newExpenses, toast);
-        
         if (result.error) {
-             handleError(new Error(result.error), 'syncing expenses to current month', toast);
-             return 0;
+            throw new Error(result.error);
         }
-
-        await refreshData(false);
-        return newExpenses.length;
+        
+        if (result.count > 0) {
+          await refreshData(false);
+        }
+        
+        return result.count || 0;
       } catch (error) {
-        handleError(error, 'syncing expenses to current month', toast);
+        handleError(error, 'syncing expenses to current month', () => {});
         return 0;
       }
     };

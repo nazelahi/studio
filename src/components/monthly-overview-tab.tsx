@@ -416,7 +416,7 @@ export function MonthlyOverviewTab() {
 
     const handleSyncTenants = () => {
         startTenantSyncTransition(async () => {
-            const syncedCount = await syncTenantsForMonth(selectedYear, selectedMonth, toast);
+            const syncedCount = await syncTenantsForMonth(selectedYear, selectedMonth);
             if (syncedCount > 0) {
                 toast({
                     title: "Sync Complete",
@@ -759,7 +759,7 @@ export function MonthlyOverviewTab() {
 
   const handleSyncExpenses = () => {
       startExpenseSyncTransition(async () => {
-        const syncedCount = await syncExpensesFromPreviousMonth(selectedYear, selectedMonth, toast);
+        const syncedCount = await syncExpensesFromPreviousMonth(selectedYear, selectedMonth);
         if (syncedCount > 0) {
             toast({
                 title: "Sync Complete",
@@ -1047,7 +1047,7 @@ export function MonthlyOverviewTab() {
                                         {isSyncingTenants ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
                                         <span className="sr-only">Sync tenants</span>
                                     </Button>
-                                </TooltipTrigger><TooltipContent>Sync</TooltipContent></Tooltip>
+                                </TooltipTrigger><TooltipContent>Sync from Tenants List</TooltipContent></Tooltip>
                             </div>
                             <div className="flex items-center gap-2">
                                 <Tooltip><TooltipTrigger asChild><Button size="icon" variant="outline" onClick={handleDownloadTemplate}><Download className="h-4 w-4" /><span className="sr-only">Download Template</span></Button></TooltipTrigger><TooltipContent>Download Template</TooltipContent></Tooltip>

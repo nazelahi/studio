@@ -4,6 +4,7 @@
 import { createClient } from '@supabase/supabase-js'
 import 'dotenv/config'
 import type { Expense } from '@/types'
+import { format, getMonth, getYear, subMonths, parseISO } from 'date-fns'
 
 const getSupabaseAdmin = () => {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -115,4 +116,59 @@ export async function addExpensesBatch(expenses: Omit<Expense, 'id' | 'created_a
     }
 
     return { success: true, count: expenses.length };
+}
+
+export async function syncExpensesAction(formData: FormData) {
+    const supabaseAdmin = getSupabaseAdmin();
+    const year = Number(formData.get('year'));
+    const month = Number(formData.get('month'));
+
+    if (isNaN(year) || isNaN(month)) {
+        return { error: 'Invalid year or month provided.' };
+    }
+
+    try {
+        const currentMonthDate = new Date(year, month, 1);
+        const previousMonthDate = subMonths(currentMonthDate, 1);
+        const previousMonth = getMonth(previousMonthDate);
+        const previousYear = getYear(previousMonthDate);
+
+        const { data: previousExpenses, error: fetchError } = await supabaseAdmin
+            .from('expenses')
+            .select('*')
+            .gte('date', format(new Date(previousYear, previousMonth, 1), 'yyyy-MM-dd'))
+            .lt('date', format(new Date(previousYear, previousMonth + 1, 1), 'yyyy-MM-dd'));
+
+        if (fetchError) {
+            throw new Error(`Failed to fetch previous month's expenses: ${fetchError.message}`);
+        }
+        
+        if (!previousExpenses || previousExpenses.length === 0) {
+            return { success: true, count: 0 };
+        }
+
+        const newExpenses = previousExpenses.map(expense => {
+            const { id, created_at, date, ...rest } = expense;
+            const previousDate = parseISO(date);
+            // Use the same day of the month if possible, otherwise clamp to the last day
+            const newDate = new Date(year, month, previousDate.getDate());
+            
+            return {
+                ...rest,
+                date: format(newDate, 'yyyy-MM-dd'),
+                status: 'Due' as const,
+            };
+        });
+
+        const { error: insertError } = await supabaseAdmin.from('expenses').insert(newExpenses);
+
+        if (insertError) {
+            throw new Error(`Failed to insert synced expenses: ${insertError.message}`);
+        }
+
+        return { success: true, count: newExpenses.length };
+    } catch (error: any) {
+        console.error('Error syncing expenses:', error);
+        return { error: error.message };
+    }
 }
