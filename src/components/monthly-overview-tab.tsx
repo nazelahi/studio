@@ -830,24 +830,11 @@ export function MonthlyOverviewTab() {
                 const row: { [key: string]: any } = {};
                 header.forEach((h, i) => { row[h] = rowArray[i]; });
                 
-                let expenseDate: string | undefined = undefined;
-                const dateInput = row.date;
-                if (dateInput) {
-                    if (typeof dateInput === 'number') {
-                        // Handle Excel's numeric date format
-                        const excelEpoch = new Date(1899, 11, 30);
-                        const excelDate = new Date(excelEpoch.getTime() + dateInput * 86400000);
-                        expenseDate = formatDate(excelDate.toISOString(), 'yyyy-MM-dd');
-                    } else {
-                        const parsed = new Date(dateInput);
-                        if (!isNaN(parsed.getTime())) {
-                            expenseDate = formatDate(parsed.toISOString(), 'yyyy-MM-dd');
-                        }
-                    }
-                }
-
+                // Use the 1st day of the selected month/year for all imported expenses
+                const expenseDate = formatDate(new Date(selectedYear, selectedMonth, 1).toISOString(), 'yyyy-MM-dd');
+                
                 return {
-                    date: expenseDate || formatDate(new Date().toISOString(), 'yyyy-MM-dd'),
+                    date: expenseDate,
                     category: String(row.category || 'Other'),
                     amount: Number(row.amount || 0),
                     description: String(row.description || ''),
