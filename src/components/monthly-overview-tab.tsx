@@ -1122,6 +1122,7 @@ export function MonthlyOverviewTab() {
                                       </div>
                                       <div className="text-sm text-muted-foreground">
                                         <p>{entry.property}</p>
+                                        <p className="md:hidden text-xs">For: {months[entry.payment_for_month ?? entry.month]}</p>
                                       </div>
                                     </div>
                                   </TableCell>
