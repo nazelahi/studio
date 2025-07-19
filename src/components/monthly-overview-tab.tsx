@@ -1085,7 +1085,7 @@ export function MonthlyOverviewTab() {
                                   />
                               </TableHead>}
                               <TableHead className="text-inherit">Tenant</TableHead>
-                              <TableHead className="text-inherit">Payment Date</TableHead>
+                              <TableHead className="table-cell text-inherit">Payment Date</TableHead>
                               <TableHead className="hidden md:table-cell text-inherit">Status</TableHead>
                               <TableHead className="text-inherit">Amount</TableHead>
                               <TableHead className="w-[50px] text-right text-inherit"></TableHead>
@@ -1125,7 +1125,14 @@ export function MonthlyOverviewTab() {
                                       </div>
                                     </div>
                                   </TableCell>
-                                  <TableCell>{formatDate(entry.payment_date, settings.dateFormat)}</TableCell>
+                                  <TableCell>
+                                      <div className="sm:hidden text-sm">
+                                          {formatDate(entry.payment_date, 'dd MMM')}
+                                      </div>
+                                      <div className="hidden sm:block text-sm">
+                                          {formatDate(entry.payment_date, settings.dateFormat)}
+                                      </div>
+                                  </TableCell>
                                   <TableCell className="hidden md:table-cell">
                                       {isAdmin && entry.status !== 'Paid' ? (
                                           <Select
