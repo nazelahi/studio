@@ -1,187 +1,283 @@
--- RentFlow - Complete Database Schema
 
--- Enable UUID generation
-create extension if not exists "uuid-ossp" with schema "public";
+--
+-- Create a new table for tenants
+--
+CREATE TABLE
+  public.tenants (
+    id uuid NOT NULL DEFAULT gen_random_uuid (),
+    name character varying(255) NOT NULL,
+    email character varying(255) NOT NULL,
+    phone character varying(255) NULL,
+    property character varying(255) NOT NULL,
+    rent numeric NOT NULL,
+    join_date date NOT NULL,
+    notes text NULL,
+    status character varying(255) NOT NULL DEFAULT 'Active'::character varying,
+    avatar character varying(255) NULL,
+    type character varying(255) NULL,
+    documents jsonb NULL,
+    father_name character varying(255) NULL,
+    address text NULL,
+    date_of_birth date NULL,
+    nid_number character varying(255) NULL,
+    advance_deposit numeric NULL,
+    gas_meter_number character varying(255) NULL,
+    electric_meter_number character varying(255) NULL,
+    created_at timestamp with time zone NOT NULL DEFAULT now(),
+    deleted_at timestamp with time zone NULL,
+    CONSTRAINT tenants_pkey PRIMARY KEY (id)
+  ) tablespace pg_default;
 
--- Table for storing property settings. Only one row will exist.
-create table if not exists public.property_settings (
-  id bigint primary key generated always as identity,
-  house_name text not null default 'RentFlow'::text,
-  house_address text,
-  bank_name text,
-  bank_account_number text,
-  bank_logo_url text,
-  owner_name text,
-  owner_photo_url text,
-  passcode text,
-  passcode_protection_enabled boolean default true,
-  about_us text,
-  contact_phone text,
-  contact_email text,
-  contact_address text,
-  footer_name text,
-  theme_primary text,
-  theme_table_header_background text,
-  theme_table_header_foreground text,
-  theme_table_footer_background text,
-  theme_mobile_nav_background text,
-  theme_mobile_nav_foreground text,
-  theme_primary_dark text,
-  theme_table_header_background_dark text,
-  theme_table_header_foreground_dark text,
-  theme_table_footer_background_dark text,
-  theme_mobile_nav_background_dark text,
-  theme_mobile_nav_foreground_dark text,
-  whatsapp_reminders_enabled boolean default false,
-  whatsapp_reminder_schedule text[],
-  whatsapp_reminder_template text,
-  tenant_view_style public.character varying(255) COLLATE "default" DEFAULT 'grid'::character varying,
-  metadata_title text,
-  favicon_url text,
-  app_logo_url text,
-  document_categories text[],
-  date_format text,
-  currency_symbol text,
-  page_labels jsonb
-);
--- Ensure only one row can be created
-alter table public.property_settings add constraint unique_id_for_singleton check (id = 1);
+--
+-- Create a new table for expenses
+--
+CREATE TABLE
+  public.expenses (
+    id uuid NOT NULL DEFAULT gen_random_uuid (),
+    date date NOT NULL,
+    category character varying(255) NOT NULL,
+    amount numeric NOT NULL,
+    description text NULL,
+    status character varying(255) NOT NULL DEFAULT 'Due'::character varying,
+    created_at timestamp with time zone NOT NULL DEFAULT now(),
+    deleted_at timestamp with time zone NULL,
+    CONSTRAINT expenses_pkey PRIMARY KEY (id)
+  ) tablespace pg_default;
 
--- Table for tenants
-create table if not exists public.tenants (
-  id uuid primary key default uuid_generate_v4(),
-  name text not null,
-  email text,
-  phone text,
-  property text not null,
-  rent numeric not null,
-  join_date date not null,
-  notes text,
-  status public.character varying(255) COLLATE "default",
-  avatar text,
-  "type" text,
-  documents text[],
-  father_name text,
-  address text,
-  date_of_birth date,
-  nid_number text,
-  advance_deposit numeric,
-  gas_meter_number text,
-  electric_meter_number text,
-  created_at timestamp with time zone not null default now(),
-  deleted_at timestamp with time zone
-);
+--
+-- Create a new table for rent entries
+--
+CREATE TABLE
+  public.rent_entries (
+    id uuid NOT NULL DEFAULT gen_random_uuid (),
+    tenant_id uuid NOT NULL,
+    name character varying(255) NOT NULL,
+    property character varying(255) NOT NULL,
+    rent numeric NOT NULL,
+    due_date date NOT NULL,
+    status character varying(255) NOT NULL DEFAULT 'Pending'::character varying,
+    avatar character varying(255) NULL,
+    "year" integer NOT NULL,
+    "month" integer NOT NULL,
+    payment_date date NULL,
+    collected_by character varying(255) NULL,
+    payment_for_month integer NULL,
+    created_at timestamp with time zone NOT NULL DEFAULT now(),
+    deleted_at timestamp with time zone NULL,
+    CONSTRAINT rent_entries_pkey PRIMARY KEY (id),
+    CONSTRAINT rent_entries_tenant_id_fkey FOREIGN KEY (tenant_id) REFERENCES tenants (id) ON DELETE CASCADE
+  ) tablespace pg_default;
 
--- Table for rent entries
-create table if not exists public.rent_entries (
-  id uuid primary key default uuid_generate_v4(),
-  tenant_id uuid references public.tenants(id) on delete cascade,
-  name text,
-  property text,
-  rent numeric,
-  due_date date,
-  status public.character varying(255) COLLATE "default",
-  avatar text,
-  "year" smallint,
-  "month" smallint,
-  payment_date date,
-  collected_by text,
-  payment_for_month smallint,
-  created_at timestamp with time zone not null default now(),
-  deleted_at timestamp with time zone
-);
+--
+-- Create a new table for property settings
+--
+CREATE TABLE
+  public.property_settings (
+    id bigint NOT NULL DEFAULT 1,
+    house_name varchar(255) NULL,
+    house_address varchar(255) NULL,
+    bank_name varchar(255) NULL,
+    bank_account_number varchar(255) NULL,
+    bank_logo_url text NULL,
+    owner_name varchar(255) NULL,
+    owner_photo_url text NULL,
+    passcode varchar(255) NULL,
+    passcode_protection_enabled boolean NULL DEFAULT true,
+    about_us text NULL,
+    contact_phone varchar(255) NULL,
+    contact_email varchar(255) NULL,
+    contact_address text NULL,
+    footer_name varchar(255) NULL,
+    theme_primary varchar(255) NULL,
+    theme_table_header_background varchar(255) NULL,
+    theme_table_header_foreground varchar(255) NULL,
+    theme_table_footer_background varchar(255) NULL,
+    theme_mobile_nav_background varchar(255) NULL,
+    theme_mobile_nav_foreground varchar(255) NULL,
+    whatsapp_reminders_enabled boolean NULL DEFAULT false,
+    whatsapp_reminder_schedule jsonb NULL,
+    whatsapp_reminder_template text NULL,
+    tenant_view_style varchar(255) NULL DEFAULT 'grid',
+    metadata_title varchar(255) NULL,
+    favicon_url text NULL,
+    app_logo_url text NULL,
+    document_categories jsonb NULL,
+    date_format varchar(255) NULL,
+    currency_symbol varchar(10) NULL,
+    page_labels jsonb NULL,
+    theme_primary_dark varchar(255) NULL,
+    theme_table_header_background_dark varchar(255) NULL,
+    theme_table_header_foreground_dark varchar(255) NULL,
+    theme_table_footer_background_dark varchar(255) NULL,
+    theme_mobile_nav_background_dark varchar(255) NULL,
+    theme_mobile_nav_foreground_dark varchar(255) NULL,
+    CONSTRAINT property_settings_pkey PRIMARY KEY (id)
+  ) tablespace pg_default;
 
--- Table for expenses
-create table if not exists public.expenses (
-  id uuid primary key default uuid_generate_v4(),
-  date date not null,
-  category text not null,
-  amount numeric not null,
-  description text,
-  status public.character varying(255) COLLATE "default",
-  created_at timestamp with time zone not null default now(),
-  deleted_at timestamp with time zone
-);
+--
+-- Create a new table for bank deposits
+--
+CREATE TABLE
+  public.deposits (
+    id uuid NOT NULL DEFAULT gen_random_uuid (),
+    "year" integer NOT NULL,
+    "month" integer NOT NULL,
+    amount numeric NOT NULL,
+    deposit_date date NOT NULL,
+    receipt_url text NULL,
+    created_at timestamp with time zone NOT NULL DEFAULT now(),
+    CONSTRAINT deposits_pkey PRIMARY KEY (id)
+  ) tablespace pg_default;
 
--- Table for deposits
-create table if not exists public.deposits (
-  id uuid primary key default uuid_generate_v4(),
-  year smallint not null,
-  month smallint not null,
-  amount numeric not null,
-  deposit_date date not null,
-  receipt_url text,
-  created_at timestamp with time zone not null default now()
-);
+--
+-- Create a new table for Zakat transactions
+--
+CREATE TABLE
+  public.zakat_transactions (
+    id uuid NOT NULL DEFAULT gen_random_uuid (),
+    transaction_date date NOT NULL,
+    type character varying(255) NOT NULL,
+    amount numeric NOT NULL,
+    source_or_recipient character varying(255) NOT NULL,
+    description text NULL,
+    receipt_url text NULL,
+    created_at timestamp with time zone NOT NULL DEFAULT now(),
+    CONSTRAINT zakat_transactions_pkey PRIMARY KEY (id)
+  ) tablespace pg_default;
 
--- Table for general documents
-create table if not exists public.documents (
-  id uuid primary key default uuid_generate_v4(),
-  file_name text,
-  file_url text,
-  file_type text,
-  category text,
-  description text,
-  created_at timestamp with time zone not null default now()
-);
+--
+-- Create a new table for notices
+--
+CREATE TABLE
+  public.notices (
+    id uuid NOT NULL DEFAULT gen_random_uuid (),
+    "year" integer NOT NULL,
+    "month" integer NOT NULL,
+    content text NOT NULL,
+    created_at timestamp with time zone NOT NULL DEFAULT now(),
+    CONSTRAINT notices_pkey PRIMARY KEY (id)
+  ) tablespace pg_default;
 
--- Table for notices
-create table if not exists public.notices (
-  id uuid primary key default uuid_generate_v4(),
-  year smallint not null,
-  month smallint not null,
-  content text,
-  created_at timestamp with time zone not null default now()
-);
+--
+-- Create a new table for work details
+--
+CREATE TABLE
+  public.work_details (
+    id uuid NOT NULL DEFAULT gen_random_uuid (),
+    title text NOT NULL,
+    description text NULL,
+    category character varying(255) NULL,
+    status character varying(255) NOT NULL DEFAULT 'To Do'::character varying,
+    assigned_to_id uuid NULL,
+    product_cost numeric NULL,
+    worker_cost numeric NULL,
+    due_date date NULL,
+    created_at timestamp with time zone NOT NULL DEFAULT now(),
+    deleted_at timestamp with time zone NULL,
+    CONSTRAINT work_details_pkey PRIMARY KEY (id)
+  ) tablespace pg_default;
 
--- Table for work details
-create table if not exists public.work_details (
-  id uuid primary key default uuid_generate_v4(),
-  title text,
-  description text,
-  category text,
-  status public.character varying(255) COLLATE "default",
-  assigned_to_id uuid,
-  product_cost numeric,
-  worker_cost numeric,
-  due_date date,
-  created_at timestamp with time zone not null default now(),
-  deleted_at timestamp with time zone
-);
+--
+-- Create a new table for Zakat bank details
+--
+CREATE TABLE
+  public.zakat_bank_details (
+    id uuid NOT NULL DEFAULT gen_random_uuid (),
+    bank_name character varying(255) NOT NULL,
+    account_number character varying(255) NOT NULL,
+    account_holder character varying(255) NULL,
+    logo_url text NULL,
+    location character varying(255) NULL,
+    created_at timestamp with time zone NOT NULL DEFAULT now(),
+    CONSTRAINT zakat_bank_details_pkey PRIMARY KEY (id)
+  ) tablespace pg_default;
+  
+--
+-- Create a new table for general documents
+--
+CREATE TABLE
+  public.documents (
+    id uuid NOT NULL DEFAULT gen_random_uuid (),
+    created_at timestamp with time zone NOT NULL DEFAULT now(),
+    file_name text NOT NULL,
+    file_url text NOT NULL,
+    file_type character varying(255) NOT NULL,
+    category character varying(255) NOT NULL,
+    description text NULL,
+    CONSTRAINT documents_pkey PRIMARY KEY (id)
+  ) tablespace pg_default;
 
--- Table for Zakat bank details
-create table if not exists public.zakat_bank_details (
-  id uuid primary key default uuid_generate_v4(),
-  bank_name text not null,
-  account_number text not null,
-  account_holder text,
-  logo_url text,
-  location text,
-  created_at timestamp with time zone not null default now()
-);
+--
+-- Enable Row Level Security (RLS) for all tables
+--
+ALTER TABLE public.tenants ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.expenses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.rent_entries ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.property_settings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.deposits ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.zakat_transactions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.notices ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.work_details ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.zakat_bank_details ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.documents ENABLE ROW LEVEL SECURITY;
 
--- Table for Zakat transactions
-create table if not exists public.zakat_transactions (
-  id uuid primary key default uuid_generate_v4(),
-  transaction_date date not null,
-  "type" public.character varying(255) COLLATE "default",
-  amount numeric not null,
-  source_or_recipient text,
-  description text,
-  receipt_url text,
-  created_at timestamp with time zone not null default now()
-);
+--
+-- Create policies to allow public read access
+--
+CREATE POLICY "Enable read access for all users" ON public.tenants FOR SELECT USING (true);
+CREATE POLICY "Enable read access for all users" ON public.expenses FOR SELECT USING (true);
+CREATE POLICY "Enable read access for all users" ON public.rent_entries FOR SELECT USING (true);
+CREATE POLICY "Enable read access for all users" ON public.property_settings FOR SELECT USING (true);
+CREATE POLICY "Enable read access for all users" ON public.deposits FOR SELECT USING (true);
+CREATE POLICY "Enable read access for all users" ON public.zakat_transactions FOR SELECT USING (true);
+CREATE POLICY "Enable read access for all users" ON public.notices FOR SELECT USING (true);
+CREATE POLICY "Enable read access for all users" ON public.work_details FOR SELECT USING (true);
+CREATE POLICY "Enable read access for all users" ON public.zakat_bank_details FOR SELECT USING (true);
+CREATE POLICY "Enable read access for all users" ON public.documents FOR SELECT USING (true);
 
--- Set up row-level security (RLS) policies if desired. 
--- By default, tables are protected. You need to enable RLS and create policies.
--- Example for a public table:
--- alter table public.property_settings enable row level security;
--- create policy "Allow public read-only access" on public.property_settings for select using (true);
+--
+-- Create policies to allow authenticated users (admin) to perform all actions
+--
+CREATE POLICY "Enable all actions for authenticated users" ON public.tenants FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Enable all actions for authenticated users" ON public.expenses FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Enable all actions for authenticated users" ON public.rent_entries FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Enable all actions for authenticated users" ON public.property_settings FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Enable all actions for authenticated users" ON public.deposits FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Enable all actions for authenticated users" ON public.zakat_transactions FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Enable all actions for authenticated users" ON public.notices FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Enable all actions for authenticated users" ON public.work_details FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Enable all actions for authenticated users" ON public.zakat_bank_details FOR ALL USING (auth.role() = 'authenticated');
+CREATE POLICY "Enable all actions for authenticated users" ON public.documents FOR ALL USING (auth.role() = 'authenticated');
 
--- Example for a protected table (users must be authenticated):
--- alter table public.tenants enable row level security;
--- create policy "Allow individual access" on public.tenants for all using (auth.role() = 'authenticated');
+--
+-- Setup Storage buckets and policies
+--
+INSERT INTO storage.buckets (id, name, public) VALUES
+  ('tenant-documents', 'tenant-documents', true),
+  ('deposit-receipts', 'deposit-receipts', true),
+  ('zakat-receipts', 'zakat-receipts', true),
+  ('general-documents', 'general-documents', true)
+ON CONFLICT (id) DO NOTHING;
 
+CREATE POLICY "Enable public read access for tenant documents" ON storage.objects FOR SELECT USING (bucket_id = 'tenant-documents');
+CREATE POLICY "Enable insert for authenticated users for tenant documents" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'tenant-documents' AND auth.role() = 'authenticated');
+CREATE POLICY "Enable update for authenticated users for tenant documents" ON storage.objects FOR UPDATE WITH CHECK (bucket_id = 'tenant-documents' AND auth.role() = 'authenticated');
+CREATE POLICY "Enable delete for authenticated users for tenant documents" ON storage.objects FOR DELETE USING (bucket_id = 'tenant-documents' AND auth.role() = 'authenticated');
 
--- Insert the single settings row
-insert into public.property_settings (id) values (1) on conflict (id) do nothing;
+CREATE POLICY "Enable public read access for deposit receipts" ON storage.objects FOR SELECT USING (bucket_id = 'deposit-receipts');
+CREATE POLICY "Enable insert for authenticated users for deposit receipts" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'deposit-receipts' AND auth.role() = 'authenticated');
+CREATE POLICY "Enable update for authenticated users for deposit receipts" ON storage.objects FOR UPDATE WITH CHECK (bucket_id = 'deposit-receipts' AND auth.role() = 'authenticated');
+CREATE POLICY "Enable delete for authenticated users for deposit receipts" ON storage.objects FOR DELETE USING (bucket_id = 'deposit-receipts' AND auth.role() = 'authenticated');
+
+CREATE POLICY "Enable public read access for zakat receipts" ON storage.objects FOR SELECT USING (bucket_id = 'zakat-receipts');
+CREATE POLICY "Enable insert for authenticated users for zakat receipts" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'zakat-receipts' AND auth.role() = 'authenticated');
+CREATE POLICY "Enable update for authenticated users for zakat receipts" ON storage.objects FOR UPDATE WITH CHECK (bucket_id = 'zakat-receipts' AND auth.role() = 'authenticated');
+CREATE POLICY "Enable delete for authenticated users for zakat receipts" ON storage.objects FOR DELETE USING (bucket_id = 'zakat-receipts' AND auth.role() = 'authenticated');
+
+CREATE POLICY "Enable public read access for general documents" ON storage.objects FOR SELECT USING (bucket_id = 'general-documents');
+CREATE POLICY "Enable insert for authenticated users for general documents" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'general-documents' AND auth.role() = 'authenticated');
+CREATE POLICY "Enable update for authenticated users for general documents" ON storage.objects FOR UPDATE WITH CHECK (bucket_id = 'general-documents' AND auth.role() = 'authenticated');
+CREATE POLICY "Enable delete for authenticated users for general documents" ON storage.objects FOR DELETE USING (bucket_id = 'general-documents' AND auth.role() = 'authenticated');
+
+-- Insert the default settings row
+INSERT INTO public.property_settings (id) VALUES (1) ON CONFLICT (id) DO NOTHING;
