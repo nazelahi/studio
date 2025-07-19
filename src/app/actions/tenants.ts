@@ -92,21 +92,25 @@ export async function updateTenantAction(formData: FormData) {
         avatarUrl = publicUrlData.publicUrl;
     }
 
+    const joinDateValue = formData.get('join_date') as string;
+    const dobValue = formData.get('date_of_birth') as string;
+    const advanceDepositValue = formData.get('advance_deposit') as string;
+
     const tenantData = {
         name: formData.get('name') as string,
         email: formData.get('email') as string,
         phone: formData.get('phone') as string,
         property: formData.get('property') as string,
         rent: Number(formData.get('rent')),
-        join_date: formData.get('join_date') as string,
+        join_date: joinDateValue || null,
         notes: formData.get('notes') as string,
         type: formData.get('type') as string,
         status: formData.get('status') as Tenant['status'],
         father_name: formData.get('father_name') as string,
         address: formData.get('address') as string,
-        date_of_birth: formData.get('date_of_birth') as string,
+        date_of_birth: dobValue || null,
         nid_number: formData.get('nid_number') as string,
-        advance_deposit: Number(formData.get('advance_deposit')),
+        advance_deposit: advanceDepositValue ? Number(advanceDepositValue) : null,
         gas_meter_number: formData.get('gas_meter_number') as string,
         electric_meter_number: formData.get('electric_meter_number') as string,
         avatar: avatarUrl,
