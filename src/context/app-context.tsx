@@ -341,62 +341,14 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
 
     useEffect(() => {
         setLoading(false);
-        // If the initial data from the server is empty (e.g., due to a temporary server-side fetch error),
-        // trigger a client-side fetch to ensure the user gets the data.
-        if (!initialData.propertySettings) {
-            console.log("Initial server data is incomplete. Triggering client-side refresh.");
-            refreshData();
-        }
-    }, [initialData, refreshData]);
+    }, []);
 
-    useEffect(() => {
-        if (!supabase) return;
-
-        const handleDbChange = (payload: any) => {
-            console.log('Database change detected, refreshing data...', payload);
-            refreshData(false); 
-        };
-
-        const tables = [
-            'tenants', 'expenses', 'rent_entries', 'property_settings', 
-            'deposits', 'zakat_transactions', 'notices', 'work_details', 'zakat_bank_details', 'documents'
-        ];
-        
-        const subscriptions = tables.map(table => {
-            return supabase
-                .channel(`public:${table}`)
-                .on(
-                    'postgres_changes',
-                    { event: '*', schema: 'public', table: table },
-                    handleDbChange
-                )
-                .subscribe((status, err) => {
-                    if (status === 'SUBSCRIBED') {
-                        console.log(`Successfully subscribed to real-time updates for ${table}!`);
-                    }
-                    if (err) {
-                        const dbError = err as any;
-                        console.error(`Realtime subscription error on ${table}:`, dbError);
-                    }
-                });
-        });
-
-        return () => {
-            subscriptions.forEach(subscription => {
-                supabase.removeChannel(subscription);
-            });
-        };
-    }, [refreshData]);
-
-
-     const handleSetSettings = (newSettingsOrFn: AppSettings | ((prev: AppSettings) => AppSettings)) => {
+    const handleSetSettings = (newSettingsOrFn: AppSettings | ((prev: AppSettings) => AppSettings)) => {
         const newSettings = typeof newSettingsOrFn === 'function' ? newSettingsOrFn(settings) : newSettingsOrFn;
         setSettings(newSettings);
     };
 
     const addTenant = async (formData: FormData) => {
-        // This function might seem redundant now, but it's kept for potential future client-side logic before calling the server action.
-        // For now, it just passes through to the server action.
         const tenantData = Object.fromEntries(formData.entries());
 
         const { data: newTenant, error } = await supabase.from('tenants').insert([tenantData]).select().single();
