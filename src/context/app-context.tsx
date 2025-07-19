@@ -300,6 +300,11 @@ const getInitialSettings = (serverSettings: DbPropertySettings | null, zakatDeta
     return combinedSettings;
 };
 
+const months = [
+    "January", "February", "March", "April", "May", "June", 
+    "July", "August", "September", "October", "November", "December"
+];
+
 
 export function AppContextProvider({ children, initialData }: { children: ReactNode; initialData: AppData }) {
     const { toast } = useToast();
@@ -342,7 +347,7 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
     };
 
     const addTenant = async (formData: FormData) => {
-       await refreshData();
+       await updateTenant(formData); // Uses the same logic, but without a tenantId
     };
 
     const updateTenant = async (formData: FormData) => {
@@ -350,7 +355,7 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
         if (result.error) {
             handleError(new Error(result.error), 'updating tenant');
         } else {
-            toast({ title: "Tenant Updated", description: "The tenant details have been successfully updated." });
+            toast({ title: "Tenant Saved", description: "The tenant details have been successfully saved." });
             await refreshData();
         }
     };
@@ -382,7 +387,14 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
     };
 
     const addExpense = async (expense: Omit<Expense, 'id' | 'created_at'>) => {
-      await refreshData();
+      const formData = new FormData();
+      Object.entries(expense).forEach(([key, value]) => formData.append(key, String(value)));
+      const result = await saveExpenseAction(formData);
+       if (result.error) {
+            handleError(new Error(result.error), 'adding expense');
+        } else {
+            await refreshData();
+        }
     };
 
     const addExpensesBatch = async (expenses: Omit<Expense, 'id' | 'created_at'>[]) => {
@@ -422,12 +434,6 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
 
         if (result.error) {
             handleError(new Error(result.error), 'deleting expense');
-        } else {
-            toast({
-                title: 'Expense Deleted',
-                description: 'The expense has been permanently deleted.',
-                variant: 'destructive',
-             });
         }
         await refreshData();
     };
@@ -436,18 +442,41 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
         const result = await deleteMultipleExpensesAction(expenseIds);
         if (result.error) {
             handleError(new Error(result.error), 'deleting multiple expenses');
-        } else {
-             toast({
-                title: `${expenseIds.length} Expense(s) Deleted`,
-                description: 'The selected expenses have been permanently deleted.',
-                variant: 'destructive',
-             });
         }
         await refreshData();
     };
     
     const addRentEntry = async (rentEntryData: NewRentEntry, year: number, month: number) => {
-      await refreshData();
+        const tenantResult = await findOrCreateTenantAction({
+            name: rentEntryData.name,
+            property: rentEntryData.property,
+            rent: rentEntryData.rent,
+            join_date: new Date(year, month, 1).toISOString().split('T')[0],
+            email: rentEntryData.name ? `${rentEntryData.name.replace(/\s+/g, '.').toLowerCase()}@example.com` : 'tenant@example.com',
+            status: 'Active',
+            avatar: rentEntryData.avatar,
+        });
+
+        if (tenantResult.error || !tenantResult.data) {
+             handleError(new Error(tenantResult.error || 'Failed to create tenant for new rent entry.'), 'creating rent entry');
+             return;
+        }
+
+        const newEntry = {
+            ...rentEntryData,
+            tenant_id: tenantResult.data.id,
+            avatar: tenantResult.data.avatar,
+            year: year,
+            month: month,
+            due_date: new Date(year, month, 1).toISOString().split('T')[0],
+        }
+
+        const { error } = await supabase.from('rent_entries').insert(newEntry);
+        if (error) {
+             handleError(error, 'adding rent entry');
+        } else {
+             await refreshData();
+        }
     };
 
     const addRentEntriesBatch = async (rentEntriesData: Omit<NewRentEntry, 'tenant_id' | 'avatar'>[], year: number, month: number) => {
@@ -505,10 +534,7 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
         if (error) {
             handleError(error, 'updating rent entry');
         } else {
-            setData(prevData => ({
-                ...prevData,
-                rentData: prevData.rentData.map(entry => entry.id === id ? updatedRentEntry : entry)
-            }));
+            await refreshData();
         }
     };
     
@@ -516,28 +542,16 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
         const result = await deleteRentEntryAction(rentEntryId);
         if (result.error) {
             handleError(new Error(result.error), 'deleting rent entry');
-        } else {
-            toast({
-                title: 'Rent Entry Deleted',
-                description: 'The rent entry has been permanently deleted.',
-                variant: 'destructive',
-            });
-            await refreshData();
         }
+        await refreshData();
     };
 
     const deleteMultipleRentEntries = async (rentEntryIds: string[]) => {
         const result = await deleteMultipleRentEntriesAction(rentEntryIds);
         if (result.error) {
             handleError(new Error(result.error), 'deleting multiple rent entries');
-        } else {
-             toast({
-                title: `${rentEntryIds.length} Rent Entries Deleted`,
-                description: 'The selected entries have been permanently deleted.',
-                variant: 'destructive',
-             });
-            await refreshData();
         }
+        await refreshData();
     };
     
     const syncTenantsForMonth = async (year: number, month: number) => {
