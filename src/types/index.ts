@@ -45,7 +45,6 @@ export type Tenant = {
   gas_meter_number?: string;
   electric_meter_number?: string;
   created_at?: string;
-  deleted_at?: string | null;
 };
 
 export type Expense = {
@@ -56,7 +55,6 @@ export type Expense = {
   description: string;
   status: "Paid" | "Due";
   created_at?: string;
-  deleted_at?: string | null;
 };
 
 export type RentEntry = {
@@ -74,7 +72,6 @@ export type RentEntry = {
     collected_by?: string;
     payment_for_month?: number;
     created_at?: string;
-    deleted_at?: string | null;
 }
 
 export type PageLabels = {

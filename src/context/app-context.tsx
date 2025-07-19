@@ -9,7 +9,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuth } from './auth-context';
 import { Button } from '@/components/ui/button';
 import { addWorkDetailsBatch as addWorkDetailsBatchAction } from '@/app/actions/work';
-import { addExpensesBatch as addExpensesBatchAction, deleteExpenseAction, deleteMultipleExpensesAction } from '@/app/actions/expenses';
+import { addExpensesBatch as addExpensesBatchAction, deleteExpenseAction, deleteMultipleExpensesAction, saveExpenseAction } from '@/app/actions/expenses';
 import type { AppData } from '@/lib/data';
 import { getDashboardDataAction } from '@/app/actions/data';
 import { findOrCreateTenantAction, updateTenantAction, deleteTenantAction, deleteMultipleTenantsAction } from '@/app/actions/tenants';
@@ -118,8 +118,8 @@ type AppContextType = {
   updateTenant: (formData: FormData, toast: ToastFn) => Promise<void>;
   deleteTenant: (formData: FormData, toast: ToastFn) => Promise<void>;
   deleteMultipleTenants: (tenantIds: string[], toast: ToastFn) => Promise<void>;
-  addExpense: (expense: Omit<Expense, 'id' | 'deleted_at' | 'created_at'>, toast: ToastFn) => Promise<void>;
-  addExpensesBatch: (expenses: Omit<Expense, 'id' | 'deleted_at' | 'created_at'>[], toast: ToastFn) => Promise<any>;
+  addExpense: (expense: Omit<Expense, 'id' | 'created_at'>, toast: ToastFn) => Promise<void>;
+  addExpensesBatch: (expenses: Omit<Expense, 'id' | 'created_at'>[], toast: ToastFn) => Promise<any>;
   updateExpense: (expense: Expense, toast: ToastFn) => Promise<void>;
   deleteExpense: (expenseId: string, toast: ToastFn) => Promise<void>;
   deleteMultipleExpenses: (expenseIds: string[], toast: ToastFn) => Promise<void>;
@@ -501,7 +501,7 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
         await refreshData(false);
     };
 
-    const addExpense = async (expense: Omit<Expense, 'id' | 'created_at' | 'deleted_at'>, toast: ToastFn) => {
+    const addExpense = async (expense: Omit<Expense, 'id' | 'created_at'>, toast: ToastFn) => {
       try {
         if (!supabase) return;
         const { error } = await supabase.from('expenses').insert([expense]);
@@ -512,7 +512,7 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
       }
     };
 
-    const addExpensesBatch = async (expenses: Omit<Expense, 'id' | 'deleted_at' | 'created_at'>[], toast: ToastFn) => {
+    const addExpensesBatch = async (expenses: Omit<Expense, 'id' | 'created_at'>[], toast: ToastFn) => {
         const result = await addExpensesBatchAction(expenses);
         if (result.error) {
             handleError(new Error(result.error), 'batch adding expenses', toast);
@@ -525,10 +525,17 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
 
     const updateExpense = async (updatedExpense: Expense, toast: ToastFn) => {
       try {
-        if (!supabase) return;
-        const { id, ...expenseData } = updatedExpense;
-        const { error } = await supabase.from('expenses').update(expenseData).eq('id', id);
-        if (error) handleError(error, 'updating expense', toast);
+        const formData = new FormData();
+        formData.append('expenseId', updatedExpense.id);
+        formData.append('date', updatedExpense.date);
+        formData.append('category', updatedExpense.category);
+        formData.append('amount', String(updatedExpense.amount));
+        formData.append('description', updatedExpense.description);
+        formData.append('status', updatedExpense.status);
+        
+        const result = await saveExpenseAction(formData);
+        if (result.error) handleError(new Error(result.error), 'updating expense', toast);
+
         await refreshData(false);
       } catch (error) {
         handleError(error, 'updating expense', toast);
@@ -579,7 +586,6 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
                 .select('id, avatar')
                 .eq('name', rentEntryData.name)
                 .eq('property', rentEntryData.property)
-                .is('deleted_at', null)
                 .maybeSingle();
             
             if (!existingTenant) {
@@ -721,8 +727,7 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
             .from('rent_entries')
             .select('tenant_id')
             .eq('year', year)
-            .eq('month', month)
-            .is('deleted_at', null);
+            .eq('month', month);
 
         if (rentDataError) {
             handleError(rentDataError, 'fetching rent data for sync', toast);
@@ -733,8 +738,7 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
         const { data: allTenants, error: tenantsError } = await supabase
             .from('tenants')
             .select('*')
-            .eq('status', 'Active') // Only sync tenants marked as "Active"
-            .is('deleted_at', null);
+            .eq('status', 'Active'); // Only sync tenants marked as "Active"
 
         if (tenantsError) {
             handleError(tenantsError, 'fetching tenants for sync', toast);
@@ -787,8 +791,7 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
             .from('expenses')
             .select('*')
             .gte('date', format(new Date(previousYear, previousMonth, 1), 'yyyy-MM-dd'))
-            .lt('date', format(new Date(previousYear, previousMonth + 1, 1), 'yyyy-MM-dd'))
-            .is('deleted_at', null);
+            .lt('date', format(new Date(previousYear, previousMonth + 1, 1), 'yyyy-MM-dd'));
 
         if (fetchError) {
             handleError(fetchError, 'fetching previous month expenses for sync', toast);
@@ -800,7 +803,7 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
         }
         
         const newExpenses = previousExpenses.map(expense => {
-            const { id, created_at, date, deleted_at, ...rest } = expense;
+            const { id, created_at, date, ...rest } = expense;
             const previousDate = parseISO(date);
             const newDate = new Date(year, month, previousDate.getDate());
             
@@ -811,11 +814,11 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
             };
         });
 
-        const { error: insertError } = await supabase.from('expenses').insert(newExpenses);
-
-        if (insertError) {
-            handleError(insertError, 'syncing expenses to current month', toast);
-            return 0;
+        const result = await addExpensesBatch(newExpenses, toast);
+        
+        if (result.error) {
+             handleError(new Error(result.error), 'syncing expenses to current month', toast);
+             return 0;
         }
 
         await refreshData(false);
@@ -889,7 +892,7 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
       }
     };
 
-    type NewRentEntry = Omit<RentEntry, 'id' | 'avatar' | 'year' | 'month' | 'due_date' | 'created_at' | 'deleted_at'> & { avatar?: string, tenant_id?: string };
+    type NewRentEntry = Omit<RentEntry, 'id' | 'avatar' | 'year' | 'month' | 'due_date' | 'created_at'> & { avatar?: string, tenant_id?: string };
 
     const value: AppContextType = {
         ...data,

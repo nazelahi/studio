@@ -100,7 +100,7 @@ export async function deleteMultipleExpensesAction(expenseIds: string[]) {
 }
 
 
-export async function addExpensesBatch(expenses: Omit<Expense, 'id' | 'created_at' | 'deleted_at'>[]) {
+export async function addExpensesBatch(expenses: Omit<Expense, 'id' | 'created_at'>[]) {
     if (!expenses || expenses.length === 0) {
         return { error: 'No expenses provided.' };
     }
