@@ -557,7 +557,7 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
                 property: entry.property,
                 rent: entry.rent,
                 join_date: new Date(year, month, 1).toISOString().split('T')[0],
-                email: entry.name ? `${entry.name.replace(/\s+/g, '.').toLowerCase()}@example.com` : 'tenant@example.com',
+                email: entry.name ? `${rentEntryData.name.replace(/\s+/g, '.').toLowerCase()}@example.com` : 'tenant@example.com',
                 status: 'Active',
             })
         );
