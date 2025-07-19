@@ -877,7 +877,7 @@ export function MonthlyOverviewTab() {
   
   return (
     <TooltipProvider>
-    <Tabs value={months[selectedMonth]} onValueChange={handleDesktopMonthChange} className="w-full pt-4 md:pt-0">
+    <Tabs value={months[selectedMonth]} onValueChange={handleDesktopMonthChange} className="w-full pt-2 md:pt-0">
       
       <div className="hidden md:flex gap-4 mb-4">
         <TabsList className="grid w-full grid-cols-12">
