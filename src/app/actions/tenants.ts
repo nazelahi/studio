@@ -96,7 +96,7 @@ export async function updateTenantAction(formData: FormData) {
     const newDocumentFiles = formData.getAll('documentFiles') as File[];
     const uploadedDocUrls: string[] = [];
 
-    if (newDocumentFiles.length > 0) {
+    if (newDocumentFiles.length > 0 && newDocumentFiles[0].size > 0) {
         for (const file of newDocumentFiles) {
             if (file.size > 0) {
                 const fileExt = file.name.split('.').pop();
