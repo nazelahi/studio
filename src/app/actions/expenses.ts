@@ -133,6 +133,20 @@ export async function syncExpensesAction(formData: FormData) {
         const previousMonth = getMonth(previousMonthDate);
         const previousYear = getYear(previousMonthDate);
 
+        // Fetch existing expenses for the *current* month to avoid duplicates
+        const { data: currentExpenses, error: currentFetchError } = await supabaseAdmin
+            .from('expenses')
+            .select('description, amount, category')
+            .gte('date', format(currentMonthDate, 'yyyy-MM-dd'))
+            .lt('date', format(new Date(year, month + 1, 1), 'yyyy-MM-dd'));
+            
+        if (currentFetchError) {
+            throw new Error(`Failed to fetch current month's expenses: ${currentFetchError.message}`);
+        }
+        
+        const currentExpenseSet = new Set(currentExpenses.map(e => `${e.description}-${e.amount}-${e.category}`));
+
+
         const { data: previousExpenses, error: fetchError } = await supabaseAdmin
             .from('expenses')
             .select('*')
@@ -144,29 +158,37 @@ export async function syncExpensesAction(formData: FormData) {
         }
         
         if (!previousExpenses || previousExpenses.length === 0) {
-            return { success: true, count: 0 };
+            return { success: true, count: 0, message: "No expenses found in the previous month to sync." };
         }
 
-        const newExpenses = previousExpenses.map(expense => {
+        const newExpensesToCreate = previousExpenses.map(expense => {
             const { id, created_at, date, ...rest } = expense;
-            const previousDate = parseISO(date);
+            
             // Use the same day of the month if possible, otherwise clamp to the last day
-            const newDate = new Date(year, month, previousDate.getDate());
+            const newDate = new Date(year, month, parseISO(date).getDate());
             
             return {
                 ...rest,
                 date: format(newDate, 'yyyy-MM-dd'),
-                status: 'Due' as const,
+                status: 'Due' as const, // Always set synced expenses to 'Due'
             };
         });
+        
+        // Filter out expenses that already exist in the current month
+        const expensesToSync = newExpensesToCreate.filter(e => !currentExpenseSet.has(`${e.description}-${e.amount}-${e.category}`));
 
-        const { error: insertError } = await supabaseAdmin.from('expenses').insert(newExpenses);
+        if (expensesToSync.length === 0) {
+            return { success: true, count: 0, message: "All recurring expenses are already synced for this month." };
+        }
+
+
+        const { error: insertError } = await supabaseAdmin.from('expenses').insert(expensesToSync);
 
         if (insertError) {
             throw new Error(`Failed to insert synced expenses: ${insertError.message}`);
         }
 
-        return { success: true, count: newExpenses.length };
+        return { success: true, count: expensesToSync.length };
     } catch (error: any) {
         console.error('Error syncing expenses:', error);
         return { error: error.message };

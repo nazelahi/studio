@@ -128,8 +128,8 @@ type AppContextType = {
   updateRentEntry: (rentEntry: RentEntry, toast: ToastFn) => Promise<void>;
   deleteRentEntry: (rentEntryId: string, toast: ToastFn) => Promise<void>;
   deleteMultipleRentEntries: (rentEntryIds: string[], toast: ToastFn) => Promise<void>;
-  syncTenantsForMonth: (year: number, month: number) => Promise<number>;
-  syncExpensesFromPreviousMonth: (year: number, month: number) => Promise<number>;
+  syncTenantsForMonth: (year: number, month: number, toast: ToastFn) => Promise<void>;
+  syncExpensesFromPreviousMonth: (year: number, month: number, toast: ToastFn) => Promise<void>;
   loading: boolean;
   getAllData: () => Omit<AppData, 'propertySettings'>;
   restoreAllData: (backupData: Omit<AppData, 'propertySettings'>, toast: ToastFn) => void;
@@ -719,7 +719,7 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
         await refreshData(false);
     };
     
-    const syncTenantsForMonth = async (year: number, month: number): Promise<number> => {
+    const syncTenantsForMonth = async (year: number, month: number, toast: ToastFn) => {
       try {
         const formData = new FormData();
         formData.append('year', String(year));
@@ -731,17 +731,23 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
         }
         
         if (result.count > 0) {
+          toast({
+                title: "Sync Complete",
+                description: `${result.count} tenant(s) have been added to the rent roll.`,
+            });
           await refreshData(false);
+        } else {
+            toast({
+                title: "Already up to date",
+                description: "All active tenants are already in the rent roll for this month.",
+            });
         }
-        
-        return result.count || 0;
       } catch (error) {
-        handleError(error, 'syncing tenants to rent roll', () => {});
-        return 0;
+        handleError(error, 'syncing tenants to rent roll', toast);
       }
     };
     
-    const syncExpensesFromPreviousMonth = async (year: number, month: number): Promise<number> => {
+    const syncExpensesFromPreviousMonth = async (year: number, month: number, toast: ToastFn) => {
       try {
         const formData = new FormData();
         formData.append('year', String(year));
@@ -753,13 +759,19 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
         }
         
         if (result.count > 0) {
+           toast({
+                title: "Sync Complete",
+                description: `${result.count} expense(s) from the previous month have been copied.`,
+            });
           await refreshData(false);
+        } else {
+             toast({
+                title: "No new expenses to sync",
+                description: result.message || "There were no new expenses to copy from the previous month.",
+            });
         }
-        
-        return result.count || 0;
       } catch (error) {
-        handleError(error, 'syncing expenses to current month', () => {});
-        return 0;
+        handleError(error, 'syncing expenses to current month', toast);
       }
     };
 
