@@ -171,6 +171,12 @@ export default function DashboardPageClient() {
                 </nav>
             </div>
             <div className="mt-auto p-4 border-t">
+                 {isSidebarOpen && (
+                    <div className="flex items-start gap-2 text-xs text-muted-foreground mb-4 p-2 rounded-lg bg-background/50">
+                        <MapPin className="h-4 w-4 shrink-0 mt-0.5" />
+                        <p>{settings.houseAddress}</p>
+                    </div>
+                )}
                  <Dialog open={isOwnerDialogOpen} onOpenChange={setIsOwnerDialogOpen}>
                   <DialogTrigger asChild>
                     <div className="flex items-center gap-3 cursor-pointer">
@@ -366,5 +372,3 @@ export default function DashboardPageClient() {
     </div>
   )
 }
-
-    
