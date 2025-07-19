@@ -574,7 +574,7 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
         if (result.error) {
             handleError(new Error(result.error), 'batch adding expenses', toast);
         } else {
-            refreshData();
+            await refreshData(false);
         }
         return result;
     };
