@@ -5,27 +5,13 @@
 import { createClient } from '@supabase/supabase-js'
 import 'dotenv/config'
 import type { Tenant } from '@/types'
-
-const getSupabaseAdmin = () => {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-
-    if (!supabaseUrl || !supabaseServiceKey) {
-        throw new Error('Supabase URL or service role key is not configured on the server. Please check your environment variables.');
-    }
-    
-    return createClient(supabaseUrl, supabaseServiceKey, {
-        auth: {
-            autoRefreshToken: false,
-            persistSession: false,
-        },
-    });
-}
+import { getSupabaseAdmin } from '@/lib/supabase'
 
 type TenantForCreation = Omit<Tenant, 'id' | 'created_at' | 'deleted_at' | 'documents'>;
 
 export async function findOrCreateTenantAction(tenantData: TenantForCreation) {
     const supabaseAdmin = getSupabaseAdmin();
+    if (!supabaseAdmin) return { error: "Could not connect to the database." };
     
     const { data: existingTenant, error: findError } = await supabaseAdmin
         .from('tenants')
@@ -44,14 +30,9 @@ export async function findOrCreateTenantAction(tenantData: TenantForCreation) {
         return { success: true, data: existingTenant };
     }
 
-    const newTenantData: Omit<Tenant, 'id' | 'created_at' | 'deleted_at' | 'documents'> = {
-        ...tenantData,
-        avatar: tenantData.avatar || 'https://placehold.co/80x80.png',
-    };
-
     const { data: newTenant, error: createError } = await supabaseAdmin
         .from('tenants')
-        .insert(newTenantData)
+        .insert(tenantData)
         .select('id, avatar')
         .single();
     
@@ -66,21 +47,19 @@ export async function findOrCreateTenantAction(tenantData: TenantForCreation) {
 
 export async function updateTenantAction(formData: FormData) {
     const supabaseAdmin = getSupabaseAdmin();
-    const tenantId = formData.get('tenantId') as string;
+    if (!supabaseAdmin) return { error: "Could not connect to the database." };
     
-    if (!tenantId) {
-        return { error: 'Tenant ID is missing.' };
-    }
+    const tenantId = formData.get('tenantId') as string;
 
     const avatarFile = formData.get('avatarFile') as File | null;
     let avatarUrl = formData.get('avatar') as string;
 
     if (avatarFile && avatarFile.size > 0) {
         const fileExt = avatarFile.name.split('.').pop();
-        const filePath = `avatars/${tenantId}/${Date.now()}.${fileExt}`;
+        const filePath = `avatars/${tenantId || Date.now()}/${Date.now()}.${fileExt}`;
         
         const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
-            .from('tenant-documents')
+            .from('rentflow-public')
             .upload(filePath, avatarFile, { upsert: true });
 
         if (uploadError) {
@@ -88,29 +67,30 @@ export async function updateTenantAction(formData: FormData) {
             return { error: `Failed to upload avatar: ${uploadError.message}` };
         }
         
-        const { data: publicUrlData } = supabaseAdmin.storage.from('tenant-documents').getPublicUrl(uploadData.path);
+        const { data: publicUrlData } = supabaseAdmin.storage.from('rentflow-public').getPublicUrl(uploadData.path);
         avatarUrl = publicUrlData.publicUrl;
     }
     
     // Handle document uploads
     const newDocumentFiles = formData.getAll('documentFiles') as File[];
     const uploadedDocUrls: string[] = [];
+    const tenantIdentifier = tenantId || `new-tenant-${Date.now()}`;
 
     if (newDocumentFiles.length > 0 && newDocumentFiles[0].size > 0) {
         for (const file of newDocumentFiles) {
             if (file.size > 0) {
                 const fileExt = file.name.split('.').pop();
-                const filePath = `tenant-docs/${tenantId}/${Date.now()}-${file.name.replace(/ /g, '_')}.${fileExt}`;
+                const filePath = `tenant-docs/${tenantIdentifier}/${Date.now()}-${file.name.replace(/ /g, '_')}.${fileExt}`;
 
                 const { data: uploadData, error: uploadError } = await supabaseAdmin.storage
-                    .from('tenant-documents')
+                    .from('rentflow-public')
                     .upload(filePath, file);
 
                 if (uploadError) {
                     console.error('Supabase document upload error:', uploadError);
                     // We'll continue, but you might want to handle this more gracefully
                 } else {
-                    const { data: publicUrlData } = supabaseAdmin.storage.from('tenant-documents').getPublicUrl(uploadData.path);
+                    const { data: publicUrlData } = supabaseAdmin.storage.from('rentflow-public').getPublicUrl(uploadData.path);
                     uploadedDocUrls.push(publicUrlData.publicUrl);
                 }
             }
@@ -124,13 +104,13 @@ export async function updateTenantAction(formData: FormData) {
     const dobValue = formData.get('date_of_birth') as string;
     const advanceDepositValue = formData.get('advance_deposit') as string;
 
-    const tenantData = {
+    const tenantData: Omit<Tenant, 'id' | 'created_at'> = {
         name: formData.get('name') as string,
         email: formData.get('email') as string,
         phone: formData.get('phone') as string,
         property: formData.get('property') as string,
         rent: Number(formData.get('rent')),
-        join_date: joinDateValue || null,
+        join_date: joinDateValue || new Date().toISOString().split('T')[0],
         notes: formData.get('notes') as string,
         type: formData.get('type') as string,
         status: formData.get('status') as Tenant['status'],
@@ -141,35 +121,47 @@ export async function updateTenantAction(formData: FormData) {
         advance_deposit: advanceDepositValue ? Number(advanceDepositValue) : null,
         gas_meter_number: formData.get('gas_meter_number') as string,
         electric_meter_number: formData.get('electric_meter_number') as string,
-        avatar: avatarUrl,
+        avatar: avatarUrl || 'https://placehold.co/80x80.png',
         documents: finalDocuments,
     };
-
-    const { error } = await supabaseAdmin
-        .from('tenants')
-        .update(tenantData)
-        .eq('id', tenantId);
-
-    if (error) {
-        console.error('Supabase tenant update error:', error);
-        return { error: `Failed to update tenant: ${error.message}` };
-    }
     
-    // Also update associated rent entries
-    const { error: rentUpdateError } = await supabaseAdmin
-        .from('rent_entries')
-        .update({
-            name: tenantData.name,
-            property: tenantData.property,
-            rent: tenantData.rent,
-            avatar: tenantData.avatar,
-        })
-        .eq('tenant_id', tenantId);
+    if (tenantId) {
+        // Update existing tenant
+        const { error } = await supabaseAdmin
+            .from('tenants')
+            .update(tenantData)
+            .eq('id', tenantId);
 
-    if (rentUpdateError) {
-        console.error('Supabase rent entry sync error:', rentUpdateError);
-        // Non-fatal, so we don't return an error to the client for this.
+        if (error) {
+            console.error('Supabase tenant update error:', error);
+            return { error: `Failed to update tenant: ${error.message}` };
+        }
+
+        // Also update associated rent entries
+        const { error: rentUpdateError } = await supabaseAdmin
+            .from('rent_entries')
+            .update({
+                name: tenantData.name,
+                property: tenantData.property,
+                rent: tenantData.rent,
+                avatar: tenantData.avatar,
+            })
+            .eq('tenant_id', tenantId);
+
+        if (rentUpdateError) {
+            console.error('Supabase rent entry sync error:', rentUpdateError);
+            // Non-fatal, so we don't return an error to the client for this.
+        }
+
+    } else {
+        // Create new tenant
+        const { error } = await supabaseAdmin.from('tenants').insert(tenantData);
+        if (error) {
+            console.error('Supabase tenant create error:', error);
+            return { error: `Failed to create tenant: ${error.message}` };
+        }
     }
+
 
     return { success: true };
 }
@@ -177,6 +169,8 @@ export async function updateTenantAction(formData: FormData) {
 
 export async function deleteTenantAction(formData: FormData) {
     const supabaseAdmin = getSupabaseAdmin();
+    if (!supabaseAdmin) return { error: "Could not connect to the database." };
+
     const tenantId = formData.get('tenantId') as string;
 
     if (!tenantId) {
@@ -199,11 +193,12 @@ export async function deleteTenantAction(formData: FormData) {
 }
 
 export async function deleteMultipleTenantsAction(tenantIds: string[]) {
+    const supabaseAdmin = getSupabaseAdmin();
+    if (!supabaseAdmin) return { error: "Could not connect to the database." };
+    
     if (!tenantIds || tenantIds.length === 0) {
         return { error: 'No tenant IDs provided.' };
     }
-
-    const supabaseAdmin = getSupabaseAdmin();
 
     // Soft delete by updating status to "Archived"
     const { error } = await supabaseAdmin

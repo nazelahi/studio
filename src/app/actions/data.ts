@@ -1,10 +1,9 @@
 
 "use server"
 
-import { createClient } from '@supabase/supabase-js'
-import 'dotenv/config'
 import type { AppData } from '@/lib/data'
 import { getDashboardData } from '@/lib/data'
+import { getSupabaseAdmin } from '@/lib/supabase'
 
 
 // This function is called from the client to fetch all initial data.
@@ -12,25 +11,10 @@ export async function getDashboardDataAction(): Promise<Omit<AppData, 'propertyS
     return await getDashboardData();
 }
 
-
-const getSupabaseAdmin = () => {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-
-    if (!supabaseUrl || !supabaseServiceKey) {
-        throw new Error('Supabase URL or service role key is not configured on the server. Please check your environment variables.');
-    }
-    
-    return createClient(supabaseUrl, supabaseServiceKey, {
-        auth: {
-            autoRefreshToken: false,
-            persistSession: false,
-        },
-    });
-}
-
 export async function clearMonthlyDataAction(formData: FormData) {
     const supabaseAdmin = getSupabaseAdmin();
+    if (!supabaseAdmin) return { error: "Could not create Supabase admin client." };
+
     const year = Number(formData.get('year'));
     const month = Number(formData.get('month'));
 
@@ -71,6 +55,7 @@ export async function clearMonthlyDataAction(formData: FormData) {
 
 export async function clearYearlyDataAction(formData: FormData) {
     const supabaseAdmin = getSupabaseAdmin();
+    if (!supabaseAdmin) return { error: "Could not create Supabase admin client." };
     const year = Number(formData.get('year'));
 
     if (isNaN(year)) {
@@ -109,6 +94,7 @@ export async function clearYearlyDataAction(formData: FormData) {
 
 export async function clearTenantDataAction(formData: FormData) {
     const supabaseAdmin = getSupabaseAdmin();
+    if (!supabaseAdmin) return { error: "Could not create Supabase admin client." };
     const tenantId = formData.get('tenantId') as string;
 
     if (!tenantId) {
@@ -140,6 +126,7 @@ export async function clearTenantDataAction(formData: FormData) {
 
 export async function clearAllDataAction() {
     const supabaseAdmin = getSupabaseAdmin();
+    if (!supabaseAdmin) return { error: "Could not create Supabase admin client." };
     // A list of all transactional data tables to clear.
     // We intentionally leave out 'property_settings' and 'zakat_bank_details' as they are configuration.
     const tablesToClear = [
@@ -171,6 +158,7 @@ export async function clearAllDataAction() {
 
 export async function generateSqlBackupAction() {
     const supabaseAdmin = getSupabaseAdmin();
+    if (!supabaseAdmin) return { error: "Could not create Supabase admin client." };
     const tables = ['tenants', 'expenses', 'rent_entries', 'deposits', 'notices', 'work_details', 'zakat_transactions', 'zakat_bank_details', 'property_settings', 'documents'];
     let sqlString = `
 -- RentFlow SQL Backup

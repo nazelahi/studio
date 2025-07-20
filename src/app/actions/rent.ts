@@ -4,14 +4,15 @@
 
 import { createClient } from '@supabase/supabase-js'
 import 'dotenv/config'
-import type { RentEntry } from '@/types'
+import type { RentEntry, Tenant } from '@/types'
 
 const getSupabaseAdmin = () => {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
     if (!supabaseUrl || !supabaseServiceKey) {
-        throw new Error('Supabase URL or service role key is not configured on the server. Please check your environment variables.');
+        console.warn('Supabase admin client could not be created. Check environment variables.');
+        return null;
     }
     
     return createClient(supabaseUrl, supabaseServiceKey, {
@@ -25,14 +26,13 @@ const getSupabaseAdmin = () => {
 type RentEntryForBatch = Omit<RentEntry, 'id' | 'created_at'>;
 
 export async function addRentEntriesBatch(rentEntries: RentEntryForBatch[]) {
+    const supabaseAdmin = getSupabaseAdmin();
+    if (!supabaseAdmin) return { error: "Could not connect to the database." };
+
     if (!rentEntries || rentEntries.length === 0) {
         return { error: 'No rent entries provided.' };
     }
     
-    const supabaseAdmin = getSupabaseAdmin();
-    
-    // The rent_entries table has RLS enabled, so we need to use the admin client
-    // to bypass it for batch imports.
     const { error } = await supabaseAdmin.from('rent_entries').insert(rentEntries);
 
     if (error) {
@@ -45,11 +45,13 @@ export async function addRentEntriesBatch(rentEntries: RentEntryForBatch[]) {
 
 
 export async function deleteRentEntryAction(rentEntryId: string) {
+    const supabaseAdmin = getSupabaseAdmin();
+    if (!supabaseAdmin) return { error: "Could not connect to the database." };
+
     if (!rentEntryId) {
         return { error: 'Rent entry ID is missing.' };
     }
-
-    const supabaseAdmin = getSupabaseAdmin();
+    
     const { error } = await supabaseAdmin
         .from('rent_entries')
         .delete()
@@ -64,11 +66,13 @@ export async function deleteRentEntryAction(rentEntryId: string) {
 }
 
 export async function deleteMultipleRentEntriesAction(rentEntryIds: string[]) {
+    const supabaseAdmin = getSupabaseAdmin();
+    if (!supabaseAdmin) return { error: "Could not connect to the database." };
+
     if (!rentEntryIds || rentEntryIds.length === 0) {
         return { error: 'No rent entry IDs provided.' };
     }
 
-    const supabaseAdmin = getSupabaseAdmin();
     const { error } = await supabaseAdmin
         .from('rent_entries')
         .delete()
@@ -85,6 +89,8 @@ export async function deleteMultipleRentEntriesAction(rentEntryIds: string[]) {
 
 export async function syncTenantsAction(formData: FormData) {
     const supabaseAdmin = getSupabaseAdmin();
+    if (!supabaseAdmin) return { error: "Could not connect to the database." };
+    
     const year = Number(formData.get('year'));
     const month = Number(formData.get('month'));
 
@@ -108,7 +114,7 @@ export async function syncTenantsAction(formData: FormData) {
         const { data: allTenants, error: tenantsError } = await supabaseAdmin
             .from('tenants')
             .select('*')
-            .eq('status', 'Active'); // Only sync active tenants
+            .eq('status', 'Active'); 
 
         if (tenantsError) {
             throw new Error(`Failed to fetch tenants for sync: ${tenantsError.message}`);
@@ -141,6 +147,71 @@ export async function syncTenantsAction(formData: FormData) {
         return { success: true, count: tenantsToSync.length };
     } catch (error: any) {
         console.error('Error syncing tenants:', error);
+        return { error: error.message };
+    }
+}
+
+
+export async function syncTenantsFromPreviousYearAction(formData: FormData) {
+    const supabaseAdmin = getSupabaseAdmin();
+    if (!supabaseAdmin) return { error: "Could not connect to the database." };
+    
+    const currentYear = Number(formData.get('year'));
+    const currentMonth = Number(formData.get('month'));
+    const previousYear = currentYear - 1;
+
+    if (isNaN(currentYear) || isNaN(currentMonth)) {
+        return { error: 'Invalid year or month provided.' };
+    }
+
+    try {
+        // 1. Get tenants already in the current month's rent roll
+        const { data: currentRentData, error: currentRentError } = await supabaseAdmin
+            .from('rent_entries')
+            .select('tenant_id')
+            .eq('year', currentYear)
+            .eq('month', currentMonth);
+        if (currentRentError) throw new Error(`Failed to fetch current rent data: ${currentRentError.message}`);
+        const currentTenantIds = new Set(currentRentData.map(e => e.tenant_id));
+
+        // 2. Get all tenants from the previous year
+        const { data: previousYearTenants, error: previousTenantsError } = await supabaseAdmin
+            .from('tenants')
+            .select('*')
+            .in('id', (
+                await supabaseAdmin.from('rent_entries').select('tenant_id').eq('year', previousYear)
+            ).data?.map(t => t.tenant_id) || []);
+        if (previousTenantsError) throw new Error(`Failed to fetch previous year's tenants: ${previousTenantsError.message}`);
+
+        // 3. Filter out tenants who are already in the current rent roll
+        const tenantsToSync = previousYearTenants.filter(tenant => !currentTenantIds.has(tenant.id) && tenant.status === 'Active');
+
+        if (tenantsToSync.length === 0) {
+            return { success: true, count: 0, message: "All tenants from previous year are already synced." };
+        }
+
+        // 4. Create new rent entries
+        const newRentEntries = tenantsToSync.map(tenant => ({
+            tenant_id: tenant.id,
+            name: tenant.name,
+            property: tenant.property,
+            rent: tenant.rent,
+            due_date: new Date(currentYear, currentMonth, 1).toISOString().split("T")[0],
+            status: "Pending" as const,
+            avatar: tenant.avatar,
+            year: currentYear,
+            month: currentMonth,
+        }));
+
+        const { error: insertError } = await supabaseAdmin.from('rent_entries').insert(newRentEntries);
+
+        if (insertError) {
+            throw new Error(`Failed to insert synced tenants from previous year: ${insertError.message}`);
+        }
+
+        return { success: true, count: tenantsToSync.length };
+    } catch (error: any) {
+        console.error('Error syncing tenants from previous year:', error);
         return { error: error.message };
     }
 }

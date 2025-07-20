@@ -49,22 +49,25 @@ const CustomTooltip = ({ active, payload, label, settings }: TooltipProps<number
     return null;
 };
 
-export function ReportsTab({ year }: { year: number }) {
+export function ReportsTab({ year: currentYear }: { year: number }) {
   const { rentData, expenses, tenants, loading, settings } = useAppContext();
   const [reportType, setReportType] = React.useState("monthly");
   const [selectedTenant, setSelectedTenant] = React.useState<string | null>(null);
   const [selectedMonth, setSelectedMonth] = React.useState<number>(new Date().getMonth());
+  const [selectedYear, setSelectedYear] = React.useState(currentYear);
   const reportContentRef = React.useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
+  const years = Array.from({ length: 5 }, (_, i) => (new Date().getFullYear() - i));
+
   const yearlySummary = React.useMemo(() => {
-    const income = rentData.filter(e => e.year === year && e.status === 'Paid').reduce((acc, e) => acc + e.rent, 0);
+    const income = rentData.filter(e => e.year === selectedYear && e.status === 'Paid').reduce((acc, e) => acc + e.rent, 0);
     const expenseTotal = expenses.filter(e => {
-        try { return parseISO(e.date).getFullYear() === year; }
+        try { return parseISO(e.date).getFullYear() === selectedYear; }
         catch { return false; }
     }).reduce((acc, e) => acc + e.amount, 0);
     return { income, expenses: expenseTotal, net: income - expenseTotal };
-  }, [year, rentData, expenses]);
+  }, [selectedYear, rentData, expenses]);
   
   const yearlyChartData = [
       { name: 'Total Income', value: yearlySummary.income },
@@ -72,11 +75,11 @@ export function ReportsTab({ year }: { year: number }) {
   ];
 
   const monthlySummary = React.useMemo(() => {
-    const income = rentData.filter(e => e.year === year && e.month === selectedMonth && e.status === 'Paid').reduce((acc, e) => acc + e.rent, 0);
+    const income = rentData.filter(e => e.year === selectedYear && e.month === selectedMonth && e.status === 'Paid').reduce((acc, e) => acc + e.rent, 0);
     const expenseTotal = expenses.filter(e => {
         try { 
             const d = parseISO(e.date);
-            return d.getFullYear() === year && d.getMonth() === selectedMonth;
+            return d.getFullYear() === selectedYear && d.getMonth() === selectedMonth;
         }
         catch { return false; }
     }).reduce((acc, e) => acc + e.amount, 0);
@@ -86,16 +89,16 @@ export function ReportsTab({ year }: { year: number }) {
         net: income - expenseTotal,
         deposit: income > expenseTotal ? income - expenseTotal : 0
     };
-  }, [year, selectedMonth, rentData, expenses]);
+  }, [selectedYear, selectedMonth, rentData, expenses]);
   
-  const monthlyRentCollections = React.useMemo(() => rentData.filter(r => r.year === year && r.month === selectedMonth), [rentData, year, selectedMonth]);
+  const monthlyRentCollections = React.useMemo(() => rentData.filter(r => r.year === selectedYear && r.month === selectedMonth), [rentData, selectedYear, selectedMonth]);
   const monthlyExpenses = React.useMemo(() => expenses.filter(e => {
         try { 
             const d = parseISO(e.date);
-            return d.getFullYear() === year && d.getMonth() === selectedMonth;
+            return d.getFullYear() === selectedYear && d.getMonth() === selectedMonth;
         }
         catch { return false; }
-    }), [expenses, year, selectedMonth]);
+    }), [expenses, selectedYear, selectedMonth]);
     
   const monthlyExpenseChartData = React.useMemo(() => {
       const categoryMap = new Map<string, number>();
@@ -109,9 +112,9 @@ export function ReportsTab({ year }: { year: number }) {
   const tenantReportData = React.useMemo(() => {
     if (!selectedTenant) return [];
     return rentData
-      .filter(entry => entry.tenant_id === selectedTenant)
+      .filter(entry => entry.tenant_id === selectedTenant && entry.year === selectedYear)
       .sort((a, b) => new Date(a.year, a.month).getTime() - new Date(b.year, b.month).getTime());
-  }, [rentData, selectedTenant]);
+  }, [rentData, selectedTenant, selectedYear]);
 
   const handleDownloadPdf = async () => {
     const input = reportContentRef.current;
@@ -126,7 +129,7 @@ export function ReportsTab({ year }: { year: number }) {
       const imgData = canvas.toDataURL('image/png');
       const pdf = new jsPDF({ orientation: 'p', unit: 'px', format: [canvas.width, canvas.height] });
       pdf.addImage(imgData, 'PNG', 0, 0, canvas.width, canvas.height);
-      pdf.save(`Report_${reportType}_${year}.pdf`);
+      pdf.save(`Report_${reportType}_${selectedYear}.pdf`);
       toast({ title: "Success", description: "PDF has been downloaded." });
     } catch (error) {
       console.error("Error generating PDF:", error);
@@ -154,7 +157,7 @@ export function ReportsTab({ year }: { year: number }) {
             return (
                 <Card>
                   <CardHeader>
-                    <CardTitle>Yearly Financial Summary for {year}</CardTitle>
+                    <CardTitle>Yearly Financial Summary for {selectedYear}</CardTitle>
                     <CardDescription>An overview of your finances for the entire year.</CardDescription>
                   </CardHeader>
                   <CardContent className="grid md:grid-cols-2 gap-8 items-center">
@@ -197,7 +200,7 @@ export function ReportsTab({ year }: { year: number }) {
                  <div className="space-y-6">
                     <div className="flex items-center gap-2">
                         <FileText className="h-6 w-6 text-primary"/>
-                        <h2 className="text-xl font-bold">Financial Report - {months[selectedMonth]} {year}</h2>
+                        <h2 className="text-xl font-bold">Financial Report - {months[selectedMonth]} {selectedYear}</h2>
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">Total Rent Collected</p><div className="flex items-center gap-2"><DollarSign className="h-5 w-5 text-green-500"/><p className="text-xl font-bold text-green-600">{formatCurrency(monthlySummary.income, settings.currencySymbol)}</p></div></CardContent></Card>
@@ -207,7 +210,7 @@ export function ReportsTab({ year }: { year: number }) {
                     </div>
                     <div className="grid md:grid-cols-2 gap-6">
                         <Card>
-                            <CardHeader><CardTitle className="text-base">Rent Collections - {months[selectedMonth]} {year}</CardTitle></CardHeader>
+                            <CardHeader><CardTitle className="text-base">Rent Collections - {months[selectedMonth]} {selectedYear}</CardTitle></CardHeader>
                             <CardContent>
                                 <Table>
                                     <TableHeader><TableRow><TableHead>Tenant</TableHead><TableHead>Flat</TableHead><TableHead className="text-right">Amount</TableHead></TableRow></TableHeader>
@@ -219,7 +222,7 @@ export function ReportsTab({ year }: { year: number }) {
                             </CardContent>
                         </Card>
                          <Card>
-                            <CardHeader><CardTitle className="text-base">Expenses - {months[selectedMonth]} {year}</CardTitle></CardHeader>
+                            <CardHeader><CardTitle className="text-base">Expenses - {months[selectedMonth]} {selectedYear}</CardTitle></CardHeader>
                             <CardContent>
                                  <Table>
                                     <TableHeader><TableRow><TableHead>Description</TableHead><TableHead className="text-right">Amount</TableHead></TableRow></TableHeader>
@@ -249,8 +252,8 @@ export function ReportsTab({ year }: { year: number }) {
             return (
                 <Card>
                     <CardHeader>
-                        <CardTitle>Tenant Payment History: {selectedTenantName}</CardTitle>
-                        <CardDescription>A complete payment history for the selected tenant.</CardDescription>
+                        <CardTitle>Tenant Payment History for {selectedYear}: {selectedTenantName}</CardTitle>
+                        <CardDescription>A complete payment history for the selected tenant for the selected year.</CardDescription>
                     </CardHeader>
                     <CardContent>
                        {selectedTenant ? (
@@ -275,7 +278,7 @@ export function ReportsTab({ year }: { year: number }) {
                                 </TableRow>
                               )) : (
                                 <TableRow>
-                                    <TableCell colSpan={5} className="text-center">No payment history found for this tenant.</TableCell>
+                                    <TableCell colSpan={5} className="text-center">No payment history found for this tenant in {selectedYear}.</TableCell>
                                 </TableRow>
                               )}
                             </TableBody>
@@ -293,7 +296,7 @@ export function ReportsTab({ year }: { year: number }) {
     <div className="pt-4 space-y-6">
       <Card className="no-print">
           <CardContent className="p-4 flex flex-col sm:flex-row items-center gap-4">
-            <div className="grid grid-cols-2 gap-4 flex-1 w-full">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 flex-1 w-full">
                 <div>
                     <Label>Report Type</Label>
                     <Select value={reportType} onValueChange={setReportType}>
@@ -304,6 +307,17 @@ export function ReportsTab({ year }: { year: number }) {
                         <SelectItem value="tenant">Tenant History</SelectItem>
                       </SelectContent>
                     </Select>
+                </div>
+                 <div>
+                    <Label>Year</Label>
+                    <Select value={String(selectedYear)} onValueChange={(v) => setSelectedYear(Number(v))}>
+                        <SelectTrigger><SelectValue placeholder="Select Year" /></SelectTrigger>
+                        <SelectContent>
+                          {years.map(y => (
+                            <SelectItem key={y} value={String(y)}>{y}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                 </div>
                 {reportType === 'monthly' && (
                     <div>
@@ -317,7 +331,7 @@ export function ReportsTab({ year }: { year: number }) {
                     </div>
                 )}
                 {reportType === 'tenant' && (
-                    <div className="col-span-2 sm:col-span-1">
+                    <div className="col-span-2 md:col-span-1">
                         <Label>Tenant</Label>
                         <Select onValueChange={setSelectedTenant}>
                           <SelectTrigger><SelectValue placeholder="Select a tenant..." /></SelectTrigger>

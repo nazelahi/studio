@@ -39,6 +39,16 @@ const getWorkStatusIcon = (status: WorkDetail['status']) => {
     }
 }
 
+const getWorkStatusBadgeClass = (status: WorkDetail['status']) => {
+    switch (status) {
+        case "Completed": return "bg-success text-success-foreground hover:bg-success/80";
+        case "In Progress": return "bg-blue-500 text-white hover:bg-blue-600";
+        case "To Do": return "bg-yellow-500 text-white hover:bg-yellow-600";
+        default: return "bg-secondary text-secondary-foreground";
+    }
+};
+
+
 interface EditableAmountProps {
     initialAmount: number;
     onSave: (newAmount: number) => void;
@@ -177,6 +187,7 @@ export function WorkDetailsTab({ year }: { year: number }) {
       } else {
         toast({ title: editingWork ? 'Work Detail Updated' : 'Work Detail Added', description: 'The work item has been saved.' });
         handleOpenChange(false);
+        refreshData();
       }
     });
   };
@@ -191,6 +202,7 @@ export function WorkDetailsTab({ year }: { year: number }) {
               toast({ title: 'Error deleting work detail', description: result.error, variant: 'destructive' });
           } else {
               toast({ title: 'Work Detail Deleted', description: 'The work item has been removed.' });
+              refreshData();
           }
       });
     });
@@ -286,6 +298,7 @@ export function WorkDetailsTab({ year }: { year: number }) {
             }
 
             await addWorkDetailsBatch(workDetailsToCreate, toast);
+            refreshData();
 
         } catch (error) {
              console.error("Error importing file:", error);
@@ -472,7 +485,6 @@ export function WorkDetailsTab({ year }: { year: number }) {
             ) : filteredWorkDetails.length > 0 ? (
               filteredWorkDetails.slice(0, showAll ? filteredWorkDetails.length : 10).map((work) => {
                 const totalCost = (work.product_cost || 0) + (work.worker_cost || 0);
-                const isCompleted = work.status === 'Completed';
                 return (
                   <TableRow key={work.id} className="odd:bg-muted/50">
                     <TableCell>
@@ -502,7 +514,7 @@ export function WorkDetailsTab({ year }: { year: number }) {
                     </TableCell>
                     <TableCell className="font-bold">{formatCurrency(totalCost, settings.currencySymbol)}</TableCell>
                     <TableCell className="hidden sm:table-cell">
-                        <Badge variant={isCompleted ? 'default': 'secondary'} className={cn(isCompleted && 'bg-success hover:bg-success/80')}>
+                        <Badge variant={'secondary'} className={cn(getWorkStatusBadgeClass(work.status))}>
                             {work.status}
                         </Badge>
                     </TableCell>
