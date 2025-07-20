@@ -5,27 +5,11 @@
 import { createClient } from '@supabase/supabase-js'
 import 'dotenv/config'
 import type { RentEntry, Tenant } from '@/types'
-
-const getSupabaseAdmin = () => {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-
-    if (!supabaseUrl || !supabaseServiceKey) {
-        console.warn('Supabase admin client could not be created. Check environment variables.');
-        return null;
-    }
-    
-    return createClient(supabaseUrl, supabaseServiceKey, {
-        auth: {
-            autoRefreshToken: false,
-            persistSession: false,
-        },
-    });
-}
+import { getSupabaseAdmin } from '@/lib/supabase'
 
 type RentEntryForBatch = Omit<RentEntry, 'id' | 'created_at'>;
 
-export async function addRentEntriesBatch(rentEntries: RentEntryForBatch[]) {
+export async function addRentEntriesBatch(rentEntries: RentEntryForBatch[], year: number, month: number) {
     const supabaseAdmin = getSupabaseAdmin();
     if (!supabaseAdmin) return { error: "Could not connect to the database." };
 
@@ -33,7 +17,15 @@ export async function addRentEntriesBatch(rentEntries: RentEntryForBatch[]) {
         return { error: 'No rent entries provided.' };
     }
     
-    const { error } = await supabaseAdmin.from('rent_entries').insert(rentEntries);
+    // Ensure all entries have the correct year and month
+    const entriesToInsert = rentEntries.map(entry => ({
+        ...entry,
+        year,
+        month,
+        due_date: new Date(year, month, 1).toISOString().split("T")[0],
+    }));
+
+    const { error } = await supabaseAdmin.from('rent_entries').insert(entriesToInsert);
 
     if (error) {
         console.error('Error batch inserting rent entries:', error);
@@ -174,23 +166,37 @@ export async function syncTenantsFromPreviousYearAction(formData: FormData) {
         if (currentRentError) throw new Error(`Failed to fetch current rent data: ${currentRentError.message}`);
         const currentTenantIds = new Set(currentRentData.map(e => e.tenant_id));
 
-        // 2. Get all tenants from the previous year
+        // 2. Get all distinct tenant_ids from the previous year's rent entries
+        const { data: prevYearTenantIds, error: prevIdsError } = await supabaseAdmin
+            .from('rent_entries')
+            .select('tenant_id', { count: 'exact', head: false })
+            .eq('year', previousYear);
+        if(prevIdsError) throw new Error(`Failed to fetch previous year's tenant IDs: ${prevIdsError.message}`);
+
+        const uniquePrevYearTenantIds = Array.from(new Set(prevYearTenantIds.map(t => t.tenant_id)));
+
+        if (uniquePrevYearTenantIds.length === 0) {
+            return { success: true, count: 0, message: "No tenants found in the previous year." };
+        }
+        
+        // 3. Fetch details for those tenants who are still active
         const { data: previousYearTenants, error: previousTenantsError } = await supabaseAdmin
             .from('tenants')
             .select('*')
-            .in('id', (
-                await supabaseAdmin.from('rent_entries').select('tenant_id').eq('year', previousYear)
-            ).data?.map(t => t.tenant_id) || []);
+            .in('id', uniquePrevYearTenantIds)
+            .eq('status', 'Active');
+            
         if (previousTenantsError) throw new Error(`Failed to fetch previous year's tenants: ${previousTenantsError.message}`);
 
-        // 3. Filter out tenants who are already in the current rent roll
-        const tenantsToSync = previousYearTenants.filter(tenant => !currentTenantIds.has(tenant.id) && tenant.status === 'Active');
+
+        // 4. Filter out tenants who are already in the current rent roll
+        const tenantsToSync = previousYearTenants.filter(tenant => !currentTenantIds.has(tenant.id));
 
         if (tenantsToSync.length === 0) {
             return { success: true, count: 0, message: "All tenants from previous year are already synced." };
         }
 
-        // 4. Create new rent entries
+        // 5. Create new rent entries
         const newRentEntries = tenantsToSync.map(tenant => ({
             tenant_id: tenant.id,
             name: tenant.name,

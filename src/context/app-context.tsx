@@ -10,7 +10,7 @@ import { addExpensesBatch as addExpensesBatchAction, deleteExpenseAction, delete
 import type { AppData } from '@/lib/data';
 import { getDashboardDataAction } from '@/app/actions/data';
 import { findOrCreateTenantAction, updateTenantAction, deleteTenantAction, deleteMultipleTenantsAction } from '@/app/actions/tenants';
-import { addRentEntriesBatch as addRentEntriesBatchServerAction, deleteRentEntryAction, deleteMultipleRentEntriesAction, syncTenantsAction } from '@/app/actions/rent';
+import { addRentEntriesBatch as addRentEntriesBatchServerAction, deleteRentEntryAction, deleteMultipleRentEntriesAction, syncTenantsAction, syncTenantsFromPreviousYearAction } from '@/app/actions/rent';
 import { useToast } from "@/hooks/use-toast";
 
 // --- START: Settings-related types moved here ---
@@ -128,6 +128,7 @@ type AppContextType = {
   deleteMultipleRentEntries: (rentEntryIds: string[]) => Promise<void>;
   syncTenantsForMonth: (year: number, month: number) => Promise<void>;
   syncExpensesFromPreviousMonth: (year: number, month: number) => Promise<void>;
+  syncTenantsFromPreviousYear: (year: number, month: number) => Promise<void>;
   loading: boolean;
   getAllData: () => Omit<AppData, 'propertySettings'>;
   restoreAllData: (backupData: Omit<AppData, 'propertySettings'>) => void;
@@ -529,7 +530,7 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
             return;
         }
 
-        const result = await addRentEntriesBatchServerAction(newEntries);
+        const result = await addRentEntriesBatchServerAction(newEntries, year, month);
         
         if (result.error) {
             handleError(new Error(result.error), 'batch adding rent entries');
@@ -595,6 +596,25 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
             await refreshData();
         } else {
             toast({ title: "Already up to date", description: result.message || "All active tenants are already in the rent roll for this month." });
+        }
+    };
+
+    const syncTenantsFromPreviousYear = async (year: number, month: number) => {
+        const formData = new FormData();
+        formData.append('year', String(year));
+        formData.append('month', String(month));
+        const result = await syncTenantsFromPreviousYearAction(formData);
+
+        if (result.error) {
+            handleError(new Error(result.error), 'syncing tenants from previous year');
+            return;
+        }
+        
+        if (result.count > 0) {
+            toast({ title: "Sync Complete", description: `${result.count} tenant(s) from the previous year have been added.` });
+            await refreshData();
+        } else {
+            toast({ title: "Already up to date", description: result.message || "All tenants from the previous year are already in this month's rent roll." });
         }
     };
     
@@ -706,6 +726,7 @@ export function AppContextProvider({ children, initialData }: { children: ReactN
         deleteMultipleRentEntries,
         syncTenantsForMonth,
         syncExpensesFromPreviousMonth,
+        syncTenantsFromPreviousYear,
         getRentEntryById,
         addWorkDetailsBatch,
     };

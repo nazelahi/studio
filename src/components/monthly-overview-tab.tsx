@@ -182,7 +182,7 @@ export function MonthlyOverviewTab() {
   const { toast } = useToast();
   const { withProtection } = useProtection();
 
-  const { tenants, expenses, rentData, deposits, notices, workDetails, addRentEntry, addRentEntriesBatch, updateRentEntry, deleteRentEntry, syncTenantsForMonth, syncExpensesFromPreviousMonth, loading, deleteMultipleRentEntries, deleteMultipleExpenses, refreshData, getRentEntryById, addExpense, addExpensesBatch, updateExpense, deleteExpense, settings } = useAppContext();
+  const { tenants, expenses, rentData, deposits, notices, workDetails, addRentEntry, addRentEntriesBatch, updateRentEntry, deleteRentEntry, syncTenantsForMonth, syncExpensesFromPreviousMonth, syncTenantsFromPreviousYear, loading, deleteMultipleRentEntries, deleteMultipleExpenses, refreshData, getRentEntryById, addExpense, addExpensesBatch, updateExpense, deleteExpense, settings } = useAppContext();
 
   const [isExpenseDialogOpen, setIsExpenseDialogOpen] = React.useState(false);
   const [editingExpense, setEditingExpense] = React.useState<Expense | null>(null);
@@ -194,6 +194,7 @@ export function MonthlyOverviewTab() {
   const [isRentDialogOpen, setIsRentDialogOpen] = React.useState(false);
   const [editingRentEntry, setEditingRentEntry] = React.useState<RentEntry | null>(null);
   const [isSyncingTenants, startTenantSyncTransition] = React.useTransition();
+  const [isSyncingTenantsPrevYear, startTenantSyncPrevYearTransition] = React.useTransition();
   
   const [isTenantFinderOpen, setIsTenantFinderOpen] = React.useState(false);
   const [selectedHistoricalTenant, setSelectedHistoricalTenant] = React.useState<HistoricalTenant | null>(null);
@@ -411,6 +412,12 @@ export function MonthlyOverviewTab() {
         });
     };
     
+    const handleSyncTenantsFromPrevYear = () => {
+        startTenantSyncPrevYearTransition(async () => {
+            await syncTenantsFromPreviousYear(selectedYear, selectedMonth);
+        });
+    }
+
   const handleMassDeleteRentEntries = () => {
     deleteMultipleRentEntries(selectedRentEntryIds);
     setSelectedRentEntryIds([]);
@@ -918,12 +925,24 @@ export function MonthlyOverviewTab() {
                                         </form>
                                     </DialogContent>
                                 </Dialog>
-                                <Tooltip><TooltipTrigger asChild>
-                                    <Button size="icon" variant="outline" onClick={handleSyncTenants} className="flex-1 sm:flex-initial" disabled={isSyncingTenants}>
-                                        {isSyncingTenants ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-                                        <span className="sr-only">Sync tenants</span>
-                                    </Button>
-                                </TooltipTrigger><TooltipContent>Sync from Tenants List</TooltipContent></Tooltip>
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button size="sm" variant="outline" className="flex-1">
+                                            <RefreshCw className="mr-2 h-4 w-4" />
+                                            Sync
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent>
+                                        <DropdownMenuItem onClick={handleSyncTenants} disabled={isSyncingTenants}>
+                                            {isSyncingTenants ? <LoaderCircle className="h-4 w-4 animate-spin mr-2"/> : <RefreshCw className="h-4 w-4 mr-2" />}
+                                            Sync Active Tenants
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={handleSyncTenantsFromPrevYear} disabled={isSyncingTenantsPrevYear}>
+                                            {isSyncingTenantsPrevYear ? <LoaderCircle className="h-4 w-4 animate-spin mr-2"/> : <RefreshCw className="h-4 w-4 mr-2" />}
+                                            Sync from Previous Year
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
                             </div>
                             <div className="flex items-center gap-2">
                                 <Tooltip><TooltipTrigger asChild><Button size="icon" variant="outline" onClick={handleDownloadTemplate}><Download className="h-4 w-4" /><span className="sr-only">Download Template</span></Button></TooltipTrigger><TooltipContent>Download Template</TooltipContent></Tooltip>
@@ -1171,7 +1190,7 @@ export function MonthlyOverviewTab() {
                                     </DialogHeader>
                                     <form onSubmit={handleSaveExpense} className="grid gap-4 py-4">
                                         {editingExpense && <input type="hidden" name="expenseId" value={editingExpense.id} />}
-                                        <div className="space-y-2"><Label htmlFor="date">Date</Label><Input id="date" name="date" type="date" defaultValue={editingExpense?.date ? formatDate(editingExpense.date, 'yyyy-MM-dd') : formatDate(new Date().toISOString(), 'yyyy-MM-dd')} required /></div>
+                                        <div className="space-y-2"><Label htmlFor="date">Date</Label><Input id="date" name="date" type="date" defaultValue={editingExpense?.date ? formatDate(editingExpense.date, 'yyyy-MM-dd') : formatDate(new Date(selectedYear, selectedMonth, 1).toISOString(), 'yyyy-MM-dd')} required /></div>
                                         <div className="space-y-2">
                                             <Label htmlFor="category">Category</Label>
                                             <Select value={expenseCategory} onValueChange={setExpenseCategory}>
