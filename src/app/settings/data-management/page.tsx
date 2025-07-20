@@ -26,8 +26,8 @@ import { Label } from "@/components/ui/label"
 import { Building, KeyRound, Palette, Tag, Database, RefreshCw, HardDriveDownload, HardDriveUpload, Trash2, User, LogOut, MapPin, Menu, Settings, LoaderCircle, LogIn, UserCircle, Share2, AlertTriangle } from "lucide-react"
 
 const months = [
-    "January", "February", "March", "April", "May", "June", 
-    "July", "August", "September", "October", "November", "December"
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun", 
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
 ];
 
 function AccessDenied() {
